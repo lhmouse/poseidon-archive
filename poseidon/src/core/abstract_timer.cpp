@@ -19,8 +19,8 @@ reset(int64_t first, int64_t period)
 noexcept
   {
     // Update data members.
-    this->m_first.store(first, ::std::memory_order_relaxed);
-    this->m_period.store(period, ::std::memory_order_relaxed);
+    this->m_first.store(first);
+    this->m_period.store(period);
 
     // Notify the driver about the update.
     Timer_Driver::invalidate_internal(this);

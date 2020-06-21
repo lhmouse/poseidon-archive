@@ -128,7 +128,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           }
 
           // Process this timer!
-          int64_t period = timer->m_period.load(::std::memory_order_relaxed);
+          int64_t period = timer->m_period.load();
           if(period > 0) {
             // The timer is periodic. Insert it back.
             do_shift_time(elem.next, period);
@@ -153,7 +153,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
                             "[timer class `$2`]",
                             stdex.what(), typeid(*timer).name());
         }
-        timer->m_count.fetch_add(1, ::std::memory_order_relaxed);
+        timer->m_count.fetch_add(1);
       }
   };
 
@@ -177,12 +177,12 @@ insert(uptr<Abstract_Timer>&& utimer)
       POSEIDON_THROW("Timer pointer must be unique");
 
     // Perform some initialization. No locking is needed here.
-    timer->m_count.store(0, ::std::memory_order_relaxed);
+    timer->m_count.store(0);
 
     // Get the next trigger time.
     // The timer is considered to be owned uniquely, so there is no need to lock it.
     PQ_Element elem;
-    elem.next = do_get_time(timer->m_first.load(::std::memory_order_relaxed));
+    elem.next = do_get_time(timer->m_first.load());
     elem.timer = timer;
 
     // Insert the timer.
@@ -206,7 +206,7 @@ noexcept
       return false;
 
     // Update the element in place.
-    qelem->next = do_get_time(ctimer->m_first.load(::std::memory_order_relaxed));
+    qelem->next = do_get_time(ctimer->m_first.load());
     ::std::make_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     self->m_pq_avail.notify_one();
     return true;

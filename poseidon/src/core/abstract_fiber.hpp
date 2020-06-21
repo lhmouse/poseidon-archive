@@ -15,8 +15,8 @@ class Abstract_Fiber
     friend Fiber_Scheduler;
 
   private:
-    ::std::atomic<bool> m_resident;  // don't delete if orphaned
-    ::std::atomic<Async_State> m_state;
+    atomic_relaxed<bool> m_resident;  // don't delete if orphaned
+    atomic_relaxed<Async_State> m_state;
 
     // These are scheduler data.
     uint32_t m_sched_version;
@@ -29,16 +29,9 @@ class Abstract_Fiber
   public:
     Abstract_Fiber()
     noexcept
-      : m_resident(false), m_state(async_state_initial)
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Fiber);
-
-  private:
-    void
-    do_set_state(Async_State state)
-    noexcept
-      { this->m_state.store(state, ::std::memory_order_release);  }
 
   protected:
     // Executes this fiber.
@@ -77,19 +70,19 @@ class Abstract_Fiber
     bool
     resident()
     const noexcept
-      { return this->m_resident.load(::std::memory_order_relaxed);  }
+      { return this->m_resident.load();  }
 
     void
     set_resident(bool value = true)
     noexcept
-      { this->m_resident.store(value, ::std::memory_order_relaxed);  }
+      { this->m_resident.store(value);  }
 
     // Gets the fiber state, which is set by the scheduler.
     ROCKET_PURE_FUNCTION
     Async_State
     state()
     const noexcept
-      { return this->m_state.load(::std::memory_order_acquire);  }
+      { return this->m_state.load();  }
   };
 
 }  // namespace poseidon

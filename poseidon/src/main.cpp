@@ -95,13 +95,7 @@ Report bugs to <%s>.
   }
 
 // We want to detect Ctrl-C.
-::std::atomic<int> exit_sig;
-
-void
-do_set_exit_sig(int sig)
-  {
-    exit_sig.store(sig, ::std::memory_order_relaxed);
-  }
+atomic_signal exit_sig;
 
 void
 do_trap_exit_signal(int sig)
@@ -109,7 +103,7 @@ noexcept
   {
     // Trap Ctrl-C. Failure to set the signal handler is ignored.
     struct ::sigaction sigx = { };
-    sigx.sa_handler = do_set_exit_sig;
+    sigx.sa_handler = [](int n) { exit_sig.store(n);  };
     ::sigaction(sig, &sigx, nullptr);
   }
 

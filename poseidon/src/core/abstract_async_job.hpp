@@ -14,26 +14,19 @@ class Abstract_Async_Job
     friend Worker_Pool;
 
   private:
-    uintptr_t m_key;
+    const uintptr_t m_key;
 
-    ::std::atomic<bool> m_resident;  // don't delete if orphaned
-    ::std::atomic<Async_State> m_state;
+    atomic_relaxed<bool> m_resident;  // don't delete if orphaned
+    atomic_relaxed<Async_State> m_state;
 
   public:
     explicit
     Abstract_Async_Job(uintptr_t key)
     noexcept
-      : m_key(key),
-        m_resident(false), m_state(async_state_initial)
+      : m_key(key)
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Async_Job);
-
-  private:
-    void
-    do_set_state(Async_State state)
-    noexcept
-      { this->m_state.store(state, ::std::memory_order_release);  }
 
   protected:
     // Executes this job and satisfies some promise of the derived class.
@@ -50,19 +43,19 @@ class Abstract_Async_Job
     bool
     resident()
     const noexcept
-      { return this->m_resident.load(::std::memory_order_relaxed);  }
+      { return this->m_resident.load();  }
 
     void
     set_resident(bool value = true)
     noexcept
-      { this->m_resident.store(value, ::std::memory_order_relaxed);  }
+      { this->m_resident.store(value);  }
 
     // Gets the asynchrnous state, which is set by worker threads.
     ROCKET_PURE_FUNCTION
     Async_State
     state()
     const noexcept
-      { return this->m_state.load(::std::memory_order_acquire);  }
+      { return this->m_state.load();  }
   };
 
 }  // namespace poseidon

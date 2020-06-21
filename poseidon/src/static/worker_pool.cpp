@@ -90,7 +90,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
 
         // Execute the job.
         ROCKET_ASSERT(job->state() == async_state_pending);
-        job->do_set_state(async_state_running);
+        job->m_state.store(async_state_running);
         POSEIDON_LOG_TRACE("Starting execution of asynchronous job `$1`", job);
 
         try {
@@ -103,7 +103,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
         }
 
         ROCKET_ASSERT(job->state() == async_state_running);
-        job->do_set_state(async_state_finished);
+        job->m_state.store(async_state_finished);
         POSEIDON_LOG_TRACE("Finished execution of asynchronous job `$1`", job);
       }
   };
@@ -156,7 +156,7 @@ insert(uptr<Abstract_Async_Job>&& ujob)
     qwrk->init_once.call(self->do_worker_init_once, qwrk);
 
     // Perform some initialization. No locking is needed here.
-    job->do_set_state(async_state_pending);
+    job->m_state.store(async_state_pending);
 
     // Insert the job.
     mutex::unique_lock lock(qwrk->queue_mutex);

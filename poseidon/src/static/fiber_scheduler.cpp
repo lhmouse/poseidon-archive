@@ -390,7 +390,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
         // Execute the fiber.
         ROCKET_ASSERT(fiber->state() == async_state_suspended);
-        fiber->do_set_state(async_state_running);
+        fiber->m_state.store(async_state_running);
         fiber->do_on_start();
         POSEIDON_LOG_TRACE("Starting execution of fiber `$1`", fiber);
 
@@ -407,7 +407,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         }
 
         ROCKET_ASSERT(fiber->state() == async_state_running);
-        fiber->do_set_state(async_state_finished);
+        fiber->m_state.store(async_state_finished);
         fiber->do_on_finish();
         POSEIDON_LOG_TRACE("Finished execution of fiber `$1`", fiber);
       }
@@ -416,7 +416,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     void
     do_thread_loop(void* param)
       {
-        const auto& exit_sig = *(const volatile ::std::atomic<int>*)param;
+        const auto& exit_sig = *(const atomic_signal*)param;
         const auto myctx = self->open_thread_context();
 
         rcptr<Abstract_Fiber> fiber;
@@ -433,7 +433,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         for(;;) {
           fiber.reset();
           now = do_get_monotonic_seconds();
-          int sig = exit_sig.load(::std::memory_order_relaxed);
+          int sig = exit_sig.load();
 
           while(auto head = self->m_sched_sleep_head) {
             // Move a fiber from the sleep queue into the scheduler queue.
@@ -591,7 +591,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           // Finish initialization.
           // Note this is the only scenerio where the fiber state is not updated
           // by itself.
-          fiber->do_set_state(async_state_suspended);
+          fiber->m_state.store(async_state_suspended);
         }
 
         // Resume this fiber...
@@ -637,7 +637,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
 void
 Fiber_Scheduler::
-modal_loop(const volatile ::std::atomic<int>& exit_sig)
+modal_loop(const atomic_signal& exit_sig)
   {
     // Perform initialization as necessary.
     self->m_init_once.call(self->do_init_once);
@@ -726,7 +726,7 @@ yield(rcptr<const Abstract_Future> futp_opt)
 
     // Suspend the current fiber...
     ROCKET_ASSERT(fiber->state() == async_state_running);
-    fiber->do_set_state(async_state_suspended);
+    fiber->m_state.store(async_state_suspended);
     fiber->do_on_suspend();
     POSEIDON_LOG_TRACE("Suspending execution of fiber `$1`", fiber);
 
@@ -781,7 +781,7 @@ yield(rcptr<const Abstract_Future> futp_opt)
     // ... and resume here.
     ROCKET_ASSERT(myctx->current == fiber);
     ROCKET_ASSERT(fiber->state() == async_state_suspended);
-    fiber->do_set_state(async_state_running);
+    fiber->m_state.store(async_state_running);
     fiber->do_on_resume();
     POSEIDON_LOG_TRACE("Resumed execution of fiber `$1`", fiber);
   }
@@ -802,7 +802,7 @@ insert(uptr<Abstract_Fiber>&& ufiber)
     fiber->m_sched_yield_time = 0;
     fiber->m_sched_futp = nullptr;
     fiber->m_sched_sleep_next = nullptr;
-    fiber->do_set_state(async_state_pending);
+    fiber->m_state.store(async_state_pending);
 
     // Attach this fiber to the ready queue.
     mutex::unique_lock lock(self->m_sched_mutex);

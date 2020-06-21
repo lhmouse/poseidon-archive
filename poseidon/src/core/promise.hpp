@@ -51,7 +51,7 @@ class Promise
         ROCKET_ASSERT(futp);
 
         ROCKET_ASSERT(futp->m_stor.index() != future_state_empty);
-        futp->m_ready.store(true, ::std::memory_order_release);
+        futp->m_ready.store(true);
         Fiber_Scheduler::signal(*futp);
       }
 

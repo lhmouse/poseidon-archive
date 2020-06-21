@@ -15,7 +15,7 @@ class Abstract_Socket
     friend Network_Driver;
 
   private:
-    ::std::atomic<bool> m_resident;  // don't delete if orphaned
+    atomic_relaxed<bool> m_resident;  // don't delete if orphaned
     unique_FD m_fd;
 
     // These are used by network driver.
@@ -78,12 +78,12 @@ class Abstract_Socket
     bool
     resident()
     const noexcept
-      { return this->m_resident.load(::std::memory_order_relaxed);  }
+      { return this->m_resident.load();  }
 
     void
     set_resident(bool value = true)
     noexcept
-      { this->m_resident.store(value, ::std::memory_order_relaxed);  }
+      { this->m_resident.store(value);  }
 
     // Returns the stream descriptor.
     // This is used to query and adjust stream flags. You shall not perform I/O

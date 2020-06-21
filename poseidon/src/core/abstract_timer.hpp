@@ -14,17 +14,16 @@ class Abstract_Timer
     friend Timer_Driver;
 
   private:
-    ::std::atomic<bool> m_resident;  // don't delete if orphaned
-    ::std::atomic<uint64_t> m_count;
+    atomic_relaxed<bool> m_resident;  // don't delete if orphaned
+    atomic_relaxed<uint64_t> m_count;
 
-    ::std::atomic<int64_t> m_first;  // absolute time in milliseconds
-    ::std::atomic<int64_t> m_period;  // period in milliseconds
+    atomic_relaxed<int64_t> m_first;  // absolute time in milliseconds
+    atomic_relaxed<int64_t> m_period;  // period in milliseconds
 
   public:
     Abstract_Timer(int64_t first, int64_t period)
     noexcept
-      : m_resident(false), m_count(0),
-        m_first(first), m_period(period)
+      : m_first(first), m_period(period)
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Timer);
@@ -44,19 +43,19 @@ class Abstract_Timer
     bool
     resident()
     const noexcept
-      { return this->m_resident.load(::std::memory_order_relaxed);  }
+      { return this->m_resident.load();  }
 
     void
     set_resident(bool value = true)
     noexcept
-      { this->m_resident.store(value, ::std::memory_order_relaxed);  }
+      { this->m_resident.store(value);  }
 
     // Gets the counter.
     ROCKET_PURE_FUNCTION
     uint64_t
     count()
     const noexcept
-      { return this->m_count.load(::std::memory_order_relaxed);  }
+      { return this->m_count.load();  }
 
     // Resets the first triggered time and the period.
     void

@@ -9,6 +9,7 @@
 #endif
 
 #include <asteria/fwd.hpp>
+#include <rocket/atomic.hpp>
 #include <rocket/mutex.hpp>
 #include <rocket/recursive_mutex.hpp>
 #include <rocket/condition_variable.hpp>
@@ -94,6 +95,10 @@ using ::asteria::array;
 using ::asteria::opt;
 using ::asteria::refp;
 
+using ::rocket::atomic;
+using ::rocket::atomic_relaxed;
+using ::rocket::atomic_acq_rel;
+using ::rocket::atomic_seq_cst;
 using ::rocket::mutex;
 using ::rocket::recursive_mutex;
 using ::rocket::condition_variable;
@@ -119,6 +124,8 @@ struct FD_Closer
 
 using unique_FD = ::rocket::unique_handle<int, FD_Closer>;
 static_assert(sizeof(unique_FD) == sizeof(int));
+
+using atomic_signal = rocket::atomic_relaxed<int>;
 
 // Core
 class Config_File;

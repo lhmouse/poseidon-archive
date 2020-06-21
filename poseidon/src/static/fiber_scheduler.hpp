@@ -19,7 +19,7 @@ class Fiber_Scheduler
     // This function is thread-safe.
     [[noreturn]] static
     void
-    modal_loop(const volatile ::std::atomic<int>& exit_sig);
+    modal_loop(const atomic_signal& exit_sig);
 
     // Reloads settings from main config.
     // If this function fails, an exception is thrown, and there is no effect.

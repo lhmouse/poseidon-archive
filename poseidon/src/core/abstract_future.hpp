@@ -17,7 +17,7 @@ class Abstract_Future
 
   private:
     mutable mutex m_mutex;
-    ::std::atomic<bool> m_ready = { false };
+    atomic_relaxed<bool> m_ready;
 
     // These are scheduler data.
     mutable Abstract_Fiber* m_sched_ready_head = nullptr;
@@ -36,7 +36,7 @@ class Abstract_Future
     bool
     do_is_ready_weak()
     const noexcept
-      { return this->m_ready.load(::std::memory_order_relaxed);  }
+      { return this->m_ready.load();  }
 
   public:
     // Gets the state, which is any of `future_state_empty`, `future_state_value`
