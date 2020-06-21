@@ -322,8 +322,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     mutable mutex m_sched_mutex;
     Queue_Semaphore m_sched_avail;
     ::std::vector<PQ_Element> m_sched_pq;
-    Abstract_Fiber* m_sched_ready_head = nullptr;
     Abstract_Fiber* m_sched_sleep_head = nullptr;
+    Abstract_Fiber* m_sched_ready_head = nullptr;
 
     static
     void
@@ -432,20 +432,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           now = do_get_monotonic_seconds();
           int sig = exit_sig.load(::std::memory_order_relaxed);
 
-          while(auto qhead = self->m_sched_ready_head) {
-            // Move a fiber from the ready queue into the scheduler queue.
-            // Note this shall guarantee strong exception safety.
-            self->m_sched_pq.emplace_back();
-            self->m_sched_ready_head = qhead->m_sched_ready_next;
-
-            auto& elem = self->m_sched_pq.back();
-            elem.time = now;
-            elem.version = ++(qhead->m_sched_version);
-            elem.fiber.reset(qhead);
-            ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
-            POSEIDON_LOG_TRACE("Collected fiber `$1` from ready queue", qhead);
-          }
-
           while(auto qhead = self->m_sched_sleep_head) {
             // Move a fiber from the sleep queue into the scheduler queue.
             // Note this shall guarantee strong exception safety.
@@ -458,6 +444,20 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             elem.fiber.reset(qhead);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
             POSEIDON_LOG_TRACE("Collected fiber `$1` from sleep queue", qhead);
+          }
+
+          while(auto qhead = self->m_sched_ready_head) {
+            // Move a fiber from the ready queue into the scheduler queue.
+            // Note this shall guarantee strong exception safety.
+            self->m_sched_pq.emplace_back();
+            self->m_sched_ready_head = qhead->m_sched_ready_next;
+
+            auto& elem = self->m_sched_pq.back();
+            elem.time = now;
+            elem.version = ++(qhead->m_sched_version);
+            elem.fiber.reset(qhead);
+            ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
+            POSEIDON_LOG_TRACE("Collected fiber `$1` from ready queue", qhead);
           }
 
           if(sig == 0) {
@@ -611,10 +611,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     do_signal_if_queues_empty()
     noexcept
       {
-        if(ROCKET_EXPECT(self->m_sched_ready_head))
+        if(ROCKET_EXPECT(self->m_sched_sleep_head))
           return;
 
-        if(ROCKET_EXPECT(self->m_sched_sleep_head))
+        if(ROCKET_EXPECT(self->m_sched_ready_head))
           return;
 
         self->m_sched_avail.post();
