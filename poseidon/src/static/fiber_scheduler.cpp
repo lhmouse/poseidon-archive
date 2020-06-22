@@ -737,8 +737,8 @@ yield(rcptr<const Abstract_Future> futp_opt)
       // of `Abstract_Future::do_is_ready_weak()`.
       // The value in the future object may be still under construction, but the lock
       // here prevents the other thread from modifying the scheduler queue. We still
-      // attach the fiber to the future's wait queue. The other thread may move it
-      // into the ready queue once the scheduler mutex is unlocked.
+      // attach the fiber to the future's wait queue, which may be moved into the
+      // ready queue once the other thread locks the scheduler mutex successfully.
       fiber->m_sched_futp = futp_opt.get();
       const auto& futr = *futp_opt;
       fiber->m_sched_ready_next = ::std::exchange(futr.m_sched_ready_head, fiber);
