@@ -235,7 +235,7 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
       }
     }
     do_end_color(fmt, conf);
-    fmt << '\n';
+    fmt << "\n\n";
 
     // Write data to all streams.
     const auto str = fmt.extract_string();
