@@ -51,7 +51,7 @@ class Promise
         ROCKET_ASSERT(futp);
 
         ROCKET_ASSERT(futp->m_stor.index() != future_state_empty);
-        futp->m_ready.store(true);
+        futp->m_count.store(1);
         Fiber_Scheduler::signal(*futp);
       }
 
