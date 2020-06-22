@@ -64,3 +64,4 @@ sudo "${_dstdir}/../ci/checkinstall"  \
   --exclude="*/install_manifest.txt"
 
 sudo mv "${_pkgname}"_*.deb "${_dstdir}/"
+sudo ldconfig
