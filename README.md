@@ -24,61 +24,60 @@
 
 #### Build and install MySQL and MongoDB client libraries
 
-    ```sh
-    cd third/
-    ./build_libmysqlclient_deb.sh
-    ./build_libmongoc_deb.sh
-    cd ..
-    ```
+```sh
+cd third/
+./build_libmysqlclient_deb.sh
+./build_libmongoc_deb.sh
+cd ..
+```
 
 #### Build and install Asteria
 
-    ```sh
-    git submodule update --init
-    cd asteria/
-    git checkout master
-    git pull
-    autoreconf -i
-    ./configure --disable-static
-    make -j$(nproc)
-    ./makedeb.sh
-    cd ..
-    ```
-
+```sh
+git submodule update --init
+cd asteria/
+git checkout master
+git pull
+autoreconf -i
+./configure --disable-static
+make -j$(nproc)
+./makedeb.sh
+cd ..
+```
 
 #### Build Poseidon
 
-    ```sh
-    autoreconf -i
-    ./configure --disable-static
-    make -j$(nproc)
-    ```
+```sh
+autoreconf -i
+./configure --disable-static
+make -j$(nproc)
+```
 
 #### Start Poseidon in build tree
 
-    ```sh
-    ./run.sh
-    ```
+```sh
+./run.sh
+```
 
 #### Start Poseidon within **GDB**
 
-    ```sh
-    ./run.sh gdb --args
-    ```
+```sh
+./run.sh gdb --args
+```
 
 #### Install Poseidon and create default configuration file
 
-    ```sh
-    ./makedeb.sh
-    sudo cp /usr/local/etc/poseidon/main.template.conf  \
-            /usr/local/etc/poseidon/main.conf
-    ```
+```sh
+./makedeb.sh
+sudo cp /usr/local/etc/poseidon/main.template.conf  \
+        /usr/local/etc/poseidon/main.conf
+```
 
 #### Start installed Poseidon
 
-    ```sh
-    poseidon /usr/local/etc/poseidon
-    ```
+```sh
+poseidon /usr/local/etc/poseidon
+```
 
 # Notes
 
