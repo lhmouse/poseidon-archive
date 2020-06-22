@@ -435,33 +435,35 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           now = do_get_monotonic_seconds();
           int sig = exit_sig.load();
 
-          while(auto head = self->m_sched_sleep_head) {
+          while(self->m_sched_sleep_head) {
             // Move a fiber from the sleep queue into the scheduler queue.
             // Note this shall guarantee strong exception safety.
             self->m_sched_pq.emplace_back();
-            self->m_sched_sleep_head = head->m_sched_sleep_next;
+            fiber.reset(self->m_sched_sleep_head);
+            self->m_sched_sleep_head = fiber->m_sched_sleep_next;
+            POSEIDON_LOG_TRACE("Collected fiber `$1` from sleep queue", fiber);
 
             auto& elem = self->m_sched_pq.back();
-            elem.time = ::rocket::min(head->m_sched_yield_time + conf.fail_timeout,
-                                      now + conf.warn_timeout);
-            elem.version = head->m_sched_version;
-            elem.fiber.reset(head);
+            int64_t fail_timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
+            elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_time + fail_timeout);
+            elem.version = fiber->m_sched_version;
+            elem.fiber = ::std::move(fiber);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
-            POSEIDON_LOG_TRACE("Collected fiber `$1` from sleep queue", head);
           }
 
-          while(auto head = self->m_sched_ready_head) {
+          while(self->m_sched_ready_head) {
             // Move a fiber from the ready queue into the scheduler queue.
             // Note this shall guarantee strong exception safety.
             self->m_sched_pq.emplace_back();
-            self->m_sched_ready_head = head->m_sched_ready_next;
+            fiber.reset(self->m_sched_ready_head);
+            self->m_sched_ready_head = fiber->m_sched_ready_next;
+            POSEIDON_LOG_TRACE("Collected fiber `$1` from ready queue", fiber);
 
             auto& elem = self->m_sched_pq.back();
             elem.time = now;
-            elem.version = head->m_sched_version;
-            elem.fiber.reset(head);
+            elem.version = fiber->m_sched_version;
+            elem.fiber = ::std::move(fiber);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
-            POSEIDON_LOG_TRACE("Collected fiber `$1` from ready queue", head);
           }
 
           if(sig == 0) {
@@ -534,14 +536,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           if((sig == 0) && fiber->m_sched_futp && !fiber->m_sched_futp->do_is_ready_weak()) {
             // Check wait duration.
             int64_t delta = now - fiber->m_sched_yield_time;
-            if(delta < conf.fail_timeout) {
+            int64_t fail_timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
+            if(delta < fail_timeout) {
               // Print a warning message if the fiber has been suspended for too long.
               if(delta >= conf.warn_timeout)
                 POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds.", fiber, delta);
 
               // Put the fiber back into the queue.
-              elem.time = ::rocket::min(fiber->m_sched_yield_time + conf.fail_timeout,
-                                        now + conf.warn_timeout);
+              elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_time + fail_timeout);
               elem.fiber = ::std::move(fiber);
               ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
               continue;
@@ -551,7 +553,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             // This usually causes an exception to be thrown after `yield()` returns.
             POSEIDON_LOG_ERROR("Suspension of fiber `$1` has exceeded `$2` seconds.\n"
                                "This circumstance looks permanent. Please check for deadlocks.",
-                               fiber, conf.fail_timeout);
+                               fiber, fail_timeout);
           }
 
           // Process this fiber!
@@ -714,7 +716,7 @@ noexcept
 
 void
 Fiber_Scheduler::
-yield(rcptr<const Abstract_Future> futp_opt)
+yield(rcptr<const Abstract_Future> futp_opt, long msecs)
   {
     const auto myctx = self->get_thread_context();
     if(!myctx)
@@ -730,8 +732,13 @@ yield(rcptr<const Abstract_Future> futp_opt)
     fiber->do_on_suspend();
     POSEIDON_LOG_TRACE("Suspending execution of fiber `$1`", fiber);
 
+    int64_t now = do_get_monotonic_seconds();
+    long timeout = ::rocket::clamp(msecs, 0, LONG_MAX - 999) + 999;
+    timeout = static_cast<long>(static_cast<unsigned long>(timeout) / 1000);
+
     mutex::unique_lock lock(self->m_sched_mutex);
-    fiber->m_sched_yield_time = do_get_monotonic_seconds();
+    fiber->m_sched_yield_time = now;
+    fiber->m_sched_yield_timeout = timeout;
     if(futp_opt && !futp_opt->do_is_ready_weak()) {
       // See comments in `do_thread_loop()` for detailed discussion of the necessity
       // of `Abstract_Future::do_is_ready_weak()`.

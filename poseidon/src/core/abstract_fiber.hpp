@@ -21,6 +21,7 @@ class Abstract_Fiber
     // These are scheduler data.
     uint32_t m_sched_version;
     int64_t m_sched_yield_time;
+    long m_sched_yield_timeout;
     const Abstract_Future* m_sched_futp;
     Abstract_Fiber* m_sched_ready_next;
     Abstract_Fiber* m_sched_sleep_next;
