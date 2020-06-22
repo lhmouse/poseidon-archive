@@ -159,7 +159,7 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
         strms.emplace_back(::std::move(fd));
       else
         ::std::fprintf(stderr,
-            "WARNING: could not open log file '%s': error %d: %m\n",
+            "WARNING: Could not open log file '%s': error %d: %m\n",
             conf.out_path.c_str(), errno);
     }
 
@@ -257,7 +257,7 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
 
       if(err != 0)
         ::std::fprintf(stderr,
-            "WARNING: could not write log data: error %d: %m\n",
+            "WARNING: Could not write log data: error %d: %m\n",
             errno);
     }
   }

@@ -79,7 +79,7 @@ class Promise
     const
       {
         ::rocket::sprintf_and_throw<::std::invalid_argument>(
-              "Promise: no future associated (value type `%s`)",
+              "Promise: No future associated (value type `%s`)",
               typeid(ValueT).name());
       }
 
@@ -123,22 +123,16 @@ class Promise
     // Puts an exception into the associated future.
     // If the future is not empty, `false` is returned, and there is no effect.
     bool
-    set_exception(const ::std::exception_ptr& eptr_opt)
+    set_exception(const ::std::exception_ptr& eptr)
       {
         auto futp = this->m_futp.get();
         if(!futp)
           this->do_throw_no_future();
 
-        // Get a pointer to the exception to set.
-        // If the user passes a null pointer, the current exception is used.
-        auto eptr = eptr_opt;
-        if(!eptr)
-          eptr = ::std::current_exception();
-
         if(!eptr)
           ::rocket::sprintf_and_throw<::std::invalid_argument>(
-            "Promise: no current exception (value type `%s`)",
-            typeid(ValueT).name());
+                "Promise: Null exception pointer (value type `%s`)",
+                typeid(ValueT).name());
 
         // Check future state.
         mutex::unique_lock lock(futp->m_mutex);
@@ -149,6 +143,12 @@ class Promise
         futp->m_stor.template emplace<future_state_except>(::std::move(eptr));
         this->do_set_ready_nolock();
         return true;
+      }
+
+    bool
+    set_current_exception()
+      {
+        return this->set_exception(::std::current_exception());
       }
   };
 

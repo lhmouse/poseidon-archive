@@ -62,8 +62,8 @@ class Future
           case future_state_empty:
             // Nothing has been set yet.
             ::rocket::sprintf_and_throw<::std::invalid_argument>(
-                "Future: no value set yet (value type `%s`)",
-                typeid(ValueT).name());
+                  "Future: No value set yet (value type `%s`)",
+                  typeid(ValueT).name());
 
           case future_state_value:
             // The cast is necessary when `ValueT` is `void`.
@@ -79,8 +79,8 @@ class Future
             // Report broken promise if a null exception pointer has been set,
             // anticipatedly by the destructor of the associated promise.
             ::rocket::sprintf_and_throw<::std::invalid_argument>(
-                "Future: broken promise (value type `%s`)",
-                typeid(ValueT).name());
+                  "Future: Broken promise (value type `%s`)",
+                  typeid(ValueT).name());
 
           default:
             ROCKET_ASSERT(false);
