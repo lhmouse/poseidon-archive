@@ -771,6 +771,8 @@ yield(rcptr<const Abstract_Future> futp_opt, long msecs)
       // If the fiber resumes execution because suspension timed out, remove it from
       // the future's wait queue.
       lock.lock(self->m_sched_mutex);
+      ROCKET_ASSERT(fiber->m_sched_futp == futp_opt);
+      fiber->m_sched_futp = nullptr;
       auto mref = &(futr.m_sched_ready_head);
       for(;;) {
         if(!*mref) {
