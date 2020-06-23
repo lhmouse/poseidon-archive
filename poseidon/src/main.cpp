@@ -297,6 +297,7 @@ main(int argc, char** argv)
     do_trap_exit_signal(SIGINT);
     do_trap_exit_signal(SIGTERM);
     do_trap_exit_signal(SIGHUP);
+    do_trap_exit_signal(SIGALRM);
 
     // Ignore `SIGPIPE` for good.
     ::signal(SIGPIPE, SIG_IGN);
