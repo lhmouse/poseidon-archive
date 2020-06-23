@@ -461,7 +461,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
             auto& elem = self->m_sched_pq.back();
             int64_t fail_timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
-            elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_time + fail_timeout);
+            elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_since + fail_timeout);
             elem.version = fiber->m_sched_version;
             elem.fiber = ::std::move(fiber);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
@@ -547,7 +547,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           // the value. Cnly after the construction succeeds, does it call `Fiber_Scheduler::signal()`.
           if((sig == 0) && fiber->m_sched_futp && fiber->m_sched_futp->do_is_empty()) {
             // Check wait duration.
-            int64_t delta = now - fiber->m_sched_yield_time;
+            int64_t delta = now - fiber->m_sched_yield_since;
             int64_t fail_timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
             if(delta < fail_timeout) {
               // Print a warning message if the fiber has been suspended for too long.
@@ -555,7 +555,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
                 POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds.", fiber, delta);
 
               // Put the fiber back into the queue.
-              elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_time + fail_timeout);
+              elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_since + fail_timeout);
               elem.fiber = ::std::move(fiber);
               ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
               continue;
@@ -749,7 +749,7 @@ yield(rcptr<const Abstract_Future> futp_opt, long msecs)
     timeout = static_cast<long>(static_cast<unsigned long>(timeout) / 1000);
 
     mutex::unique_lock lock(self->m_sched_mutex);
-    fiber->m_sched_yield_time = now;
+    fiber->m_sched_yield_since = now;
     fiber->m_sched_yield_timeout = timeout;
     if(futp_opt && futp_opt->do_is_empty()) {
       // The value in the future object may be still under construction, but the lock
@@ -824,7 +824,7 @@ insert(uptr<Abstract_Fiber>&& ufiber)
       POSEIDON_THROW("Fiber pointer must be unique");
 
     // Perform some initialization. No locking is needed here.
-    fiber->m_sched_yield_time = 0;
+    fiber->m_sched_yield_since = 0;
     fiber->m_sched_futp = nullptr;
     fiber->m_sched_sleep_next = nullptr;
     fiber->m_state.store(async_state_pending);
