@@ -6,7 +6,7 @@
 #include "main_config.hpp"
 #include "../core/abstract_fiber.hpp"
 #include "../core/config_file.hpp"
-#include "../utilities.hpp"
+#include "../xutilities.hpp"
 #include <sys/resource.h>
 #include <sys/mman.h>
 #include <semaphore.h>
@@ -188,7 +188,6 @@ struct Config_Scalars
 struct PQ_Element
   {
     int64_t time;
-    uint32_t version;
     rcptr<Abstract_Fiber> fiber;
   };
 
@@ -447,6 +446,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         // Await a fiber and pop it.
         lock.lock(self->m_sched_mutex);
         for(;;) {
+ROCKET_ASSERT(lock.is_locking(self->m_sched_mutex));
           fiber.reset();
           now = do_get_monotonic_seconds();
           int sig = exit_sig.load();
@@ -462,7 +462,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             auto& elem = self->m_sched_pq.back();
             int64_t fail_timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
             elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_since + fail_timeout);
-            elem.version = fiber->m_sched_version;
             elem.fiber = ::std::move(fiber);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
           }
@@ -477,7 +476,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
             auto& elem = self->m_sched_pq.back();
             elem.time = now;
-            elem.version = fiber->m_sched_version;
             elem.fiber = ::std::move(fiber);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
           }
@@ -516,7 +514,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           auto& elem = self->m_sched_pq.back();
           fiber = ::std::move(elem.fiber);
 
-          if(elem.version != fiber->m_sched_version) {
+          if(fiber->m_sched_assigned) {
             // Delete this invalidated element.
             self->m_sched_pq.pop_back();
             continue;
@@ -569,7 +567,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           }
 
           // Process this fiber!
-          fiber->m_sched_version++;
+          fiber->m_sched_assigned = true;
           self->m_sched_pq.pop_back();
           break;
         }
@@ -586,6 +584,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
             // Put the fiber back into the sleep queue.
             lock.lock(self->m_sched_mutex);
+            fiber->m_sched_assigned = false;
             fiber->m_sched_sleep_next = ::std::exchange(self->m_sched_sleep_head, fiber);
             fiber.release();
             return;
@@ -623,6 +622,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         if(fiber->state() == async_state_suspended) {
           // Put the fiber back into the sleep queue.
           lock.lock(self->m_sched_mutex);
+          fiber->m_sched_assigned = false;
           fiber->m_sched_sleep_next = ::std::exchange(self->m_sched_sleep_head, fiber);
           fiber.release();
           return;
@@ -657,6 +657,9 @@ modal_loop(const atomic_signal& exit_sig)
     self->m_init_once.call(self->do_init_once);
 
     // Schedule fibers and block until `exit_sig` becomes non-zero.
+    for(int i = 0;  i < 10;  ++i)
+      create_daemon_thread<Fiber_Scheduler_self::do_thread_loop>("sched", (void*)&exit_sig);
+
     for(;;)
       self->do_thread_loop((void*)&exit_sig);
   }
@@ -825,6 +828,7 @@ insert(uptr<Abstract_Fiber>&& ufiber)
       POSEIDON_THROW("Fiber pointer must be unique");
 
     // Perform some initialization. No locking is needed here.
+    fiber->m_sched_assigned = false;
     fiber->m_sched_yield_since = 0;
     fiber->m_sched_futp = nullptr;
     fiber->m_sched_sleep_next = nullptr;
