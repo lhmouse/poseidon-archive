@@ -446,7 +446,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         // Await a fiber and pop it.
         lock.lock(self->m_sched_mutex);
         for(;;) {
-ROCKET_ASSERT(lock.is_locking(self->m_sched_mutex));
           fiber.reset();
           now = do_get_monotonic_seconds();
           int sig = exit_sig.load();
