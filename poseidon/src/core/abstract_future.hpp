@@ -17,7 +17,6 @@ class Abstract_Future
 
   private:
     mutable mutex m_mutex;
-    atomic_acq_rel<ptrdiff_t> m_count;
 
     // These are scheduler data.
     mutable Abstract_Fiber* m_sched_ready_head = nullptr;
@@ -34,9 +33,9 @@ class Abstract_Future
     // This functions is called by the fiber scheduler with the global mutex locked.
     ROCKET_PURE_FUNCTION
     bool
-    do_is_ready_weak()
+    do_is_empty()
     const noexcept
-      { return this->m_count.load() > 0;  }
+      { return this->state() == future_state_empty;  }
 
   public:
     // Gets the state, which is any of `future_state_empty`, `future_state_value`

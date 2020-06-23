@@ -43,18 +43,6 @@ class Promise
       { this->do_dispose();  }
 
   private:
-    void
-    do_set_ready_nolock()
-    noexcept
-      {
-        auto futp = this->m_futp.get();
-        ROCKET_ASSERT(futp);
-
-        ROCKET_ASSERT(futp->m_stor.index() != future_state_empty);
-        futp->m_count.store(1);
-        Fiber_Scheduler::signal(*futp);
-      }
-
     bool
     do_dispose()
     noexcept
@@ -69,7 +57,9 @@ class Promise
 
         // Mark the future broken.
         futp->m_stor.template emplace<future_state_except>();
-        this->do_set_ready_nolock();
+        lock.unlock();
+
+        Fiber_Scheduler::signal(*futp);
         return true;
       }
 
@@ -116,7 +106,9 @@ class Promise
 
         // Construct a new value in the future.
         futp->m_stor.template emplace<future_state_value>(::std::forward<ArgsT>(args)...);
-        this->do_set_ready_nolock();
+        lock.unlock();
+
+        Fiber_Scheduler::signal(*futp);
         return true;
       }
 
@@ -141,7 +133,9 @@ class Promise
 
         // Construct a exception pointer in the future.
         futp->m_stor.template emplace<future_state_except>(::std::move(eptr));
-        this->do_set_ready_nolock();
+        lock.unlock();
+
+        Fiber_Scheduler::signal(*futp);
         return true;
       }
 

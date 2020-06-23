@@ -546,14 +546,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
           // Check for blocking conditions.
           // Note that `Promise::set_value()` first attempts to lock the future, then constructs
-          // the value, and if the construction succeeds, it calls `Fiber_Scheduler::signal()` with
-          // the future mutex locked. That is, the future mutex is locked prior to the scheduler
-          // mutex. However, when we are here, the scheduler mutex has already been locked, so
-          // attempting to lock the future mutex results in a deadlock.
-          // This is resolved by introduction of `Abstract_Future::do_is_ready_weak()`. It does not
-          // wait for the mutex, but only tries locking it. If the mutex cannot be locked, the
-          // future is presumed to have a value under construction and is not considered ready.
-          if((sig == 0) && fiber->m_sched_futp && !fiber->m_sched_futp->do_is_ready_weak()) {
+          // the value. Cnly after the construction succeeds, does it call `Fiber_Scheduler::signal()`.
+          if((sig == 0) && fiber->m_sched_futp && fiber->m_sched_futp->do_is_empty()) {
             // Check wait duration.
             int64_t delta = now - fiber->m_sched_yield_time;
             int64_t fail_timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
@@ -759,9 +753,7 @@ yield(rcptr<const Abstract_Future> futp_opt, long msecs)
     mutex::unique_lock lock(self->m_sched_mutex);
     fiber->m_sched_yield_time = now;
     fiber->m_sched_yield_timeout = timeout;
-    if(futp_opt && !futp_opt->do_is_ready_weak()) {
-      // See comments in `do_thread_loop()` for detailed discussion of the necessity
-      // of `Abstract_Future::do_is_ready_weak()`.
+    if(futp_opt && futp_opt->do_is_empty()) {
       // The value in the future object may be still under construction, but the lock
       // here prevents the other thread from modifying the scheduler queue. We still
       // attach the fiber to the future's wait queue, which may be moved into the
