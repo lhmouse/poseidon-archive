@@ -248,12 +248,12 @@ union Fancy_Fiber_Pointer
 class Queue_Semaphore
   {
   private:
-    ::sem_t m_sem;
+    ::sem_t m_sem[1];
 
   public:
     Queue_Semaphore()
       {
-        int r = ::sem_init(&(this->m_sem), 0, 0);
+        int r = ::sem_init(this->m_sem, 0, 0);
         if(r != 0)
           POSEIDON_THROW("Failed to initialize semaphore\n"
                          "[`sem_init()` failed: $1]",
@@ -262,7 +262,7 @@ class Queue_Semaphore
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Queue_Semaphore)
       {
-        int r = ::sem_destroy(&(this->m_sem));
+        int r = ::sem_destroy(this->m_sem);
         ROCKET_ASSERT(r == 0);
       }
 
@@ -271,39 +271,50 @@ class Queue_Semaphore
     wait_for(long secs)
     noexcept
       {
-        // Check for immediate timeouts.
-        if(secs <= 0)
-          return ::sem_trywait(&(this->m_sem)) == 0;
+        int r;
+        if(secs <= 0) {
+          // Deal with immediate timeouts.
+          r = ::sem_trywait(this->m_sem);
+        }
+        else {
+          // Get the current time.
+          ::timespec ts;
+          r = ::clock_gettime(CLOCK_REALTIME, &ts);
+          ROCKET_ASSERT(r == 0);
 
-        // Get the current time.
-        ::timespec ts;
-        int r = ::clock_gettime(CLOCK_REALTIME, &ts);
-        ROCKET_ASSERT(r == 0);
+          // Ensure we don't cause overflows.
+          if(secs <= ::std::numeric_limits<::time_t>::max() - ts.tv_sec) {
+            ts.tv_sec += static_cast<::time_t>(secs);
 
-        // Ensure we don't cause overflows.
-        if(secs > ::std::numeric_limits<::time_t>::max() - ts.tv_sec)
-          return ::sem_wait(&(this->m_sem)) == 0;
-
-        // Add `secs` to the current time to get the end time point.
-        ts.tv_sec += static_cast<::time_t>(secs);
-        return ::sem_timedwait(&(this->m_sem), &ts) == 0;
+            r = ::sem_timedwait(this->m_sem, &ts);
+          }
+          else
+            r = ::sem_wait(this->m_sem);
+        }
+        ROCKET_ASSERT(r != EINVAL);
+        return r == 0;
       }
 
     bool
     wait()
     noexcept
       {
-        return ::sem_wait(&(this->m_sem)) == 0;
+        // Note `semwait()` may fail with `EINTR`.
+        int r = ::sem_wait(this->m_sem);
+        ROCKET_ASSERT(r != EINVAL);
+        return r == 0;
       }
 
     bool
-    post()
+    signal()
     noexcept
       {
         // Note `sem_post()` may fail with `EOVERFLOW`.
         // The semaphore only indicates whether the queue is non-empty,
         // so we may ignore this error.
-        return ::sem_post(&(this->m_sem)) == 0;
+        int r = ::sem_post(this->m_sem);
+        ROCKET_ASSERT(r != EINVAL);
+        return r == 0;
       }
   };
 
@@ -642,7 +653,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         if(ROCKET_EXPECT(self->m_sched_ready_head))
           return;
 
-        self->m_sched_avail.post();
+        self->m_sched_avail.signal();
       }
   };
 
