@@ -17,8 +17,9 @@ class Abstract_Timer
     atomic_relaxed<bool> m_resident;  // don't delete if orphaned
     atomic_relaxed<uint64_t> m_count;
 
-    atomic_relaxed<int64_t> m_first;  // absolute time in milliseconds
-    atomic_relaxed<int64_t> m_period;  // period in milliseconds
+    // These are updated by the timer driver.
+    int64_t m_first;
+    int64_t m_period;
 
   public:
     Abstract_Timer(int64_t first, int64_t period)

@@ -128,7 +128,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           }
 
           // Process this timer!
-          int64_t period = timer->m_period.load();
+          int64_t period = timer->m_period;
           if(period > 0) {
             // The timer is periodic. Insert it back.
             do_shift_time(elem.next, period);
@@ -178,11 +178,12 @@ insert(uptr<Abstract_Timer>&& utimer)
 
     // Perform some initialization. No locking is needed here.
     timer->m_count.store(0);
+    int64_t first = timer->m_first;
 
     // Get the next trigger time.
     // The timer is considered to be owned uniquely, so there is no need to lock it.
     PQ_Element elem;
-    elem.next = do_get_time(timer->m_first.load());
+    elem.next = do_get_time(first);
     elem.timer = timer;
 
     // Insert the timer.
@@ -195,7 +196,7 @@ insert(uptr<Abstract_Timer>&& utimer)
 
 bool
 Timer_Driver::
-invalidate_internal(const Abstract_Timer* ctimer)
+invalidate_internal(const Abstract_Timer* ctimer, int64_t first, int64_t period)
 noexcept
   {
     // Don't do anything if the timer does not exist in the queue.
@@ -205,8 +206,12 @@ noexcept
                       [&](PQ_Element& r) { return (qelem = &r)->timer.get() == ctimer;  }))
       return false;
 
+    // Update the timer itself.
+    qelem->timer->m_first = first;
+    qelem->timer->m_period = period;
+
     // Update the element in place.
-    qelem->next = do_get_time(ctimer->m_first.load());
+    qelem->next = do_get_time(first);
     ::std::make_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     self->m_pq_avail.notify_one();
     return true;
