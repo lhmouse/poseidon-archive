@@ -137,7 +137,6 @@ do_allocate_stack(size_t stack_vm_size)
     // Check whether we can get a region from the pool.
     for(;;) {
       mutex::unique_lock lock(s_stack_pool_mutex);
-
       sp = s_stack_pool_head;
       if(ROCKET_UNEXPECT(!sp))
         break;
@@ -146,7 +145,6 @@ do_allocate_stack(size_t stack_vm_size)
       auto qnext = static_cast<Stack_Pointer*>(sp.base);
       s_stack_pool_head = *qnext;
       ::rocket::destroy_at(qnext);
-
       lock.unlock();
 
       // Use this region if it is large enough.
