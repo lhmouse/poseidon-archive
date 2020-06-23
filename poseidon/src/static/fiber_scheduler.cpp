@@ -380,7 +380,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         return qctx.release();
       }
 
-    static
+    [[noreturn]] static
     void
     do_execute_fiber(int word_0, int word_1)
     noexcept
@@ -410,6 +410,13 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         fiber->m_state.store(async_state_finished);
         fiber->do_on_finish();
         POSEIDON_LOG_TRACE("Finished execution of fiber `$1`", fiber);
+
+        // Note the scheduler thread may have changed.
+        auto myctx = self->open_thread_context();
+        ROCKET_ASSERT(myctx);
+
+        ::setcontext(myctx->return_uctx);
+        ::std::terminate();
       }
 
     static
@@ -581,10 +588,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             return;
           }
 
-          int ret = ::getcontext(fiber->m_sched_uctx);
-          ROCKET_ASSERT(ret == 0);
+          int r = ::getcontext(fiber->m_sched_uctx);
+          ROCKET_ASSERT(r == 0);
 
-          fiber->m_sched_uctx->uc_link = myctx->return_uctx;
+          fiber->m_sched_uctx->uc_link = reinterpret_cast<::ucontext_t*>(-0x21520FF3);
           fiber->m_sched_uctx->uc_stack = stack.release();
 
           // Initialize the fiber context.
@@ -603,8 +610,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         myctx->current = fiber;
         POSEIDON_LOG_TRACE("Resuming execution of fiber `$1`", fiber);
 
-        int ret = ::swapcontext(myctx->return_uctx, fiber->m_sched_uctx);
-        ROCKET_ASSERT(ret == 0);
+        int r = ::swapcontext(myctx->return_uctx, fiber->m_sched_uctx);
+        ROCKET_ASSERT(r == 0);
 
         // ... and return here.
         myctx->current = nullptr;
@@ -704,7 +711,7 @@ Fiber_Scheduler::
 current_opt()
 noexcept
   {
-    const auto myctx = self->get_thread_context();
+    auto myctx = self->get_thread_context();
     if(!myctx)
       return nullptr;
 
@@ -720,7 +727,7 @@ void
 Fiber_Scheduler::
 yield(rcptr<const Abstract_Future> futp_opt, long msecs)
   {
-    const auto myctx = self->get_thread_context();
+    auto myctx = self->get_thread_context();
     if(!myctx)
       POSEIDON_THROW("Invalid call to `yield()` inside a non-scheduler thread");
 
@@ -754,8 +761,11 @@ yield(rcptr<const Abstract_Future> futp_opt, long msecs)
       fiber->add_reference();
       lock.unlock();
 
-      int ret = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
-      ROCKET_ASSERT(ret == 0);
+      int r = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
+      ROCKET_ASSERT(r == 0);
+
+      // Note the scheduler thread may have changed.
+      myctx = self->open_thread_context();
 
       // If the fiber resumes execution because suspension timed out, remove it from
       // the future's wait queue.
@@ -783,8 +793,11 @@ yield(rcptr<const Abstract_Future> futp_opt, long msecs)
       fiber->add_reference();
       lock.unlock();
 
-      int ret = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
-      ROCKET_ASSERT(ret == 0);
+      int r = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
+      ROCKET_ASSERT(r == 0);
+
+      // Note the scheduler thread may have changed.
+      myctx = self->open_thread_context();
     }
 
     // ... and resume here.
