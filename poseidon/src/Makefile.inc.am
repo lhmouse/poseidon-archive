@@ -81,6 +81,14 @@ lib_libposeidon_la_SOURCES =  \
 lib_libposeidon_la_LDFLAGS =  \
   -Wl,--no-undefined -no-undefined -version-info 0:0:0
 
+if enable_address_sanitizer
+lib_libposeidon_la_LDFLAGS += -fsanitize=address
+endif
+
+if enable_thread_sanitizer
+lib_libposeidon_la_LDFLAGS += -fsanitize=thread
+endif
+
 bin_PROGRAMS += bin/poseidon
 bin_poseidon_SOURCES =  \
   %reldir%/main.cpp

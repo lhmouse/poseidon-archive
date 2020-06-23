@@ -15,6 +15,14 @@ AM_CXXFLAGS = -include .pch.hpp -std=gnu++14 -Wp,-std=c++11 -fno-gnu-keywords  \
   -Wno-redundant-move  \
   -Werror={non-virtual-dtor,missing-declarations}
 
+if enable_address_sanitizer
+AM_CXXFLAGS += -fsanitize=address
+endif
+
+if enable_thread_sanitizer
+AM_CXXFLAGS += -fsanitize=thread
+endif
+
 AM_DEFAULT_SOURCE_EXT = .cpp
 LDADD = lib/libposeidon.la
 

@@ -24,6 +24,20 @@ AM_COND_IF([enable_debug_checks], [
   AC_DEFINE([_DEBUG], [1], [Define to 1 to enable debug checks of MSVC standard library.])
 ])
 
+AC_ARG_ENABLE([address-sanitizer], AS_HELP_STRING([--enable-address-sanitizer], [enable address sanitizer]))
+AM_CONDITIONAL([enable_address_sanitizer], [test "${enable_address_sanitizer}" == "yes"])
+AM_COND_IF([enable_address_sanitizer], [
+  AC_CHECK_LIB([asan], [__asan_report_error], [], [AC_MSG_ERROR([address sanitizer not found])])
+  AC_DEFINE([POSEIDON_ENABLE_ADDRESS_SANITIZER], [1], [Define to 1 to enable address sanitizer.])
+])
+
+AC_ARG_ENABLE([thread-sanitizer], AS_HELP_STRING([--enable-thread-sanitizer], [enable thread sanitizer]))
+AM_CONDITIONAL([enable_thread_sanitizer], [test "${enable_thread_sanitizer}" == "yes"])
+AM_COND_IF([enable_thread_sanitizer], [
+  AC_CHECK_LIB([tsan], [__tsan_on_report], [], [AC_MSG_ERROR([thread sanitizer not found])])
+  AC_DEFINE([POSEIDON_ENABLE_THREAD_SANITIZER], [1], [Define to 1 to enable thread sanitizer.])
+])
+
 AC_ARG_ENABLE([mysql], AS_HELP_STRING([--disable-mysql], [disable MySQL support]))
 AM_CONDITIONAL([enable_mysql], [test "${enable_mysql}" != "no"])
 AM_COND_IF([enable_mysql], [
