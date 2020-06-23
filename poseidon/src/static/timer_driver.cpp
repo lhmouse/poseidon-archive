@@ -201,17 +201,25 @@ noexcept
   {
     // Don't do anything if the timer does not exist in the queue.
     mutex::unique_lock lock(self->m_pq_mutex);
-    PQ_Element* qelem;
-    if(::std::none_of(self->m_pq.begin(), self->m_pq.end(),
-                      [&](PQ_Element& r) { return (qelem = &r)->timer.get() == ctimer;  }))
-      return false;
+
+    auto curp = self->m_pq.begin();
+    for(;;) {
+      if(curp == self->m_pq.end())
+        return false;
+
+      if(curp->timer.get() == ctimer)
+        break;
+
+      ++curp;
+    }
+    auto& elem = *curp;
 
     // Update the timer itself.
-    qelem->timer->m_first = first;
-    qelem->timer->m_period = period;
+    elem.timer->m_first = first;
+    elem.timer->m_period = period;
 
     // Update the element in place.
-    qelem->next = do_get_time(first);
+    elem.next = do_get_time(first);
     ::std::make_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     self->m_pq_avail.notify_one();
     return true;
