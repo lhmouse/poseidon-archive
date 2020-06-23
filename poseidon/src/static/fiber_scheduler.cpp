@@ -392,7 +392,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
         // Allocate it if one hasn't been allocated yet.
         auto qctx = ::rocket::make_unique<Thread_Context>();
-        POSEIDON_LOG_DEBUG("Created new fiber scheduler thread context `$1`", qctx);
 
         int err = ::pthread_setspecific(self->m_sched_key, qctx);
         if(err != 0)
@@ -400,6 +399,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
                          "[`pthread_setspecific()` failed: $1]",
                          noadl::format_errno(err));
 
+        POSEIDON_LOG_DEBUG("Created new fiber scheduler thread context `$1`", qctx);
         return qctx.release();
       }
 
