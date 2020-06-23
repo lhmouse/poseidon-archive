@@ -472,6 +472,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
               // Wait until a fiber becomes available.
               lock.unlock();
               self->m_sched_avail.wait();
+              lock.lock(self->m_sched_mutex);
               continue;
             }
 
@@ -480,6 +481,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             if(delta > 0) {
               lock.unlock();
               self->m_sched_avail.wait_for(static_cast<long>(delta));
+              lock.lock(self->m_sched_mutex);
               continue;
             }
           }
