@@ -773,6 +773,7 @@ yield(rcptr<const Abstract_Future> futp_opt, long msecs)
       lock.lock(self->m_sched_mutex);
       ROCKET_ASSERT(fiber->m_sched_futp == futp_opt);
       fiber->m_sched_futp = nullptr;
+
       auto mref = &(futr.m_sched_ready_head);
       for(;;) {
         if(!*mref) {
