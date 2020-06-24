@@ -12,21 +12,20 @@
 #include <semaphore.h>
 #include <signal.h>
 
-#ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
-extern "C" {
+namespace poseidon {
 
+#ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
+extern "C"
 void
 __sanitizer_start_switch_fiber(void** save, const void* sp_base, size_t st_size)
 noexcept;
 
+extern "C"
 void
 __sanitizer_finish_switch_fiber(void* save, const void** sp_base, size_t* st_size)
 noexcept;
+#endif
 
-}  // extern "C"
-#endif  // POSEIDON_ENABLE_ADDRESS_SANITIZER
-
-namespace poseidon {
 namespace {
 
 int64_t
@@ -411,23 +410,24 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 #ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
         auto myctx = self->open_thread_context();
         ROCKET_ASSERT(myctx);
-        ::__sanitizer_start_switch_fiber(&(myctx->asan_fiber_save),
+        __sanitizer_start_switch_fiber(&(myctx->asan_fiber_save),
               uctx->uc_stack.ss_sp, uctx->uc_stack.ss_size);
-#endif  // POSEIDON_ENABLE_ADDRESS_SANITIZER
+#endif
         return uctx;
       }
 
     static
-    void
+    ::ucontext_t*
     do_stack_switch_end()
     noexcept
       {
 #ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
         auto myctx = self->open_thread_context();
         ROCKET_ASSERT(myctx);
-        ::__sanitizer_finish_switch_fiber(myctx->asan_fiber_save,
+        __sanitizer_finish_switch_fiber(myctx->asan_fiber_save,
               nullptr, nullptr);
-#endif  // POSEIDON_ENABLE_ADDRESS_SANITIZER
+#endif
+        return nullptr;
       }
 
     [[noreturn]] static
