@@ -201,6 +201,7 @@ struct Config_Scalars
 struct PQ_Element
   {
     int64_t time;
+    uint32_t version;
     rcptr<Abstract_Fiber> fiber;
   };
 
@@ -500,11 +501,19 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             self->m_sched_pq.emplace_back();
             fiber.reset(self->m_sched_sleep_head);
             self->m_sched_sleep_head = fiber->m_sched_sleep_next;
+
+            // An odd version number indicates the fiber is being scheduled.
+            if(fiber->m_sched_version & 1) {
+              self->m_sched_pq.pop_back();
+              continue;
+            }
             POSEIDON_LOG_TRACE("Collected fiber `$1` from sleep queue", fiber);
+            fiber->m_sched_version += 2;
 
             auto& elem = self->m_sched_pq.back();
             int64_t fail_timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
             elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_since + fail_timeout);
+            elem.version = fiber->m_sched_version;
             elem.fiber = ::std::move(fiber);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
           }
@@ -515,10 +524,18 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             self->m_sched_pq.emplace_back();
             fiber.reset(self->m_sched_ready_head);
             self->m_sched_ready_head = fiber->m_sched_ready_next;
+
+            // An odd version number indicates the fiber is being scheduled.
+            if(fiber->m_sched_version & 1) {
+              self->m_sched_pq.pop_back();
+              continue;
+            }
             POSEIDON_LOG_TRACE("Collected fiber `$1` from ready queue", fiber);
+            fiber->m_sched_version += 2;
 
             auto& elem = self->m_sched_pq.back();
             elem.time = now;
+            elem.version = fiber->m_sched_version;
             elem.fiber = ::std::move(fiber);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
           }
@@ -557,7 +574,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           auto& elem = self->m_sched_pq.back();
           fiber = ::std::move(elem.fiber);
 
-          if(fiber->m_sched_assigned) {
+          ROCKET_ASSERT((elem.version & 1) == 0);
+          if(fiber->m_sched_version != elem.version) {
             // Delete this invalidated element.
             self->m_sched_pq.pop_back();
             continue;
@@ -610,7 +628,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           }
 
           // Process this fiber!
-          fiber->m_sched_assigned = true;
+          // An odd version number indicates the fiber is being scheduled.
+          ROCKET_ASSERT((fiber->m_sched_version & 1) == 0);
+          fiber->m_sched_version += 1;
           self->m_sched_pq.pop_back();
           break;
         }
@@ -627,7 +647,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
             // Put the fiber back into the sleep queue.
             lock.lock(self->m_sched_mutex);
-            fiber->m_sched_assigned = false;
+            ROCKET_ASSERT((fiber->m_sched_version & 1) != 0);
+            fiber->m_sched_version += 1;
             fiber->m_sched_sleep_next = ::std::exchange(self->m_sched_sleep_head, fiber);
             fiber.release();
             return;
@@ -667,7 +688,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         if(fiber->state() == async_state_suspended) {
           // Put the fiber back into the sleep queue.
           lock.lock(self->m_sched_mutex);
-          fiber->m_sched_assigned = false;
+          ROCKET_ASSERT((fiber->m_sched_version & 1) != 0);
+          fiber->m_sched_version += 1;
           fiber->m_sched_sleep_next = ::std::exchange(self->m_sched_sleep_head, fiber);
           fiber.release();
           return;
@@ -877,7 +899,7 @@ insert(uptr<Abstract_Fiber>&& ufiber)
       POSEIDON_THROW("Fiber pointer must be unique");
 
     // Perform some initialization. No locking is needed here.
-    fiber->m_sched_assigned = false;
+    fiber->m_sched_version = 0;
     fiber->m_sched_yield_since = 0;
     fiber->m_sched_futp = nullptr;
     fiber->m_sched_sleep_next = nullptr;
