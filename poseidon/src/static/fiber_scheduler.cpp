@@ -724,9 +724,6 @@ modal_loop(const atomic_signal& exit_sig)
     self->m_init_once.call(self->do_init_once);
 
     // Schedule fibers and block until `exit_sig` becomes non-zero.
-    for(int i = 0;  i < 10;  ++i)
-      create_daemon_thread<Fiber_Scheduler_self::do_thread_loop>("sched", (void*)&exit_sig);
-
     for(;;)
       self->do_thread_loop((void*)&exit_sig);
   }
