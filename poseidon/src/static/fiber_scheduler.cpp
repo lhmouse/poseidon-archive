@@ -503,7 +503,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             self->m_sched_sleep_head = fiber->m_sched_sleep_next;
 
             // An odd version number indicates the fiber is being scheduled.
-            if(fiber->m_sched_version & 1) {
+            if(fiber->m_sched_version % 2) {
               self->m_sched_pq.pop_back();
               continue;
             }
@@ -526,7 +526,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             self->m_sched_ready_head = fiber->m_sched_ready_next;
 
             // An odd version number indicates the fiber is being scheduled.
-            if(fiber->m_sched_version & 1) {
+            if(fiber->m_sched_version % 2) {
               self->m_sched_pq.pop_back();
               continue;
             }
@@ -574,7 +574,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           auto& elem = self->m_sched_pq.back();
           fiber = ::std::move(elem.fiber);
 
-          ROCKET_ASSERT((elem.version & 1) == 0);
+          ROCKET_ASSERT(elem.version % 2 == 0);
           if(fiber->m_sched_version != elem.version) {
             // Delete this invalidated element.
             self->m_sched_pq.pop_back();
@@ -629,7 +629,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
           // Process this fiber!
           // An odd version number indicates the fiber is being scheduled.
-          ROCKET_ASSERT((fiber->m_sched_version & 1) == 0);
+          ROCKET_ASSERT(fiber->m_sched_version % 2 == 0);
           fiber->m_sched_version += 1;
           self->m_sched_pq.pop_back();
           break;
@@ -647,7 +647,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
             // Put the fiber back into the sleep queue.
             lock.lock(self->m_sched_mutex);
-            ROCKET_ASSERT((fiber->m_sched_version & 1) != 0);
+            ROCKET_ASSERT(fiber->m_sched_version % 2 != 0);
             fiber->m_sched_version += 1;
             fiber->m_sched_sleep_next = ::std::exchange(self->m_sched_sleep_head, fiber);
             fiber.release();
@@ -688,7 +688,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         if(fiber->state() == async_state_suspended) {
           // Put the fiber back into the sleep queue.
           lock.lock(self->m_sched_mutex);
-          ROCKET_ASSERT((fiber->m_sched_version & 1) != 0);
+          ROCKET_ASSERT(fiber->m_sched_version % 2 != 0);
           fiber->m_sched_version += 1;
           fiber->m_sched_sleep_next = ::std::exchange(self->m_sched_sleep_head, fiber);
           fiber.release();
