@@ -56,24 +56,24 @@ do_validate_stack_vm_size(size_t stack_vm_size)
     return stack_vm_size;
   }
 
-struct Stack_Pointer
+struct stack_pointer
   {
     void* base;
     size_t size;
 
     constexpr
-    Stack_Pointer(nullptr_t = nullptr)
+    stack_pointer(nullptr_t = nullptr)
     noexcept
       : base(nullptr), size(0)
       { }
 
     constexpr
-    Stack_Pointer(const ::stack_t& st)
+    stack_pointer(const ::stack_t& st)
       : base(st.ss_sp), size(st.ss_size)
       { }
 
     constexpr
-    Stack_Pointer(void* xbase, size_t xsize)
+    stack_pointer(void* xbase, size_t xsize)
     noexcept
       : base(xbase), size(xsize)
       { }
@@ -95,10 +95,38 @@ struct Stack_Pointer
   };
 
 mutex s_stack_pool_mutex;
-Stack_Pointer s_stack_pool_head;
+stack_pointer s_stack_pool_head;
+
+struct Stack_Pooler
+  {
+    constexpr
+    stack_pointer
+    null()
+    const noexcept
+      { return nullptr;  }
+
+    constexpr
+    bool
+    is_null(stack_pointer sp)
+    const noexcept
+      { return sp.base == nullptr;  }
+
+    void
+    close(stack_pointer sp)
+      {
+        mutex::unique_lock lock(s_stack_pool_mutex);
+
+        // Insert the region at the beginning.
+        auto qnext = static_cast<stack_pointer*>(sp.base);
+        qnext = ::rocket::construct_at(qnext, s_stack_pool_head);
+        s_stack_pool_head = sp;
+      }
+  };
+
+using poolable_stack = ::rocket::unique_handle<stack_pointer, Stack_Pooler>;
 
 void
-do_unmap_stack_aux(Stack_Pointer sp)
+do_unmap_stack_aux(stack_pointer sp)
 noexcept
   {
     char* vm_base = static_cast<char*>(sp.base) - page_size;
@@ -112,38 +140,10 @@ noexcept
                          noadl::format_errno(errno), vm_base, vm_size);
   }
 
-struct Stack_Closer
-  {
-    constexpr
-    Stack_Pointer
-    null()
-    const noexcept
-      { return nullptr;  }
-
-    constexpr
-    bool
-    is_null(Stack_Pointer sp)
-    const noexcept
-      { return sp.base == nullptr;  }
-
-    void
-    close(Stack_Pointer sp)
-      {
-        mutex::unique_lock lock(s_stack_pool_mutex);
-
-        // Insert the region at the beginning.
-        auto qnext = static_cast<Stack_Pointer*>(sp.base);
-        qnext = ::rocket::construct_at(qnext, s_stack_pool_head);
-        s_stack_pool_head = sp;
-      }
-  };
-
-using poolable_stack = ::rocket::unique_handle<Stack_Pointer, Stack_Closer>;
-
 poolable_stack
 do_allocate_stack(size_t stack_vm_size)
   {
-    Stack_Pointer sp;
+    stack_pointer sp;
     char* vm_base;
     size_t vm_size = do_validate_stack_vm_size(stack_vm_size);
 
@@ -155,7 +155,7 @@ do_allocate_stack(size_t stack_vm_size)
         break;
 
       // Remove this region from the pool.
-      auto qnext = static_cast<Stack_Pointer*>(sp.base);
+      auto qnext = static_cast<stack_pointer*>(sp.base);
       s_stack_pool_head = *qnext;
       ::rocket::destroy_at(qnext);
       lock.unlock();
