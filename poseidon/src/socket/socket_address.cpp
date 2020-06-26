@@ -200,7 +200,7 @@ const
     if(!fd)
       POSEIDON_THROW("Could not create socket (family `$2`, type `$3`, protocol `$4`)\n"
                      "[`socket()` failed: $1]",
-                     noadl::format_errno(errno), this->family(), type, protocol);
+                     format_errno(errno), this->family(), type, protocol);
     return fd;
   }
 

@@ -54,7 +54,7 @@ const
     if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
       POSEIDON_THROW("Could not get local socket address\n"
                      "[`getsockname()` failed: $1]",
-                     noadl::format_errno(errno));
+                     format_errno(errno));
     return { addrst, addrlen };
   }
 

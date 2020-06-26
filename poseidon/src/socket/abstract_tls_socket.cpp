@@ -38,7 +38,7 @@ do_translate_ssl_error(const char* func, ::SSL* ssl, int ret)
 
         POSEIDON_SSL_THROW("Irrecoverable SSL I/O error\n"
                            "[`$1()` returned `$2`: $3]",
-                           func, ret, noadl::format_errno(err));
+                           func, ret, format_errno(err));
 
       default:
         POSEIDON_SSL_THROW("Irrecoverable SSL error\n"
@@ -125,7 +125,7 @@ Abstract_TLS_Socket::
 do_on_async_shutdown(int err)
   {
     POSEIDON_LOG_INFO("Secure TCP connection closed: local '$1', $2",
-                      this->get_local_address(), noadl::format_errno(err));
+                      this->get_local_address(), format_errno(err));
   }
 
 }  // namespace poseidon

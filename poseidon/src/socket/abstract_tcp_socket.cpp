@@ -21,7 +21,7 @@ do_translate_syscall_error(const char* func, int err)
 
     POSEIDON_THROW("TCP socket error\n"
                    "[`$1()` failed: $2]",
-                   func, noadl::format_errno(err));
+                   func, format_errno(err));
   }
 
 }  // namespace
@@ -95,7 +95,7 @@ Abstract_TCP_Socket::
 do_on_async_shutdown(int err)
   {
     POSEIDON_LOG_INFO("TCP connection closed: local '$1', $2",
-                      this->get_local_address(), noadl::format_errno(err));
+                      this->get_local_address(), format_errno(err));
   }
 
 }  // namespace poseidon

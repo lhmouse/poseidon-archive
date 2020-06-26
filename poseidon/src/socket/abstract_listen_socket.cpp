@@ -21,7 +21,7 @@ do_translate_syscall_error(const char* func, int err)
 
     POSEIDON_THROW("Failed to accept incoming connection\n"
                    "[`$1()` failed: $2]",
-                   func, noadl::format_errno(err));
+                   func, format_errno(err));
   }
 
 }  // namespace
@@ -101,7 +101,7 @@ Abstract_Listen_Socket::
 do_on_async_poll_shutdown(int err)
   {
     POSEIDON_LOG_INFO("Listen socket closed: local '$1', $2",
-                      this->get_local_address(), noadl::format_errno(err));
+                      this->get_local_address(), format_errno(err));
   }
 
 void
@@ -112,13 +112,13 @@ do_listen(const Socket_Address& addr, int backlog)
     if(::bind(this->get_fd(), addr.data(), addr.size()) != 0)
       POSEIDON_THROW("Failed to bind accept socket onto '$2'\n"
                      "[`bind()` failed: $1]",
-                     noadl::format_errno(errno), addr);
+                     format_errno(errno), addr);
 
     // Start listening.
     if(::listen(this->get_fd(), ::rocket::clamp(backlog, 1, SOMAXCONN)) != 0)
       POSEIDON_THROW("Failed to set up listen socket on '$2'\n"
                      "[`listen()` failed: $1]",
-                     noadl::format_errno(errno), this->get_local_address());
+                     format_errno(errno), this->get_local_address());
 
     POSEIDON_LOG_INFO("Listen socket opened: local '$1'",
                       this->get_local_address());

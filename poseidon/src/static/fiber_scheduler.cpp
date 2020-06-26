@@ -137,7 +137,7 @@ noexcept
     if(::munmap(vm_base, vm_size) != 0)
       POSEIDON_LOG_FATAL("Could not deallocate virtual memory (base `$2`, size `$3`)\n"
                          "[`munmap()` failed: $1]",
-                         noadl::format_errno(errno), vm_base, vm_size);
+                         format_errno(errno), vm_base, vm_size);
   }
 
 poolable_stack
@@ -175,7 +175,7 @@ do_allocate_stack(size_t stack_vm_size)
     if(vm_base == MAP_FAILED)
       POSEIDON_THROW("Could not allocate virtual memory (size `$2`)\n"
                      "[`mmap()` failed: $1]",
-                     noadl::format_errno(errno), vm_size);
+                     format_errno(errno), vm_size);
 
     sp.base = vm_base + page_size;
     sp.size = vm_size - page_size * 2;
@@ -185,7 +185,7 @@ do_allocate_stack(size_t stack_vm_size)
     if(::mprotect(sp.base, sp.size, PROT_READ | PROT_WRITE) != 0)
       POSEIDON_THROW("Could not set stack memory permission (base `$2`, size `$3`)\n"
                      "[`mprotect()` failed: $1]",
-                     noadl::format_errno(errno), sp.base, sp.size);
+                     format_errno(errno), sp.base, sp.size);
 
     // The stack need not be unmapped once all permissions have been set.
     return poolable_stack(sp_guard.release());
@@ -269,7 +269,7 @@ class Queue_Semaphore
         if(r != 0)
           POSEIDON_THROW("Failed to initialize semaphore\n"
                          "[`sem_init()` failed: $1]",
-                         noadl::format_errno(errno));
+                         format_errno(errno));
       }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Queue_Semaphore)
@@ -360,7 +360,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         if(err != 0)
           POSEIDON_THROW("Failed to allocate thread-specific key for fibers\n"
                          "[`pthread_key_create()` failed: $1]",
-                         noadl::format_errno(err));
+                         format_errno(err));
 
         auto key_guard = ::rocket::make_unique_handle(ckey,
                                [](::pthread_key_t* ptr) { ::pthread_key_delete(*ptr);  });
@@ -397,7 +397,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         if(err != 0)
           POSEIDON_THROW("Could not set fiber scheduler thread context\n"
                          "[`pthread_setspecific()` failed: $1]",
-                         noadl::format_errno(err));
+                         format_errno(err));
 
         POSEIDON_LOG_DEBUG("Created new fiber scheduler thread context `$1`", qctx);
         return qctx.release();
@@ -756,7 +756,7 @@ reload()
       if(::getrlimit(RLIMIT_STACK, &rlim) != 0)
         POSEIDON_THROW("Could not get thread stack size\n"
                        "[`getrlimit()` failed: $1]",
-                       noadl::format_errno(errno));
+                       format_errno(errno));
 
       conf.stack_vm_size = static_cast<size_t>(rlim.rlim_cur);
     }

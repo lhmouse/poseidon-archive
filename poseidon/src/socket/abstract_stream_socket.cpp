@@ -210,7 +210,7 @@ do_async_connect(const Socket_Address& addr)
       if(err != EINPROGRESS)
         POSEIDON_THROW("Failed to initiate connection to '$2'\n"
                        "[`connect()` failed: $1]",
-                       noadl::format_errno(err), addr);
+                       format_errno(err), addr);
     }
     this->m_cstate = connection_state_connecting;
   }
@@ -226,7 +226,7 @@ const
     if(::getpeername(this->get_fd(), addrst, &addrlen) != 0)
       POSEIDON_THROW("Could not get remote socket address\n"
                      "[`getpeername()` failed: $1]",
-                     noadl::format_errno(errno));
+                     format_errno(errno));
     return { addrst, addrlen };
   }
 

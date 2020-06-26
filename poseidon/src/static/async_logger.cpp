@@ -286,7 +286,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
       {
         // Create the thread. Note it is never joined or detached.
         mutex::unique_lock lock(self->m_queue_mutex);
-        self->m_thread = noadl::create_daemon_thread<do_thread_loop>("logger");
+        self->m_thread = create_daemon_thread<do_thread_loop>("logger");
       }
 
     static
