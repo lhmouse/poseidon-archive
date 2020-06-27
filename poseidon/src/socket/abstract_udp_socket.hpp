@@ -14,6 +14,7 @@ class Abstract_UDP_Socket
     public Abstract_Socket
   {
   private:
+    // These are I/O components.
     mutable mutex m_mutex;
     Connection_State m_cstate = connection_state_initial;
     ::rocket::linear_buffer m_wqueue;  // write queue

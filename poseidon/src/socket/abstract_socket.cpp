@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "abstract_socket.hpp"
-#include "socket_address.hpp"
 #include "../utilities.hpp"
 #include <sys/socket.h>
 
@@ -43,19 +42,26 @@ noexcept
     ::shutdown(this->get_fd(), SHUT_RDWR);
   }
 
-Socket_Address
+const Socket_Address&
 Abstract_Socket::
 get_local_address()
 const
   {
-    // Try getting the local address.
-    Socket_Address::storage_type addrst;
-    Socket_Address::size_type addrlen = sizeof(addrst);
-    if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
-      POSEIDON_THROW("Could not get local socket address\n"
-                     "[`getsockname()` failed: $1]",
-                     format_errno(errno));
-    return { addrst, addrlen };
+    this->m_local_addr_once.call(
+      [this] {
+        // Try getting the local address.
+        Socket_Address::storage_type addrst;
+        Socket_Address::size_type addrlen = sizeof(addrst);
+        if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
+          POSEIDON_THROW("Could not get local socket address\n"
+                         "[`getsockname()` failed: $1]",
+                         format_errno(errno));
+
+        // Cache the result.
+        this->m_local_addr.assign(addrst, addrlen);
+      });
+
+    return this->m_local_addr;
   }
 
 }  // namespace poseidon

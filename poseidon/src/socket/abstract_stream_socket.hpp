@@ -14,9 +14,14 @@ class Abstract_Stream_Socket
     public Abstract_Socket
   {
   private:
+    // These are I/O components.
     mutable mutex m_mutex;
     Connection_State m_cstate = connection_state_initial;
     ::rocket::linear_buffer m_wqueue;  // write queue
+
+    // This the remote address. It is initialized upon the first request.
+    mutable once_flag m_remote_addr_once;
+    mutable Socket_Address m_remote_addr;
 
   public:
     explicit
@@ -127,7 +132,7 @@ class Abstract_Stream_Socket
   public:
     // Gets the (connected) address of the remote peer.
     // This function throws an exception if no peer has connected.
-    Socket_Address
+    const Socket_Address&
     get_remote_address()
     const;
 

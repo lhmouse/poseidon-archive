@@ -3,7 +3,6 @@
 
 #include "../precompiled.hpp"
 #include "abstract_stream_socket.hpp"
-#include "socket_address.hpp"
 #include "../static/network_driver.hpp"
 #include "../utilities.hpp"
 
@@ -215,19 +214,26 @@ do_async_connect(const Socket_Address& addr)
     this->m_cstate = connection_state_connecting;
   }
 
-Socket_Address
+const Socket_Address&
 Abstract_Stream_Socket::
 get_remote_address()
 const
   {
-    // Try getting the remote address.
-    Socket_Address::storage_type addrst;
-    Socket_Address::size_type addrlen = sizeof(addrst);
-    if(::getpeername(this->get_fd(), addrst, &addrlen) != 0)
-      POSEIDON_THROW("Could not get remote socket address\n"
-                     "[`getpeername()` failed: $1]",
-                     format_errno(errno));
-    return { addrst, addrlen };
+    this->m_remote_addr_once.call(
+      [this] {
+        // Try getting the remote address.
+        Socket_Address::storage_type addrst;
+        Socket_Address::size_type addrlen = sizeof(addrst);
+        if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
+          POSEIDON_THROW("Could not get remote socket address\n"
+                         "[`getsockname()` failed: $1]",
+                         format_errno(errno));
+
+        // Cache the result.
+        this->m_remote_addr.assign(addrst, addrlen);
+      });
+
+    return this->m_remote_addr;
   }
 
 bool

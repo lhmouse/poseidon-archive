@@ -5,7 +5,6 @@
 #define POSEIDON_SOCKET_ABSTRACT_UDP_CLIENT_SOCKET_HPP_
 
 #include "abstract_udp_socket.hpp"
-#include "socket_address.hpp"
 #include "abstract_udp_socket.hpp"
 
 namespace poseidon {

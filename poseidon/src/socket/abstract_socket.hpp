@@ -6,6 +6,7 @@
 
 #include "../fwd.hpp"
 #include "enums.hpp"
+#include "socket_address.hpp"
 
 namespace poseidon {
 
@@ -21,6 +22,10 @@ class Abstract_Socket
     // These are used by network driver.
     uint64_t m_epoll_data = 1234567890123456789;
     uint32_t m_epoll_events = UINT32_MAX;
+
+    // This the local address. It is initialized upon the first request.
+    mutable once_flag m_local_addr_once;
+    mutable Socket_Address m_local_addr;
 
   public:
     explicit
@@ -102,7 +107,7 @@ class Abstract_Socket
     noexcept;
 
     // Gets the (bound) address of the local peer.
-    Socket_Address
+    const Socket_Address&
     get_local_address()
     const;
   };

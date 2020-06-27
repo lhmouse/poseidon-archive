@@ -5,7 +5,6 @@
 #define POSEIDON_SOCKET_ABSTRACT_TLS_SERVER_SOCKET_HPP_
 
 #include "abstract_listen_socket.hpp"
-#include "socket_address.hpp"
 #include "abstract_tls_socket.hpp"
 #include "openssl.hpp"
 
