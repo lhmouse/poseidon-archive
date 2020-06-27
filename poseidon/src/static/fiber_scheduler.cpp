@@ -335,7 +335,7 @@ class Queue_Semaphore
 POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
   {
     // constant data
-    ::rocket::once_flag m_init_once;
+    once_flag m_init_once;
     ::pthread_key_t m_sched_key;
 
     // configuration

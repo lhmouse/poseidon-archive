@@ -267,7 +267,7 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
 POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
   {
     // constant data
-    ::rocket::once_flag m_init_once;
+    once_flag m_init_once;
     ::pthread_t m_thread = 0;
 
     // configuration

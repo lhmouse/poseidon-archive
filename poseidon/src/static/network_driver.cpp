@@ -106,7 +106,7 @@ noexcept
 POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
   {
     // constant data
-    ::rocket::once_flag m_init_once;
+    once_flag m_init_once;
     ::pthread_t m_thread;
     int m_epoll_fd = -1;
     int m_event_fd = -1;

@@ -29,7 +29,7 @@ do_get_size_config(const Config_File& file, const char* name, long max, size_t d
 
 struct Worker
   {
-    ::rocket::once_flag init_once;
+    once_flag init_once;
     ::pthread_t thread;
 
     mutex queue_mutex;

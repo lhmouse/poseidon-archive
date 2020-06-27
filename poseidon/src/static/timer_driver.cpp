@@ -71,7 +71,7 @@ struct PQ_Compare
 POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
   {
     // constant data
-    ::rocket::once_flag m_init_once;
+    once_flag m_init_once;
     ::pthread_t m_thread;
 
     // dynamic data

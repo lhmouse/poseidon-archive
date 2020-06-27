@@ -13,6 +13,7 @@
 #include <rocket/mutex.hpp>
 #include <rocket/recursive_mutex.hpp>
 #include <rocket/condition_variable.hpp>
+#include <rocket/once_flag.hpp>
 #include <string>
 #include <vector>
 #include <deque>
@@ -102,6 +103,7 @@ using ::rocket::atomic_seq_cst;
 using ::rocket::mutex;
 using ::rocket::recursive_mutex;
 using ::rocket::condition_variable;
+using ::rocket::once_flag;
 
 struct FD_Closer
   {
