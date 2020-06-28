@@ -19,13 +19,14 @@ struct Example_Session : Abstract_TCP_Socket
       { }
 
     void
-    do_on_async_receive(void* data, size_t size)
+    do_on_async_receive(linear_buffer&& rqueue)
     override
       {
-        POSEIDON_LOG_WARN("example TCP client received: $1",
-                          cow_string(static_cast<char*>(data), size));
+        POSEIDON_LOG_WARN("example TCP session received: $1",
+                          cow_string(rqueue.data(), rqueue.size()));
 
-        this->async_send(data, size);
+        this->async_send(rqueue.data(), rqueue.size());
+        rqueue.clear();
       }
   };
 

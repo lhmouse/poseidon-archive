@@ -61,7 +61,7 @@ class Abstract_TLS_Socket
     // Consumes incoming data.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_async_receive(void* data, size_t size)
+    do_on_async_receive(linear_buffer&& rqueue)
     override
       = 0;
 

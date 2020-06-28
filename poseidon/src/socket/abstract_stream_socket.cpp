@@ -192,6 +192,18 @@ do_on_async_poll_shutdown(int err)
 
 void
 Abstract_Stream_Socket::
+do_on_async_receive(void* data, size_t size)
+  {
+    // Append data to the default queue.
+    // Note the queue is provided purely for convenience for derived classes. It is not
+    // protected by the I/O mutex.
+    this->m_rqueue.putn(static_cast<const char*>(data), size);
+
+    this->do_on_async_receive(::std::move(this->m_rqueue));
+  }
+
+void
+Abstract_Stream_Socket::
 do_async_connect(const Socket_Address& addr)
   {
     // Lock the stream and examine connection state.
