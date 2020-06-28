@@ -5,7 +5,6 @@
 #define POSEIDON_SOCKET_ABSTRACT_UDP_SOCKET_HPP_
 
 #include "abstract_socket.hpp"
-#include <rocket/linear_buffer.hpp>
 
 namespace poseidon {
 
@@ -17,7 +16,7 @@ class Abstract_UDP_Socket
     // These are I/O components.
     mutable mutex m_mutex;
     Connection_State m_cstate = connection_state_initial;
-    ::rocket::linear_buffer m_wqueue;  // write queue
+    linear_buffer m_wqueue;  // write queue
 
   public:
     explicit

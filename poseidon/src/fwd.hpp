@@ -9,6 +9,7 @@
 #endif
 
 #include <asteria/fwd.hpp>
+#include <rocket/linear_buffer.hpp>
 #include <rocket/atomic.hpp>
 #include <rocket/mutex.hpp>
 #include <rocket/recursive_mutex.hpp>
@@ -96,6 +97,7 @@ using ::asteria::array;
 using ::asteria::opt;
 using ::asteria::refp;
 
+using ::rocket::linear_buffer;
 using ::rocket::atomic;
 using ::rocket::atomic_relaxed;
 using ::rocket::atomic_acq_rel;

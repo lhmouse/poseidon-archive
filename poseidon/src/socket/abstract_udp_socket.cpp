@@ -30,14 +30,6 @@ struct Packet_Header
     uint16_t datalen;
   };
 
-void
-do_wqueue_append(::rocket::linear_buffer& wqueue, const void* data, size_t size)
-noexcept
-  {
-    ::std::memcpy(wqueue.mut_end(), data, size);
-    wqueue.accept(size);
-  }
-
 int
 do_ifname_to_ifindex(const char* ifname)
   {
@@ -178,8 +170,9 @@ do_on_async_poll_write(mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/
     }
 
     // Try extracting a packet.
+    // This function shall match `async_send()`.
     Packet_Header header;
-    size_t size = this->m_wqueue.getn(reinterpret_cast<char (&)[]>(header), sizeof(header));
+    size_t size = this->m_wqueue.getn(reinterpret_cast<char*>(&header), sizeof(header));
     if(size == 0) {
       if(this->m_cstate <= connection_state_established)
         return io_result_eof;
@@ -416,10 +409,19 @@ async_send(const Socket_Address& addr, const void* data, size_t size)
     if(size != header.datalen)
       POSEIDON_LOG_WARN("UDP packet truncated (size `$1` too large)", size);
 
+    // Please mind thread safety.
+    // This function shall match `do_on_async_poll_write()`.
     this->m_wqueue.reserve(sizeof(header) + header.addrlen + header.datalen);
-    do_wqueue_append(this->m_wqueue, &header, sizeof(header));
-    do_wqueue_append(this->m_wqueue, addr.data(), header.addrlen);
-    do_wqueue_append(this->m_wqueue, data, header.datalen);
+
+    ::std::memcpy(this->m_wqueue.mut_end(), &header, sizeof(header));
+    this->m_wqueue.accept(sizeof(header));
+
+    ::std::memcpy(this->m_wqueue.mut_end(), addr.data(), header.addrlen);
+    this->m_wqueue.accept(header.addrlen);
+
+    ::std::memcpy(this->m_wqueue.mut_end(), data, header.datalen);
+    this->m_wqueue.accept(header.datalen);
+
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.
