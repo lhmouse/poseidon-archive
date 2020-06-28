@@ -97,7 +97,7 @@ IO_Result
 Abstract_Stream_Socket::
 do_on_async_poll_read(mutex::unique_lock& lock, void* hint, size_t size)
   {
-    lock.lock(this->m_mutex);
+    lock.lock(this->m_io_mutex);
 
     // If the stream is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
@@ -117,7 +117,7 @@ do_on_async_poll_read(mutex::unique_lock& lock, void* hint, size_t size)
     // Process the data that have been read.
     lock.unlock();
     this->do_on_async_receive(hint, static_cast<size_t>(io_res));
-    lock.lock(this->m_mutex);
+    lock.lock(this->m_io_mutex);
     return io_res;
   }
 
@@ -126,7 +126,7 @@ Abstract_Stream_Socket::
 do_write_queue_size(mutex::unique_lock& lock)
 const
   {
-    lock.lock(this->m_mutex);
+    lock.lock(this->m_io_mutex);
 
     // Get the size of pending data.
     size_t size = this->m_wqueue.size();
@@ -145,7 +145,7 @@ IO_Result
 Abstract_Stream_Socket::
 do_on_async_poll_write(mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/)
   {
-    lock.lock(this->m_mutex);
+    lock.lock(this->m_io_mutex);
 
     // If the stream is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
@@ -157,7 +157,7 @@ do_on_async_poll_write(mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/
 
       lock.unlock();
       this->do_on_async_establish();
-      lock.lock(this->m_mutex);
+      lock.lock(this->m_io_mutex);
     }
 
     // Try writing some bytes.
@@ -183,7 +183,7 @@ void
 Abstract_Stream_Socket::
 do_on_async_poll_shutdown(int err)
   {
-    mutex::unique_lock lock(this->m_mutex);
+    mutex::unique_lock lock(this->m_io_mutex);
     this->m_cstate = connection_state_closed;
     lock.unlock();
 
@@ -195,7 +195,7 @@ Abstract_Stream_Socket::
 do_async_connect(const Socket_Address& addr)
   {
     // Lock the stream and examine connection state.
-    mutex::unique_lock lock(this->m_mutex);
+    mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate != connection_state_initial)
       POSEIDON_THROW("Another connection already in progress or established");
 
@@ -240,7 +240,7 @@ bool
 Abstract_Stream_Socket::
 async_send(const void* data, size_t size)
   {
-    mutex::unique_lock lock(this->m_mutex);
+    mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate > connection_state_established)
       return false;
 
@@ -258,7 +258,7 @@ Abstract_Stream_Socket::
 async_shutdown()
 noexcept
   {
-    mutex::unique_lock lock(this->m_mutex);
+    mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate > connection_state_established)
       return false;
 

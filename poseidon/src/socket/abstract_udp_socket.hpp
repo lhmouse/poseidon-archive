@@ -14,7 +14,7 @@ class Abstract_UDP_Socket
   {
   private:
     // These are I/O components.
-    mutable mutex m_mutex;
+    mutable mutex m_io_mutex;
     Connection_State m_cstate = connection_state_initial;
     linear_buffer m_wqueue;  // write queue
 
