@@ -437,6 +437,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     noexcept
       {
         self->do_stack_switch_finish();
+
+        // Get the fiber pointer back.
         Fancy_Fiber_Pointer fcptr(word_0, word_1);
         Abstract_Fiber* fiber = fcptr;
 
@@ -470,6 +472,24 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         self->do_stack_switch_start(myctx->return_uctx);
         ::setcontext(myctx->return_uctx);
         ::std::terminate();
+      }
+
+    static
+    void
+    do_initialize_context(Abstract_Fiber* fiber, poolable_stack&& stack)
+    noexcept
+      {
+        // Initialize the user-context.
+        int r = ::getcontext(fiber->m_sched_uctx);
+        ROCKET_ASSERT(r == 0);
+
+        fiber->m_sched_uctx->uc_link = reinterpret_cast<::ucontext_t*>(-0x21520FF3);
+        fiber->m_sched_uctx->uc_stack = stack.release();
+
+        // Fill in the executor function, whose argument is a copy of `fiber`.
+        Fancy_Fiber_Pointer fcptr(fiber);
+        ::makecontext(fiber->m_sched_uctx, reinterpret_cast<void (*)()>(do_execute_fiber),
+                                           2, fcptr.words[0], fcptr.words[1]);
       }
 
     static
@@ -654,16 +674,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             return;
           }
 
-          int r = ::getcontext(fiber->m_sched_uctx);
-          ROCKET_ASSERT(r == 0);
-
-          fiber->m_sched_uctx->uc_link = reinterpret_cast<::ucontext_t*>(-0x21520FF3);
-          fiber->m_sched_uctx->uc_stack = stack.release();
-
-          // Initialize the fiber context.
-          Fancy_Fiber_Pointer fcptr(fiber);
-          ::makecontext(fiber->m_sched_uctx, reinterpret_cast<void (*)()>(do_execute_fiber),
-                                             2, fcptr.words[0], fcptr.words[1]);
+          // Note this shall not throw exceptions.
+          self->do_initialize_context(fiber, ::std::move(stack));
 
           // Finish initialization.
           // Note this is the only scenerio where the fiber state is not updated
