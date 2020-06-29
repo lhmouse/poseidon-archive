@@ -226,6 +226,23 @@ do_async_connect(const Socket_Address& addr)
     this->m_cstate = connection_state_connecting;
   }
 
+bool
+Abstract_Stream_Socket::
+do_async_send(const void* data, size_t size)
+  {
+    mutex::unique_lock lock(this->m_io_mutex);
+    if(this->m_cstate > connection_state_established)
+      return false;
+
+    // Append data to the write queue.
+    this->m_wqueue.putn(static_cast<const char*>(data), size);
+    lock.unlock();
+
+    // Notify the driver about availability of outgoing data.
+    Network_Driver::notify_writable_internal(this);
+    return true;
+  }
+
 const Socket_Address&
 Abstract_Stream_Socket::
 get_remote_address()
@@ -246,23 +263,6 @@ const
       });
 
     return this->m_remote_addr;
-  }
-
-bool
-Abstract_Stream_Socket::
-async_send(const void* data, size_t size)
-  {
-    mutex::unique_lock lock(this->m_io_mutex);
-    if(this->m_cstate > connection_state_established)
-      return false;
-
-    // Append data to the write queue.
-    this->m_wqueue.putn(static_cast<const char*>(data), size);
-    lock.unlock();
-
-    // Notify the driver about availability of outgoing data.
-    Network_Driver::notify_writable_internal(this);
-    return true;
   }
 
 bool

@@ -29,7 +29,7 @@ struct Example_Server : Abstract_UDP_Server_Socket
         POSEIDON_LOG_WARN("example UDP server received from '$1': $2",
                           addr, cow_string(static_cast<char*>(data), size));
 
-        this->async_send(addr, data, size);
+        this->do_async_send(addr, data, size);
       }
   };
 

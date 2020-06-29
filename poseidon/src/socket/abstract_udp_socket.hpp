@@ -84,6 +84,13 @@ class Abstract_UDP_Socket
     void
     do_bind(const Socket_Address& addr);
 
+    // Enqueues a packet for writing.
+    // This function returns `true` if the data have been queued, or `false` if a
+    // shutdown request has been initiated.
+    // This function is thread-safe.
+    bool
+    do_async_send(const Socket_Address& addr, const void* data, size_t size);
+
   public:
     using Abstract_Socket::get_fd;
     using Abstract_Socket::abort;
@@ -120,13 +127,6 @@ class Abstract_UDP_Socket
 
     void
     leave_multicast_group(const Socket_Address& maddr, const char* ifname);
-
-    // Enqueues a packet for writing.
-    // This function returns `true` if the data have been queued, or `false` if a
-    // shutdown request has been initiated.
-    // This function is thread-safe.
-    bool
-    async_send(const Socket_Address& addr, const void* data, size_t size);
 
     // Marks this socket as closed immediately. No further data may be read from or
     // written through it.

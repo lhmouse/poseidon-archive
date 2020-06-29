@@ -25,7 +25,7 @@ struct Example_Session : Abstract_TCP_Socket
         POSEIDON_LOG_WARN("example TCP session received: $1",
                           cow_string(rqueue.data(), rqueue.size()));
 
-        this->async_send(rqueue.data(), rqueue.size());
+        this->do_async_send(rqueue.data(), rqueue.size());
         rqueue.clear();
       }
   };

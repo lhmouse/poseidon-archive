@@ -137,19 +137,19 @@ class Abstract_Stream_Socket
     void
     do_async_connect(const Socket_Address& addr);
 
+    // Enqueues some data for writing.
+    // This function returns `true` if the data have been queued, or `false` if a
+    // shutdown request has been initiated.
+    // This function is thread-safe.
+    bool
+    do_async_send(const void* data, size_t size);
+
   public:
     // Gets the (connected) address of the remote peer.
     // This function throws an exception if no peer has connected.
     const Socket_Address&
     get_remote_address()
     const;
-
-    // Enqueues some data for writing.
-    // This function returns `true` if the data have been queued, or `false` if a
-    // shutdown request has been initiated.
-    // This function is thread-safe.
-    bool
-    async_send(const void* data, size_t size);
 
     // Initiates normal closure of this stream.
     // This function returns `true` if the shutdown request completes immediately,

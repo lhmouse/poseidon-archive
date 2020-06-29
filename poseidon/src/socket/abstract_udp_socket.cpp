@@ -251,6 +251,41 @@ do_bind(const Socket_Address& addr)
                       this->get_local_address());
   }
 
+bool
+Abstract_UDP_Socket::
+do_async_send(const Socket_Address& addr, const void* data, size_t size)
+  {
+    mutex::unique_lock lock(this->m_io_mutex);
+    if(this->m_cstate > connection_state_established)
+      return false;
+
+    // Append data to the write queue.
+    Packet_Header header;
+    header.addrlen = static_cast<uint16_t>(addr.size());
+    header.datalen = static_cast<uint16_t>(::std::min<size_t>(size, UINT16_MAX));
+    if(size != header.datalen)
+      POSEIDON_LOG_WARN("UDP packet truncated (size `$1` too large)", size);
+
+    // Please mind thread safety.
+    // This function shall match `do_on_async_poll_write()`.
+    this->m_wqueue.reserve(sizeof(header) + header.addrlen + header.datalen);
+
+    ::std::memcpy(this->m_wqueue.mut_end(), &header, sizeof(header));
+    this->m_wqueue.accept(sizeof(header));
+
+    ::std::memcpy(this->m_wqueue.mut_end(), addr.data(), header.addrlen);
+    this->m_wqueue.accept(header.addrlen);
+
+    ::std::memcpy(this->m_wqueue.mut_end(), data, header.datalen);
+    this->m_wqueue.accept(header.datalen);
+
+    lock.unlock();
+
+    // Notify the driver about availability of outgoing data.
+    Network_Driver::notify_writable_internal(this);
+    return true;
+  }
+
 void
 Abstract_UDP_Socket::
 set_multicast(int ifindex, uint8_t ttl, bool loop)
@@ -392,41 +427,6 @@ Abstract_UDP_Socket::
 leave_multicast_group(const Socket_Address& maddr, const char* ifname)
   {
     return this->leave_multicast_group(maddr, do_ifname_to_ifindex(ifname));
-  }
-
-bool
-Abstract_UDP_Socket::
-async_send(const Socket_Address& addr, const void* data, size_t size)
-  {
-    mutex::unique_lock lock(this->m_io_mutex);
-    if(this->m_cstate > connection_state_established)
-      return false;
-
-    // Append data to the write queue.
-    Packet_Header header;
-    header.addrlen = static_cast<uint16_t>(addr.size());
-    header.datalen = static_cast<uint16_t>(::std::min<size_t>(size, UINT16_MAX));
-    if(size != header.datalen)
-      POSEIDON_LOG_WARN("UDP packet truncated (size `$1` too large)", size);
-
-    // Please mind thread safety.
-    // This function shall match `do_on_async_poll_write()`.
-    this->m_wqueue.reserve(sizeof(header) + header.addrlen + header.datalen);
-
-    ::std::memcpy(this->m_wqueue.mut_end(), &header, sizeof(header));
-    this->m_wqueue.accept(sizeof(header));
-
-    ::std::memcpy(this->m_wqueue.mut_end(), addr.data(), header.addrlen);
-    this->m_wqueue.accept(header.addrlen);
-
-    ::std::memcpy(this->m_wqueue.mut_end(), data, header.datalen);
-    this->m_wqueue.accept(header.datalen);
-
-    lock.unlock();
-
-    // Notify the driver about availability of outgoing data.
-    Network_Driver::notify_writable_internal(this);
-    return true;
   }
 
 bool
