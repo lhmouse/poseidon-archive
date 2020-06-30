@@ -400,8 +400,8 @@ synchronize(long msecs)
 noexcept
   {
     // Wait until the log queue becomes empty.
-    mutex::unique_lock lock(self->m_conf_mutex);
-    self->m_queue_empty.wait_for(lock, msecs);
+    mutex::unique_lock lock(self->m_queue_mutex);
+    self->m_queue_empty.wait_for(lock, msecs, [] { return self->m_queue.empty();  });
   }
 
 
