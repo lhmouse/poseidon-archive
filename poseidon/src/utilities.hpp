@@ -54,8 +54,7 @@ noexcept
 // Note the format string must be a string literal.
 #define POSEIDON_XLOG_(level, ...)  \
     (::poseidon::Async_Logger::is_enabled(level) &&  \
-         ::poseidon::do_xlog_format(level, __FILE__, __LINE__, __func__,  \
-                                    "" __VA_ARGS__))
+         ::poseidon::do_xlog_format(level, __FILE__, __LINE__, __func__, "" __VA_ARGS__))
 
 #define POSEIDON_LOG_FATAL(...)   POSEIDON_XLOG_(::poseidon::log_level_fatal,  __VA_ARGS__)
 #define POSEIDON_LOG_ERROR(...)   POSEIDON_XLOG_(::poseidon::log_level_error,  __VA_ARGS__)
@@ -156,12 +155,10 @@ enqueue_async_job(uintptr_t key, FuncT&& func)
         void
         do_execute()
         override
-          try {
-            this->m_prom.set_value(this->m_func());
-          }
-          catch(...) {
-            this->m_prom.set_exception(::std::current_exception());
-          }
+          try
+            { this->m_prom.set_value(this->m_func());  }
+          catch(...)
+            { this->m_prom.set_exception(::std::current_exception());  }
       };
 
     // Allocate a function object.
@@ -193,12 +190,10 @@ enqueue_async_job(FuncT&& func)
         void
         do_execute()
         override
-          try {
-            this->m_prom.set_value(this->m_func());
-          }
-          catch(...) {
-            this->m_prom.set_exception(::std::current_exception());
-          }
+          try
+            { this->m_prom.set_value(this->m_func());  }
+          catch(...)
+            { this->m_prom.set_exception(::std::current_exception());  }
       };
 
     // Allocate a function object.
