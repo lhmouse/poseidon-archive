@@ -139,9 +139,9 @@ create_async_timer_periodic(int64_t period, FuncT&& func)
 // Functions with the same key will always be delivered to the same worker.
 template<typename FuncT>
 futp<typename ::std::result_of<FuncT ()>::type>
-enqueue_async_job_keyed(uintptr_t key, FuncT&& func)
+enqueue_async_job(uintptr_t key, FuncT&& func)
   {
-    // // This is the concrete function class.
+    // This is the concrete function class.
     struct Concrete_Async_Job : Abstract_Async_Job
       {
         prom<typename ::std::result_of<FuncT ()>::type> m_prom;
@@ -166,7 +166,7 @@ enqueue_async_job_keyed(uintptr_t key, FuncT&& func)
 
     // Allocate a function object.
     auto async = ::rocket::make_unique<Concrete_Async_Job>(key,
-                                               ::std::forward<FuncT>(func));
+                                           ::std::forward<FuncT>(func));
     auto futr = async->m_prom.future();
     Worker_Pool::insert(::std::move(async));
     return futr;
@@ -176,9 +176,9 @@ enqueue_async_job_keyed(uintptr_t key, FuncT&& func)
 // The function is delivered to a random worker.
 template<typename FuncT>
 futp<typename ::std::result_of<FuncT ()>::type>
-enqueue_async_job_random(FuncT&& func)
+enqueue_async_job(FuncT&& func)
   {
-    // // This is the concrete function class.
+    // This is the concrete function class.
     struct Concrete_Async_Job : Abstract_Async_Job
       {
         prom<typename ::std::result_of<FuncT ()>::type> m_prom;
@@ -186,7 +186,7 @@ enqueue_async_job_random(FuncT&& func)
 
         explicit
         Concrete_Async_Job(FuncT&& func)
-          : Abstract_Async_Job(reinterpret_cast<uintptr_t>(this)),
+          : Abstract_Async_Job(reinterpret_cast<uintptr_t>(this) >> 4),
             m_func(::std::forward<FuncT>(func))
           { }
 
@@ -203,7 +203,7 @@ enqueue_async_job_random(FuncT&& func)
 
     // Allocate a function object.
     auto async = ::rocket::make_unique<Concrete_Async_Job>(
-                                               ::std::forward<FuncT>(func));
+                                           ::std::forward<FuncT>(func));
     auto futr = async->m_prom.future();
     Worker_Pool::insert(::std::move(async));
     return futr;
