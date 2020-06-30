@@ -1,3 +1,4 @@
+## Set up project
 AC_INIT([Poseidon], [0.1], [lh_mouse@126.com], [poseidon], [https://github.com/lhmouse/poseidon])
 AC_CONFIG_SRCDIR([poseidon/src])
 AC_CONFIG_HEADERS([config.h])
@@ -10,12 +11,14 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
 LT_INIT([disable-static])
 
+## Check for required libraries
 AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR(dl library not found)])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR(pthread library not found)])
 AC_CHECK_LIB([asteria], [_ZN7asteria14Global_ContextD2Ev], [], [AC_MSG_ERROR(Asteria not found)])
 AC_CHECK_LIB([ssl], [TLS_method], [], [AC_MSG_ERROR(OpenSSL 1.1 not found)])
 AC_CHECK_LIB([crypto], [ERR_error_string], [], [AC_MSG_ERROR(OpenSSL not found)])
 
+## Set up optional features
 AC_ARG_ENABLE([debug-checks], AS_HELP_STRING([--enable-debug-checks], [enable assertions]))
 AM_CONDITIONAL([enable_debug_checks], [test "${enable_debug_checks}" == "yes"])
 AM_COND_IF([enable_debug_checks], [
@@ -24,15 +27,13 @@ AM_COND_IF([enable_debug_checks], [
   AC_DEFINE([_DEBUG], [1], [Define to 1 to enable debug checks of MSVC standard library.])
 ])
 
-AC_ARG_ENABLE([address-sanitizer], AS_HELP_STRING([--enable-address-sanitizer], [enable address sanitizer]))
-AM_CONDITIONAL([enable_address_sanitizer], [test "${enable_address_sanitizer}" == "yes"])
+AC_ARG_ENABLE([sanitizer], AS_HELP_STRING([--enable-sanitizer=address|thread], [enable sanitizer (address sanitizer and thread sanitizer cannot be enabled at the same time)]))
+AM_CONDITIONAL([enable_address_sanitizer], [test "${enable_sanitizer}" == "address"])
 AM_COND_IF([enable_address_sanitizer], [
   AC_CHECK_LIB([asan], [__asan_report_error], [], [AC_MSG_ERROR([address sanitizer not found])])
   AC_DEFINE([POSEIDON_ENABLE_ADDRESS_SANITIZER], [1], [Define to 1 to enable address sanitizer.])
 ])
-
-AC_ARG_ENABLE([thread-sanitizer], AS_HELP_STRING([--enable-thread-sanitizer], [enable thread sanitizer]))
-AM_CONDITIONAL([enable_thread_sanitizer], [test "${enable_thread_sanitizer}" == "yes"])
+AM_CONDITIONAL([enable_thread_sanitizer], [test "${enable_sanitizer}" == "thread"])
 AM_COND_IF([enable_thread_sanitizer], [
   AC_CHECK_LIB([tsan], [__tsan_on_report], [], [AC_MSG_ERROR([thread sanitizer not found])])
   AC_DEFINE([POSEIDON_ENABLE_THREAD_SANITIZER], [1], [Define to 1 to enable thread sanitizer.])
