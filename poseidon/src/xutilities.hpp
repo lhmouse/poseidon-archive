@@ -28,10 +28,8 @@ create_daemon_thread(const char* name, void* param = nullptr)
           }
           catch(exception& stdex) {
             POSEIDON_LOG_ERROR("Caught exception: $1\n"
-                               "[exception class `$2`]\n"
-                               "[thrown from daemon thread loop function $3 (`$4`)]",
-                               stdex.what(),
-                               typeid(stdex).name(),
+                               "[thrown from daemon thread loop function $2 (`$3`)]",
+                               stdex,
                                loopfnT, typeid(loopfnT).name());
           }
 

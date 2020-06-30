@@ -315,6 +315,6 @@ main(int argc, char** argv)
   }
   catch(exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.
-    do_exit(exit_system_error, "unhandled exception: %s\n[exception class `%s`]\n",
+    do_exit(exit_system_error, "%s\n[exception class `%s`]\n",
                                stdex.what(), typeid(stdex).name());
   }

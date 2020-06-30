@@ -139,7 +139,7 @@ constexpr s_level_names[] =
     { "trace",  " TRACE "  },
   };
 
-using Level_Config_Array = array<Level_Config, ::rocket::countof(s_level_names)>;
+using Level_Config_Array = array<Level_Config, size(s_level_names)>;
 
 void
 do_write_log_entry(const Level_Config& conf, Entry&& entry)

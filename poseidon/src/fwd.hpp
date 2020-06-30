@@ -70,7 +70,6 @@ using ::std::ptrdiff_t;
 using ::std::size_t;
 using ::std::wint_t;
 using ::std::exception;
-using ::std::exception_ptr;
 using ::std::type_info;
 using ::std::pair;
 
@@ -88,7 +87,7 @@ using ::asteria::begin;
 using ::asteria::end;
 using ::asteria::swap;
 using ::asteria::xswap;
-using ::asteria::nullopt;
+using ::asteria::size;
 
 using ::asteria::uptr;
 using ::asteria::rcptr;
@@ -106,6 +105,8 @@ using ::rocket::mutex;
 using ::rocket::recursive_mutex;
 using ::rocket::condition_variable;
 using ::rocket::once_flag;
+
+using ::asteria::nullopt;
 
 struct FD_Closer
   {
