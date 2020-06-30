@@ -240,10 +240,10 @@ do_load_addons()
       if(!addon.is_string())
         POSEIDON_THROW("Invalid add-on path (`$1` is not a string)", addon);
 
-      const char* path = addon.as_string().safe_c_str();
+      const auto& path = addon.as_string();
       POSEIDON_LOG_INFO("Loading add-on: $1", path);
 
-      if(::dlopen(path, RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE) == nullptr)
+      if(!::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE))
         POSEIDON_THROW("Error loading add-on '$1'\n"
                        "[`dlopen()` failed: $2]",
                        path, ::dlerror());
