@@ -412,7 +412,7 @@ parse(const cow_string& str)
       bptr = mptr + 1;
     }
 
-    // Check for the host name.
+    // Check for a host name.
     // The host name may be an IP address in a pair of bracket. Colons are
     // allowed inside brackets, but not outside.
     size_t brackets = bptr[0] == '[';
@@ -438,7 +438,7 @@ parse(const cow_string& str)
       do_percent_decode(this->m_host, bptr, mptr);
       bptr = mptr;
 
-      // Check for the port number.
+      // Check for a port number.
       if(mptr[0] == ':') {
         mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
@@ -463,7 +463,7 @@ parse(const cow_string& str)
       }
     }
 
-    // Check for the path.
+    // Check for a path.
     if(bptr[0] == '/') {
       mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
@@ -476,7 +476,7 @@ parse(const cow_string& str)
       bptr = mptr;
     }
 
-    // Check for the query string.
+    // Check for a query string.
     if(bptr[0] == '?') {
       mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
@@ -490,7 +490,7 @@ parse(const cow_string& str)
       bptr = mptr;
     }
 
-    // Check for the fragment.
+    // Check for a fragment.
     if(bptr[0] == '#') {
       mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
