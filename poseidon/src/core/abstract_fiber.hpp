@@ -75,10 +75,10 @@ class Abstract_Fiber
     const noexcept
       { return this->m_resident.load();  }
 
-    void
+    Abstract_Fiber&
     set_resident(bool value = true)
     noexcept
-      { this->m_resident.store(value);  }
+      { return this->m_resident.store(value), *this;  }
 
     // Gets the fiber state, which is set by the scheduler.
     ROCKET_PURE_FUNCTION

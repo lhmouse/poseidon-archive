@@ -13,12 +13,13 @@ Abstract_Timer::
   {
   }
 
-void
+Abstract_Timer&
 Abstract_Timer::
 reset(int64_t first, int64_t period)
 noexcept
   {
     Timer_Driver::invalidate_internal(this, first, period);
+    return *this;
   }
 
 }  // namespace poseidon

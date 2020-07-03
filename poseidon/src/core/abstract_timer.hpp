@@ -46,10 +46,10 @@ class Abstract_Timer
     const noexcept
       { return this->m_resident.load();  }
 
-    void
+    Abstract_Timer&
     set_resident(bool value = true)
     noexcept
-      { this->m_resident.store(value);  }
+      { return this->m_resident.store(value), *this;  }
 
     // Gets the counter.
     ROCKET_PURE_FUNCTION
@@ -59,7 +59,7 @@ class Abstract_Timer
       { return this->m_count.load();  }
 
     // Resets the first triggered time and the period.
-    void
+    Abstract_Timer&
     reset(int64_t first, int64_t period)
     noexcept;
   };

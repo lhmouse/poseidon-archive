@@ -45,10 +45,10 @@ class Abstract_Async_Job
     const noexcept
       { return this->m_resident.load();  }
 
-    void
+    Abstract_Async_Job&
     set_resident(bool value = true)
     noexcept
-      { this->m_resident.store(value);  }
+      { return this->m_resident.store(value), *this;  }
 
     // Gets the asynchrnous state, which is set by worker threads.
     ROCKET_PURE_FUNCTION
