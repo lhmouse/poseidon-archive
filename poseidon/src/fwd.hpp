@@ -138,6 +138,7 @@ class Abstract_Timer;
 class Abstract_Async_Job;
 class Abstract_Future;
 class Abstract_Fiber;
+class URL;
 
 template<typename V> class Promise;
 template<typename V> class Future;
