@@ -37,6 +37,11 @@ include_poseidon_socket_HEADERS =  \
   %reldir%/socket/abstract_udp_client_socket.hpp  \
   ${NOTHING}
 
+include_poseidon_httpdir = ${includedir}/poseidon/http
+include_poseidon_http_HEADERS =  \
+  %reldir%/http/enums.hpp  \
+  ${NOTHING}
+
 include_poseidon_staticdir = ${includedir}/poseidon/static
 include_poseidon_static_HEADERS =  \
   %reldir%/static/main_config.hpp  \
@@ -58,6 +63,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/abstract_async_job.cpp  \
   %reldir%/core/abstract_fiber.cpp  \
   %reldir%/core/url.cpp  \
+  %reldir%/http/enums.cpp  \
   %reldir%/socket/openssl.cpp  \
   %reldir%/socket/socket_address.cpp  \
   %reldir%/socket/abstract_socket.cpp  \

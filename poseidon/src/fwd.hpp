@@ -166,6 +166,10 @@ class Abstract_TLS_Server_Socket;
 class Abstract_TLS_Client_Socket;
 class Abstract_UDP_Socket;
 
+// HTTP
+enum HTTP_Version : uint16_t;
+enum HTTP_Status : uint16_t;
+
 // Singletons
 class Main_Config;
 class Async_Logger;
