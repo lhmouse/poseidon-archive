@@ -14,18 +14,18 @@ namespace {
 // preferred to conformance.
 enum : uint8_t
   {
-    cctype_alpha       = 0x01,  // ALPHA
-    cctype_digit       = 0x02,  // DIGIT
-    cctype_hex_digit   = 0x04,  // HEXDIG
-    cctype_pchar       = 0x08,  // pchar
-    cctype_fragment    = 0x10,  // query & fragment
-    cctype_unreserved  = 0x20,  // unreserved
-    cctype_gen_delim   = 0x40,  // gen-delims
-    cctype_sub_delim   = 0x80,  // sub-delims
-    cctype_reserved    = cctype_gen_delim | cctype_sub_delim,
+    url_ctype_alpha       = 0x01,  // ALPHA
+    url_ctype_digit       = 0x02,  // DIGIT
+    url_ctype_hex_digit   = 0x04,  // HEXDIG
+    url_ctype_pchar       = 0x08,  // pchar
+    url_ctype_fragment    = 0x10,  // query & fragment
+    url_ctype_unreserved  = 0x20,  // unreserved
+    url_ctype_gen_delim   = 0x40,  // gen-delims
+    url_ctype_sub_delim   = 0x80,  // sub-delims
+    url_ctype_reserved    = url_ctype_gen_delim | url_ctype_sub_delim,
   };
 
-constexpr uint8_t s_cctype_table[128] =
+constexpr uint8_t s_url_ctype_table[128] =
   {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -47,15 +47,15 @@ constexpr uint8_t s_cctype_table[128] =
 
 constexpr
 uint8_t
-do_get_cctype(char c)
+do_get_url_ctype(char c)
 noexcept
-  { return (uint8_t(c) < 128) ? s_cctype_table[uint8_t(c)] : 0;  }
+  { return (uint8_t(c) < 128) ? s_url_ctype_table[uint8_t(c)] : 0;  }
 
 constexpr
 bool
-do_is_cctype(char c, uint8_t mask)
+do_is_url_ctype(char c, uint8_t mask)
 noexcept
-  { return do_get_cctype(c) & mask;  }
+  { return do_get_url_ctype(c) & mask;  }
 
 class Percent_Encode
   {
@@ -103,7 +103,7 @@ do_convert_to_lowercase(cow_string& str, const char* bptr, const char* eptr)
 
     for(auto p = bptr;  p != eptr;  ++p) {
       char32_t uch = *p & 0xFF;
-      if(do_is_cctype(*p, cctype_alpha)) {
+      if(do_is_url_ctype(*p, url_ctype_alpha)) {
         uch |= 0x20;
       }
       str += static_cast<char>(uch);
@@ -192,18 +192,18 @@ do_verify_and_set_scheme(cow_string&& val)
 
     // The first character must be an alphabetic character.
     //   scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
-    if(!do_is_cctype(val[0], cctype_alpha))
+    if(!do_is_url_ctype(val[0], url_ctype_alpha))
       POSEIDON_THROW("Invalid URL scheme: $1", val);
 
     for(size_t k = 0;  k < val.size();  ++k) {
       // Convert alphabetic characters into lowercase.
-      if(do_is_cctype(val[k], cctype_alpha)) {
+      if(do_is_url_ctype(val[k], url_ctype_alpha)) {
         val.mut(k) |= 0x20;
         continue;
       }
 
       // Other characters require no conversion.
-      if(do_is_cctype(val[k], cctype_digit))
+      if(do_is_url_ctype(val[k], url_ctype_digit))
         continue;
 
       if(::rocket::is_any_of(val[k], {'+','-','.'}))
@@ -234,12 +234,12 @@ do_verify_and_set_host(cow_string&& val)
 
     for(size_t k = 1;  k < val.size() - 1;  ++k) {
       // Convert alphabetic characters into lowercase.
-      if(do_is_cctype(val[k], cctype_alpha)) {
+      if(do_is_url_ctype(val[k], url_ctype_alpha)) {
         val.mut(k) |= 0x20;
         continue;
       }
 
-      if(do_is_cctype(val[k], cctype_digit))
+      if(do_is_url_ctype(val[k], url_ctype_digit))
         continue;
 
       if(::rocket::is_any_of(val[k], {'.',':'}))
@@ -260,7 +260,7 @@ do_verify_and_set_query(cow_string&& val)
     for(size_t k = 0;  k < val.size();  ++k) {
       // Ensure the query string does not contain unsafe characters.
       //   query = *( pchar / "/" / "?" )
-      if(do_is_cctype(val[k], cctype_pchar))
+      if(do_is_url_ctype(val[k], url_ctype_pchar))
         continue;
 
       if(::rocket::is_any_of(val[k], {'/','?'}))
@@ -292,7 +292,7 @@ const
         //   userinfo = *( unreserved / pct-encoded / sub-delims / ":" )
         ::rocket::for_each(this->m_userinfo,
             [&](char ch) -> tinyfmt& {
-              if(do_is_cctype(ch, cctype_unreserved | cctype_sub_delim))
+              if(do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim))
                 return fmt << ch;
               else if(ch == ':')
                 return fmt << ch;
@@ -314,7 +314,7 @@ const
         //   reg-name = *( unreserved / pct-encoded / sub-delims )
         ::rocket::for_each(this->m_host,
             [&](char ch) -> tinyfmt& {
-              if(do_is_cctype(ch, cctype_unreserved | cctype_sub_delim))
+              if(do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim))
                 return fmt << ch;
               else
                 return fmt << do_percent_encode(ch);
@@ -331,7 +331,7 @@ const
 
     ::rocket::for_each(this->m_path,
         [&](char ch) -> tinyfmt& {
-          if(do_is_cctype(ch, cctype_pchar))
+          if(do_is_url_ctype(ch, url_ctype_pchar))
             return fmt << ch;
           else if(ch == '/')
             return fmt << ch;
@@ -352,7 +352,7 @@ const
       //   fragment = *( pchar / "/" / "?" )
       ::rocket::for_each(this->m_fragment,
           [&](char ch) -> tinyfmt& {
-            if(do_is_cctype(ch, cctype_pchar))
+            if(do_is_url_ctype(ch, url_ctype_pchar))
               return fmt << ch;
             else if(::rocket::is_any_of(ch, {'/','?'}))
               return fmt << ch;
@@ -386,10 +386,10 @@ parse(const cow_string& str)
     // If no scheme string can be accepted, `bptr` shall be left intact.
     // The URL may start with a scheme, userinfo or host name field.
     // A leading alphabetic character may initiate a scheme or host name.
-    if(do_is_cctype(bptr[0], cctype_alpha)) {
+    if(do_is_url_ctype(bptr[0], url_ctype_alpha)) {
       mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
-                   return do_is_cctype(ch, cctype_alpha | cctype_digit);
+                   return do_is_url_ctype(ch, url_ctype_alpha | url_ctype_digit);
                  });
 
       if((mptr[0] == ':') && (mptr[1] == '/') && (mptr[2] == '/')) {
@@ -402,7 +402,7 @@ parse(const cow_string& str)
     // Check for a userinfo.
     mptr = do_find_if_not(bptr, eptr,
                  [&](char ch) {
-                   return do_is_cctype(ch, cctype_unreserved | cctype_sub_delim) ||
+                   return do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim) ||
                           ::rocket::is_any_of(ch, {'%',':'});
                  });
 
@@ -418,7 +418,7 @@ parse(const cow_string& str)
     size_t brackets = bptr[0] == '[';
     mptr = do_find_if_not(bptr + brackets, eptr,
                  [&](char ch) {
-                   return do_is_cctype(ch, cctype_unreserved | cctype_sub_delim) ||
+                   return do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim) ||
                           (ch == (brackets ? ':' : '%'));
                  });
 
@@ -442,7 +442,7 @@ parse(const cow_string& str)
       if(mptr[0] == ':') {
         mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
-                   return do_is_cctype(ch, cctype_digit);
+                   return do_is_url_ctype(ch, url_ctype_digit);
                  });
 
         if(mptr - bptr == 1)
@@ -467,7 +467,7 @@ parse(const cow_string& str)
     if(bptr[0] == '/') {
       mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
-                   return do_is_cctype(ch, cctype_pchar) ||
+                   return do_is_url_ctype(ch, url_ctype_pchar) ||
                           ::rocket::is_any_of(ch, {'%','/'});
                  });
 
@@ -480,7 +480,7 @@ parse(const cow_string& str)
     if(bptr[0] == '?') {
       mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
-                   return do_is_cctype(ch, cctype_pchar) ||
+                   return do_is_url_ctype(ch, url_ctype_pchar) ||
                           ::rocket::is_any_of(ch, {'/','?'});
                  });
 
@@ -494,7 +494,7 @@ parse(const cow_string& str)
     if(bptr[0] == '#') {
       mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
-                   return do_is_cctype(ch, cctype_pchar) ||
+                   return do_is_url_ctype(ch, url_ctype_pchar) ||
                           ::rocket::is_any_of(ch, {'/','?'});
                  });
 
