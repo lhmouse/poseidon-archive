@@ -224,7 +224,7 @@ class URL
     print(tinyfmt& fmt)
     const;
 
-    // Parses a URL from a string.
+    // Parses a URL string.
     // An exception is thrown if the URL is invalid.
     URL&
     parse(const cow_string& str);
