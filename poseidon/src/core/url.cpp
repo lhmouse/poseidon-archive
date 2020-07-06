@@ -179,7 +179,7 @@ do_verify_and_set_scheme(cow_string&& val)
       if(do_is_url_ctype(val[k], url_ctype_digit))
         continue;
 
-      if(::rocket::is_any_of(val[k], {'+','-','.'}))
+      if(::rocket::is_any_of(val[k], {'+', '-', '.'}))
         continue;
 
       // Reject invalid characters.
@@ -215,7 +215,7 @@ do_verify_and_set_host(cow_string&& val)
       if(do_is_url_ctype(val[k], url_ctype_digit))
         continue;
 
-      if(::rocket::is_any_of(val[k], {'.',':'}))
+      if(::rocket::is_any_of(val[k], {'.', ':'}))
         continue;
 
       // Reject invalid characters.
@@ -236,7 +236,7 @@ do_verify_and_set_query(cow_string&& val)
       if(do_is_url_ctype(val[k], url_ctype_pchar))
         continue;
 
-      if(::rocket::is_any_of(val[k], {'/','?'}))
+      if(::rocket::is_any_of(val[k], {'/', '?'}))
         continue;
 
       // Reject invalid characters.
@@ -327,7 +327,7 @@ const
           [&](char ch) {
             if(do_is_url_ctype(ch, url_ctype_pchar))
               fmt << ch;
-            else if(::rocket::is_any_of(ch, {'/','?'}))
+            else if(::rocket::is_any_of(ch, {'/', '?'}))
               fmt << ch;
             else
               do_percent_encode(fmt, ch);
@@ -376,7 +376,7 @@ parse(const cow_string& str)
     mptr = do_find_if_not(bptr, eptr,
                  [&](char ch) {
                    return do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim) ||
-                          ::rocket::is_any_of(ch, {'%',':'});
+                          ::rocket::is_any_of(ch, {'%', ':'});
                  });
 
     if(mptr[0] == '@') {
@@ -441,7 +441,7 @@ parse(const cow_string& str)
       mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
                    return do_is_url_ctype(ch, url_ctype_pchar) ||
-                          ::rocket::is_any_of(ch, {'%','/'});
+                          ::rocket::is_any_of(ch, {'%', '/'});
                  });
 
       // Accept the path without the leading slash.
@@ -454,7 +454,7 @@ parse(const cow_string& str)
       mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
                    return do_is_url_ctype(ch, url_ctype_pchar) ||
-                          ::rocket::is_any_of(ch, {'/','?'});
+                          ::rocket::is_any_of(ch, {'/', '?'});
                  });
 
       // Accept the query string without the question mark.
@@ -468,7 +468,7 @@ parse(const cow_string& str)
       mptr = do_find_if_not(bptr + 1, eptr,
                  [&](char ch) {
                    return do_is_url_ctype(ch, url_ctype_pchar) ||
-                          ::rocket::is_any_of(ch, {'/','?'});
+                          ::rocket::is_any_of(ch, {'/', '?'});
                  });
 
       // Accept the query string without the hashtag.
@@ -476,9 +476,9 @@ parse(const cow_string& str)
       bptr = mptr;
     }
 
-    if(bptr != eptr)
-      POSEIDON_THROW("Junk data after URL: $1", str);
-
+    if(bptr != eptr) {
+      POSEIDON_THROW("Invalid URL string: $1", str);
+    }
     return *this;
   }
 
