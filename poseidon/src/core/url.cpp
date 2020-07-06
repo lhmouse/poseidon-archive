@@ -57,38 +57,11 @@ do_is_url_ctype(char c, uint8_t mask)
 noexcept
   { return do_get_url_ctype(c) & mask;  }
 
-class Percent_Encode
-  {
-  private:
-    char m_ch;
-
-  public:
-    constexpr
-    Percent_Encode(char ch)
-    noexcept
-      : m_ch(ch)
-      { }
-
-  public:
-    constexpr
-    uintptr_t
-    value()
-    const noexcept
-      { return static_cast<uint8_t>(this->m_ch);  }
-  };
-
-constexpr
-Percent_Encode
-do_percent_encode(char ch)
-noexcept
-  { return Percent_Encode(ch);  }
-
-inline
 tinyfmt&
-operator<<(tinyfmt& fmt, const Percent_Encode& pctec)
+do_percent_encode(tinyfmt& fmt, char ch)
   {
     static constexpr char s_xdigits[] = "0123456789ABCDEF";
-    uintptr_t val = pctec.value();
+    uint32_t val = static_cast<uint8_t>(ch);
 
     char str[4] = { '%' };
     str[1] = s_xdigits[val / 16];
@@ -102,7 +75,7 @@ do_convert_to_lowercase(cow_string& str, const char* bptr, const char* eptr)
     str.clear();
 
     for(auto p = bptr;  p != eptr;  ++p) {
-      char32_t uch = *p & 0xFF;
+      uint32_t uch = static_cast<uint8_t>(*p);
       if(do_is_url_ctype(*p, url_ctype_alpha)) {
         uch |= 0x20;
       }
@@ -120,10 +93,10 @@ do_find_if_not(const char* bptr, const char* eptr, PredT&& pred)
   }
 
 inline
-char32_t
+uint32_t
 do_xdigit_value(char ch)
   {
-    char32_t uch = ch & 0xFF;
+    uint32_t uch = static_cast<uint8_t>(ch);
     if(('0' <= uch) && (uch <= '9'))
       return uch - '0';
 
@@ -140,7 +113,7 @@ do_percent_decode(cow_string& str, const char* bptr, const char* eptr)
     str.clear();
 
     for(auto p = bptr;  p != eptr;  ++p) {
-      char32_t uch = *p & 0xFF;
+      uint32_t uch = static_cast<uint8_t>(*p);
       if(uch == '%') {
         uch = do_xdigit_value(*++p) << 4;
         uch |= do_xdigit_value(*++p);
@@ -291,13 +264,13 @@ const
         // Escape unsafe characters.
         //   userinfo = *( unreserved / pct-encoded / sub-delims / ":" )
         ::rocket::for_each(this->m_userinfo,
-            [&](char ch) -> tinyfmt& {
+            [&](char ch) {
               if(do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim))
-                return fmt << ch;
+                fmt << ch;
               else if(ch == ':')
-                return fmt << ch;
+                fmt << ch;
               else
-                return fmt << do_percent_encode(ch);
+                do_percent_encode(fmt, ch);
             });
 
         fmt << '@';
@@ -313,11 +286,11 @@ const
         // Otherwise, it is treated as a reg-name.
         //   reg-name = *( unreserved / pct-encoded / sub-delims )
         ::rocket::for_each(this->m_host,
-            [&](char ch) -> tinyfmt& {
+            [&](char ch) {
               if(do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim))
-                return fmt << ch;
+                fmt << ch;
               else
-                return fmt << do_percent_encode(ch);
+                do_percent_encode(fmt, ch);
             });
       }
 
@@ -330,13 +303,13 @@ const
     fmt << '/';
 
     ::rocket::for_each(this->m_path,
-        [&](char ch) -> tinyfmt& {
+        [&](char ch) {
           if(do_is_url_ctype(ch, url_ctype_pchar))
-            return fmt << ch;
+            fmt << ch;
           else if(ch == '/')
-            return fmt << ch;
+            fmt << ch;
           else
-            return fmt << do_percent_encode(ch);
+            do_percent_encode(fmt, ch);
         });
 
     // If a query string field is present, write it.
@@ -351,13 +324,13 @@ const
       // Escape unsafe characters.
       //   fragment = *( pchar / "/" / "?" )
       ::rocket::for_each(this->m_fragment,
-          [&](char ch) -> tinyfmt& {
+          [&](char ch) {
             if(do_is_url_ctype(ch, url_ctype_pchar))
-              return fmt << ch;
+              fmt << ch;
             else if(::rocket::is_any_of(ch, {'/','?'}))
-              return fmt << ch;
+              fmt << ch;
             else
-              return fmt << do_percent_encode(ch);
+              do_percent_encode(fmt, ch);
           });
     }
     return fmt;
