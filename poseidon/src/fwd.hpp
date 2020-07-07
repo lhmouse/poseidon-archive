@@ -171,6 +171,8 @@ enum HTTP_Version : uint16_t;
 enum HTTP_Verb : uint8_t;
 enum HTTP_Status : uint16_t;
 
+class Option_Map;
+
 // Singletons
 class Main_Config;
 class Async_Logger;

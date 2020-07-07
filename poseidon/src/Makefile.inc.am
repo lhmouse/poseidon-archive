@@ -40,6 +40,7 @@ include_poseidon_socket_HEADERS =  \
 include_poseidon_httpdir = ${includedir}/poseidon/http
 include_poseidon_http_HEADERS =  \
   %reldir%/http/enums.hpp  \
+  %reldir%/http/option_map.hpp  \
   ${NOTHING}
 
 include_poseidon_staticdir = ${includedir}/poseidon/static
@@ -64,6 +65,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/abstract_fiber.cpp  \
   %reldir%/core/url.cpp  \
   %reldir%/http/enums.cpp  \
+  %reldir%/http/option_map.cpp  \
   %reldir%/socket/openssl.cpp  \
   %reldir%/socket/socket_address.cpp  \
   %reldir%/socket/abstract_socket.cpp  \
