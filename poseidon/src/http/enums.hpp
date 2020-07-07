@@ -161,6 +161,31 @@ const char*
 describe_http_status(HTTP_Status stat)
 noexcept;
 
+// These are HTTP status code classes.
+enum HTTP_Status_Class : uint8_t
+  {
+    http_status_class_null           = 0,
+    http_status_class_informational  = 1,
+    http_status_class_successful     = 2,
+    http_status_class_redirection    = 3,
+    http_status_class_client_error   = 4,
+    http_status_class_server_error   = 5,
+  };
+
+// Classifies a status code.
+constexpr
+HTTP_Status_Class
+classify_http_status(HTTP_Status stat)
+noexcept
+  { return static_cast<HTTP_Status_Class>(static_cast<uint32_t>(stat) / 100);  }
+
+// Gets the x00 status code.
+constexpr
+HTTP_Status
+get_http_status_base(HTTP_Status_Class stcls)
+noexcept
+  { return static_cast<HTTP_Status>(static_cast<uint32_t>(stcls) * 100);  }
+
 }  // namespace poseidon
 
 #endif

@@ -170,6 +170,7 @@ class Abstract_UDP_Socket;
 enum HTTP_Version : uint16_t;
 enum HTTP_Verb : uint8_t;
 enum HTTP_Status : uint16_t;
+enum HTTP_Status_Class : uint8_t;
 
 class Option_Map;
 
