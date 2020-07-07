@@ -26,7 +26,6 @@ format_http_version(HTTP_Version ver)
 noexcept;
 
 // Parses a version number from plain text.
-// This function never returns `http_version_null`.
 // `http_version_null` is returned if the string is not valid.
 ROCKET_PURE_FUNCTION
 HTTP_Version
@@ -44,6 +43,46 @@ HTTP_Version
 parse_http_version(const char* bptr)
 noexcept
   { return noadl::parse_http_version(bptr, ::std::strlen(bptr));  }
+
+// These are HTTP verbs a.k.a. methods.
+enum HTTP_Verb : uint8_t
+  {
+    http_verb_null     = 0,
+    http_verb_get      = 1,
+    http_verb_head     = 2,
+    http_verb_post     = 3,
+    http_verb_put      = 4,
+    http_verb_delete   = 5,
+    http_verb_connect  = 6,
+    http_verb_options  = 7,
+    http_verb_trace    = 8,
+  };
+
+// Converts an HTTP verb to a string such as `GET`.
+// If the verb is invalid, the invalid string `NULL` is returned.
+ROCKET_CONST_FUNCTION
+const char*
+format_http_verb(HTTP_Verb verb)
+noexcept;
+
+// Parses a verb from plain text.
+// `http_verb_null` is returned if the string is not valid.
+ROCKET_PURE_FUNCTION
+HTTP_Verb
+parse_http_verb(const char* bptr, const char* eptr)
+noexcept;
+
+ROCKET_PURE_FUNCTION inline
+HTTP_Verb
+parse_http_verb(const char* bptr, size_t len)
+noexcept
+  { return noadl::parse_http_verb(bptr, bptr + len);  }
+
+ROCKET_PURE_FUNCTION inline
+HTTP_Verb
+parse_http_verb(const char* bptr)
+noexcept
+  { return noadl::parse_http_verb(bptr, ::std::strlen(bptr));  }
 
 // These are HTTP status codes.
 // This list is not exhaustive. Custom values may be used.

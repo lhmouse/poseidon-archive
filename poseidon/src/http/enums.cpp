@@ -53,6 +53,95 @@ noexcept
   }
 
 const char*
+format_http_verb(HTTP_Verb verb)
+noexcept
+  {
+    switch(verb) {
+      case http_verb_get:
+        return "GET";
+
+      case http_verb_head:
+        return "HEAD";
+
+      case http_verb_post:
+        return "POST";
+
+      case http_verb_put:
+        return "PUT";
+
+      case http_verb_delete:
+        return "DELETE";
+
+      case http_verb_connect:
+        return "CONNECT";
+
+      case http_verb_options:
+        return "OPTIONS";
+
+      case http_verb_trace:
+        return "TRACE";
+
+      case http_verb_null:
+      default:
+        return "NULL";
+    }
+  }
+
+HTTP_Verb
+parse_http_verb(const char* bptr, const char* eptr)
+noexcept
+  {
+    switch(eptr - bptr) {
+      case 3: {
+        if(::std::memcmp(bptr, "GET", 3) == 0)
+          return http_verb_get;
+
+        if(::std::memcmp(bptr, "PUT", 3) == 0)
+          return http_verb_put;
+
+        return http_verb_null;
+      }
+
+      case 4: {
+        if(::std::memcmp(bptr, "HEAD", 4) == 0)
+          return http_verb_head;
+
+        if(::std::memcmp(bptr, "POST", 4) == 0)
+          return http_verb_post;
+
+        return http_verb_null;
+      }
+
+      case 5: {
+        if(::std::memcmp(bptr, "TRACE", 5) == 0)
+          return http_verb_trace;
+
+        return http_verb_null;
+      }
+
+      case 6: {
+        if(::std::memcmp(bptr, "DELETE", 6) == 0)
+          return http_verb_delete;
+
+        return http_verb_null;
+      }
+
+      case 7: {
+        if(::std::memcmp(bptr, "CONNECT", 7) == 0)
+          return http_verb_connect;
+
+        if(::std::memcmp(bptr, "OPTIONS", 7) == 0)
+          return http_verb_options;
+
+        return http_verb_null;
+      }
+
+      default:
+        return http_verb_null;
+    }
+  }
+
+const char*
 describe_http_status(HTTP_Status stat)
 noexcept
   {
