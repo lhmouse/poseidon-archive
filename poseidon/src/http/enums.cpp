@@ -8,7 +8,7 @@
 namespace poseidon {
 
 const char*
-describe_http_version(HTTP_Version ver)
+format_http_version(HTTP_Version ver)
 noexcept
   {
     switch(ver) {
@@ -26,20 +26,27 @@ noexcept
 
 HTTP_Version
 parse_http_version(const char* bptr, const char* eptr)
+noexcept
   {
     // Check hard-coded characters.
-    if((eptr - bptr != 8) || (::std::memcmp(bptr, "HTTP/", 5) != 0) || (bptr[6] != '.'))
-      POSEIDON_THROW("Invalid HTTP version string");
+    if(eptr - bptr != 8)
+      return http_version_null;
 
-    // Parse version numbers.
-    uint32_t maj = static_cast<uint8_t>(bptr[5]);
-    uint32_t min = static_cast<uint8_t>(bptr[7]);
+    if(::std::memcmp(bptr, "HTTP/", 5) != 0)
+      return http_version_null;
 
-    if((maj < '1') || ('9' < maj) || (min < '0') || ('9' < min))
-      POSEIDON_THROW("Invalid HTTP version `$1.$2`", bptr[5], bptr[7]);
+    // Parse the major version number.
+    uint32_t maj = static_cast<uint8_t>(bptr[5]) - U'0';
+    if((maj < 1) || (maj > 9))
+      return http_version_null;
 
-    maj -= '0';
-    min -= '0';
+    // Parse the minor version number.
+    if(bptr[6] != '.')
+      return http_version_null;
+
+    uint32_t min = static_cast<uint8_t>(bptr[7]) - U'0';
+    if(min > 9)
+      return http_version_null;
 
     // Build the version number.
     return static_cast<HTTP_Version>(maj << 8 | min);

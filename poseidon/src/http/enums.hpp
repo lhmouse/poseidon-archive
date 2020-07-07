@@ -22,23 +22,27 @@ enum HTTP_Version : uint16_t
 // returned.
 ROCKET_CONST_FUNCTION
 const char*
-describe_http_version(HTTP_Version ver)
+format_http_version(HTTP_Version ver)
 noexcept;
 
 // Parses a version number from plain text.
 // This function never returns `http_version_null`.
-// An exception is thrown if the string is not valid.
+// `http_version_null` is returned if the string is not valid.
+ROCKET_PURE_FUNCTION
 HTTP_Version
-parse_http_version(const char* bptr, const char* eptr);
+parse_http_version(const char* bptr, const char* eptr)
+noexcept;
 
-inline
+ROCKET_PURE_FUNCTION inline
 HTTP_Version
 parse_http_version(const char* bptr, size_t len)
+noexcept
   { return noadl::parse_http_version(bptr, bptr + len);  }
 
-inline
+ROCKET_PURE_FUNCTION inline
 HTTP_Version
 parse_http_version(const char* bptr)
+noexcept
   { return noadl::parse_http_version(bptr, ::std::strlen(bptr));  }
 
 // These are HTTP status codes.
