@@ -452,10 +452,7 @@ parse_url_query(const cow_string& str)
     const char* mptr;
 
     // Ensure the string doesn't contain control characters.
-    mptr = ::std::find_if(bptr, eptr,
-                    [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  });
-
-    if(mptr != eptr)
+    if(::std::any_of(bptr, eptr, [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  }))
       POSEIDON_THROW("Invalid character in URL query string");
 
     for(;;) {
@@ -465,8 +462,7 @@ parse_url_query(const cow_string& str)
         break;
 
       // A key is terminated by either delimiter.
-      mptr = ::std::find_if(bptr, eptr,
-                    [&](char ch) { return ::rocket::is_any_of(ch, {'=', '&'});  });
+      mptr = ::std::find_if(bptr, eptr, [&](char ch) { return ::rocket::is_any_of(ch, {'=', '&'});  });
 
       // Decode the key.
       cow_string key;
