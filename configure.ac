@@ -17,6 +17,7 @@ AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR(pthread library not 
 AC_CHECK_LIB([asteria], [_ZN7asteria14Global_ContextD2Ev], [], [AC_MSG_ERROR(Asteria not found)])
 AC_CHECK_LIB([ssl], [TLS_method], [], [AC_MSG_ERROR(OpenSSL 1.1 not found)])
 AC_CHECK_LIB([crypto], [ERR_error_string], [], [AC_MSG_ERROR(OpenSSL not found)])
+AC_CHECK_LIB([z], [deflate], [], [AC_MSG_ERROR(zlib not found)])
 
 ## Set up optional features
 AC_ARG_ENABLE([debug-checks], AS_HELP_STRING([--enable-debug-checks], [enable assertions]))
