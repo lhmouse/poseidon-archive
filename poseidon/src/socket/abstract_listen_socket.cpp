@@ -45,8 +45,8 @@ Abstract_Listen_Socket::
 do_on_async_poll_read(mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   try {
     // Try accepting a socket.
-    Socket_Address::storage_type addrst;
-    Socket_Address::size_type addrlen = sizeof(addrst);
+    Socket_Address::storage addrst;
+    ::socklen_t addrlen = sizeof(addrst);
     unique_FD fd(::accept4(this->get_fd(), addrst, &addrlen, SOCK_NONBLOCK));
     if(!fd)
       return do_translate_syscall_error("accept4", errno);
@@ -108,7 +108,7 @@ Abstract_Listen_Socket::
 do_listen(const Socket_Address& addr, int backlog)
   {
     // Bind onto `addr`.
-    if(::bind(this->get_fd(), addr.data(), addr.size()) != 0)
+    if(::bind(this->get_fd(), addr.data(), addr.ssize()) != 0)
       POSEIDON_THROW("Failed to bind accept socket onto '$2'\n"
                      "[`bind()` failed: $1]",
                      format_errno(errno), addr);

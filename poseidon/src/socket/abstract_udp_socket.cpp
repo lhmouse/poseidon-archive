@@ -102,8 +102,8 @@ do_on_async_poll_read(mutex::unique_lock& lock, void* hint, size_t size)
       return io_result_eof;
 
     // Try reading a packet.
-    Socket_Address::storage_type addrst;
-    Socket_Address::size_type addrlen = sizeof(addrst);
+    Socket_Address::storage addrst;
+    ::socklen_t addrlen = sizeof(addrst);
     ::ssize_t nread = ::recvfrom(this->get_fd(), hint, size, 0, addrst, &addrlen);
     if(nread < 0)
       return do_translate_syscall_error("recvfrom", errno);
@@ -185,8 +185,8 @@ do_on_async_poll_write(mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/
     ROCKET_ASSERT(size == sizeof(header));
     ROCKET_ASSERT(this->m_wqueue.size() >= header.addrlen + header.datalen);
 
-    Socket_Address::storage_type addrst;
-    Socket_Address::size_type addrlen = header.addrlen;
+    Socket_Address::storage addrst;
+    ::socklen_t addrlen = header.addrlen;
     size = this->m_wqueue.getn(reinterpret_cast<char (&)[]>(addrst), addrlen);
     ROCKET_ASSERT(size == addrlen);
 
@@ -242,7 +242,7 @@ Abstract_UDP_Socket::
 do_bind(const Socket_Address& addr)
   {
     // Bind onto `addr`.
-    if(::bind(this->get_fd(), addr.data(), addr.size()) != 0)
+    if(::bind(this->get_fd(), addr.data(), addr.ssize()) != 0)
       POSEIDON_THROW("Failed to bind UDP socket onto '$2'\n"
                      "[`bind()` failed: $1]",
                      format_errno(errno), addr);

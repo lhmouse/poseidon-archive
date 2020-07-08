@@ -16,7 +16,7 @@ class Socket_Address
   public:
     // For maximum compatibility, this union is recommended to be used
     // in place of the legacy `::sockaddr`.
-    union storage_type
+    union storage
       {
         ::sockaddr_storage stor;
         ::sockaddr addr;
@@ -64,11 +64,9 @@ class Socket_Address
           { return &(this->addr6);  }
       };
 
-    using size_type = ::socklen_t;
-
   private:
-    storage_type m_stor;
-    size_type m_size;
+    storage m_stor;
+    size_t m_size;
 
   public:
     // Note this is a trivially copyable and destructible class.
@@ -78,7 +76,7 @@ class Socket_Address
       : m_stor(), m_size(0)
       { }
 
-    Socket_Address(const storage_type& stor, size_type size)
+    Socket_Address(const storage& stor, size_t size)
     noexcept
       { this->assign(stor, size);  }
 
@@ -108,15 +106,20 @@ class Socket_Address
 
     // Gets internal data.
     // The pointer and size can be passed to `bind()` or `connect()`
-    const storage_type&
+    const storage&
     data()
     const noexcept
       { return this->m_stor;  }
 
-    ::socklen_t
+    size_t
     size()
     const noexcept
       { return this->m_size;  }
+
+    ::socklen_t
+    ssize()
+    const noexcept
+      { return static_cast<::socklen_t>(this->m_size);  }
 
     // Resets to the default-constructed one (all zeroes).
     Socket_Address&
@@ -169,9 +172,11 @@ class Socket_Address
     // This function throws an exception upon failure, and the contents of `*this`
     // is undefined.
     Socket_Address&
-    assign(const storage_type& stor, size_type size)
+    assign(const storage& stor, size_t size)
     noexcept
       {
+        ROCKET_ASSERT_MSG(size <= sizeof(stor), "Invalid socket address size");
+
         this->m_stor = stor;
         this->m_size = size;
         return *this;

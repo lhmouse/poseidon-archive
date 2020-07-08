@@ -50,8 +50,8 @@ const
     this->m_local_addr_once.call(
       [this] {
         // Try getting the local address.
-        Socket_Address::storage_type addrst;
-        Socket_Address::size_type addrlen = sizeof(addrst);
+        Socket_Address::storage addrst;
+        ::socklen_t addrlen = sizeof(addrst);
         if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
           POSEIDON_THROW("Could not get local socket address\n"
                          "[`getsockname()` failed: $1]",

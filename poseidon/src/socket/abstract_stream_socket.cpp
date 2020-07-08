@@ -214,7 +214,7 @@ do_async_connect(const Socket_Address& addr)
 
     // No matter whether `::connect()` succeeds or fails with `EINPROGRESS`, the current
     // socket is set to the CONNECTING state.
-    if(::connect(this->get_fd(), addr.data(), addr.size()) != 0) {
+    if(::connect(this->get_fd(), addr.data(), addr.ssize()) != 0) {
       int err = errno;
       if(err != EINPROGRESS)
         POSEIDON_THROW("Failed to initiate connection to '$2'\n"
@@ -249,8 +249,8 @@ const
     this->m_remote_addr_once.call(
       [this] {
         // Try getting the remote address.
-        Socket_Address::storage_type addrst;
-        Socket_Address::size_type addrlen = sizeof(addrst);
+        Socket_Address::storage addrst;
+        ::socklen_t addrlen = sizeof(addrst);
         if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
           POSEIDON_THROW("Could not get remote socket address\n"
                          "[`getsockname()` failed: $1]",
