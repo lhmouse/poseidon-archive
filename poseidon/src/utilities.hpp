@@ -204,6 +204,18 @@ enqueue_async_job(FuncT&& func)
     return futr;
   }
 
+// Converts all ASCII letters in a string into uppercase.
+cow_string
+ascii_uppercase(cow_string str);
+
+// Converts all ASCII letters in a string into lowercase.
+cow_string
+ascii_lowercase(cow_string str);
+
+// Removes all leading and trailing blank characters.
+cow_string
+ascii_trim(cow_string str);
+
 }  // namespace asteria
 
 #endif

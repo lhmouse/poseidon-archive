@@ -69,21 +69,6 @@ do_percent_encode(tinyfmt& fmt, char ch)
     return fmt.putn(str, 3);
   }
 
-cow_string&
-do_convert_to_lowercase(cow_string& str, const char* bptr, const char* eptr)
-  {
-    str.clear();
-
-    for(auto p = bptr;  p != eptr;  ++p) {
-      uint32_t uch = static_cast<uint8_t>(*p);
-      if(do_is_url_ctype(*p, url_ctype_alpha)) {
-        uch |= 0x20;
-      }
-      str += static_cast<char>(uch);
-    }
-    return str;
-  }
-
 template<typename PredT>
 constexpr
 const char*
@@ -367,7 +352,7 @@ parse(const cow_string& str)
 
       if((mptr[0] == ':') && (mptr[1] == '/') && (mptr[2] == '/')) {
         // Accept the scheme.
-        do_convert_to_lowercase(this->m_scheme, bptr, mptr);
+        this->m_scheme = ascii_lowercase(cow_string(bptr, mptr));
         bptr = mptr + 3;
       }
     }
