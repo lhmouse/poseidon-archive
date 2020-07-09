@@ -47,7 +47,7 @@ class Future
     state()
     const noexcept final
       {
-        mutex::unique_lock lock(this->m_mutex);
+        simple_mutex::unique_lock lock(this->m_mutex);
         return static_cast<Future_State>(this->m_stor.index());
       }
 
@@ -57,7 +57,7 @@ class Future
     value()
     const
       {
-        mutex::unique_lock lock(this->m_mutex);
+        simple_mutex::unique_lock lock(this->m_mutex);
         switch(this->m_stor.index()) {
           case future_state_empty:
             // Nothing has been set yet.

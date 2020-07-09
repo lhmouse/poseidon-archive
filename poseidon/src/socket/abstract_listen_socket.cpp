@@ -42,7 +42,7 @@ do_set_common_options()
 
 IO_Result
 Abstract_Listen_Socket::
-do_on_async_poll_read(mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
+do_on_async_poll_read(simple_mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   try {
     // Try accepting a socket.
     Socket_Address::storage addrst;
@@ -82,7 +82,7 @@ do_on_async_poll_read(mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*siz
 
 size_t
 Abstract_Listen_Socket::
-do_write_queue_size(mutex::unique_lock& /*lock*/)
+do_write_queue_size(simple_mutex::unique_lock& /*lock*/)
 const
   {
     return 0;
@@ -90,7 +90,7 @@ const
 
 IO_Result
 Abstract_Listen_Socket::
-do_on_async_poll_write(mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
+do_on_async_poll_write(simple_mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
   {
     return io_result_eof;
   }

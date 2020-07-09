@@ -75,7 +75,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
     ::pthread_t m_thread;
 
     // dynamic data
-    mutable mutex m_pq_mutex;
+    mutable simple_mutex m_pq_mutex;
     condition_variable m_pq_avail;
     ::std::vector<PQ_Element> m_pq;
 
@@ -84,7 +84,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
     do_init_once()
       {
         // Create the thread. Note it is never joined or detached.
-        mutex::unique_lock lock(self->m_pq_mutex);
+        simple_mutex::unique_lock lock(self->m_pq_mutex);
         self->m_thread = create_daemon_thread<do_thread_loop>("timer");
       }
 
@@ -96,7 +96,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
         int64_t now;
 
         // Await an element and pop it.
-        mutex::unique_lock lock(self->m_pq_mutex);
+        simple_mutex::unique_lock lock(self->m_pq_mutex);
         for(;;) {
           timer.reset();
           if(self->m_pq.empty()) {
@@ -187,7 +187,7 @@ insert(uptr<Abstract_Timer>&& utimer)
     elem.timer = timer;
 
     // Insert the timer.
-    mutex::unique_lock lock(self->m_pq_mutex);
+    simple_mutex::unique_lock lock(self->m_pq_mutex);
     self->m_pq.emplace_back(::std::move(elem));
     ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     self->m_pq_avail.notify_one();
@@ -200,7 +200,7 @@ invalidate_internal(const Abstract_Timer* ctimer, int64_t first, int64_t period)
 noexcept
   {
     // Don't do anything if the timer does not exist in the queue.
-    mutex::unique_lock lock(self->m_pq_mutex);
+    simple_mutex::unique_lock lock(self->m_pq_mutex);
 
     auto curp = self->m_pq.begin();
     for(;;) {

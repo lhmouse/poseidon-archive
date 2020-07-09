@@ -32,7 +32,7 @@ struct Worker
     once_flag init_once;
     ::pthread_t thread;
 
-    mutex queue_mutex;
+    mutable simple_mutex queue_mutex;
     condition_variable queue_avail;
     ::std::deque<rcptr<Abstract_Async_Job>> queue;
   };
@@ -52,7 +52,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
         auto name = format_string("worker $1", index);
         POSEIDON_LOG_INFO("Creating new worker thread: $1", name);
 
-        mutex::unique_lock lock(qwrk->queue_mutex);
+        simple_mutex::unique_lock lock(qwrk->queue_mutex);
         qwrk->thread = create_daemon_thread<do_worker_thread_loop>(name.c_str(), qwrk);
       }
 
@@ -64,7 +64,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
         rcptr<Abstract_Async_Job> job;
 
         // Await a job and pop it.
-        mutex::unique_lock lock(qwrk->queue_mutex);
+        simple_mutex::unique_lock lock(qwrk->queue_mutex);
         for(;;) {
           job.reset();
           if(qwrk->queue.empty()) {
@@ -159,7 +159,7 @@ insert(uptr<Abstract_Async_Job>&& ujob)
     job->m_state.store(async_state_pending);
 
     // Insert the job.
-    mutex::unique_lock lock(qwrk->queue_mutex);
+    simple_mutex::unique_lock lock(qwrk->queue_mutex);
     qwrk->queue.emplace_back(job);
     qwrk->queue_avail.notify_one();
     return job;

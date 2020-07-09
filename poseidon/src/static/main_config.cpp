@@ -10,7 +10,7 @@ namespace poseidon {
 
 POSEIDON_STATIC_CLASS_DEFINE(Main_Config)
   {
-    mutable mutex m_mutex;
+    mutable simple_mutex m_mutex;
     Config_File m_data;
   };
 
@@ -25,7 +25,7 @@ reload()
     // During destruction of `temp` the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
     // for too long.
-    mutex::unique_lock lock(self->m_mutex);
+    simple_mutex::unique_lock lock(self->m_mutex);
     self->m_data.swap(temp);
   }
 
@@ -35,7 +35,7 @@ copy()
 noexcept
   {
     // Note again config files are copy-on-write and cheap to copy.
-    mutex::unique_lock lock(self->m_mutex);
+    simple_mutex::unique_lock lock(self->m_mutex);
     return self->m_data;
   }
 

@@ -112,7 +112,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     int m_event_fd = -1;
 
     // configuration
-    mutable mutex m_conf_mutex;
+    mutable simple_mutex m_conf_mutex;
     Config_Scalars m_conf;
 
     // dynamic data
@@ -127,7 +127,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         uint32_t tail = poll_index_end;
       };
 
-    mutable mutex m_poll_mutex;
+    mutable simple_mutex m_poll_mutex;
     ::std::vector<Poll_Socket> m_poll_elems;
     uint64_t m_poll_serial = 0;
     Poll_List_root<&Poll_Socket::node_cl> m_poll_root_cl;
@@ -161,7 +161,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
                          format_errno(errno));
 
         // Create the thread. Note it is never joined or detached.
-        mutex::unique_lock lock(self->m_conf_mutex);
+        simple_mutex::unique_lock lock(self->m_conf_mutex);
         self->m_thread = create_daemon_thread<do_thread_loop>("network");
         self->m_epoll_fd = epoll_fd.release();
         self->m_event_fd = event_fd.release();
@@ -319,7 +319,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     do_thread_loop(void* /*param*/)
       {
         // Reload configuration.
-        mutex::unique_lock lock(self->m_conf_mutex);
+        simple_mutex::unique_lock lock(self->m_conf_mutex);
         const auto conf = self->m_conf;
         lock.unlock();
 
@@ -588,7 +588,7 @@ reload()
     // During destruction of temporary objects the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
     // for too long.
-    mutex::unique_lock lock(self->m_conf_mutex);
+    simple_mutex::unique_lock lock(self->m_conf_mutex);
     self->m_conf = conf;
   }
 
@@ -605,7 +605,7 @@ insert(uptr<Abstract_Socket>&& usock)
       POSEIDON_THROW("Socket pointer must be unique");
 
     // Lock epoll for modification.
-    mutex::unique_lock lock(self->m_poll_mutex);
+    simple_mutex::unique_lock lock(self->m_poll_mutex);
 
     // Initialize the hint value for lookups.
     size_t index = self->m_poll_elems.size();
@@ -643,7 +643,7 @@ notify_writable_internal(const Abstract_Socket* csock)
 noexcept
   {
     // If the socket has been removed or is not writable , don't do anything.
-    mutex::unique_lock lock(self->m_poll_mutex);
+    simple_mutex::unique_lock lock(self->m_poll_mutex);
     if((csock->m_epoll_events & (EPOLLOUT | EPOLLERR | EPOLLHUP)) != EPOLLOUT)
       return false;
 

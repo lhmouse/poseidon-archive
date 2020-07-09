@@ -271,11 +271,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     ::pthread_t m_thread = 0;
 
     // configuration
-    mutable mutex m_conf_mutex;
+    mutable simple_mutex m_conf_mutex;
     Level_Config_Array m_conf_levels;
 
     // dynamic data
-    mutable mutex m_queue_mutex;
+    mutable simple_mutex m_queue_mutex;
     condition_variable m_queue_avail;
     condition_variable m_queue_empty;
     ::std::deque<Entry> m_queue;
@@ -285,7 +285,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     do_init_once()
       {
         // Create the thread. Note it is never joined or detached.
-        mutex::unique_lock lock(self->m_queue_mutex);
+        simple_mutex::unique_lock lock(self->m_queue_mutex);
         self->m_thread = create_daemon_thread<do_thread_loop>("logger");
       }
 
@@ -297,7 +297,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         bool needs_sync;
 
         // Await an entry and pop it.
-        mutex::unique_lock lock(self->m_queue_mutex);
+        simple_mutex::unique_lock lock(self->m_queue_mutex);
         for(;;) {
           if(self->m_queue.empty()) {
             // Wait until an entry becomes available.
@@ -348,7 +348,7 @@ reload()
     // During destruction of `temp` the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
     // for too long.
-    mutex::unique_lock lock(self->m_conf_mutex);
+    simple_mutex::unique_lock lock(self->m_conf_mutex);
     self->m_conf_levels.swap(temp);
   }
 
@@ -358,7 +358,7 @@ is_enabled(Log_Level level)
 noexcept
   {
     // Validate arguments.
-    mutex::unique_lock lock(self->m_conf_mutex);
+    simple_mutex::unique_lock lock(self->m_conf_mutex);
     if(level >= self->m_conf_levels.size())
       return false;
 
@@ -388,7 +388,7 @@ enqueue(Log_Level level, const char* file, long line, const char* func,
     }
 
     // Push the entry.
-    mutex::unique_lock lock(self->m_queue_mutex);
+    simple_mutex::unique_lock lock(self->m_queue_mutex);
     self->m_queue.emplace_back(::std::move(entry));
     self->m_queue_avail.notify_one();
     return true;
@@ -400,7 +400,7 @@ synchronize(long msecs)
 noexcept
   {
     // Wait until the log queue becomes empty.
-    mutex::unique_lock lock(self->m_queue_mutex);
+    simple_mutex::unique_lock lock(self->m_queue_mutex);
     self->m_queue_empty.wait_for(lock, msecs, [] { return self->m_queue.empty();  });
   }
 

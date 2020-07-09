@@ -16,7 +16,7 @@ class Abstract_Future
     friend Fiber_Scheduler;
 
   private:
-    mutable mutex m_mutex;
+    mutable simple_mutex m_mutex;
 
     // These are scheduler data.
     mutable Abstract_Fiber* m_sched_ready_head = nullptr;

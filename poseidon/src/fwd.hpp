@@ -101,7 +101,8 @@ using ::rocket::atomic;
 using ::rocket::atomic_relaxed;
 using ::rocket::atomic_acq_rel;
 using ::rocket::atomic_seq_cst;
-using ::rocket::mutex;
+using atomic_signal = atomic_relaxed<int>;
+using simple_mutex = ::rocket::mutex;
 using ::rocket::recursive_mutex;
 using ::rocket::condition_variable;
 using ::rocket::once_flag;
@@ -129,8 +130,6 @@ struct FD_Closer
 
 using unique_FD = ::rocket::unique_handle<int, FD_Closer>;
 static_assert(sizeof(unique_FD) == sizeof(int));
-
-using atomic_signal = rocket::atomic_relaxed<int>;
 
 // Core
 class Config_File;

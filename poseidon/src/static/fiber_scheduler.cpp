@@ -94,7 +94,7 @@ struct stack_pointer
       }
   };
 
-mutex s_stack_pool_mutex;
+simple_mutex s_stack_pool_mutex;
 stack_pointer s_stack_pool_head;
 
 struct Stack_Pooler
@@ -114,7 +114,7 @@ struct Stack_Pooler
     void
     close(stack_pointer sp)
       {
-        mutex::unique_lock lock(s_stack_pool_mutex);
+        simple_mutex::unique_lock lock(s_stack_pool_mutex);
 
         // Insert the region at the beginning.
         auto qnext = static_cast<stack_pointer*>(sp.base);
@@ -149,7 +149,7 @@ do_allocate_stack(size_t stack_vm_size)
 
     // Check whether we can get a region from the pool.
     for(;;) {
-      mutex::unique_lock lock(s_stack_pool_mutex);
+      simple_mutex::unique_lock lock(s_stack_pool_mutex);
       sp = s_stack_pool_head;
       if(ROCKET_UNEXPECT(!sp))
         break;
@@ -339,11 +339,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     ::pthread_key_t m_sched_key;
 
     // configuration
-    mutable mutex m_conf_mutex;
+    mutable simple_mutex m_conf_mutex;
     Config_Scalars m_conf;
 
     // dynamic data
-    mutable mutex m_sched_mutex;
+    mutable simple_mutex m_sched_mutex;
     Queue_Semaphore m_sched_avail;
     ::std::vector<PQ_Element> m_sched_pq;
     Abstract_Fiber* m_sched_sleep_head = nullptr;
@@ -366,7 +366,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
                                [](::pthread_key_t* ptr) { ::pthread_key_delete(*ptr);  });
 
         // Set up initialized data.
-        mutex::unique_lock lock(self->m_sched_mutex);
+        simple_mutex::unique_lock lock(self->m_sched_mutex);
         self->m_sched_key = *(key_guard.release());
       }
 
@@ -502,7 +502,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         poolable_stack stack;
 
         // Reload configuration.
-        mutex::unique_lock lock(self->m_conf_mutex);
+        simple_mutex::unique_lock lock(self->m_conf_mutex);
         const auto conf = self->m_conf;
         lock.unlock();
 
@@ -782,7 +782,7 @@ reload()
     // During destruction of temporary objects the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
     // for too long.
-    mutex::unique_lock lock(self->m_conf_mutex);
+    simple_mutex::unique_lock lock(self->m_conf_mutex);
     self->m_conf = conf;
   }
 
@@ -825,7 +825,7 @@ yield(rcptr<const Abstract_Future> futp_opt, long msecs)
     long timeout = ::rocket::clamp(msecs, 0, LONG_MAX - 999) + 999;
     timeout = static_cast<long>(static_cast<unsigned long>(timeout) / 1000);
 
-    mutex::unique_lock lock(self->m_sched_mutex);
+    simple_mutex::unique_lock lock(self->m_sched_mutex);
     fiber->m_sched_yield_since = now;
     fiber->m_sched_yield_timeout = timeout;
     if(futp_opt && futp_opt->do_is_empty()) {
@@ -913,7 +913,7 @@ insert(uptr<Abstract_Fiber>&& ufiber)
     fiber->m_state.store(async_state_pending);
 
     // Attach this fiber to the ready queue.
-    mutex::unique_lock lock(self->m_sched_mutex);
+    simple_mutex::unique_lock lock(self->m_sched_mutex);
     self->do_signal_if_queues_empty();
     fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
     fiber->add_reference();
@@ -926,7 +926,7 @@ signal(const Abstract_Future& futr)
 noexcept
   {
     // Move all fibers from the future's wait queue to the ready queue.
-    mutex::unique_lock lock(self->m_sched_mutex);
+    simple_mutex::unique_lock lock(self->m_sched_mutex);
     auto head = ::std::exchange(futr.m_sched_ready_head, nullptr);
     if(!head)
       return false;

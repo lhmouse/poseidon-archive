@@ -14,7 +14,7 @@ class Abstract_UDP_Socket
   {
   private:
     // These are I/O components.
-    mutable mutex m_io_mutex;
+    mutable simple_mutex m_io_mutex;
     Connection_State m_cstate = connection_state_initial;
     linear_buffer m_wqueue;  // write queue
 
@@ -37,20 +37,20 @@ class Abstract_UDP_Socket
     // `hint` is used as the I/O buffer. `size` specifies the maximum number of
     // bytes to read.
     IO_Result
-    do_on_async_poll_read(mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
     // Returns `0` due to lack of congestion control.
     // `lock` will lock `*this` after the call, nevertheless.
     size_t
-    do_write_queue_size(mutex::unique_lock& lock)
+    do_write_queue_size(simple_mutex::unique_lock& lock)
     const final;
 
     // Writes some data.
     // `lock` will lock `*this` after the call.
     // `hint` and `size` are ignored.
     IO_Result
-    do_on_async_poll_write(mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_write(simple_mutex::unique_lock& lock, void* hint, size_t size)
     final;
 
     // Notifies this socket has been closed.
