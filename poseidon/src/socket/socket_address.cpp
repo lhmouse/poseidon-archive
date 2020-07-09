@@ -167,8 +167,7 @@ noexcept
 
 }  // namespace
 
-static_assert(::std::is_trivially_copy_constructible<Socket_Address>::value &&
-              ::std::is_trivially_move_constructible<Socket_Address>::value &&
+static_assert(::std::is_trivially_copyable<Socket_Address>::value &&
               ::std::is_trivially_destructible<Socket_Address>::value);
 
 Socket_Address_Class
