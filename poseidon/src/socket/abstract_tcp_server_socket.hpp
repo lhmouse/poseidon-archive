@@ -5,7 +5,6 @@
 #define POSEIDON_SOCKET_ABSTRACT_TCP_SERVER_SOCKET_HPP_
 
 #include "abstract_listen_socket.hpp"
-#include "abstract_tcp_socket.hpp"
 
 namespace poseidon {
 
