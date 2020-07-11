@@ -199,19 +199,19 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
 
     // Write the thread ID and name.
     do_color(fmt, conf, "30;1");  // grey
-    fmt << " Thread \"" << entry.thr_name << "\" [LWP " << entry.thr_lwpid << "]";
+    fmt << "Thread \"" << entry.thr_name << "\" [LWP " << entry.thr_lwpid << "]";
     do_end_color(fmt, conf);
     fmt << ' ';
 
     // Write the function name.
     do_color(fmt, conf, "37;1");  // bright white
-    fmt << " Function `" << entry.func << "`";
+    fmt << "Function `" << entry.func << "`";
     do_end_color(fmt, conf);
     fmt << ' ';
 
     // Write the file name and line number.
     do_color(fmt, conf, "34;1");  // bright blue
-    fmt << " @ " << entry.file << ':' << entry.line;
+    fmt << "@ " << entry.file << ':' << entry.line;
     do_end_color(fmt, conf);
     fmt << "\n\t";
 
