@@ -27,10 +27,10 @@ create_daemon_thread(const char* name, void* param = nullptr)
             loopfnT(xparam);
           }
           catch(exception& stdex) {
-            POSEIDON_LOG_ERROR("Caught exception: $1\n"
-                               "[thrown from daemon thread loop function $2 (`$3`)]",
-                               stdex,
-                               loopfnT, typeid(loopfnT).name());
+            POSEIDON_LOG_ERROR("Caught exception:\n"
+                               "$1\n"
+                               "[thrown from daemon thread loop function `$2`]",
+                               stdex, loopfnT);
           }
 
         [[noreturn]] static
@@ -50,7 +50,7 @@ create_daemon_thread(const char* name, void* param = nullptr)
     ::pthread_t thr;
     int err = ::pthread_create(&thr, nullptr, Thunk::do_loop, param);
     if(err != 0)
-      POSEIDON_THROW("Could not create $2 thread\n"
+      POSEIDON_THROW("Could not create thread '$2'\n"
                     "[`pthread_create()` failed: $1]",
                     format_errno(err), name);
 

@@ -72,9 +72,10 @@ do_on_async_poll_read(simple_mutex::unique_lock& /*lock*/, void* /*hint*/, size_
   catch(exception& stdex) {
     // It is probably bad to let the exception propagate to network driver and kill
     // this server socket... so we catch and ignore this exception.
-    POSEIDON_LOG_ERROR("Error accepting incoming connection: $2\n"
-                       "[socket class `$1`]",
-                       typeid(*this).name(), stdex.what());
+    POSEIDON_LOG_ERROR("Error accepting incoming connection:\n"
+                       "$1\n"
+                       "[socket class `$2`]",
+                       stdex, typeid(*this));
 
     // Accept other connections. The error is considered non-fatal.
     return io_result_not_eof;

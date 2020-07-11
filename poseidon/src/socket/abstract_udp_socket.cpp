@@ -119,9 +119,10 @@ do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
   catch(exception& stdex) {
     // It is probably bad to let the exception propagate to network driver and kill
     // this server socket... so we catch and ignore this exception.
-    POSEIDON_LOG_ERROR("Error reading UDP socket: $2\n"
-                       "[socket class `$1`]",
-                       typeid(*this).name(), stdex.what());
+    POSEIDON_LOG_ERROR("Error reading UDP socket `$1`:\n"
+                       "$2\n"
+                       "[socket class `$3`]",
+                       this, stdex, typeid(*this));
 
     // Read other packets. The error is considered non-fatal.
     return io_result_not_eof;
@@ -204,9 +205,10 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, void* /*hint*/, size_t /
   catch(exception& stdex) {
     // It is probably bad to let the exception propagate to network driver and kill
     // this server socket... so we catch and ignore this exception.
-    POSEIDON_LOG_ERROR("Error writing UDP socket: $2\n"
-                       "[socket class `$1`]",
-                       typeid(*this).name(), stdex.what());
+    POSEIDON_LOG_ERROR("Error writing UDP socket `$1`:\n"
+                       "$2\n"
+                       "[socket class `$3`]",
+                       this, stdex, typeid(*this));
 
     // Write other packets. The error is considered non-fatal.
     return io_result_not_eof;

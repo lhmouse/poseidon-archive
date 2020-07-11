@@ -452,10 +452,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           fiber->do_execute();
         }
         catch(exception& stdex) {
-          POSEIDON_LOG_WARN("Caught an exception from fiber `$1`: $2\n"
+          POSEIDON_LOG_WARN("Caught an exception from fiber `$1`:\n"
+                            "$2\n"
                             "[fiber class `$3`]",
-                            fiber, stdex,
-                            typeid(*fiber).name());
+                            fiber, stdex, typeid(*fiber));
         }
 
         ROCKET_ASSERT(fiber->state() == async_state_running);
@@ -661,7 +661,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             stack = do_allocate_stack(conf.stack_vm_size);
           }
           catch(exception& stdex) {
-            POSEIDON_LOG_ERROR("Failed to initialize fiber: $1", stdex.what());
+            POSEIDON_LOG_ERROR("Failed to initialize fiber:\n$1", stdex);
 
             // Put the fiber back into the sleep queue.
             lock.lock(self->m_sched_mutex);

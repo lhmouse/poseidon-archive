@@ -97,9 +97,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
           job->do_execute();
         }
         catch(exception& stdex) {
-          POSEIDON_LOG_WARN("Caught an exception thrown from asynchronous job: $1\n"
+          POSEIDON_LOG_WARN("Caught an exception thrown from asynchronous job:\n"
+                            "$1\n"
                             "[job class `$2`]",
-                            stdex.what(), typeid(*job).name());
+                            stdex, typeid(*job));
         }
 
         ROCKET_ASSERT(job->state() == async_state_running);
