@@ -4,14 +4,14 @@
 #ifndef POSEIDON_SOCKET_ABSTRACT_TLS_SERVER_SOCKET_HPP_
 #define POSEIDON_SOCKET_ABSTRACT_TLS_SERVER_SOCKET_HPP_
 
-#include "abstract_listen_socket.hpp"
+#include "abstract_accept_socket.hpp"
 #include "openssl.hpp"
 
 namespace poseidon {
 
 class Abstract_TLS_Server_Socket
   : public ::asteria::Rcfwd<Abstract_TLS_Server_Socket>,
-    public Abstract_Listen_Socket
+    public Abstract_Accept_Socket
   {
   private:
     unique_SSL_CTX m_ctx;
@@ -19,7 +19,7 @@ class Abstract_TLS_Server_Socket
   public:
     Abstract_TLS_Server_Socket(const Socket_Address& addr,
                                const char* cert_opt, const char* pkey_opt)
-      : Abstract_Listen_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP)),
+      : Abstract_Accept_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP)),
         m_ctx(noadl::create_server_ssl_ctx(cert_opt, pkey_opt))
       { this->do_listen(addr);  }
 

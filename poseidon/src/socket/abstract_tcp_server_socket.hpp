@@ -4,18 +4,18 @@
 #ifndef POSEIDON_SOCKET_ABSTRACT_TCP_SERVER_SOCKET_HPP_
 #define POSEIDON_SOCKET_ABSTRACT_TCP_SERVER_SOCKET_HPP_
 
-#include "abstract_listen_socket.hpp"
+#include "abstract_accept_socket.hpp"
 
 namespace poseidon {
 
 class Abstract_TCP_Server_Socket
   : public ::asteria::Rcfwd<Abstract_TCP_Server_Socket>,
-    public Abstract_Listen_Socket
+    public Abstract_Accept_Socket
   {
   public:
     explicit
     Abstract_TCP_Server_Socket(const Socket_Address& addr)
-      : Abstract_Listen_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP))
+      : Abstract_Accept_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP))
       { this->do_listen(addr);  }
 
     Abstract_TCP_Server_Socket(const char* bind, uint16_t port)

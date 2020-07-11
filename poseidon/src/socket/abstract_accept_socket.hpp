@@ -1,24 +1,24 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_SOCKET_ABSTRACT_LISTEN_SOCKET_HPP_
-#define POSEIDON_SOCKET_ABSTRACT_LISTEN_SOCKET_HPP_
+#ifndef POSEIDON_SOCKET_ABSTRACT_ACCEPT_SOCKET_HPP_
+#define POSEIDON_SOCKET_ABSTRACT_ACCEPT_SOCKET_HPP_
 
 #include "abstract_socket.hpp"
 
 namespace poseidon {
 
-class Abstract_Listen_Socket
-  : public ::asteria::Rcfwd<Abstract_Listen_Socket>,
+class Abstract_Accept_Socket
+  : public ::asteria::Rcfwd<Abstract_Accept_Socket>,
     public Abstract_Socket
   {
   public:
     explicit
-    Abstract_Listen_Socket(unique_FD&& fd)
+    Abstract_Accept_Socket(unique_FD&& fd)
       : Abstract_Socket(::std::move(fd))
       { this->do_set_common_options();  }
 
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Listen_Socket);
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Accept_Socket);
 
   private:
     // Enables `SO_REUSEADDR`, etc.

@@ -24,7 +24,7 @@ include_poseidon_socket_HEADERS =  \
   %reldir%/socket/socket_address.hpp  \
   %reldir%/socket/openssl.hpp  \
   %reldir%/socket/abstract_socket.hpp  \
-  %reldir%/socket/abstract_listen_socket.hpp  \
+  %reldir%/socket/abstract_accept_socket.hpp  \
   %reldir%/socket/abstract_stream_socket.hpp  \
   %reldir%/socket/abstract_tcp_socket.hpp  \
   %reldir%/socket/abstract_tcp_server_socket.hpp  \
@@ -69,7 +69,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/socket/openssl.cpp  \
   %reldir%/socket/socket_address.cpp  \
   %reldir%/socket/abstract_socket.cpp  \
-  %reldir%/socket/abstract_listen_socket.cpp  \
+  %reldir%/socket/abstract_accept_socket.cpp  \
   %reldir%/socket/abstract_stream_socket.cpp  \
   %reldir%/socket/abstract_tcp_socket.cpp  \
   %reldir%/socket/abstract_tcp_server_socket.cpp  \

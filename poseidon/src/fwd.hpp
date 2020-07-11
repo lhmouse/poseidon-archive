@@ -155,7 +155,7 @@ struct SSL_CTX_deleter;
 
 class Socket_Address;
 class Abstract_Socket;
-class Abstract_Listen_Socket;
+class Abstract_Accept_Socket;
 class Abstract_Stream_Socket;
 class Abstract_TCP_Socket;
 class Abstract_TCP_Server_Socket;
