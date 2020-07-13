@@ -445,8 +445,9 @@ parse_url_query(const cow_string& str)
     // If this function fails, the contents of `*this` are undefined.
     this->clear();
 
-    // Ensure the string doesn't contain control characters.
-    if(::rocket::any_of(str, [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  }))
+    // Ensure the string doesn't contain blank or control characters.
+    if(::rocket::any_of(str, [&](char ch) { return ::rocket::is_any_of(ch, {' ', '\t'}) ||
+                                                   do_is_opt_ctype(ch, opt_ctype_control);  }))
       POSEIDON_THROW("Invalid character in URL query string `$1`", str);
 
     // Why pointers? Why not iterators?
