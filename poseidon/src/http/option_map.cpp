@@ -146,8 +146,8 @@ const noexcept
     auto eptr = bptr + this->m_stor.size();
 
     // Find a bucket using linear probing.
-    // We keep the load factor below 1.0 so there will always be some empty buckets in
-    // the table.
+    // We keep the load factor below 1.0 so there will always be some empty buckets
+    // in the table.
     auto mptr = ::rocket::get_probing_origin(bptr, eptr, hash);
     auto qbkt = ::rocket::linear_probe(bptr, mptr, mptr, eptr,
                     [&](const Bucket& r) {
@@ -396,7 +396,7 @@ Option_Map::
 print_url_query(tinyfmt& fmt)
 const
   {
-    size_t count = 0;
+    size_t count = SIZE_MAX;
 
     // Encode all key-value pairs.
     for(const auto& bkt : this->m_stor) {
@@ -404,7 +404,7 @@ const
       auto print_one = [&](const cow_string& value)
         {
           // Separate elements with ampersands (&).
-          if(count++)
+          if(++count)
             fmt << '&';
 
           // Spaces are encoded as plus signs (+).
