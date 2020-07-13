@@ -357,10 +357,14 @@ const
 
     // Print all keye-value pairs.
     for(const auto& bkt : this->m_stor) {
-      // Indent each element a bit.
+      // Print a key-value pair.
       auto print_one = [&](const cow_string& value)
         {
-          fmt << "  \"" << bkt.key << "\" = \"" << value << "\"\n";
+          // Indent each element a bit.
+          fmt << "  ";
+
+          // Print the key and value.
+          fmt << ::asteria::quote(bkt.key) << " = " << ::asteria::quote(value) << '\n';
         };
 
       switch(bkt.vstor.index()) {
