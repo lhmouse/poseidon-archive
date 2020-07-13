@@ -636,7 +636,6 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
 
     size_t count = SIZE_MAX;
     cow_string key;
-    cow_string value;
 
     for(;;) {
       // Skip leading blank characters.
@@ -648,14 +647,13 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
       if(comma_opt && (*bptr == ','))
         break;
 
-      // Note that their storage may be reused.
+      // Note that the storage of `key` may be reused.
       ++count;
       key.clear();
-      value.clear();
 
       // Skip empty fields.
       if(*bptr == ';') {
-        bptr++;
+        ++bptr;
         continue;
       }
 
@@ -690,40 +688,55 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
       }
 
       // Get a value.
-      if(*bptr == '\"') {
-        bptr++;
+      cow_string& value = this->do_mutable_append(key, this->do_key_hash(::rocket::sref(key)));
 
+      if(*bptr == '\"') {
         // If the value starts with a double quote, it shall be a quoted string.
+        ++bptr;
         for(;;) {
-          mptr = ::std::find_if(bptr, eptr,
-                                [&](char ch) { return ::rocket::is_any_of(ch, {'\"', '\\'});  });
-          if(mptr == eptr)
+          if(bptr == eptr)
             POSEIDON_THROW("Invalid HTTP header (missing `\"`): $1", str);
 
-          value.append(bptr, mptr);
-          bptr = mptr + 1;
-
-          // If an unescaped double quote is encountered, stop.
-          if(*mptr == '\"')
+          char ch = *(bptr++);
+          if(ch == '\"')
             break;
 
-          // Append the escaped character.
+          // Append a non-escaped character verbatim.
+          if(ch != '\\') {
+            value.push_back(ch);
+            continue;
+          }
+
+          // Append the next one to this escape character.
+          if(bptr == eptr)
+            POSEIDON_THROW("Invalid HTTP header (dangling `\\` at the end): $1", str);
+
           value.push_back(*(bptr++));
         }
       }
       else {
         // Otherwise, the value is copied verbatim up to the first comma or semicolon.
-        mptr = ::std::find_if(bptr, eptr,
-                              [&](char ch) { return (ch == ';') || (comma_opt && (ch == ','));  });
+        mptr = bptr;
+        for(;;) {
+          if(bptr == eptr)
+            break;
 
-        value.append(bptr, mptr);
-        bptr = mptr;
+          if(comma_opt && (*bptr == ','))
+            break;
 
-        // Remove trailing whitespace.
-        value.erase(value.find_last_not_of(" \t") + 1);
+          if(*bptr == ';')
+            break;
+
+          // Record the start of this whitespace sequence in `mptr`, but don't append it now.
+          char ch = *(bptr++);
+          if(::rocket::is_any_of(ch, {' ', '\t'}))
+            continue;
+
+          // Append the non-whitespace character along with any preceding whitespace characters.
+          value.append(mptr, bptr);
+          mptr = bptr;
+        }
       }
-      auto& s = this->do_mutable_append(key, this->do_key_hash(::rocket::sref(key)));
-      s = ::std::move(value);
     }
 
     // Output the end position.
