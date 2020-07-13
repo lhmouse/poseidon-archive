@@ -234,6 +234,31 @@ class Option_Map
     // An exception is thrown if the string is invalid.
     Option_Map&
     parse_url_query(const cow_string& str);
+
+    // Converts this map to an HTTP header value.
+    // All values with empty keys are output first; the others follow.
+    // All non-empty keys must be valid tokens according to RFC 7230.
+    // This is the inverse function of `parse_http_header()`.
+    tinyfmt&
+    print_http_header(tinyfmt& fmt)
+    const;
+
+    // Parses an HTTP header value.
+    // A header value is a series of fields delimited by semicolons. A field may be a
+    // plain string (non-option) or an option comprising a key followed by an optional
+    // equals sign and its value. Non-options are parsed as values with empty keys.
+    // `nonopts` specifies the maximum number of non-options to accept.
+    // All non-empty keys must be valid tokens according to RFC 7230.
+    // If `comma_opt` is null, commas are parsed as part of values. This mode allows
+    // parsing values of `Set-Cookie:` headers.
+    // If `comma_opt` is non-null, parsing starts from `*comma_opt` and a header value
+    // is terminated by a non-quoted comma, whose offset is then stored into `comma_opt`.
+    // This means the caller should initialize the value of `*comma_opt` to zero, then
+    // call this function to parse and process header values repeatedly, until
+    // `*comma_opt` reaches `str.size()`.
+    // An exception is thrown if the string is invalid.
+    Option_Map&
+    parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts);
   };
 
 inline
