@@ -229,8 +229,8 @@ class Option_Map
     const;
 
     // Parses a URL query string.
-    // If an element contains no equals sign (such as the `foo` in `foo&bar=42`),
-    // it is interpreted as a key having an empty value.
+    // If an element contains no equals sign (such as the `foo` in `foo&bar=42`), it is
+    // interpreted as a key having an empty value.
     // An exception is thrown if the string is invalid.
     Option_Map&
     parse_url_query(const cow_string& str);

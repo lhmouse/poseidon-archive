@@ -55,7 +55,7 @@ do_encode_query(tinyfmt& fmt, const cow_string& str)
     for(;;) {
       // Get the first sequence of safe characters.
       auto mptr = ::std::find_if(bptr, eptr,
-             [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_query_safe);  });
+                      [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_query_safe);  });
 
       if(mptr != bptr)
         fmt.putn(bptr, static_cast<size_t>(mptr - bptr));
@@ -150,10 +150,10 @@ const noexcept
     // the table.
     auto mptr = ::rocket::get_probing_origin(bptr, eptr, hash);
     auto qbkt = ::rocket::linear_probe(bptr, mptr, mptr, eptr,
-                            [&](const Bucket& r) {
-                                return (r.hash == hash) &&
-                                       this->do_key_equal(::rocket::sref(r.key), key);
-                            });
+                    [&](const Bucket& r) {
+                      return (r.hash == hash) &&
+                             this->do_key_equal(::rocket::sref(r.key), key);
+                    });
     ROCKET_ASSERT(qbkt);
     return static_cast<size_t>(qbkt - bptr);
   }
@@ -281,7 +281,6 @@ do_mutable_append(const cow_string& key, size_t hash)
     }
   }
 
-
 size_t
 Option_Map::
 do_erase(cow_string::shallow_type key, size_t hash)
@@ -355,8 +354,9 @@ print(tinyfmt& fmt)
 const
   {
     fmt << "{\n";
+
+    // Print all keye-value pairs.
     for(const auto& bkt : this->m_stor) {
-      // Print a key-value pair.
       // Indent each element a bit.
       auto print_one = [&](const cow_string& value)
         {
@@ -383,8 +383,8 @@ const
           ROCKET_ASSERT(false);
       }
     }
-    fmt << "}\n";
-    return fmt;
+
+    return fmt << "}\n";
   }
 
 tinyfmt&
@@ -393,8 +393,9 @@ print_url_query(tinyfmt& fmt)
 const
   {
     size_t count = 0;
+
+    // Encode all key-value pairs.
     for(const auto& bkt : this->m_stor) {
-      // Encode a key-value pair.
       // Spaces are encoded differently from URLs.
       auto print_one = [&](const cow_string& value)
         {
@@ -418,17 +419,17 @@ const
           print_one(bkt.vstor.as<1>());
           break;
 
-        case 2: {
+        case 2:
           // If the bucket holds an array of values, write each one after the key
           // as a separated line.
           ::rocket::for_each(bkt.vstor.as<2>(), print_one);
           break;
-        }
 
         default:
           ROCKET_ASSERT(false);
       }
     }
+
     return fmt;
   }
 
@@ -440,6 +441,10 @@ parse_url_query(const cow_string& str)
     // If this function fails, the contents of `*this` are undefined.
     this->clear();
 
+    // Ensure the string doesn't contain control characters.
+    if(::rocket::any_of(str, [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  }))
+      POSEIDON_THROW("Invalid character in URL query string `$1`", str);
+
     // Why pointers? Why not iterators?
     // We assume that the string is terminated by a null character, which
     // simplifies a lot of checks below. But dereferencing the past-the-end
@@ -450,10 +455,6 @@ parse_url_query(const cow_string& str)
     const char* bptr = str.c_str();
     const char* const eptr = bptr + str.size();
     const char* mptr;
-
-    // Ensure the string doesn't contain control characters.
-    if(::std::any_of(bptr, eptr, [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  }))
-      POSEIDON_THROW("Invalid character in URL query string");
 
     for(;;) {
       // Skip separators.
