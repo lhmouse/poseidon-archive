@@ -234,7 +234,8 @@ do_load_addons()
     if(!qaddons)
       return;
 
-    POSEIDON_LOG_DEBUG("List of add-ons to load: $1", *qaddons);
+    POSEIDON_LOG_DEBUG("List of add-ons to load:\n$1", *qaddons);
+
     for(const auto& addon : *qaddons) {
       // Load the shared library denoted by `addon`
       if(!addon.is_string())
