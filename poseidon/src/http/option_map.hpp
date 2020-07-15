@@ -198,6 +198,30 @@ class Option_Map
     erase(const cow_string& key)
       { return this->erase(::rocket::sref(key));  }
 
+    // Invokes the given function with all key-value pairs.
+    // If the function returns `false`, this function stops to return `false`.
+    // Otherwise, this function returns `true`.
+    template<typename FuncT>
+    bool
+    enumerate(FuncT&& func)
+    const
+      {
+        for(const auto& bkt : this->m_stor) {
+          if(bkt.vstor.index() == 1) {
+            // Process a scalar value.
+            if(!func(bkt.key, bkt.vstor.as<1>()))
+              return false;
+          }
+          else if(bkt.vstor.index() == 2) {
+            // Process every value in the array.
+            for(const auto& s : bkt.vstor.as<2>())
+              if(!func(bkt.key, s))
+                return false;
+          }
+        }
+        return true;
+      }
+
     // These are general modifiers.
     Option_Map&
     clear()

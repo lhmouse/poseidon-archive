@@ -165,26 +165,19 @@ do_equal_range(cow_string::shallow_type key, size_t hash)
 const noexcept
   {
     const auto& bkt = this->m_stor[this->do_bucket_index(key, hash)];
-    switch(bkt.vstor.index()) {
-      case 0:
-        // If the bucket is empty, return an empty range.
-        return { nullptr, 0 };
-
-      case 1: {
-        // If the bucket holds a scalar value, return it.
-        const auto& s = bkt.vstor.as<1>();
-        return { &s, 1 };
-      }
-
-      case 2: {
-        // If the bucket holds an array of values, return its contents.
-        const auto& v = bkt.vstor.as<2>();
-        return { v.data(), v.size() };
-      }
-
-      default:
-        ROCKET_ASSERT(false);
+    if(bkt.vstor.index() == 1) {
+      // If the bucket holds a scalar value, return it.
+      const auto& s = bkt.vstor.as<1>();
+      return { &s, 1 };
     }
+    else if(bkt.vstor.index() == 2) {
+      // If the bucket holds an array of values, return its contents.
+      const auto& v = bkt.vstor.as<2>();
+      return { v.data(), v.size() };
+    }
+
+    // If the bucket is empty, return an empty range.
+    return { };
   }
 
 void
@@ -221,31 +214,24 @@ do_mutable_scalar(const cow_string& key, size_t hash)
   {
     this->do_reserve_more();
     auto& bkt = this->m_stor.mut(this->do_bucket_index(::rocket::sref(key), hash));
-    switch(bkt.vstor.index()) {
-      case 0: {
-        // If the bucket is empty, construct an empty string.
-        bkt.key = key;
-        bkt.hash = hash;
-        this->m_nbkt++;
-        return bkt.vstor.emplace<1>();
-      }
-
-      case 1:
-        // If the bucket holds a scalar value, return it intact.
-        return bkt.vstor.as<1>();
-
-      case 2: {
-        // If the bucket holds an array of values, use the last one.
-        auto v = ::std::move(bkt.vstor.as<2>());
-        if(v.empty())
-          return bkt.vstor.emplace<1>();
-
-        return bkt.vstor.emplace<1>(::std::move(v.mut_back()));
-      }
-
-      default:
-        ROCKET_ASSERT(false);
+    if(bkt.vstor.index() == 1) {
+      // If the bucket holds a scalar value, return it intact.
+      return bkt.vstor.as<1>();
     }
+    else if(bkt.vstor.index() == 2) {
+      // If the bucket holds an array of values, use the last one.
+      auto v = ::std::move(bkt.vstor.as<2>());
+      if(v.empty())
+        return bkt.vstor.emplace<1>();
+
+      return bkt.vstor.emplace<1>(::std::move(v.mut_back()));
+    }
+
+    // If the bucket is empty, construct an empty string.
+    bkt.key = key;
+    bkt.hash = hash;
+    this->m_nbkt++;
+    return bkt.vstor.emplace<1>();
   }
 
 cow_string&
@@ -254,32 +240,25 @@ do_mutable_append(const cow_string& key, size_t hash)
   {
     this->do_reserve_more();
     auto& bkt = this->m_stor.mut(this->do_bucket_index(::rocket::sref(key), hash));
-    switch(bkt.vstor.index()) {
-      case 0: {
-        // If the bucket is empty, construct an empty string.
-        bkt.key = key;
-        bkt.hash = hash;
-        this->m_nbkt++;
-        return bkt.vstor.emplace<1>();
-      }
+    if(bkt.vstor.index() == 1) {
+      // If the bucket holds a scalar value, convert it to an array, then append
+      // an empty string.
+      auto s = ::std::move(bkt.vstor.as<1>());
 
-      case 1: {
-        // If the bucket holds a scalar value, convert it to an array, then append
-        // an empty string.
-        auto s = ::std::move(bkt.vstor.as<1>());
-
-        auto& v = bkt.vstor.emplace<2>();
-        v.emplace_back(::std::move(s));
-        return v.emplace_back();
-      }
-
-      case 2:
-        // If the bucket holds an array of values, append an empty string.
-        return bkt.vstor.as<2>().emplace_back();
-
-      default:
-        ROCKET_ASSERT(false);
+      auto& v = bkt.vstor.emplace<2>();
+      v.emplace_back(::std::move(s));
+      return v.emplace_back();
     }
+    else if(bkt.vstor.index() == 2) {
+      // If the bucket holds an array of values, append an empty string.
+      return bkt.vstor.as<2>().emplace_back();
+    }
+
+    // If the bucket is empty, construct an empty string.
+    bkt.key = key;
+    bkt.hash = hash;
+    this->m_nbkt++;
+    return bkt.vstor.emplace<1>();
   }
 
 size_t
@@ -288,26 +267,19 @@ do_erase(cow_string::shallow_type key, size_t hash)
   {
     size_t nerased;
     auto& bkt = this->m_stor.mut(this->do_bucket_index(key, hash));
-    switch(bkt.vstor.index()) {
-      case 0:
-        // If the bucket is empty, there is nothing to erase.
-        return 0;
-
-      case 1:
-        // If the bucket holds a scalar value, erase it.
-        nerased = 1;
-        bkt.vstor = nullopt;
-        break;
-
-      case 2:
-        // If the bucket holds an array of values, erase its contents.
-        nerased = bkt.vstor.as<2>().size();
-        bkt.vstor = nullopt;
-        break;
-
-      default:
-        ROCKET_ASSERT(false);
+    if(bkt.vstor.index() == 1) {
+      // Erase a scalar value.
+      nerased = 1;
+      bkt.vstor = nullopt;
     }
+    else if(bkt.vstor.index() == 2) {
+      // If the bucket holds an array of values, erase its contents.
+      nerased = bkt.vstor.as<2>().size();
+      bkt.vstor = nullopt;
+    }
+    else
+      // If the bucket is empty, there is nothing to erase.
+      return 0;
 
     // Clear the bucket.
     bkt.key = ::rocket::sref("<empty>");
@@ -368,24 +340,14 @@ const
           fmt << ::asteria::quote(bkt.key) << " = " << ::asteria::quote(value) << '\n';
         };
 
-      switch(bkt.vstor.index()) {
-        case 0:
-          // If the bucket is empty, do nothing.
-          break;
-
-        case 1:
-          // If the bucket holds a scalar value, write it after the key.
-          print_one(bkt.vstor.as<1>());
-          break;
-
-        case 2:
-          // If the bucket holds an array of values, write each one after the key
-          // as a separated line.
-          ::rocket::for_each(bkt.vstor.as<2>(), print_one);
-          break;
-
-        default:
-          ROCKET_ASSERT(false);
+      if(bkt.vstor.index() == 1) {
+        // If the bucket holds a scalar value, write it after the key.
+        print_one(bkt.vstor.as<1>());
+      }
+      else if(bkt.vstor.index() == 2) {
+        // If the bucket holds an array of values, write each one after the key
+        // as a separated line.
+        ::rocket::for_each(bkt.vstor.as<2>(), print_one);
       }
     }
 
@@ -414,24 +376,14 @@ const
           do_encode_query(fmt, value);
         };
 
-      switch(bkt.vstor.index()) {
-        case 0:
-          // If the bucket is empty, do nothing.
-          break;
-
-        case 1:
-          // If the bucket holds a scalar value, write it after the key.
-          print_one(bkt.vstor.as<1>());
-          break;
-
-        case 2:
-          // If the bucket holds an array of values, write each one after the key
-          // as a separated line.
-          ::rocket::for_each(bkt.vstor.as<2>(), print_one);
-          break;
-
-        default:
-          ROCKET_ASSERT(false);
+      if(bkt.vstor.index() == 1) {
+        // If the bucket holds a scalar value, write it after the key.
+        print_one(bkt.vstor.as<1>());
+      }
+      else if(bkt.vstor.index() == 2) {
+        // If the bucket holds an array of values, write each one after the key
+        // as a separated line.
+        ::rocket::for_each(bkt.vstor.as<2>(), print_one);
       }
     }
 
@@ -576,24 +528,14 @@ const
           fmt << '\"';
         };
 
-      switch(bkt.vstor.index()) {
-        case 0:
-          // If the bucket is empty, do nothing.
-          break;
-
-        case 1:
-          // If the bucket holds a scalar value, write it after the key.
-          print_one(bkt.vstor.as<1>());
-          break;
-
-        case 2:
-          // If the bucket holds an array of values, write each one after the key
-          // as a separated line.
-          ::rocket::for_each(bkt.vstor.as<2>(), print_one);
-          break;
-
-        default:
-          ROCKET_ASSERT(false);
+      if(bkt.vstor.index() == 1) {
+        // If the bucket holds a scalar value, write it after the key.
+        print_one(bkt.vstor.as<1>());
+      }
+      else if(bkt.vstor.index() == 2) {
+        // If the bucket holds an array of values, write each one after the key
+        // as a separated line.
+        ::rocket::for_each(bkt.vstor.as<2>(), print_one);
       }
     }
 
