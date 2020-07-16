@@ -33,19 +33,33 @@ ascii_lowercase(cow_string str)
 cow_string
 ascii_trim(cow_string str)
   {
-    // Return an empty string if it comprises only blank characters.
-    size_t bp = str.find_first_not_of(" \t");
-    if(bp == cow_string::npos)
-      return { };
+    // Remove leading blank characters.
+    // Return an empty string if all characters are blank.
+    size_t k = cow_string::npos;
+    for(;;) {
+      if(++k == str.size())
+        return { };
 
-    // Get the offset of the past-the-last character.
-    size_t ep = str.find_last_not_of(" \t") + 1;
-
-    // Only modify the string when it really has to modified.
-    if((bp != 0) || (ep != str.size())) {
-      str.erase(0, bp);
-      str.erase(ep - bp);
+      char ch = str[k];
+      if((ch != ' ') && (ch != '\t'))
+        break;
     }
+    if(k != 0)
+      str.erase(0, k);
+
+    // Remove trailing blank characters.
+    k = str.size();
+    for(;;) {
+      if(--k == 0)
+        break;
+
+      char ch = str[k];
+      if((ch != ' ') && (ch != '\t'))
+        break;
+    }
+    if(++k != str.size())
+      str.erase(k);
+
     return ::std::move(str);
   }
 
