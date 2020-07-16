@@ -204,6 +204,145 @@ enqueue_async_job(FuncT&& func)
     return futr;
   }
 
+// Hashes a string in a case-insensitive way.
+struct ASCII_CI_Hash
+  {
+    constexpr
+    size_t
+    operator()(cow_string::shallow_type sh)
+    const noexcept
+      {
+        auto bptr = sh.c_str();
+        auto eptr = bptr + sh.length();
+
+        // Implement the FNV-1a hash algorithm.
+        char32_t reg = 0x811C9DC5;
+        while(bptr != eptr) {
+          char32_t ch = static_cast<uint8_t>(*(bptr++));
+
+          // Upper-case letters are converted to corresponding lower-case
+          // ones, so this algorithm is case-insensitive.
+          if(('A' <= ch) && (ch <= 'Z'))
+            ch |= 0x20;
+
+          reg = (reg ^ ch) * 0x1000193;
+        }
+        return reg;
+      }
+
+    constexpr
+    size_t
+    operator()(const char* s)
+    const noexcept
+      { return (*this)(::rocket::sref(s));  }
+
+    constexpr
+    size_t
+    operator()(const cow_string& s)
+    const noexcept
+      { return (*this)(::rocket::sref(s));  }
+  };
+
+template<typename StringT>
+constexpr
+size_t
+ascii_ci_hash(const StringT& str)
+noexcept
+  { return ASCII_CI_Hash()(str);  }
+
+// Compares two strings in a case-insensitive way.
+struct ASCII_CI_Equal
+  {
+    constexpr
+    bool
+    operator()(cow_string::shallow_type s1, cow_string::shallow_type s2)
+    const noexcept
+      {
+        if(s1.length() != s2.length())
+          return false;
+
+        auto bptr = s1.c_str();
+        auto eptr = bptr + s1.length();
+        auto kptr = s2.c_str();
+        if(bptr == kptr)
+          return true;
+
+        // Perform character-wise comparison.
+        while(bptr != eptr) {
+          char32_t ch = static_cast<uint8_t>(*(bptr++));
+          char32_t cmp = ch ^ static_cast<uint8_t>(*(kptr++));
+          if(cmp == 0)
+            continue;
+
+          // Report inequality unless the two characters diff only in case.
+          if(cmp != 0x20)
+            return false;
+
+          // Upper-case letters are converted to corresponding lower-case ones,
+          // so this algorithm is case-insensitive.
+          ch |= 0x20;
+          if((ch < 'a') || ('z' < ch))
+            return false;
+        }
+        return true;
+      }
+
+    constexpr
+    bool
+    operator()(cow_string::shallow_type s1, const char* s2)
+    const noexcept
+      { return (*this)(s1, ::rocket::sref(s2));  }
+
+    constexpr
+    bool
+    operator()(cow_string::shallow_type s1, const cow_string& s2)
+    const noexcept
+      { return (*this)(s1, ::rocket::sref(s2));  }
+
+    constexpr
+    bool
+    operator()(const char* s1, cow_string::shallow_type s2)
+    const noexcept
+      { return (*this)(::rocket::sref(s1), s2);  }
+
+    constexpr
+    bool
+    operator()(const char* s1, const char* s2)
+    const noexcept
+      { return (*this)(::rocket::sref(s1), ::rocket::sref(s2));  }
+
+    constexpr
+    bool
+    operator()(const char* s1, const cow_string& s2)
+    const noexcept
+      { return (*this)(::rocket::sref(s1), ::rocket::sref(s2));  }
+
+    constexpr
+    bool
+    operator()(const cow_string& s1, cow_string::shallow_type s2)
+    const noexcept
+      { return (*this)(::rocket::sref(s1), s2);  }
+
+    constexpr
+    bool
+    operator()(const cow_string& s1, const char* s2)
+    const noexcept
+      { return (*this)(::rocket::sref(s1), ::rocket::sref(s2));  }
+
+    constexpr
+    bool
+    operator()(const cow_string& s1, const cow_string& s2)
+    const noexcept
+      { return (*this)(::rocket::sref(s1), ::rocket::sref(s2));  }
+  };
+
+template<typename StringT, typename OtherT>
+constexpr
+bool
+ascii_ci_equal(const StringT& str, const OtherT& oth)
+noexcept
+  { return ASCII_CI_Equal()(str, oth);  }
+
 // Converts all ASCII letters in a string into uppercase.
 cow_string
 ascii_uppercase(cow_string str);
