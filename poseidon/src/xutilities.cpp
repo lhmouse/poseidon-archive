@@ -11,7 +11,7 @@ ascii_uppercase(cow_string str)
   {
     // Only modify the string when it really has to modified.
     for(size_t k = 0;  k != str.size();  ++k) {
-      char ch = str[k];
+      char32_t ch = static_cast<uint8_t>(str[k]);
       if(('a' <= ch) && (ch <= 'z'))
         str.mut(k) = static_cast<char>(ch - 0x20);
     }
@@ -23,7 +23,7 @@ ascii_lowercase(cow_string str)
   {
     // Only modify the string when it really has to modified.
     for(size_t k = 0;  k != str.size();  ++k) {
-      char ch = str[k];
+      char32_t ch = static_cast<uint8_t>(str[k]);
       if(('A' <= ch) && (ch <= 'Z'))
         str.mut(k) = static_cast<char>(ch + 0x20);
     }
@@ -40,7 +40,7 @@ ascii_trim(cow_string str)
       if(++k == str.size())
         return { };
 
-      char ch = str[k];
+      char32_t ch = static_cast<uint8_t>(str[k]);
       if((ch != ' ') && (ch != '\t'))
         break;
     }
@@ -53,7 +53,7 @@ ascii_trim(cow_string str)
       if(--k == 0)
         break;
 
-      char ch = str[k];
+      char32_t ch = static_cast<uint8_t>(str[k]);
       if((ch != ' ') && (ch != '\t'))
         break;
     }
