@@ -18,6 +18,7 @@
 #include <cstdio>
 #include <endian.h>
 
+#include <rocket/ascii_case.hpp>
 #include <rocket/mutex.hpp>
 #include <rocket/recursive_mutex.hpp>
 #include <rocket/condition_variable.hpp>

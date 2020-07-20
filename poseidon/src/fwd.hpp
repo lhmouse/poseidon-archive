@@ -9,6 +9,7 @@
 #endif
 
 #include <asteria/fwd.hpp>
+#include <rocket/ascii_case.hpp>
 #include <rocket/linear_buffer.hpp>
 #include <rocket/atomic.hpp>
 #include <rocket/mutex.hpp>
