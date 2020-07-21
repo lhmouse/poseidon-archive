@@ -91,10 +91,10 @@ class Promise
 
     // Puts a value into the associated future.
     // If the future is not empty, `false` is returned, and there is no effect.
-    template<typename... ArgsT,
-    ROCKET_DISABLE_IF(::std::is_void<ValueT>::value && sizeof...(ArgsT))>
+    template<typename... ParamsT,
+    ROCKET_DISABLE_IF(::std::is_void<ValueT>::value && sizeof...(ParamsT))>
     bool
-    set_value(ArgsT&&... args)
+    set_value(ParamsT&&... params)
       {
         auto futp = this->m_futp.get();
         if(!futp)
@@ -105,7 +105,7 @@ class Promise
           return false;
 
         // Construct a new value in the future.
-        futp->m_stor.template emplace<future_state_value>(::std::forward<ArgsT>(args)...);
+        futp->m_stor.template emplace<future_state_value>(::std::forward<ParamsT>(params)...);
         lock.unlock();
 
         Fiber_Scheduler::signal(*futp);
