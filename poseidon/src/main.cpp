@@ -127,6 +127,7 @@ enum Exit_Code : uint8_t
     exit_success            = 0,
     exit_system_error       = 1,
     exit_invalid_argument   = 2,
+    exit_root_disallowed    = 3,
   };
 
 [[noreturn]] ROCKET_NOINLINE
@@ -227,9 +228,27 @@ do_parse_command_line(int argc, char** argv)
 
 ROCKET_NOINLINE
 void
+do_check_euid()
+  {
+    const auto file = Main_Config::copy();
+    const auto qroot = file.get_bool_opt({"general","permit_root_startup"});
+    if(qroot && *qroot)
+      return;
+
+    if(::geteuid() == 0)
+      do_exit(exit_root_disallowed,
+              "Please do not start this program as root.\n"
+              "If you insist, you may set `general.permit_root_startup` in `main.conf`\n"
+              "to `true` to bypass this check. Note that starting as root is considered\n"
+              "insecure. An unprivileged user should have been created for this service.\n"
+              "You have been warned.\n");
+  }
+
+ROCKET_NOINLINE
+void
 do_load_addons()
   {
-    auto file = Main_Config::copy();
+    const auto file = Main_Config::copy();
     const auto qaddons = file.get_array_opt({"addons"});
     if(!qaddons)
       return;
@@ -279,6 +298,8 @@ main(int argc, char** argv)
     Network_Driver::reload();
     Worker_Pool::reload();
     Fiber_Scheduler::reload();
+
+    do_check_euid();
 
     // Daemonize the process before entering modal loop.
     if(cmdline.daemonize)
