@@ -7,7 +7,7 @@ _version="1.16.2"
 _release="1"
 
 # Package settings
-_pkgname="libmongoc-dev"
+_pkgname="poseidon_libmongoc-dev"
 _pkggroup="libdevel"
 _pkgsource="https://github.com/mongodb/mongo-c-driver/releases/download/${_version}/mongo-c-driver-${_version}.tar.gz"
 _pkglicense="Apache 2.0"
