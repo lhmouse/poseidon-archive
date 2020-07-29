@@ -7,7 +7,7 @@ _version="6.1.11"
 _release="1"
 
 # Package settings
-_pkgname="poseidon_libmysqlclient-dev"
+_pkgname="poseidon-libmysqlclient-dev"
 _pkggroup="libdevel"
 _pkgsource="https://dev.mysql.com/get/Downloads/Connector-C/mysql-connector-c-${_version}-src.tar.gz"
 _pkglicense="GPL v2.0"
