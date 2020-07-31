@@ -27,8 +27,7 @@ class Async_Logger
 
     // Checks whether a given level of log has any output streams.
     // This function is thread-safe.
-    ROCKET_PURE_FUNCTION
-    static
+    ROCKET_PURE_FUNCTION static
     bool
     is_enabled(Log_Level level)
     noexcept;
