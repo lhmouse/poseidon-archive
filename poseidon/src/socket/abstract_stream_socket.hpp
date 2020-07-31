@@ -157,7 +157,7 @@ class Abstract_Stream_Socket
     // considered closed. No further data may be read from or written through it.
     // Note half-closed connections are not supported.
     bool
-    async_shutdown()
+    shut_down()
     noexcept;
   };
 

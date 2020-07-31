@@ -268,7 +268,7 @@ const
 
 bool
 Abstract_Stream_Socket::
-async_shutdown()
+shut_down()
 noexcept
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);

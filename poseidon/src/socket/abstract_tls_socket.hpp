@@ -78,7 +78,7 @@ class Abstract_TLS_Socket
     using Abstract_Socket::get_local_address;
 
     using Abstract_Stream_Socket::get_remote_address;
-    using Abstract_Stream_Socket::async_shutdown;
+    using Abstract_Stream_Socket::shut_down;
   };
 
 }  // namespace poseidon

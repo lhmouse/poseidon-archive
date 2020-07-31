@@ -131,7 +131,7 @@ class Abstract_UDP_Socket
     // Marks this socket as closed immediately. No further data may be read from or
     // written through it.
     bool
-    async_shutdown()
+    shut_down()
     noexcept;
   };
 

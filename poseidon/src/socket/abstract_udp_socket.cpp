@@ -433,7 +433,7 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname)
 
 bool
 Abstract_UDP_Socket::
-async_shutdown()
+shut_down()
 noexcept
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
