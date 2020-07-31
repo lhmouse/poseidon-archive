@@ -354,7 +354,7 @@ reload()
 
 bool
 Async_Logger::
-is_enabled(Log_Level level)
+enabled(Log_Level level)
 noexcept
   {
     // Validate arguments.
@@ -403,6 +403,5 @@ noexcept
     simple_mutex::unique_lock lock(self->m_queue_mutex);
     self->m_queue_empty.wait_for(lock, msecs, [] { return self->m_queue.empty();  });
   }
-
 
 }  // namespace poseidon

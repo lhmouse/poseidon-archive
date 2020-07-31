@@ -53,7 +53,7 @@ noexcept
 
 // Note the format string must be a string literal.
 #define POSEIDON_XLOG_(level, ...)  \
-    (::poseidon::Async_Logger::is_enabled(level) &&  \
+    (::poseidon::Async_Logger::enabled(level) &&  \
          ::poseidon::do_xlog_format(level, __FILE__, __LINE__, __func__, "" __VA_ARGS__))
 
 #define POSEIDON_LOG_FATAL(...)   POSEIDON_XLOG_(::poseidon::log_level_fatal,  __VA_ARGS__)
@@ -76,7 +76,7 @@ do_xthrow_format(const char* file, long line, const char* func,
 
     // Push a new log entry.
     static constexpr auto level = log_level_warn;
-    if(Async_Logger::is_enabled(level))
+    if(Async_Logger::enabled(level))
       Async_Logger::enqueue(level, file, line, func, "POSEIDON_THROW: " + text);
 
     // Throw the exception.

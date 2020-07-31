@@ -29,7 +29,7 @@ class Async_Logger
     // This function is thread-safe.
     ROCKET_PURE_FUNCTION static
     bool
-    is_enabled(Log_Level level)
+    enabled(Log_Level level)
     noexcept;
 
     // Enqueues a log entry and returns the total number of entries that are pending.
