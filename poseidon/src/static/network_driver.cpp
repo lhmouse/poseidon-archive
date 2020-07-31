@@ -297,24 +297,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       }
 
     static
-    size_t
-    do_epoll_wait()
-    noexcept
-      {
-        int ret = ::epoll_wait(self->m_epoll_fd, self->m_event_buffer.data(),
-                                                 static_cast<int>(self->m_event_buffer.size()),
-                                                 60'000);  // one minute
-        if(ROCKET_EXPECT(ret >= 0))
-          return static_cast<uint32_t>(ret);
-
-        int err = errno;
-        if(err != EINTR)
-          POSEIDON_LOG_FATAL("`epoll_wait()` failed: $1", format_errno(err));
-
-        return 0;  // no events
-      }
-
-    static
     void
     do_thread_loop(void* /*param*/)
       {
@@ -330,27 +312,34 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         // Try polling if there is nothing to do.
         lock.lock(self->m_poll_mutex);
         if(self->poll_lists_empty()) {
-          // Delete sockets that have no other references to them.
           for(const auto& elem : self->m_poll_elems) {
-            bool kill = elem.sock.unique() && !elem.sock->resident();
-            if(!kill)
+            if(elem.sock.unique() && !elem.sock->m_resident.load()) {
+              // Delete sockets that have no other references to them.
+              POSEIDON_LOG_DEBUG("Killed orphan socket: $1", elem.sock);
+              elem.sock->abort();
               continue;
-
-            POSEIDON_LOG_DEBUG("Killed orphan socket: $1", elem.sock);
-            elem.sock->abort();
+            }
+            POSEIDON_LOG_TRACE("Active socket: $1", elem.sock);
           }
           lock.unlock();
 
           // Await I/O events.
-          size_t nevents = self->do_epoll_wait();
+          int navail = ::epoll_wait(self->m_epoll_fd, self->m_event_buffer.data(),
+                                    static_cast<int>(self->m_event_buffer.size()),
+                                    60'000);  // one minute
+          if(navail < 0) {
+            POSEIDON_LOG_DEBUG("`epoll_wait()` failed: $1", format_errno(errno));
+            self->m_event_buffer.clear();
+          }
+          else
+            self->m_event_buffer.erase(self->m_event_buffer.begin() + navail,
+                                       self->m_event_buffer.end());
 
           // Process all events that have been received so far.
           // Note the loop below will not throw exceptions.
           lock.lock(self->m_poll_mutex);
-          for(size_t k = 0;  k < nevents;  ++k) {
-            ::epoll_event& event = self->m_event_buffer[k];
-
-            // The special event is not associated with any socket.
+          for(const auto& event : self->m_event_buffer) {
+            // Check for special indexes.
             if(self->index_from_epoll_data(event.data.u64) == poll_index_event) {
               do_event_wait(self->m_event_fd);
               continue;
@@ -381,11 +370,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         lock.lock(self->m_poll_mutex);
         self->poll_list_collect(self->m_poll_root_cl);
         for(const auto& sock : self->m_ready_socks) {
-          // Set `err` to zero if normal closure, and to the error code otherwise.
           lock.lock(self->m_poll_mutex);
           int err = sock->m_epoll_events & EPOLLERR;
           lock.unlock();
 
+          // Get the error number if `EPOLLERR` has been turned on.
           if(err) {
             ::socklen_t optlen = sizeof(err);
             if(::getsockopt(sock->get_fd(), SOL_SOCKET, SO_ERROR, &err, &optlen) != 0)
@@ -435,22 +424,21 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
               self->poll_list_attach(self->m_poll_root_wr, index);
           }
           self->m_poll_elems.pop_back();
-          POSEIDON_LOG_TRACE("Socket removed: $1", sock);
+          POSEIDON_LOG_TRACE("Removed closed socket: $1", sock);
         }
 
         // Process readable sockets.
         lock.lock(self->m_poll_mutex);
         self->poll_list_collect(self->m_poll_root_rd);
         for(const auto& sock : self->m_ready_socks) {
-          // Perform a single read operation (no retry upon EINTR).
           lock.unlock();
 
           bool throttle;
           bool detach;
           bool clear_status;
 
+          // Perform a single read operation (no retry upon EINTR).
           try {
-            // Check whether the socket should be throttled.
             throttle = sock->do_write_queue_size(lock) > conf.throttle_size;
             if(throttle) {
               // If the socket is throttled, remove it from read queue.
@@ -501,15 +489,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         lock.lock(self->m_poll_mutex);
         self->poll_list_collect(self->m_poll_root_wr);
         for(const auto& sock : self->m_ready_socks) {
-          // Perform a single write operation (no retry upon EINTR).
           lock.unlock();
 
           bool detach;
           bool clear_status;
           bool throttle;
 
+          // Perform a single write operation (no retry upon EINTR).
           try {
-            // Try writing some bytes.
             auto io_res = sock->do_on_async_poll_write(lock,
                                        self->m_io_buffer.data(), self->m_io_buffer.size());
 

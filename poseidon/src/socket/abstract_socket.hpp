@@ -78,17 +78,11 @@ class Abstract_Socket
       = 0;
 
   public:
-    // Should this socket be deleted if network driver holds its last reference?
-    ROCKET_PURE_FUNCTION
+    // Marks this socket to be deleted if network driver holds its last reference.
     bool
-    resident()
-    const noexcept
-      { return this->m_resident.load();  }
-
-    void
     set_resident(bool value = true)
     noexcept
-      { this->m_resident.store(value);  }
+      { return this->m_resident.exchange(value);  }
 
     // Returns the stream descriptor.
     // This is used to query and adjust stream flags. You shall not perform I/O

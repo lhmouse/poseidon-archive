@@ -14,6 +14,7 @@ class Abstract_Timer
     friend Timer_Driver;
 
   private:
+    atomic_relaxed<bool> m_zombie;
     atomic_relaxed<bool> m_resident;  // don't delete if orphaned
     atomic_relaxed<uint64_t> m_count;
 
@@ -39,17 +40,17 @@ class Abstract_Timer
       = 0;
 
   public:
-    // Should this timer be deleted if timer driver holds its last reference?
-    ROCKET_PURE_FUNCTION
+    // Marks this timer to be deleted.
     bool
-    resident()
-    const noexcept
-      { return this->m_resident.load();  }
+    shut_down()
+    noexcept
+      { return this->m_zombie.exchange(true);  }
 
-    Abstract_Timer&
+    // Marks this this timer to be deleted if timer driver holds its last reference.
+    bool
     set_resident(bool value = true)
     noexcept
-      { return this->m_resident.store(value), *this;  }
+      { return this->m_resident.exchange(value);  }
 
     // Gets the counter.
     ROCKET_PURE_FUNCTION

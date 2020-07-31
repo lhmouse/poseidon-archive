@@ -77,7 +77,13 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
           job = ::std::move(qwrk->queue.front());
           qwrk->queue.pop_front();
 
-          if(job.unique() && !job->resident()) {
+          if(job->m_zombie.load()) {
+            // Delete this job asynchronously.
+            POSEIDON_LOG_DEBUG("Shut down asynchronous job: $1", job);
+            continue;
+          }
+
+          if(job.unique() && !job->m_resident.load()) {
             // Delete this job when no other reference of it exists.
             POSEIDON_LOG_DEBUG("Killed orphan asynchronous job: $1", job);
             continue;

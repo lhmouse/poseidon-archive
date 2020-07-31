@@ -15,6 +15,7 @@ class Abstract_Fiber
     friend Fiber_Scheduler;
 
   private:
+    atomic_relaxed<bool> m_zombie;
     atomic_relaxed<bool> m_resident;  // don't delete if orphaned
     atomic_relaxed<Async_State> m_state;
 
@@ -68,17 +69,17 @@ class Abstract_Fiber
     noexcept;
 
   public:
-    // Should this timer be deleted if timer driver holds its last reference?
-    ROCKET_PURE_FUNCTION
+    // Marks this fiber to be deleted.
     bool
-    resident()
-    const noexcept
-      { return this->m_resident.load();  }
+    shut_down()
+    noexcept
+      { return this->m_zombie.exchange(true);  }
 
-    Abstract_Fiber&
+    // Marks this fiber to be deleted if fiber scheduler holds its last reference.
+    bool
     set_resident(bool value = true)
     noexcept
-      { return this->m_resident.store(value), *this;  }
+      { return this->m_resident.exchange(value);  }
 
     // Gets the fiber state, which is set by the scheduler.
     ROCKET_PURE_FUNCTION

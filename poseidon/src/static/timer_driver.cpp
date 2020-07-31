@@ -120,7 +120,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           auto& elem = self->m_pq.back();
           timer = ::std::move(elem.timer);
 
-          if(timer.unique() && !timer->resident()) {
+          if(timer->m_zombie.load()) {
+            // Delete this timer asynchronously.
+            POSEIDON_LOG_DEBUG("Shut down timer: $1", timer);
+            self->m_pq.pop_back();
+            continue;
+          }
+
+          if(timer.unique() && !timer->m_resident.load()) {
             // Delete this timer when no other reference of it exists.
             POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
             self->m_pq.pop_back();

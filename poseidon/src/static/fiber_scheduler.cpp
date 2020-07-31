@@ -611,7 +611,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
               continue;
             }
 
-            if(fiber.unique() && !fiber->resident()) {
+            if(fiber->m_zombie.load()) {
+              // Delete this fiber asynchronously.
+              POSEIDON_LOG_DEBUG("Shut down fiber: $1", fiber);
+              self->m_sched_pq.pop_back();
+              continue;
+            }
+
+            if(fiber.unique() && !fiber->m_resident.load()) {
               // Delete this fiber when no other reference of it exists.
               POSEIDON_LOG_DEBUG("Killed orphan fiber: $1", fiber);
               self->m_sched_pq.pop_back();

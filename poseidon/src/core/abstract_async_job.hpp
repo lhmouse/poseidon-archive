@@ -16,6 +16,7 @@ class Abstract_Async_Job
   private:
     const uintptr_t m_key;
 
+    atomic_relaxed<bool> m_zombie;
     atomic_relaxed<bool> m_resident;  // don't delete if orphaned
     atomic_relaxed<Async_State> m_state;
 
@@ -38,17 +39,17 @@ class Abstract_Async_Job
       = 0;
 
   public:
-    // Should this job be deleted if worker pool holds its last reference?
-    ROCKET_PURE_FUNCTION
+    // Marks this job to be deleted immediately.
     bool
-    resident()
-    const noexcept
-      { return this->m_resident.load();  }
+    shut_down()
+    noexcept
+      { return this->m_zombie.exchange(true);  }
 
-    Abstract_Async_Job&
+    // Marks this job to be deleted if worker pool holds its last reference.
+    bool
     set_resident(bool value = true)
     noexcept
-      { return this->m_resident.store(value), *this;  }
+      { return this->m_resident.exchange(value);  }
 
     // Gets the asynchrnous state, which is set by worker threads.
     ROCKET_PURE_FUNCTION
