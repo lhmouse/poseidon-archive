@@ -6,7 +6,7 @@
 #include "main_config.hpp"
 #include "../core/abstract_fiber.hpp"
 #include "../core/config_file.hpp"
-#include "../xutilities.hpp"
+#include "../utilities.hpp"
 #include <sys/resource.h>
 #include <sys/mman.h>
 #include <semaphore.h>
