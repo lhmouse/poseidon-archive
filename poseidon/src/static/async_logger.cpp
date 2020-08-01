@@ -141,7 +141,7 @@ constexpr s_level_names[] =
 
 using Level_Config_Array = array<Level_Config, size(s_level_names)>;
 
-void
+bool
 do_write_log_entry(const Level_Config& conf, Entry&& entry)
   {
     // Get list of streams to write.
@@ -165,7 +165,7 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
 
     // If no stream is opened, return immediately.
     if(strms.empty())
-      return;
+      return false;
 
     // Compose the string to write.
     ::rocket::tinyfmt_str fmt;
@@ -260,6 +260,7 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
             "WARNING: Could not write log data: error %d: %m\n",
             errno);
     }
+    return true;
   }
 
 }  // namespace
@@ -372,9 +373,6 @@ Async_Logger::
 enqueue(Log_Level level, const char* file, long line, const char* func,
         cow_string&& text)
   {
-    if(level >= self->m_conf_levels.size())
-      return false;
-
     // Compose the entry.
     Entry entry = { level, file, line, func, ::std::move(text), "", 0 };
     ::pthread_getname_np(::pthread_self(), entry.thr_name, sizeof(entry.thr_name));
@@ -383,8 +381,7 @@ enqueue(Log_Level level, const char* file, long line, const char* func,
     if(ROCKET_UNEXPECT(self->m_thread == 0)) {
       // If the logger thread has not been created, write it immediately.
       const auto& conf = self->m_conf_levels.at(entry.level);
-      do_write_log_entry(conf, ::std::move(entry));
-      return true;
+      return do_write_log_entry(conf, ::std::move(entry));
     }
 
     // Push the entry.
