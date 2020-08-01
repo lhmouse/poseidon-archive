@@ -8,6 +8,7 @@
 #include "enums.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include "../details/socket_address.ipp"
 
 namespace poseidon {
 
@@ -16,53 +17,8 @@ class Socket_Address
   public:
     // For maximum compatibility, this union is recommended to be used
     // in place of the legacy `::sockaddr`.
-    union storage
-      {
-        ::sockaddr_storage stor;
-        ::sockaddr addr;
-        ::sockaddr_in addr4;
-        ::sockaddr_in6 addr6;
-
-        constexpr operator
-        const void*()
-        const noexcept
-          { return &(this->addr);  }
-
-        operator
-        void*()
-        noexcept
-          { return &(this->addr);  }
-
-        constexpr operator
-        const sockaddr*()
-        const noexcept
-          { return &(this->addr);  }
-
-        operator
-        sockaddr*()
-        noexcept
-          { return &(this->addr);  }
-
-        constexpr operator
-        const sockaddr_in*()
-        const noexcept
-          { return &(this->addr4);  }
-
-        operator
-        sockaddr_in*()
-        noexcept
-          { return &(this->addr4);  }
-
-        constexpr operator
-        const sockaddr_in6*()
-        const noexcept
-          { return &(this->addr6);  }
-
-        operator
-        sockaddr_in6*()
-        noexcept
-          { return &(this->addr6);  }
-      };
+    // Implicit conversions from/to `sockaddr` etc. are provided.
+    using storage = details_socket_address::storage;
 
   private:
     storage m_stor;
