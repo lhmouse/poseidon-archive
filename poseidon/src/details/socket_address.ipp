@@ -2,7 +2,7 @@
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
 #ifndef POSEIDON_SOCKET_SOCKET_ADDRESS_HPP_
-#  error Please include <poseidon/socket/socket/address.hpp> instead.
+#  error Please include <poseidon/socket/socket_address.hpp> instead.
 #endif
 
 namespace poseidon {
