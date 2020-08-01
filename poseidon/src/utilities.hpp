@@ -120,7 +120,7 @@ create_async_timer_periodic(int64_t period, FuncT&& func)
 // Enqueues an asynchronous job and returns a future to its result.
 // Functions with the same key will always be delivered to the same worker.
 template<typename FuncT>
-futp<typename ::std::result_of<typename ::std::decay<FuncT>::type ()>::type>
+futp<typename ::std::result_of<typename ::std::decay<FuncT>::type& ()>::type>
 enqueue_async_job(uintptr_t key, FuncT&& func)
   { return details_utilities::promise(
                  ::rocket::make_unique<details_utilities::Async<
@@ -130,7 +130,7 @@ enqueue_async_job(uintptr_t key, FuncT&& func)
 // Enqueues an asynchronous job and returns a future to its result.
 // The function is delivered to a random worker.
 template<typename FuncT>
-futp<typename ::std::result_of<FuncT ()>::type>
+futp<typename ::std::result_of<typename ::std::decay<FuncT>::type& ()>::type>
 enqueue_async_job(FuncT&& func)
   { return details_utilities::promise(
                  ::rocket::make_unique<details_utilities::Async<
