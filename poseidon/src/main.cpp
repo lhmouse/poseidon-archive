@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <dlfcn.h>
+#include <sys/resource.h>
 
 using namespace poseidon;
 
@@ -246,6 +247,22 @@ do_check_euid()
 
 ROCKET_NOINLINE
 void
+do_check_core_dump()
+  {
+    ::rlimit rlim;
+    if(::getrlimit(RLIMIT_CORE, &rlim) != 0)
+      POSEIDON_THROW("Could not get core dump limit\n"
+                     "[`getrlimit()` failed: $1]",
+                     format_errno(errno));
+
+    if(rlim.rlim_cur <= 0)
+      POSEIDON_LOG_WARN("Core dumps are disabled.\n"
+                        "We highly suggest you enable them in case of crashes.\n"
+                        "See `/etc/security/limits.conf` for details.");
+  }
+
+ROCKET_NOINLINE
+void
 do_load_addons()
   {
     const auto file = Main_Config::copy();
@@ -326,10 +343,14 @@ main(int argc, char** argv)
 
     // Start daemon threads.
     POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, ::getpid());
+
     Async_Logger::start();
     Timer_Driver::start();
     Network_Driver::start();
+
+    do_check_core_dump();
     do_load_addons();
+
     POSEIDON_LOG_INFO("Started up and running: $1 (PID $2)", PACKAGE_STRING, ::getpid());
 
     // Schedule fibers until a termination signal is caught.
