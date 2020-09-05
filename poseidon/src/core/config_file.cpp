@@ -352,7 +352,7 @@ reload(const char* path)
     opts.keywords_as_identifiers = true;
 
     ::asteria::Token_Stream tstrm(opts);
-    tstrm.reload(cbuf, this->m_abspath);
+    tstrm.reload(this->m_abspath, 1, cbuf);
 
     // Parse a sequence of key-value pairs.
     while(auto qkey = do_accept_object_key_opt(tstrm))
@@ -380,7 +380,7 @@ const
     for(;;) {
       // Find the child denoted by `*sptr`.
       // Return null if no such child exists or if an explicit null is found.
-      auto qchild = qobj->get_ptr(::rocket::sref(psegs[icur]));
+      auto qchild = qobj->ptr(::rocket::sref(psegs[icur]));
       if(!qchild || qchild->is_null())
         return ::asteria::null_value;
 
