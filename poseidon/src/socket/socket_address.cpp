@@ -238,7 +238,7 @@ const
       const char* host = ::inet_ntop(AF_INET, &(this->m_stor.addr4.sin_addr),
                                      sbuf, sizeof(sbuf));
       if(!host)
-        return fmt << "<invalid IPv4 address>";
+        return fmt << "[invalid IPv4 address]";
 
       return fmt << host << ":" << be16toh(this->m_stor.addr4.sin_port);
     }
@@ -248,12 +248,12 @@ const
       const char* host = ::inet_ntop(AF_INET6, &(this->m_stor.addr6.sin6_addr),
                                      sbuf, sizeof(sbuf));
       if(!host)
-        return fmt << "<invalid IPv6 address>";
+        return fmt << "[invalid IPv6 address]";
 
       return fmt << "[" << host << "]:" << be16toh(this->m_stor.addr6.sin6_port);
     }
     else
-      return fmt << "<unknown address family `" << this->family() << "`>";
+      return fmt << "[unknown address family `" << this->family() << "`>";
   }
 
 }  // namespace poseidon

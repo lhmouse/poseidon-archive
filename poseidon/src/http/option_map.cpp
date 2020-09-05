@@ -282,7 +282,7 @@ do_erase(cow_string::shallow_type key, size_t hash)
       return 0;
 
     // Clear the bucket.
-    bkt.key = ::rocket::sref("<empty>");
+    bkt.key = ::rocket::sref("[empty]");
     bkt.hash = 0xDEADBEEF;
     this->m_nbkt--;
 
