@@ -5,7 +5,7 @@
 #include "openssl.hpp"
 #include "../core/config_file.hpp"
 #include "../static/main_config.hpp"
-#include "../utilities.hpp"
+#include "../util.hpp"
 #include <openssl/err.h>
 
 namespace poseidon {

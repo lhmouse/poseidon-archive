@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "main_config.hpp"
 #include "../core/config_file.hpp"
-#include "../utilities.hpp"
+#include "../util.hpp"
 
 namespace poseidon {
 

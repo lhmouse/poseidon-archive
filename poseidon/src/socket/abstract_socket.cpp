@@ -3,7 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "abstract_socket.hpp"
-#include "../utilities.hpp"
+#include "../util.hpp"
 #include <sys/socket.h>
 
 namespace poseidon {

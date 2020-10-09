@@ -82,8 +82,6 @@ using ::asteria::phsh_string;
 using ::asteria::tinybuf;
 using ::asteria::tinyfmt;
 
-using ::asteria::cbegin;
-using ::asteria::cend;
 using ::asteria::begin;
 using ::asteria::end;
 using ::asteria::swap;
@@ -95,7 +93,6 @@ using ::asteria::rcptr;
 using ::asteria::rcfwdp;
 using ::asteria::array;
 using ::asteria::opt;
-using ::asteria::refp;
 
 using ::rocket::linear_buffer;
 using ::rocket::atomic;

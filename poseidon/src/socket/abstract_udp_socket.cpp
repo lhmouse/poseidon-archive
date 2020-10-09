@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "abstract_udp_socket.hpp"
 #include "../static/network_driver.hpp"
-#include "../utilities.hpp"
+#include "../util.hpp"
 #include <net/if.h>
 
 namespace poseidon {

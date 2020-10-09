@@ -3,7 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "option_map.hpp"
-#include "../utilities.hpp"
+#include "../util.hpp"
 
 namespace poseidon {
 namespace {

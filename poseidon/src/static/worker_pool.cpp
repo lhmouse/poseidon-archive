@@ -6,7 +6,7 @@
 #include "main_config.hpp"
 #include "../core/abstract_async_job.hpp"
 #include "../core/config_file.hpp"
-#include "../utilities.hpp"
+#include "../util.hpp"
 
 namespace poseidon {
 namespace {

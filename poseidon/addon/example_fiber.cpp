@@ -6,7 +6,7 @@
 #include "../src/static/fiber_scheduler.hpp"
 #include "../src/core/abstract_timer.hpp"
 #include "../src/static/timer_driver.hpp"
-#include "../src/utilities.hpp"
+#include "../src/util.hpp"
 
 namespace {
 

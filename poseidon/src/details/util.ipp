@@ -1,12 +1,12 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_UTILITIES_HPP_
-#  error Please include <poseidon/utilities.hpp> instead.
+#ifndef POSEIDON_UTIL_HPP_
+#  error Please include <poseidon/util.hpp> instead.
 #endif
 
 namespace poseidon {
-namespace details_utilities {
+namespace details_util {
 
 template<typename... ParamsT>
 ROCKET_NOINLINE inline
@@ -177,5 +177,5 @@ promise(uptr<AsyncT>&& async)
     return futr;
   }
 
-}  // namespace details_utilities
+}  // namespace details_util
 }  // namespace poseidon

@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "abstract_tcp_server_socket.hpp"
 #include "abstract_tcp_socket.hpp"
-#include "../utilities.hpp"
+#include "../util.hpp"
 
 namespace poseidon {
 

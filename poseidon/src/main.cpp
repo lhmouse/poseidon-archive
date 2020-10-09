@@ -9,7 +9,7 @@
 #include "static/network_driver.hpp"
 #include "static/worker_pool.hpp"
 #include "static/fiber_scheduler.hpp"
-#include "utilities.hpp"
+#include "util.hpp"
 #include <locale.h>
 #include <unistd.h>
 #include <signal.h>

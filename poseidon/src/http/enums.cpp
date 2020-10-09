@@ -3,7 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "enums.hpp"
-#include "../utilities.hpp"
+#include "../util.hpp"
 
 namespace poseidon {
 

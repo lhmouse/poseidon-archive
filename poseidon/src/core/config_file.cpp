@@ -3,7 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "config_file.hpp"
-#include "../utilities.hpp"
+#include "../util.hpp"
 #include <asteria/compiler/token_stream.hpp>
 #include <asteria/compiler/enums.hpp>
 #include <asteria/compiler/parser_error.hpp>
@@ -190,7 +190,7 @@ do_parse_value_nonrecursive(::asteria::Token_Stream& tstrm)
 
           switch(name[0]) {
             case 'n':
-              value = nullptr;
+              value = nullopt;
               break;
 
             case 't':
@@ -317,7 +317,7 @@ const
     // Throw the exception now.
     POSEIDON_THROW("Unexpected type of $1 (expecting $2, got `$3`)\n"
                    "[in file '$4']",
-                   path, expect, ::asteria::describe_vtype(value.vtype()),
+                   path, expect, ::asteria::describe_type(value.type()),
                    this->m_abspath);
   }
 
@@ -380,7 +380,7 @@ const
     for(;;) {
       // Find the child denoted by `*sptr`.
       // Return null if no such child exists or if an explicit null is found.
-      auto qchild = qobj->ptr(::rocket::sref(psegs[icur]));
+      auto qchild = qobj.get().ptr(::rocket::sref(psegs[icur]));
       if(!qchild || qchild->is_null())
         return ::asteria::null_value;
 

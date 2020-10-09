@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_UTILITIES_HPP_
-#define POSEIDON_UTILITIES_HPP_
+#ifndef POSEIDON_UTIL_HPP_
+#define POSEIDON_UTIL_HPP_
 
 #include "fwd.hpp"
 #include "static/async_logger.hpp"
@@ -12,9 +12,9 @@
 #include "core/promise.hpp"
 #include "core/future.hpp"
 #include "static/worker_pool.hpp"
-#include <asteria/utilities.hpp>
+#include <asteria/util.hpp>
 #include <cstdio>
-#include "details/utilities.ipp"
+#include "details/util.ipp"
 
 namespace poseidon {
 
@@ -43,7 +43,7 @@ ascii_trim(cow_string str);
 // Composes a string and submits it to the logger.
 #define POSEIDON_LOG_X_(level, ...)  \
     (::poseidon::Async_Logger::enabled(level) &&  \
-         (::poseidon::details_utilities::format_log(level, __FILE__, __LINE__, __func__,  \
+         (::poseidon::details_util::format_log(level, __FILE__, __LINE__, __func__,  \
                                                     "" __VA_ARGS__), 1))
 
 #define POSEIDON_LOG_FATAL(...)   POSEIDON_LOG_X_(::poseidon::log_level_fatal,  __VA_ARGS__)
@@ -55,8 +55,7 @@ ascii_trim(cow_string str);
 
 // Composes a string and throws an exception.
 #define POSEIDON_THROW(...)  \
-    (::poseidon::details_utilities::format_throw(__FILE__, __LINE__, __func__,  \
-                                                 "" __VA_ARGS__))
+    (::poseidon::details_util::format_throw(__FILE__, __LINE__, __func__, "" __VA_ARGS__))
 
 // Creates a thread that invokes `loopfnT` repeatedly and never exits.
 // Exceptions thrown from the thread procedure are ignored.
@@ -70,7 +69,7 @@ create_daemon_thread(const char* name, void* param = nullptr)
     // Create the thread.
     ::pthread_t thr;
     int err = ::pthread_create(&thr, nullptr,
-                       details_utilities::daemon_thread_proc<loopfnT>, param);
+                       details_util::daemon_thread_proc<loopfnT>, param);
     if(err != 0)
       POSEIDON_THROW("Could not create thread '$2'\n"
                     "[`pthread_create()` failed: $1]",
@@ -95,7 +94,7 @@ template<typename FuncT>
 rcptr<Abstract_Timer>
 create_async_timer(int64_t next, int64_t period, FuncT&& func)
   { return Timer_Driver::insert(
-                 ::rocket::make_unique<details_utilities::Timer<
+                 ::rocket::make_unique<details_util::Timer<
                        typename ::std::decay<FuncT>::type>>(
                            next, period, ::std::forward<FuncT>(func)));  }
 
@@ -104,7 +103,7 @@ template<typename FuncT>
 rcptr<Abstract_Timer>
 create_async_timer_oneshot(int64_t next, FuncT&& func)
   { return Timer_Driver::insert(
-                 ::rocket::make_unique<details_utilities::Timer<
+                 ::rocket::make_unique<details_util::Timer<
                        typename ::std::decay<FuncT>::type>>(
                            next, 0, ::std::forward<FuncT>(func)));  }
 
@@ -113,7 +112,7 @@ template<typename FuncT>
 rcptr<Abstract_Timer>
 create_async_timer_periodic(int64_t period, FuncT&& func)
   { return Timer_Driver::insert(
-                 ::rocket::make_unique<details_utilities::Timer<
+                 ::rocket::make_unique<details_util::Timer<
                        typename ::std::decay<FuncT>::type>>(
                            period, period, ::std::forward<FuncT>(func)));  }
 
@@ -122,8 +121,8 @@ create_async_timer_periodic(int64_t period, FuncT&& func)
 template<typename FuncT>
 futp<typename ::std::result_of<typename ::std::decay<FuncT>::type& ()>::type>
 enqueue_async_job(uintptr_t key, FuncT&& func)
-  { return details_utilities::promise(
-                 ::rocket::make_unique<details_utilities::Async<
+  { return details_util::promise(
+                 ::rocket::make_unique<details_util::Async<
                        typename ::std::decay<FuncT>::type>>(
                            key, ::std::forward<FuncT>(func)));  }
 
@@ -132,10 +131,10 @@ enqueue_async_job(uintptr_t key, FuncT&& func)
 template<typename FuncT>
 futp<typename ::std::result_of<typename ::std::decay<FuncT>::type& ()>::type>
 enqueue_async_job(FuncT&& func)
-  { return details_utilities::promise(
-                 ::rocket::make_unique<details_utilities::Async<
+  { return details_util::promise(
+                 ::rocket::make_unique<details_util::Async<
                        typename ::std::decay<FuncT>::type>>(
-                           details_utilities::random_key, ::std::forward<FuncT>(func)));  }
+                           details_util::random_key, ::std::forward<FuncT>(func)));  }
 
 }  // namespace asteria
 
