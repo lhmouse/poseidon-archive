@@ -104,23 +104,25 @@ constexpr char s_escapes[][8] =
 
 template<typename... ParamsT>
 bool
-do_color(tinyfmt& fmt, const Level_Config& conf, const ParamsT&... params)
+do_color(cow_string& log_text, const Level_Config& conf, const ParamsT&... params)
   {
     if(conf.color.empty())
       return false;
 
-    void* unused[] = { &(fmt << "\x1B["), &(fmt << params)..., &(fmt << 'm') };
+    void* unused[] = { &(log_text += "\x1B["),
+                       &(log_text += params)...,
+                       &(log_text += 'm') };
     (void)unused;
     return true;
   }
 
 bool
-do_end_color(tinyfmt& fmt, const Level_Config& conf)
+do_end_color(cow_string& log_text, const Level_Config& conf)
   {
     if(conf.color.empty())
       return false;
 
-    fmt << "\x1B[0m";
+    log_text += "\x1B[0m";
     return true;
   }
 
@@ -168,9 +170,8 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
       return false;
 
     // Compose the string to write.
-    ::rocket::tinyfmt_str fmt;
-    fmt.set_string(cow_string(2047, '/'));
-    fmt.clear_string();
+    cow_string log_text;
+    log_text.reserve(2047);
 
     // Write the timestamp.
     ::timespec ts;
@@ -178,68 +179,70 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
     ::tm tr;
     ::localtime_r(&(ts.tv_sec), &tr);
 
-    do_color(fmt, conf, conf.color);
-    ::rocket::ascii_numput nump;
-    // 'yyyy-mmmm-dd HH:MM:SS.sss'
-    fmt << nump.put_DU(static_cast<uint64_t>(tr.tm_year + 1900), 4);
-    fmt << '-' << nump.put_DU(static_cast<uint64_t>(tr.tm_mon + 1), 2);
-    fmt << '-' << nump.put_DU(static_cast<uint64_t>(tr.tm_mday), 2);
-    fmt << ' ' << nump.put_DU(static_cast<uint64_t>(tr.tm_hour), 2);
-    fmt << ':' << nump.put_DU(static_cast<uint64_t>(tr.tm_min), 2);
-    fmt << ':' << nump.put_DU(static_cast<uint64_t>(tr.tm_sec), 2);
-    fmt << '.' << nump.put_DU(static_cast<uint64_t>(ts.tv_nsec), 9);
-    do_end_color(fmt, conf);
-    fmt << ' ';
+    do_color(log_text, conf, conf.color);
+    char temp[64];
+    ::strftime(temp, sizeof(temp), "%F %R", &tr);
+    log_text += temp;
+    ::sprintf(temp, ":%2.9f", tr.tm_sec + double(ts.tv_nsec) / 1.0e9);
+    log_text += temp;
+    do_end_color(log_text, conf);
+    log_text += " ";
 
     // Write the log level string.
-    do_color(fmt, conf, conf.color, ";7");  // reverse
-    fmt << names.fmt_name;
-    do_end_color(fmt, conf);
-    fmt << ' ';
+    do_color(log_text, conf, conf.color, ";7");  // reverse
+    log_text += names.fmt_name;
+    do_end_color(log_text, conf);
+    log_text += " ";
 
     // Write the thread ID and name.
-    do_color(fmt, conf, "30;1");  // grey
-    fmt << "Thread \"" << entry.thr_name << "\" [LWP " << entry.thr_lwpid << "]";
-    do_end_color(fmt, conf);
-    fmt << "  ";
+    do_color(log_text, conf, "30;1");  // grey
+    log_text += "Thread \"";
+    log_text += entry.thr_name;
+    ::sprintf(temp, "\" [LWP %ld]", long(entry.thr_lwpid));
+    log_text += temp;
+    do_end_color(log_text, conf);
+    log_text += "  ";
 
     // Write the function name.
-    do_color(fmt, conf, "37;1");  // bright white
-    fmt << "Function `" << entry.func << "`";
-    do_end_color(fmt, conf);
-    fmt << "  ";
+    do_color(log_text, conf, "37;1");  // bright white
+    log_text += "Function `";
+    log_text += entry.func;
+    log_text += "`";
+    do_end_color(log_text, conf);
+    log_text += "  ";
 
     // Write the file name and line number.
-    do_color(fmt, conf, "34;1");  // bright blue
-    fmt << "@ " << entry.file << ':' << entry.line;
-    do_end_color(fmt, conf);
-    fmt << "\n\t";
+    do_color(log_text, conf, "34;1");  // bright blue
+    log_text += "@ ";
+    log_text += entry.file;
+    ::sprintf(temp, ":%ld", entry.line);
+    log_text += temp;
+    do_end_color(log_text, conf);
+    log_text += "\n\t";
 
     // Write the message.
-    do_color(fmt, conf, conf.color);
+    do_color(log_text, conf, conf.color);
     for(size_t k = 0;  k != entry.text.size();  ++k) {
       const auto& seq = s_escapes[uint8_t(entry.text[k])];
       if(ROCKET_EXPECT(seq[1] == 0)) {
         // Optimize the operation a little if it is a non-escaped character.
-        fmt << seq[0];
+        log_text += seq[0];
       }
       else if(ROCKET_EXPECT(seq[0] != '\\')) {
         // Insert non-escaped characters verbatim.
-        fmt << seq;
+        log_text += seq;
       }
       else {
         // Write an escaped sequence.
-        do_color(fmt, conf, "7");  // reverse
-        fmt << seq;
-        do_color(fmt, conf, "27");  // reverse
+        do_color(log_text, conf, "7");  // reverse
+        log_text += seq;
+        do_color(log_text, conf, "27");  // reverse
       }
     }
-    do_end_color(fmt, conf);
-    fmt << "\n\n";
+    do_end_color(log_text, conf);
+    log_text += "\n\n";
 
     // Write data to all streams.
-    const auto str = fmt.extract_string();
-
     for(const auto& fd : strms) {
       // Note we only retry writing in case of EINTR.
       // `::write()` shall block, so partial writes are ignored.
@@ -247,7 +250,7 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
 
       for(;;) {
         err = 0;
-        if(::write(fd, str.data(), str.size()) >= 0)
+        if(::write(fd, log_text.data(), log_text.size()) >= 0)
           break;
 
         err = errno;
