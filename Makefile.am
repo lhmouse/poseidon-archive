@@ -10,7 +10,7 @@ AM_CPPFLAGS = -pipe -pthread -Wall -Wextra -fPIC -DPIC  \
   -W{invalid-pch,switch-enum,suggest-attribute=noreturn,shadow,missing-field-initializers}  \
   -Wunused-{function,label,local-typedefs,{,but-set-}{variable,parameter}}
 
-AM_CXXFLAGS = -include .pch.hpp -std=gnu++14 -Wp,-std=c++11 -fno-gnu-keywords  \
+AM_CXXFLAGS = -include precompiled.w.hpp -std=gnu++14 -Wp,-std=c++11 -fno-gnu-keywords  \
   -fvisibility-inlines-hidden  \
   -Wno-redundant-move  \
   -Werror={non-virtual-dtor,missing-declarations}
@@ -28,21 +28,21 @@ LDADD = lib/libposeidon.la
 
 ## Pre-compiled header
 BUILT_SOURCES =  \
-  .pch.hpp  \
-  .pch.hpp.gch  \
+  precompiled.w.hpp  \
+  precompiled.w.hpp.gch  \
   ${NOTHING}
 
 CLEANFILES =  \
-  .pch.hpp  \
-  .pch.hpp.gch  \
-  .pch.hpp.gch.lo  \
+  precompiled.w.hpp  \
+  precompiled.w.hpp.gch  \
+  precompiled.w.hpp.gch.lo  \
   ${NOTHING}
 
-.pch.hpp: ${srcdir}/poseidon/src/precompiled.hpp
+precompiled.w.hpp: ${srcdir}/poseidon/src/precompiled.hpp
 	## Build the wrapper header, which contains the absolute path to the plain header.
 	${AM_V_GEN}echo "#include \"$$(cygpath -m $< 2>/dev/null || readlink -f $<)\"" >$@
 
-.pch.hpp.gch: .pch.hpp config.h
+precompiled.w.hpp.gch: precompiled.w.hpp config.h
 	## Compile the header. This must use LTCXXCOMPILE due to some nasty PIC flags...
 	${AM_V_CXX}${LTCXXCOMPILE} -x c++-header -Wno-error $< -o $@.o
 	## ..., but it causes the 'real' output to go into './libs/' and leaves a text file outside,
