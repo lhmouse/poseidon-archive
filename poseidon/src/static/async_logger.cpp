@@ -109,10 +109,9 @@ do_color(cow_string& log_text, const Level_Config& conf, const ParamsT&... param
     if(conf.color.empty())
       return false;
 
-    void* unused[] = { &(log_text += "\x1B["),
-                       &(log_text += params)...,
-                       &(log_text += 'm') };
-    (void)unused;
+    log_text += "\x1B[";
+    (void*[]){ &(log_text += params)... };
+    log_text += "m";
     return true;
   }
 
@@ -173,7 +172,7 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
     cow_string log_text;
     log_text.reserve(2047);
 
-    // Write the timestamp.
+    // Write the timestamp and log level string.
     ::timespec ts;
     ::clock_gettime(CLOCK_REALTIME, &ts);
     ::tm tr;
@@ -183,16 +182,12 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
     char temp[64];
     ::strftime(temp, sizeof(temp), "%F %R", &tr);
     log_text += temp;
-    ::sprintf(temp, ":%2.9f", tr.tm_sec + double(ts.tv_nsec) / 1.0e9);
+    ::sprintf(temp, ":%2.9f ", tr.tm_sec + double(ts.tv_nsec) / 1.0e9);
     log_text += temp;
-    do_end_color(log_text, conf);
-    log_text += " ";
-
-    // Write the log level string.
-    do_color(log_text, conf, conf.color, ";7");  // reverse
+    do_color(log_text, conf, "7");  // reverse
     log_text += names.fmt_name;
     do_end_color(log_text, conf);
-    log_text += " ";
+    log_text += "  ";
 
     // Write the thread ID and name.
     do_color(log_text, conf, "30;1");  // grey

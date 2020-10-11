@@ -130,13 +130,13 @@ final
 
   public:
     template<typename... ParamsT>
-    Async(uintptr_t key, int64_t period, ParamsT&&... params)
+    Async(uintptr_t key, ParamsT&&... params)
       : Abstract_Async_Job(key),
         m_func(::std::forward<ParamsT>(params)...)
       { }
 
     template<typename... ParamsT>
-    Async(random_key_t, int64_t period, ParamsT&&... params)
+    Async(random_key_t, ParamsT&&... params)
       : Abstract_Async_Job(reinterpret_cast<uintptr_t>(this) / alignof(max_align_t)),
         m_func(::std::forward<ParamsT>(params)...)
       { }
