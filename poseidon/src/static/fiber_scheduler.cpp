@@ -628,7 +628,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
           // Check for blocking conditions.
           // Note that `Promise::set_value()` first attempts to lock the future, then constructs
-          // the value. Cnly after the construction succeeds, does it call `Fiber_Scheduler::signal()`.
+          // the value. Only after the construction succeeds, does it call `Fiber_Scheduler::signal()`.
           if((sig == 0) && fiber->m_sched_futp && fiber->m_sched_futp->do_is_empty()) {
             // Check wait duration.
             int64_t delta = now - fiber->m_sched_yield_since;
