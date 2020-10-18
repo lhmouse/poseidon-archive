@@ -17,7 +17,7 @@ const ::asteria::Value&
 Config_File::
 do_throw_type_mismatch(const char* const* bptr, size_t epos, const char* expect,
                        const ::asteria::Value& value)
-const
+  const
   {
     cow_string path;
     path << '`';
@@ -41,7 +41,7 @@ reload(const cow_string& path)
 const ::asteria::Value&
 Config_File::
 get_value(const char* const* psegs, size_t nsegs)
-const
+  const
   {
     auto qobj = &(this->m_root);
     size_t icur = 0;
@@ -71,7 +71,7 @@ const
 opt<bool>
 Config_File::
 get_bool_opt(const char* const* psegs, size_t nsegs)
-const
+  const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())
@@ -86,7 +86,7 @@ const
 opt<int64_t>
 Config_File::
 get_int64_opt(const char* const* psegs, size_t nsegs)
-const
+  const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())
@@ -101,7 +101,7 @@ const
 opt<double>
 Config_File::
 get_double_opt(const char* const* psegs, size_t nsegs)
-const
+  const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())
@@ -116,7 +116,7 @@ const
 opt<cow_string>
 Config_File::
 get_string_opt(const char* const* psegs, size_t nsegs)
-const
+  const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())
@@ -131,7 +131,7 @@ const
 opt<::asteria::V_array>
 Config_File::
 get_array_opt(const char* const* psegs, size_t nsegs)
-const
+  const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())
@@ -146,7 +146,7 @@ const
 opt<::asteria::V_object>
 Config_File::
 get_object_opt(const char* const* psegs, size_t nsegs)
-const
+  const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())

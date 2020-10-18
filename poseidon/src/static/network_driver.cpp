@@ -61,7 +61,7 @@ struct Poll_Socket
 
 void
 do_event_wait(int fd)
-noexcept
+  noexcept
   {
     int err;
 
@@ -82,7 +82,7 @@ noexcept
 
 void
 do_event_signal(int fd)
-noexcept
+  noexcept
   {
     int err;
 
@@ -630,7 +630,7 @@ insert(uptr<Abstract_Socket>&& usock)
 bool
 Network_Driver::
 notify_writable_internal(const Abstract_Socket* csock)
-noexcept
+  noexcept
   {
     // If the socket has been removed or is not writable , don't do anything.
     simple_mutex::unique_lock lock(self->m_poll_mutex);

@@ -100,7 +100,7 @@ atomic_signal exit_sig;
 
 void
 do_trap_exit_signal(int sig)
-noexcept
+  noexcept
   {
     // Trap Ctrl-C. Failure to set the signal handler is ignored.
     struct ::sigaction sigx = { };
@@ -134,7 +134,7 @@ enum Exit_Code : uint8_t
 [[noreturn]] ROCKET_NOINLINE
 int
 do_exit(Exit_Code code, const char* fmt, ...)
-noexcept
+  noexcept
   {
     // Sleep for a few moments so pending logs are flushed.
     Async_Logger::synchronize(1000);

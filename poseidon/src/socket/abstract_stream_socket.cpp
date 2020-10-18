@@ -16,7 +16,7 @@ Abstract_Stream_Socket::
 IO_Result
 Abstract_Stream_Socket::
 do_call_stream_preshutdown_unlocked()
-noexcept
+  noexcept
   try {
     // Call `do_stream_preshutdown_unlocked()`, ignoring any exeptions.
     return this->do_stream_preshutdown_unlocked();
@@ -32,7 +32,7 @@ noexcept
 IO_Result
 Abstract_Stream_Socket::
 do_async_shutdown_unlocked()
-noexcept
+  noexcept
   {
     switch(this->m_cstate) {
       case connection_state_initial:
@@ -125,7 +125,7 @@ do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
 size_t
 Abstract_Stream_Socket::
 do_write_queue_size(simple_mutex::unique_lock& lock)
-const
+  const
   {
     lock.lock(this->m_io_mutex);
 
@@ -247,7 +247,7 @@ do_async_send(const void* data, size_t size)
 const Socket_Address&
 Abstract_Stream_Socket::
 get_remote_address()
-const
+  const
   {
     this->m_remote_addr_once.call(
       [this] {
@@ -269,7 +269,7 @@ const
 bool
 Abstract_Stream_Socket::
 shut_down()
-noexcept
+  noexcept
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate > connection_state_established)

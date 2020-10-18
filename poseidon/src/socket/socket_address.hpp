@@ -163,7 +163,7 @@ class Socket_Address
 inline
 void
 swap(Socket_Address& lhs, Socket_Address& rhs)
-noexcept
+  noexcept
   { lhs.swap(rhs);  }
 
 inline

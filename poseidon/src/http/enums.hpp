@@ -23,25 +23,25 @@ enum HTTP_Version : uint16_t
 ROCKET_CONST_FUNCTION
 const char*
 format_http_version(HTTP_Version ver)
-noexcept;
+  noexcept;
 
 // Parses a version number from plain text.
 // `http_version_null` is returned if the string is not valid.
 ROCKET_PURE_FUNCTION
 HTTP_Version
 parse_http_version(const char* bptr, const char* eptr)
-noexcept;
+  noexcept;
 
 ROCKET_PURE_FUNCTION inline
 HTTP_Version
 parse_http_version(const char* bptr, size_t len)
-noexcept
+  noexcept
   { return noadl::parse_http_version(bptr, bptr + len);  }
 
 ROCKET_PURE_FUNCTION inline
 HTTP_Version
 parse_http_version(const char* bptr)
-noexcept
+  noexcept
   { return noadl::parse_http_version(bptr, ::std::strlen(bptr));  }
 
 // These are HTTP verbs a.k.a. methods.
@@ -63,25 +63,25 @@ enum HTTP_Verb : uint8_t
 ROCKET_CONST_FUNCTION
 const char*
 format_http_verb(HTTP_Verb verb)
-noexcept;
+  noexcept;
 
 // Parses a verb from plain text.
 // `http_verb_null` is returned if the string is not valid.
 ROCKET_PURE_FUNCTION
 HTTP_Verb
 parse_http_verb(const char* bptr, const char* eptr)
-noexcept;
+  noexcept;
 
 ROCKET_PURE_FUNCTION inline
 HTTP_Verb
 parse_http_verb(const char* bptr, size_t len)
-noexcept
+  noexcept
   { return noadl::parse_http_verb(bptr, bptr + len);  }
 
 ROCKET_PURE_FUNCTION inline
 HTTP_Verb
 parse_http_verb(const char* bptr)
-noexcept
+  noexcept
   { return noadl::parse_http_verb(bptr, ::std::strlen(bptr));  }
 
 // These are HTTP status codes.
@@ -159,7 +159,7 @@ enum HTTP_Status : uint16_t
 ROCKET_CONST_FUNCTION
 const char*
 describe_http_status(HTTP_Status stat)
-noexcept;
+  noexcept;
 
 // These are HTTP status code classes.
 enum HTTP_Status_Class : uint8_t
@@ -176,14 +176,14 @@ enum HTTP_Status_Class : uint8_t
 constexpr
 HTTP_Status_Class
 classify_http_status(HTTP_Status stat)
-noexcept
+  noexcept
   { return static_cast<HTTP_Status_Class>(static_cast<uint32_t>(stat) / 100);  }
 
 // Gets the x00 status code.
 constexpr
 HTTP_Status
 get_http_status_base(HTTP_Status_Class stcls)
-noexcept
+  noexcept
   { return static_cast<HTTP_Status>(static_cast<uint32_t>(stcls) * 100);  }
 
 }  // namespace poseidon

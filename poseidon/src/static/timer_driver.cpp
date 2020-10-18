@@ -12,7 +12,7 @@ namespace {
 inline
 int64_t&
 do_shift_time(int64_t& value, int64_t shift)
-noexcept
+  noexcept
   {
     // `value` must be non-negative. `shift` may be any value.
     ROCKET_ASSERT(value >= 0);
@@ -23,7 +23,7 @@ noexcept
 
 int64_t
 do_get_time(int64_t shift)
-noexcept
+  noexcept
   {
     // Get the time since the system was started.
     ::timespec ts;
@@ -205,7 +205,7 @@ insert(uptr<Abstract_Timer>&& utimer)
 bool
 Timer_Driver::
 invalidate_internal(const Abstract_Timer* ctimer, int64_t first, int64_t period)
-noexcept
+  noexcept
   {
     // Don't do anything if the timer does not exist in the queue.
     simple_mutex::unique_lock lock(self->m_pq_mutex);

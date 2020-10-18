@@ -13,7 +13,7 @@ ROCKET_NOINLINE inline
 void
 format_log(Log_Level level, const char* file, long line, const char* func,
            const char* templ, const ParamsT&... params)
-noexcept
+  noexcept
   try {
     // Compose the message.
     ::rocket::tinyfmt_str fmt;
@@ -84,7 +84,7 @@ daemon_thread_proc(void* param)
 
 template<typename FuncT>
 class Timer
-final
+  final
   : public Abstract_Timer
   {
   private:
@@ -118,7 +118,7 @@ struct random_key_t
 
 template<typename FuncT>
 class Async
-final
+  final
   : public Abstract_Async_Job
   {
   public:

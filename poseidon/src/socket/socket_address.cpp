@@ -12,7 +12,7 @@ namespace {
 inline
 ::std::bitset<32>
 do_cast_ipv4(const ::in_addr& in4)
-noexcept
+  noexcept
   {
     ::std::bitset<32> bits;
     bits = be32toh(in4.s_addr);
@@ -22,7 +22,7 @@ noexcept
 inline
 ::std::bitset<32>
 do_make_ipv4(const array<uint8_t, 4>& segs)
-noexcept
+  noexcept
   {
     ::std::bitset<32> bits;
     for(size_t k = 0;  k != 4;  ++k)
@@ -33,7 +33,7 @@ noexcept
 inline
 ::std::bitset<128>
 do_cast_ipv6(const ::in6_addr& in6)
-noexcept
+  noexcept
   {
     ::std::bitset<128> bits;
     for(size_t k = 0;  k != 16;  ++k)
@@ -44,7 +44,7 @@ noexcept
 inline
 ::std::bitset<128>
 do_make_ipv6(const array<uint16_t, 8>& segs)
-noexcept
+  noexcept
   {
     ::std::bitset<128> bits;
     for(size_t k = 0;  k != 8;  ++k)
@@ -56,7 +56,7 @@ template<size_t N>
 constexpr
 bool
 do_match(const ::std::bitset<N>& addr, const ::std::bitset<N>& comp, size_t bits)
-noexcept
+  noexcept
   {
     ::std::bitset<N> mask;
     if(bits < mask.size())
@@ -69,7 +69,7 @@ noexcept
 
 Socket_Address_Class
 do_classify_ipv4(const ::std::bitset<32>& addr)
-noexcept
+  noexcept
   {
     // 0.0.0.0/8: Local Identification
     if(do_match(addr, do_make_ipv4({0,0,0,0}), 8))
@@ -108,7 +108,7 @@ noexcept
 
 Socket_Address_Class
 do_classify_ipv6(const ::std::bitset<128>& addr)
-noexcept
+  noexcept
   {
     // ::/128: Unspecified
     if(do_match(addr, do_make_ipv6({0,0,0,0,0,0,0,0}), 128))
@@ -173,7 +173,7 @@ static_assert(::std::is_trivially_copyable<Socket_Address>::value &&
 Socket_Address_Class
 Socket_Address::
 classify()
-const noexcept
+  const noexcept
   {
     if(this->family() == AF_INET) {
       // Try IPv4.
@@ -190,7 +190,7 @@ const noexcept
 unique_FD
 Socket_Address::
 create_socket(int type, int protocol)
-const
+  const
   {
     if(this->family() == 0)
       POSEIDON_THROW("Null address family");
@@ -230,7 +230,7 @@ parse(const char* host, uint16_t port)
 tinyfmt&
 Socket_Address::
 print(tinyfmt& fmt)
-const
+  const
   {
     if(this->family() == AF_INET) {
       // Try IPv4.

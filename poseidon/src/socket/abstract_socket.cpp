@@ -29,7 +29,7 @@ do_set_common_options()
 void
 Abstract_Socket::
 abort()
-noexcept
+  noexcept
   {
     // Enable linger to discard all pending data.
     // Failure to set this option is ignored.
@@ -45,7 +45,7 @@ noexcept
 const Socket_Address&
 Abstract_Socket::
 get_local_address()
-const
+  const
   {
     this->m_local_addr_once.call(
       [this] {

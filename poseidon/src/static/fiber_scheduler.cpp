@@ -13,24 +13,11 @@
 #include <signal.h>
 
 namespace poseidon {
-
-#ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
-extern "C"
-void
-__sanitizer_start_switch_fiber(void** save, const void* sp_base, size_t st_size)
-noexcept;
-
-extern "C"
-void
-__sanitizer_finish_switch_fiber(void* save, const void** sp_base, size_t* st_size)
-noexcept;
-#endif
-
 namespace {
 
 int64_t
 do_get_monotonic_seconds()
-noexcept
+  noexcept
   {
     ::timespec ts;
     ::clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -127,7 +114,7 @@ using poolable_stack = ::rocket::unique_handle<stack_pointer, Stack_Pooler>;
 
 void
 do_unmap_stack_aux(stack_pointer sp)
-noexcept
+  noexcept
   {
     char* vm_base = static_cast<char*>(sp.base) - page_size;
     size_t vm_size = sp.size + page_size * 2;
@@ -331,6 +318,18 @@ class Queue_Semaphore
   };
 
 }  // namespace
+
+#ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
+extern "C"
+void
+__sanitizer_start_switch_fiber(void** save, const void* sp_base, size_t st_size)
+  noexcept;
+
+extern "C"
+void
+__sanitizer_finish_switch_fiber(void* save, const void** sp_base, size_t* st_size)
+  noexcept;
+#endif
 
 POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
   {
@@ -796,7 +795,7 @@ reload()
 Abstract_Fiber*
 Fiber_Scheduler::
 current_opt()
-noexcept
+  noexcept
   {
     auto myctx = self->get_thread_context();
     if(!myctx)
@@ -930,7 +929,7 @@ insert(uptr<Abstract_Fiber>&& ufiber)
 bool
 Fiber_Scheduler::
 signal(const Abstract_Future& futr)
-noexcept
+  noexcept
   {
     // Move all fibers from the future's wait queue to the ready queue.
     simple_mutex::unique_lock lock(self->m_sched_mutex);

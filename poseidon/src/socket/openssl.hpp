@@ -34,7 +34,7 @@ using unique_SSL = uptr<::SSL, SSL_deleter>;
 // Returns the number of errors that have been dumped.
 size_t
 dump_ssl_errors()
-noexcept;
+  noexcept;
 
 #define POSEIDON_SSL_THROW(...)   (::poseidon::dump_ssl_errors(), POSEIDON_THROW(__VA_ARGS__))
 

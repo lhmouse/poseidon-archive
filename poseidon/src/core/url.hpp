@@ -233,7 +233,7 @@ class URL
 inline
 void
 swap(URL& lhs, URL& rhs)
-noexcept
+  noexcept
   { lhs.swap(rhs);  }
 
 inline

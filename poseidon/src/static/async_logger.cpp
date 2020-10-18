@@ -354,7 +354,7 @@ reload()
 bool
 Async_Logger::
 enabled(Log_Level level)
-noexcept
+  noexcept
   {
     // Validate arguments.
     simple_mutex::unique_lock lock(self->m_conf_mutex);
@@ -392,7 +392,7 @@ enqueue(Log_Level level, const char* file, long line, const char* func,
 void
 Async_Logger::
 synchronize(long msecs)
-noexcept
+  noexcept
   {
     // Wait until the log queue becomes empty.
     simple_mutex::unique_lock lock(self->m_queue_mutex);

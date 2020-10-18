@@ -105,7 +105,7 @@ do_copy_default_ssl_ctx(::SSL_CTX* ctx)
 
 size_t
 dump_ssl_errors()
-noexcept
+  noexcept
   {
     char sbuf[1024];
     size_t index = 0;

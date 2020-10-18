@@ -9,7 +9,7 @@ namespace poseidon {
 
 const char*
 format_http_version(HTTP_Version ver)
-noexcept
+  noexcept
   {
     switch(ver) {
       case http_version_1_0:
@@ -26,7 +26,7 @@ noexcept
 
 HTTP_Version
 parse_http_version(const char* bptr, const char* eptr)
-noexcept
+  noexcept
   {
     // Check hard-coded characters.
     if(eptr - bptr != 8)
@@ -54,7 +54,7 @@ noexcept
 
 const char*
 format_http_verb(HTTP_Verb verb)
-noexcept
+  noexcept
   {
     switch(verb) {
       case http_verb_get:
@@ -89,7 +89,7 @@ noexcept
 
 HTTP_Verb
 parse_http_verb(const char* bptr, const char* eptr)
-noexcept
+  noexcept
   {
     switch(eptr - bptr) {
       case 3: {
@@ -143,7 +143,7 @@ noexcept
 
 const char*
 describe_http_status(HTTP_Status stat)
-noexcept
+  noexcept
   {
     switch(stat) {
       case http_status_continue:

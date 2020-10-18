@@ -55,7 +55,7 @@ Abstract_UDP_Socket::
 IO_Result
 Abstract_UDP_Socket::
 do_async_shutdown_unlocked()
-noexcept
+  noexcept
   {
     switch(this->m_cstate) {
       case connection_state_initial:
@@ -131,7 +131,7 @@ do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
 size_t
 Abstract_UDP_Socket::
 do_write_queue_size(simple_mutex::unique_lock& lock)
-const
+  const
   {
     lock.lock(this->m_io_mutex);
 
@@ -434,7 +434,7 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname)
 bool
 Abstract_UDP_Socket::
 shut_down()
-noexcept
+  noexcept
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate > connection_state_established)

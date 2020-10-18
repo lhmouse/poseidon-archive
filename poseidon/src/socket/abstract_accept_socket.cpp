@@ -84,7 +84,7 @@ do_on_async_poll_read(simple_mutex::unique_lock& /*lock*/, void* /*hint*/, size_
 size_t
 Abstract_Accept_Socket::
 do_write_queue_size(simple_mutex::unique_lock& /*lock*/)
-const
+  const
   {
     return 0;
   }

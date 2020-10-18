@@ -288,7 +288,7 @@ class Option_Map
 inline
 void
 swap(Option_Map& lhs, Option_Map& rhs)
-noexcept
+  noexcept
   { lhs.swap(rhs);  }
 
 inline

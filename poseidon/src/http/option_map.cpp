@@ -38,13 +38,13 @@ constexpr uint8_t s_opt_ctype_table[128] =
 constexpr
 uint8_t
 do_get_opt_ctype(char c)
-noexcept
+  noexcept
   { return (uint8_t(c) < 128) ? s_opt_ctype_table[uint8_t(c)] : 0;  }
 
 constexpr
 bool
 do_is_opt_ctype(char c, uint8_t mask)
-noexcept
+  noexcept
   { return do_get_opt_ctype(c) & mask;  }
 
 tinyfmt&
@@ -138,7 +138,7 @@ Option_Map::
 size_t
 Option_Map::
 do_bucket_index(cow_string::shallow_type key, size_t hash)
-const noexcept
+  const noexcept
   {
 #ifdef ROCKET_DEBUG
     ROCKET_ASSERT(this->do_key_hash(key) == hash);
@@ -162,7 +162,7 @@ const noexcept
 pair<const cow_string*, size_t>
 Option_Map::
 do_equal_range(cow_string::shallow_type key, size_t hash)
-const noexcept
+  const noexcept
   {
     const auto& bkt = this->m_stor[this->do_bucket_index(key, hash)];
     if(bkt.vstor.index() == 1) {
@@ -324,7 +324,7 @@ do_erase(cow_string::shallow_type key, size_t hash)
 tinyfmt&
 Option_Map::
 print(tinyfmt& fmt)
-const
+  const
   {
     fmt << "{\n";
 
@@ -357,7 +357,7 @@ const
 tinyfmt&
 Option_Map::
 print_url_query(tinyfmt& fmt)
-const
+  const
   {
     size_t count = SIZE_MAX;
 
@@ -443,7 +443,7 @@ parse_url_query(const cow_string& str)
 tinyfmt&
 Option_Map::
 print_http_header(tinyfmt& fmt)
-const
+  const
   {
     size_t count = SIZE_MAX;
 

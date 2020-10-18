@@ -48,13 +48,13 @@ constexpr uint8_t s_url_ctype_table[128] =
 constexpr
 uint8_t
 do_get_url_ctype(char c)
-noexcept
+  noexcept
   { return (uint8_t(c) < 128) ? s_url_ctype_table[uint8_t(c)] : 0;  }
 
 constexpr
 bool
 do_is_url_ctype(char c, uint8_t mask)
-noexcept
+  noexcept
   { return do_get_url_ctype(c) & mask;  }
 
 tinyfmt&
@@ -117,7 +117,7 @@ URL::~URL()
 uint16_t
 URL::
 do_get_default_port()
-const noexcept
+  const noexcept
   {
     // Look up the well-known port for the current scheme.
     // Note the scheme string is always in lowercase.
@@ -235,7 +235,7 @@ do_verify_and_set_query(cow_string&& val)
 tinyfmt&
 URL::
 print(tinyfmt& fmt)
-const
+  const
   {
     // If a scheme field is present, write it.
     if(this->m_scheme.size())

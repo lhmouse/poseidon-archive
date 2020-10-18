@@ -134,7 +134,7 @@ reload()
 size_t
 Worker_Pool::
 thread_count()
-noexcept
+  noexcept
   {
     return self->m_workers.size();
   }

@@ -32,7 +32,7 @@ reload()
 Config_File
 Main_Config::
 copy()
-noexcept
+  noexcept
   {
     // Note again config files are copy-on-write and cheap to copy.
     simple_mutex::unique_lock lock(self->m_mutex);
