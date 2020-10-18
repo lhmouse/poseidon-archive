@@ -16,12 +16,13 @@ class Config_File
     ::asteria::V_object m_root;
 
   public:
+    constexpr
     Config_File()
       noexcept
       { }
 
     explicit
-    Config_File(const char* path)
+    Config_File(const cow_string& path)
       { this->reload(path);  }
 
     ASTERIA_COPYABLE_DESTRUCTOR(Config_File);
@@ -80,7 +81,7 @@ class Config_File
     // If this function fails, an exception is thrown and the contents are
     // indeterminate (basic exception safety guarantee).
     Config_File&
-    reload(const char* path);
+    reload(const cow_string& path);
 
     // Gets a value denoted by a path, which shall not be empty.
     // If the path does not denote an existent value, a statically allocated
