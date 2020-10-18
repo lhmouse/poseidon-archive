@@ -271,13 +271,17 @@ do_load_addons()
       return;
 
     POSEIDON_LOG_DEBUG("List of add-ons to load:\n$1", *qaddons);
+    ::std::vector<cow_string> paths;
+    paths.reserve(qaddons->size());
 
     for(const auto& addon : *qaddons) {
-      // Load the shared library denoted by `addon`
       if(!addon.is_string())
         POSEIDON_THROW("Invalid add-on path (`$1` is not a string)", addon);
 
-      const auto& path = addon.as_string();
+      paths.emplace_back(addon.as_string());
+    }
+
+    for(const auto& path : paths) {
       POSEIDON_LOG_INFO("Loading add-on: $1", path);
 
       if(!::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE))
