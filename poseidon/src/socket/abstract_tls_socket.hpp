@@ -33,22 +33,22 @@ class Abstract_TLS_Socket
     // Calls `::SSL_set_connect_state()`.
     void
     do_stream_preconnect_unlocked()
-    final;
+      final;
 
     // Calls `::SSL_read()`.
     IO_Result
     do_stream_read_unlocked(void* data, size_t size)
-    final;
+      final;
 
     // Calls `::SSL_write()`.
     IO_Result
     do_stream_write_unlocked(const void* data, size_t size)
-    final;
+      final;
 
     // Calls `::SSL_shutdown()`.
     IO_Result
     do_stream_preshutdown_unlocked()
-    final;
+      final;
 
   protected:
     // Notifies a full-duplex channel has been established.
@@ -56,13 +56,13 @@ class Abstract_TLS_Socket
     // Please mind thread safety, as this function is called by the network thread.
     void
     do_on_async_establish()
-    override;
+      override;
 
     // Consumes incoming data.
     // Please mind thread safety, as this function is called by the network thread.
     void
     do_on_async_receive(linear_buffer&& rqueue)
-    override
+      override
       = 0;
 
     // Notifies a full-duplex channel has been closed.
@@ -70,7 +70,7 @@ class Abstract_TLS_Socket
     // Please mind thread safety, as this function is called by the network thread.
     void
     do_on_async_shutdown(int err)
-    override;
+      override;
 
   public:
     using Abstract_Socket::get_fd;

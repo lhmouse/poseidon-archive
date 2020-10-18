@@ -30,7 +30,7 @@ class Abstract_UDP_Socket
     inline
     IO_Result
     do_async_shutdown_unlocked()
-    noexcept;
+      noexcept;
 
     // Reads some data.
     // `lock` will lock `*this` after the call.
@@ -38,25 +38,25 @@ class Abstract_UDP_Socket
     // bytes to read.
     IO_Result
     do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
-    final;
+      final;
 
     // Returns `0` due to lack of congestion control.
     // `lock` will lock `*this` after the call, nevertheless.
     size_t
     do_write_queue_size(simple_mutex::unique_lock& lock)
-    const final;
+      const final;
 
     // Writes some data.
     // `lock` will lock `*this` after the call.
     // `hint` and `size` are ignored.
     IO_Result
     do_on_async_poll_write(simple_mutex::unique_lock& lock, void* hint, size_t size)
-    final;
+      final;
 
     // Notifies this socket has been closed.
     void
     do_on_async_poll_shutdown(int err)
-    final;
+      final;
 
   protected:
     // Notifies a socket has been open for sending data.
@@ -132,7 +132,7 @@ class Abstract_UDP_Socket
     // written through it.
     bool
     shut_down()
-    noexcept;
+      noexcept;
   };
 
 }  // namespace poseidon

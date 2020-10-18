@@ -36,12 +36,12 @@ class Abstract_Stream_Socket
     inline
     IO_Result
     do_call_stream_preshutdown_unlocked()
-    noexcept;
+      noexcept;
 
     inline
     IO_Result
     do_async_shutdown_unlocked()
-    noexcept;
+      noexcept;
 
     // Reads some data.
     // `lock` will lock `*this` after the call.
@@ -49,25 +49,25 @@ class Abstract_Stream_Socket
     // bytes to read.
     IO_Result
     do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
-    final;
+      final;
 
     // Returns the estimated size of data pending for writing.
     // `lock` will lock `*this` after the call.
     size_t
     do_write_queue_size(simple_mutex::unique_lock& lock)
-    const final;
+      const final;
 
     // Writes some data.
     // `lock` will lock `*this` after the call.
     // `hint` and `size` are ignored.
     IO_Result
     do_on_async_poll_write(simple_mutex::unique_lock& lock, void* hint, size_t size)
-    final;
+      final;
 
     // Notifies a full-duplex channel has been closed.
     void
     do_on_async_poll_shutdown(int err)
-    final;
+      final;
 
   protected:
     // Performs outgoing connecting preparation.
@@ -149,7 +149,7 @@ class Abstract_Stream_Socket
     // This function throws an exception if no peer has connected.
     const Socket_Address&
     get_remote_address()
-    const;
+      const;
 
     // Initiates normal closure of this stream.
     // This function returns `true` if the shutdown request completes immediately,
@@ -158,7 +158,7 @@ class Abstract_Stream_Socket
     // Note half-closed connections are not supported.
     bool
     shut_down()
-    noexcept;
+      noexcept;
   };
 
 }  // namespace poseidon

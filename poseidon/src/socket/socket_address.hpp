@@ -28,12 +28,12 @@ class Socket_Address
     // Note this is a trivially copyable and destructible class.
     constexpr
     Socket_Address()
-    noexcept
+      noexcept
       : m_stor(), m_size(0)
       { }
 
     Socket_Address(const storage& stor, size_t size)
-    noexcept
+      noexcept
       { this->assign(stor, size);  }
 
     Socket_Address(const char* host, uint16_t port)
@@ -43,44 +43,44 @@ class Socket_Address
     // Gets the `AF_` or `PF_` field.
     ::sa_family_t
     family()
-    const noexcept
+      const noexcept
       { return this->m_stor.addr.sa_family;  }
 
     // Checks whether this is an IPv4 address.
     // An IPv4-mapped IPv6 address is not an IPv4 one.
     bool
     is_ipv4()
-    const noexcept
+      const noexcept
       { return this->m_stor.addr.sa_family == AF_INET;  }
 
     // Checks whether this is an IPv6 address.
     // An IPv4-mapped IPv6 address is an IPv6 one.
     bool
     is_ipv6()
-    const noexcept
+      const noexcept
       { return this->m_stor.addr.sa_family == AF_INET6;  }
 
     // Gets internal data.
     // The pointer and size can be passed to `bind()` or `connect()`
     const storage&
     data()
-    const noexcept
+      const noexcept
       { return this->m_stor;  }
 
     size_t
     size()
-    const noexcept
+      const noexcept
       { return this->m_size;  }
 
     ::socklen_t
     ssize()
-    const noexcept
+      const noexcept
       { return static_cast<::socklen_t>(this->m_size);  }
 
     // Resets to the default-constructed one (all zeroes).
     Socket_Address&
     clear()
-    noexcept
+      noexcept
       {
         this->m_stor.addr.sa_family = 0;
         this->m_size = 0;
@@ -89,7 +89,7 @@ class Socket_Address
 
     Socket_Address&
     swap(Socket_Address& other)
-    noexcept
+      noexcept
       {
         ::std::swap(this->m_stor, other.m_stor);
         ::std::swap(this->m_size, other.m_size);
@@ -100,26 +100,26 @@ class Socket_Address
     ROCKET_PURE_FUNCTION
     Socket_Address_Class
     classify()
-    const noexcept;
+      const noexcept;
 
     bool
     is_loopback()
-    const noexcept
+      const noexcept
       { return this->classify() == socket_address_class_loopback;  }
 
     bool
     is_private()
-    const noexcept
+      const noexcept
       { return this->classify() == socket_address_class_private;  }
 
     bool
     is_multicast()
-    const noexcept
+      const noexcept
       { return this->classify() == socket_address_class_multicast;  }
 
     bool
     is_public()
-    const noexcept
+      const noexcept
       { return this->classify() == socket_address_class_public;  }
 
     // Sets contents from the result of a call to `recvfrom()`.
@@ -129,7 +129,7 @@ class Socket_Address
     // is undefined.
     Socket_Address&
     assign(const storage& stor, size_t size)
-    noexcept
+      noexcept
       {
         ROCKET_ASSERT_MSG(size <= sizeof(stor), "Invalid socket address size");
 
@@ -142,7 +142,7 @@ class Socket_Address
     // This function throws an exception on failure, and there is no effect.
     unique_FD
     create_socket(int type, int protocol)
-    const;
+      const;
 
     // Loads address from a string.
     // Either an IPv4 or IPv6 address may be specified. The address family is
@@ -157,7 +157,7 @@ class Socket_Address
     // to the host as a string, separated by a colon.
     tinyfmt&
     print(tinyfmt& fmt)
-    const;
+      const;
   };
 
 inline

@@ -24,7 +24,7 @@ class Abstract_Timer
 
   public:
     Abstract_Timer(int64_t first, int64_t period)
-    noexcept
+      noexcept
       : m_first(first), m_period(period)
       { }
 
@@ -43,26 +43,26 @@ class Abstract_Timer
     // Marks this timer to be deleted.
     bool
     shut_down()
-    noexcept
+      noexcept
       { return this->m_zombie.exchange(true);  }
 
     // Marks this this timer to be deleted if timer driver holds its last reference.
     bool
     set_resident(bool value = true)
-    noexcept
+      noexcept
       { return this->m_resident.exchange(value);  }
 
     // Gets the counter.
     ROCKET_PURE_FUNCTION
     uint64_t
     count()
-    const noexcept
+      const noexcept
       { return this->m_count.load();  }
 
     // Resets the first triggered time and the period.
     Abstract_Timer&
     reset(int64_t first, int64_t period)
-    noexcept;
+      noexcept;
   };
 
 }  // namespace poseidon

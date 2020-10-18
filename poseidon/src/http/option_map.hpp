@@ -23,7 +23,7 @@ class Option_Map
 
         operator
         bool()
-        const noexcept
+          const noexcept
           { return this->vstor.index() != 0;  }
       };
 
@@ -33,7 +33,7 @@ class Option_Map
   public:
     constexpr
     Option_Map()
-    noexcept
+      noexcept
       { }
 
     ASTERIA_COPYABLE_DESTRUCTOR(Option_Map);
@@ -43,7 +43,7 @@ class Option_Map
     static constexpr
     size_t
     do_key_hash(cow_string::shallow_type sh)
-    noexcept
+      noexcept
       {
         auto bptr = sh.c_str();
         auto eptr = bptr + sh.length();
@@ -64,7 +64,7 @@ class Option_Map
     static constexpr
     bool
     do_key_equal(cow_string::shallow_type s1, cow_string::shallow_type s2)
-    noexcept
+      noexcept
       {
         if(s1.length() != s2.length())
           return false;
@@ -95,12 +95,12 @@ class Option_Map
     inline
     size_t
     do_bucket_index(cow_string::shallow_type key, size_t hash)
-    const noexcept;
+      const noexcept;
 
     ROCKET_PURE_FUNCTION
     pair<const cow_string*, size_t>
     do_equal_range(cow_string::shallow_type key, size_t hash)
-    const noexcept;
+      const noexcept;
 
     inline
     void
@@ -119,14 +119,14 @@ class Option_Map
     // Checks whether any buckets are in use.
     bool
     empty()
-    const noexcept
+      const noexcept
       { return this->m_nbkt != 0;  }
 
     // Gets a scalar value.
     // If multiple values exist, the last one is returned.
     const cow_string*
     find_opt(cow_string::shallow_type key)
-    const noexcept
+      const noexcept
       {
         auto r = this->do_equal_range(key, this->do_key_hash(key));
         return r.second ? (r.first + r.second - 1) : nullptr;
@@ -134,7 +134,7 @@ class Option_Map
 
     const cow_string*
     find_opt(const cow_string& key)
-    const noexcept
+      const noexcept
       { return this->find_opt(::rocket::sref(key));  }
 
     // Sets a scalar value.
@@ -150,7 +150,7 @@ class Option_Map
     // Gets an array value.
     pair<const cow_string*, const cow_string*>
     equal_range(cow_string::shallow_type key)
-    const noexcept
+      const noexcept
       {
         auto r = this->do_equal_range(key, this->do_key_hash(key));
         return { r.first, r.first + r.second };
@@ -158,7 +158,7 @@ class Option_Map
 
     pair<const cow_string*, const cow_string*>
     equal_range(const cow_string& key)
-    const noexcept
+      const noexcept
       { return this->equal_range(::rocket::sref(key));  }
 
     // Appends a new value to an array.
@@ -174,7 +174,7 @@ class Option_Map
     // Retrieves the number of values matching a key.
     size_t
     count(cow_string::shallow_type key)
-    const noexcept
+      const noexcept
       {
         auto r = this->do_equal_range(key, this->do_key_hash(key));
         return r.second;
@@ -182,7 +182,7 @@ class Option_Map
 
     size_t
     count(const cow_string& key)
-    const noexcept
+      const noexcept
       { return this->count(::rocket::sref(key));  }
 
     // Removes all values matching a key.
@@ -204,7 +204,7 @@ class Option_Map
     template<typename FuncT>
     bool
     enumerate(FuncT&& func)
-    const
+      const
       {
         for(const auto& bkt : this->m_stor) {
           if(bkt.vstor.index() == 1) {
@@ -225,7 +225,7 @@ class Option_Map
     // These are general modifiers.
     Option_Map&
     clear()
-    noexcept
+      noexcept
       {
         this->m_stor.clear();
         this->m_nbkt = 0;
@@ -234,7 +234,7 @@ class Option_Map
 
     Option_Map&
     swap(Option_Map& other)
-    noexcept
+      noexcept
       {
         this->m_stor.swap(other.m_stor);
         ::std::swap(this->m_nbkt, other.m_nbkt);
@@ -244,13 +244,13 @@ class Option_Map
     // Converts this map to a human-readable string.
     tinyfmt&
     print(tinyfmt& fmt)
-    const;
+      const;
 
     // Converts this map to an URL query string.
     // This is the inverse function of `parse_url_query()`.
     tinyfmt&
     print_url_query(tinyfmt& fmt)
-    const;
+      const;
 
     // Parses a URL query string.
     // If an element contains no equals sign (such as the `foo` in `foo&bar=42`), it is
@@ -265,7 +265,7 @@ class Option_Map
     // This is the inverse function of `parse_http_header()`.
     tinyfmt&
     print_http_header(tinyfmt& fmt)
-    const;
+      const;
 
     // Parses an HTTP header value.
     // A header value is a series of fields delimited by semicolons. A field may be a

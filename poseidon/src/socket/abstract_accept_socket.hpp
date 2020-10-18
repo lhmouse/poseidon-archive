@@ -30,21 +30,21 @@ class Abstract_Accept_Socket
     // Please mind thread safety, as this function is called by the network thread.
     IO_Result
     do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
-    final;
+      final;
 
     // Does nothing.
     // This function always returns zero.
     // `lock` is ignored.
     size_t
     do_write_queue_size(simple_mutex::unique_lock& lock)
-    const final;
+      const final;
 
     // Does nothing.
     // This function always returns `io_result_eof`.
     // `lock` is ignored.
     IO_Result
     do_on_async_poll_write(simple_mutex::unique_lock& lock, void* hint, size_t size)
-    final;
+      final;
 
   protected:
     // Consumes an accepted socket descriptor.
@@ -68,7 +68,7 @@ class Abstract_Accept_Socket
     // Please mind thread safety, as this function is called by the network thread.
     void
     do_on_async_poll_shutdown(int err)
-    override;
+      override;
 
     // Binds this socket to the specified address and starts listening.
     // `backlog` is clamped between `1` and `SOMAXCONN`. Out-of-bound values

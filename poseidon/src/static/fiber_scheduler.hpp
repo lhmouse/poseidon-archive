@@ -34,7 +34,7 @@ class Fiber_Scheduler
     ROCKET_PURE_FUNCTION static
     Abstract_Fiber*
     current_opt()
-    noexcept;
+      noexcept;
 
     // Suspends the current fiber until a future becomes satisfied.
     // `current_opt()` must not return null when this function is called.
@@ -62,7 +62,7 @@ class Fiber_Scheduler
     static
     bool
     signal(const Abstract_Future& futr)
-    noexcept;
+      noexcept;
   };
 
 }  // namespace poseidon

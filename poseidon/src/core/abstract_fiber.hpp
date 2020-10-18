@@ -32,7 +32,7 @@ class Abstract_Fiber
 
   public:
     Abstract_Fiber()
-    noexcept
+      noexcept
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Fiber);
@@ -51,41 +51,41 @@ class Abstract_Fiber
     virtual
     void
     do_on_start()
-    noexcept;
+      noexcept;
 
     virtual
     void
     do_on_suspend()
-    noexcept;
+      noexcept;
 
     virtual
     void
     do_on_resume()
-    noexcept;
+      noexcept;
 
     virtual
     void
     do_on_finish()
-    noexcept;
+      noexcept;
 
   public:
     // Marks this fiber to be deleted.
     bool
     shut_down()
-    noexcept
+      noexcept
       { return this->m_zombie.exchange(true);  }
 
     // Marks this fiber to be deleted if fiber scheduler holds its last reference.
     bool
     set_resident(bool value = true)
-    noexcept
+      noexcept
       { return this->m_resident.exchange(value);  }
 
     // Gets the fiber state, which is set by the scheduler.
     ROCKET_PURE_FUNCTION
     Async_State
     state()
-    const noexcept
+      const noexcept
       { return this->m_state.load();  }
   };
 

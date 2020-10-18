@@ -20,7 +20,7 @@ struct Example_Session : Abstract_TCP_Socket
 
     void
     do_on_async_receive(linear_buffer&& rqueue)
-    override
+      override
       {
         POSEIDON_LOG_WARN("example TCP session received: $1",
                           cow_string(rqueue.data(), rqueue.size()));
@@ -46,7 +46,7 @@ struct Example_Server : Abstract_TCP_Server_Socket
 
     uptr<Abstract_TCP_Socket>
     do_on_async_accept_tcp(unique_FD&& fd)
-    override
+      override
       {
         return ::rocket::make_unique<Example_Session>(::std::move(fd));
       }

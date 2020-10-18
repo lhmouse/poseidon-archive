@@ -45,11 +45,11 @@ class Abstract_TLS_Server_Socket
   private:
     uptr<Abstract_Socket>
     do_on_async_accept(unique_FD&& fd)
-    final;
+      final;
 
     void
     do_on_async_register(rcptr<Abstract_Socket>&& sock)
-    final;
+      final;
 
   protected:
     // Consumes an accepted socket.

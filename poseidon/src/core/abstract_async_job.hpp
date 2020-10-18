@@ -23,7 +23,7 @@ class Abstract_Async_Job
   public:
     explicit
     Abstract_Async_Job(uintptr_t key)
-    noexcept
+      noexcept
       : m_key(key)
       { }
 
@@ -42,20 +42,20 @@ class Abstract_Async_Job
     // Marks this job to be deleted immediately.
     bool
     shut_down()
-    noexcept
+      noexcept
       { return this->m_zombie.exchange(true);  }
 
     // Marks this job to be deleted if worker pool holds its last reference.
     bool
     set_resident(bool value = true)
-    noexcept
+      noexcept
       { return this->m_resident.exchange(value);  }
 
     // Gets the asynchrnous state, which is set by worker threads.
     ROCKET_PURE_FUNCTION
     Async_State
     state()
-    const noexcept
+      const noexcept
       { return this->m_state.load();  }
   };
 

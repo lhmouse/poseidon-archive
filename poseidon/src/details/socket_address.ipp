@@ -18,45 +18,45 @@ union storage
     // This union is implicit convertible to `void*`.
     constexpr operator
     const void*()
-    const noexcept
+      const noexcept
       { return &(this->addr);  }
 
     operator
     void*()
-    noexcept
+      noexcept
       { return &(this->addr);  }
 
     // This union is implicit convertible to `sockaddr*`.
     constexpr operator
     const ::sockaddr*()
-    const noexcept
+      const noexcept
       { return &(this->addr);  }
 
     operator
     ::sockaddr*()
-    noexcept
+      noexcept
       { return &(this->addr);  }
 
     // This union is implicit convertible to an IPv4 address.
     constexpr operator
     const ::sockaddr_in*()
-    const noexcept
+      const noexcept
       { return &(this->addr4);  }
 
     operator
     ::sockaddr_in*()
-    noexcept
+      noexcept
       { return &(this->addr4);  }
 
     // This union is implicit convertible to an IPv6 address.
     constexpr operator
     const ::sockaddr_in6*()
-    const noexcept
+      const noexcept
       { return &(this->addr6);  }
 
     operator
     ::sockaddr_in6*()
-    noexcept
+      noexcept
       { return &(this->addr6);  }
   };
 

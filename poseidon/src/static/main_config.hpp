@@ -26,7 +26,7 @@ class Main_Config
     static
     Config_File
     copy()
-    noexcept;
+      noexcept;
   };
 
 }  // namespace poseidon

@@ -17,7 +17,7 @@ class Config_File
 
   public:
     Config_File()
-    noexcept
+      noexcept
       { }
 
     explicit
@@ -31,37 +31,37 @@ class Config_File
     const ::asteria::Value&
     do_throw_type_mismatch(const char* const* bptr, size_t epos, const char* expect,
                            const ::asteria::Value& value)
-    const;
+      const;
 
   public:
     const cow_string&
     abspath()
-    const noexcept
+      const noexcept
       { return this->m_abspath;  }
 
     bool
     empty()
-    const noexcept
+      const noexcept
       { return this->m_root.empty();  }
 
     ::asteria::V_object::const_iterator
     begin()
-    const noexcept
+      const noexcept
       { return this->m_root.begin();  }
 
     ::asteria::V_object::const_iterator
     end()
-    const noexcept
+      const noexcept
       { return this->m_root.end();  }
 
     const ::asteria::V_object&
     root()
-    const noexcept
+      const noexcept
       { return this->m_root;  }
 
     Config_File&
     clear()
-    noexcept
+      noexcept
       {
         this->m_root.clear();
         return *this;
@@ -69,7 +69,7 @@ class Config_File
 
     Config_File&
     swap(Config_File& other)
-    noexcept
+      noexcept
       {
         this->m_abspath.swap(other.m_abspath);
         this->m_root.swap(other.m_root);
@@ -88,67 +88,67 @@ class Config_File
     // to get a field of a value which is not an object, an exception is thrown.
     const ::asteria::Value&
     get_value(const char* const* psegs, size_t nsegs)
-    const;
+      const;
 
     const ::asteria::Value&
     get_value(initializer_list<const char*> path)
-    const
+      const
       { return this->get_value(path.begin(), path.size());  }
 
     // These functions behave like `query_value()` except that they perform
     // type checking and conversion as needed.
     opt<bool>
     get_bool_opt(const char* const* psegs, size_t nsegs)
-    const;
+      const;
 
     opt<bool>
     get_bool_opt(initializer_list<const char*> path)
-    const
+      const
       { return this->get_bool_opt(path.begin(), path.size());  }
 
     opt<int64_t>
     get_int64_opt(const char* const* psegs, size_t nsegs)
-    const;
+      const;
 
     opt<int64_t>
     get_int64_opt(initializer_list<const char*> path)
-    const
+      const
       { return this->get_int64_opt(path.begin(), path.size());  }
 
     opt<double>
     get_double_opt(const char* const* psegs, size_t nsegs)
-    const;
+      const;
 
     opt<double>
     get_double_opt(initializer_list<const char*> path)
-    const
+      const
       { return this->get_double_opt(path.begin(), path.size());  }
 
     opt<cow_string>
     get_string_opt(const char* const* psegs, size_t nsegs)
-    const;
+      const;
 
     opt<cow_string>
     get_string_opt(initializer_list<const char*> path)
-    const
+      const
       { return this->get_string_opt(path.begin(), path.size());  }
 
     opt<::asteria::V_array>
     get_array_opt(const char* const* psegs, size_t nsegs)
-    const;
+      const;
 
     opt<::asteria::V_array>
     get_array_opt(initializer_list<const char*> path)
-    const
+      const
       { return this->get_array_opt(path.begin(), path.size());  }
 
     opt<::asteria::V_object>
     get_object_opt(const char* const* psegs, size_t nsegs)
-    const;
+      const;
 
     opt<::asteria::V_object>
     get_object_opt(initializer_list<const char*> path)
-    const
+      const
       { return this->get_object_opt(path.begin(), path.size());  }
   };
 

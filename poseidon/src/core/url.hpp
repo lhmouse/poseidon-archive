@@ -32,7 +32,7 @@ class URL
   public:
     constexpr
     URL()
-    noexcept
+      noexcept
       { }
 
     explicit
@@ -48,7 +48,7 @@ class URL
   private:
     uint16_t
     do_get_default_port()
-    const noexcept;
+      const noexcept;
 
     cow_string&
     do_verify_and_set_scheme(cow_string&& val);
@@ -63,7 +63,7 @@ class URL
     // Gets the scheme.
     const cow_string&
     scheme()
-    noexcept
+      noexcept
       { return this->m_scheme;  }
 
     // Sets the scheme.
@@ -76,13 +76,13 @@ class URL
 
     URL&
     clear_scheme()
-    noexcept
+      noexcept
       { return this->m_scheme.clear(), *this;  }
 
     // Gets the user information.
     const cow_string&
     userinfo()
-    noexcept
+      noexcept
       { return this->m_userinfo;  }
 
     // Sets the user information, which may comprise arbitrary characters.
@@ -92,13 +92,13 @@ class URL
 
     URL&
     clear_userinfo()
-    noexcept
+      noexcept
       { return this->m_userinfo.clear(), *this;  }
 
     // Gets the host name.
     const cow_string&
     host()
-    noexcept
+      noexcept
       { return this->m_host;  }
 
     // Sets the host name.
@@ -111,7 +111,7 @@ class URL
 
     URL&
     clear_host()
-    noexcept
+      noexcept
       { return this->m_host.clear(), *this;  }
 
     // Gets the port.
@@ -119,43 +119,43 @@ class URL
     // the scheme. If no default port is available, zero is returned.
     uint16_t
     port()
-    const noexcept
+      const noexcept
       { return this->m_port ? *(this->m_port) : this->do_get_default_port();  }
 
     // Sets the port.
     URL&
     set_port(uint16_t val)
-    noexcept
+      noexcept
       { return this->m_port = val, *this;  }
 
     URL&
     clear_port()
-    noexcept
+      noexcept
       { return this->m_port.reset(), *this;  }
 
     // Gets the path.
     // The slash initiator is not included.
     const cow_string&
     path()
-    const noexcept
+      const noexcept
       { return this->m_path;  }
 
     // Sets the path.
     // A path may comprise arbitrary characters.
     URL&
     set_path(cow_string val)
-    noexcept
+      noexcept
       { return this->m_path = ::std::move(val), *this;  }
 
     URL&
     clear_path()
-    noexcept
+      noexcept
       { return this->m_path.clear(), *this;  }
 
     // Gets the query string.
     const cow_string&
     query()
-    const noexcept
+      const noexcept
       { return this->m_query;  }
 
     // Sets the query string.
@@ -168,31 +168,31 @@ class URL
 
     URL&
     clear_query()
-    noexcept
+      noexcept
       { return this->m_query.clear(), *this;  }
 
     // Gets the fragment.
     const cow_string&
     fragment()
-    const noexcept
+      const noexcept
       { return this->m_fragment;  }
 
     // Sets the fragment.
     // A fragment may comprise arbitrary characters.
     URL&
     set_fragment(cow_string val)
-    noexcept
+      noexcept
       { return this->m_fragment = ::std::move(val), *this;  }
 
     URL&
     clear_fragment()
-    noexcept
+      noexcept
       { return this->m_fragment.clear(), *this;  }
 
     // These are general modifiers.
     URL&
     clear()
-    noexcept
+      noexcept
       {
         this->m_scheme.clear();
         this->m_userinfo.clear();
@@ -206,7 +206,7 @@ class URL
 
     URL&
     swap(URL& other)
-    noexcept
+      noexcept
       {
         this->m_scheme.swap(other.m_scheme);
         this->m_userinfo.swap(other.m_userinfo);
@@ -222,7 +222,7 @@ class URL
     // This is the inverse function of `parse()`.
     tinyfmt&
     print(tinyfmt& fmt)
-    const;
+      const;
 
     // Parses a URL string.
     // An exception is thrown if the URL is invalid.

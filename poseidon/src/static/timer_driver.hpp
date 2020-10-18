@@ -33,7 +33,7 @@ class Timer_Driver
     static
     bool
     invalidate_internal(const Abstract_Timer* timer, int64_t first, int64_t period)
-    noexcept;
+      noexcept;
   };
 
 }  // namespace poseidon

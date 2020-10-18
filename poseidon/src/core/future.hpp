@@ -26,7 +26,7 @@ class Future
 
   public:
     Future()
-    noexcept
+      noexcept
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Future);
@@ -45,7 +45,7 @@ class Future
     ROCKET_PURE_FUNCTION
     Future_State
     state()
-    const noexcept final
+      const noexcept final
       {
         simple_mutex::unique_lock lock(this->m_mutex);
         return static_cast<Future_State>(this->m_stor.index());
@@ -55,7 +55,7 @@ class Future
     // If no value has been set, an exception is thrown, and there is no effect.
     typename ::std::add_lvalue_reference<const ValueT>::type
     value()
-    const
+      const
       {
         simple_mutex::unique_lock lock(this->m_mutex);
         switch(this->m_stor.index()) {

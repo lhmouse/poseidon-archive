@@ -112,13 +112,13 @@ struct FD_Closer
     constexpr
     int
     null()
-    const noexcept
+      const noexcept
       { return -1;  }
 
     constexpr
     bool
     is_null(int fd)
-    const noexcept
+      const noexcept
       { return fd == -1;  }
 
     void

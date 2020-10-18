@@ -40,7 +40,7 @@ class Network_Driver
     static
     bool
     notify_writable_internal(const Abstract_Socket* csock)
-    noexcept;
+      noexcept;
   };
 
 }  // namespace poseidon

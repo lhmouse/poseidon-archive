@@ -27,7 +27,7 @@ class Worker_Pool
     ROCKET_PURE_FUNCTION static
     size_t
     thread_count()
-    noexcept;
+      noexcept;
 
     // Inserts an asynchronous job.
     // Functions with the same key will be delivered to the same worker thread.

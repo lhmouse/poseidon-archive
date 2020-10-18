@@ -23,7 +23,7 @@ class Abstract_Future
 
   public:
     Abstract_Future()
-    noexcept
+      noexcept
       { }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Future);
@@ -34,7 +34,7 @@ class Abstract_Future
     ROCKET_PURE_FUNCTION
     bool
     do_is_empty()
-    const noexcept
+      const noexcept
       { return this->state() == future_state_empty;  }
 
   public:
@@ -43,7 +43,7 @@ class Abstract_Future
     ROCKET_PURE_FUNCTION virtual
     Future_State
     state()
-    const noexcept
+      const noexcept
       = 0;
   };
 

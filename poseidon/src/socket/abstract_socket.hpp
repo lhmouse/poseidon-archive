@@ -56,7 +56,7 @@ class Abstract_Socket
     virtual
     size_t
     do_write_queue_size(simple_mutex::unique_lock& lock)
-    const
+      const
       = 0;
 
     // The network driver notifies possibility of outgoing data via this callback.
@@ -81,7 +81,7 @@ class Abstract_Socket
     // Marks this socket to be deleted if network driver holds its last reference.
     bool
     set_resident(bool value = true)
-    noexcept
+      noexcept
       { return this->m_resident.exchange(value);  }
 
     // Returns the stream descriptor.
@@ -90,7 +90,7 @@ class Abstract_Socket
     ROCKET_PURE_FUNCTION
     int
     get_fd()
-    const noexcept
+      const noexcept
       { return this->m_fd;  }
 
     // Causes abnormal termination of this stream.
@@ -98,12 +98,12 @@ class Abstract_Socket
     // The other peer is likely to see a 'connection reset by peer' error.
     void
     abort()
-    noexcept;
+      noexcept;
 
     // Gets the (bound) address of the local peer.
     const Socket_Address&
     get_local_address()
-    const;
+      const;
   };
 
 }  // namespace poseidon

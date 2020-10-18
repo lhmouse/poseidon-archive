@@ -14,7 +14,7 @@ struct SSL_CTX_deleter
   {
     void
     operator()(::SSL_CTX* ctx)
-    noexcept
+      noexcept
       { ::SSL_CTX_free(ctx);  }
   };
 
@@ -24,7 +24,7 @@ struct SSL_deleter
   {
     void
     operator()(::SSL* ssl)
-    noexcept
+      noexcept
       { ::SSL_free(ssl);  }
   };
 

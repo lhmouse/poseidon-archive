@@ -24,7 +24,7 @@ struct Example_Server : Abstract_UDP_Server_Socket
 
     void
     do_on_async_receive(Socket_Address&& addr, void* data, size_t size)
-    override
+      override
       {
         POSEIDON_LOG_WARN("example UDP server received from '$1': $2",
                           addr, cow_string(static_cast<char*>(data), size));

@@ -30,7 +30,7 @@ class Async_Logger
     ROCKET_PURE_FUNCTION static
     bool
     enabled(Log_Level level)
-    noexcept;
+      noexcept;
 
     // Enqueues a log entry and returns the total number of entries that are pending.
     // If this function fails, an exception is thrown, and there is no effect.
@@ -46,7 +46,7 @@ class Async_Logger
     static
     void
     synchronize(long msecs)
-    noexcept;
+      noexcept;
   };
 
 }  // namespace poseidon

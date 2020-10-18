@@ -49,19 +49,19 @@ struct PQ_Compare
     constexpr
     bool
     operator()(const PQ_Element& lhs, const PQ_Element& rhs)
-    const noexcept
+      const noexcept
       { return lhs.next > rhs.next;  }
 
     constexpr
     bool
     operator()(const PQ_Element& lhs, int64_t rhs)
-    const noexcept
+      const noexcept
       { return lhs.next > rhs;  }
 
     constexpr
     bool
     operator()(int64_t lhs, const PQ_Element& rhs)
-    const noexcept
+      const noexcept
       { return lhs > rhs.next;  }
   }
   constexpr pq_compare;

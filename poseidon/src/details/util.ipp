@@ -98,12 +98,12 @@ final
       { }
 
     ~Timer()
-    override;
+      override;
 
   private:
     void
     do_on_async_timer(int64_t now)
-    override
+      override
       { this->m_func(now);  }
   };
 
@@ -142,12 +142,12 @@ final
       { }
 
     ~Async()
-    override;
+      override;
 
   private:
     void
     do_execute()
-    override
+      override
       try {
         this->m_prom.set_value(this->m_func());
       }
@@ -158,7 +158,7 @@ final
   public:
     futp<result_type>
     future()
-    const
+      const
       { return this->m_prom.future();  }
   };
 

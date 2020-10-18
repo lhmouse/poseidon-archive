@@ -20,7 +20,7 @@ struct Example_Session : Abstract_TLS_Socket
 
     void
     do_on_async_receive(linear_buffer&& rqueue)
-    override
+      override
       {
         POSEIDON_LOG_WARN("example TLS session received: $1",
                           cow_string(rqueue.data(), rqueue.size()));
@@ -46,7 +46,7 @@ struct Example_Server : Abstract_TLS_Server_Socket
 
     uptr<Abstract_TLS_Socket>
     do_on_async_accept_tls(unique_FD&& fd, ::SSL_CTX* ctx)
-    override
+      override
       {
         return ::rocket::make_unique<Example_Session>(::std::move(fd), ctx);
       }

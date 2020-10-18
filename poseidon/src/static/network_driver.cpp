@@ -172,7 +172,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     static constexpr
     uint64_t
     make_epoll_data(uint64_t index, uint64_t serial)
-    noexcept
+      noexcept
       {
         return (index << 40) | ((serial << 24) >> 24);
       }
@@ -180,7 +180,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     static constexpr
     uint32_t
     index_from_epoll_data(uint64_t epoll_data)
-    noexcept
+      noexcept
       {
         return static_cast<uint32_t>(epoll_data >> 40);
       }
@@ -191,7 +191,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     static
     uint32_t
     find_poll_socket(uint64_t epoll_data)
-    noexcept
+      noexcept
       {
         // Perform fast lookup using the hint value.
         uint32_t index = self->index_from_epoll_data(epoll_data);
@@ -233,7 +233,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     ROCKET_PURE_FUNCTION static
     bool
     poll_lists_empty()
-    noexcept
+      noexcept
       {
         return (self->m_poll_root_cl.head == poll_index_end) &&  // close list empty
                (self->m_poll_root_rd.head == poll_index_end) &&  // read list empty
@@ -262,7 +262,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     static
     bool
     poll_list_attach(Poll_List_root<mptrT>& root, uint32_t index)
-    noexcept
+      noexcept
       {
         // Don't perform any operation if the element has already been attached.
         auto& elem = self->m_poll_elems[index];
@@ -281,7 +281,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     static
     bool
     poll_list_detach(Poll_List_root<mptrT>& root, uint32_t index)
-    noexcept
+      noexcept
       {
         // Don't perform any operation if the element has not been attached.
         auto& elem = self->m_poll_elems[index];
@@ -547,7 +547,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     static
     void
     do_signal_if_poll_lists_empty()
-    noexcept
+      noexcept
       {
         if(ROCKET_EXPECT(!self->poll_lists_empty()))
           return;
