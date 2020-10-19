@@ -94,6 +94,12 @@ using ::asteria::rcfwdp;
 using ::asteria::array;
 using ::asteria::opt;
 
+using ::asteria::static_pointer_cast;
+using ::asteria::dynamic_pointer_cast;
+using ::asteria::const_pointer_cast;
+using ::asteria::unerase_cast;
+using ::asteria::unerase_pointer_cast;
+
 using ::rocket::linear_buffer;
 using ::rocket::atomic;
 using ::rocket::atomic_relaxed;
