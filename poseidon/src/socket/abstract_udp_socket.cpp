@@ -193,8 +193,8 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, void* /*hint*/, size_t /
 
     // Write the payload, which shall be removed after `sendto()`, no matter whether it
     // succeeds or not.
-    ::ssize_t nwritten = ::sendto(this->get_fd(), this->m_wqueue.data(), header.datalen, 0,
-                                  addrst, addrlen);
+    ::ssize_t nwritten = ::sendto(this->get_fd(), this->m_wqueue.data(), header.datalen,
+                                  0, addrst, addrlen);
     this->m_wqueue.discard(header.datalen);
     if(nwritten < 0)
       return do_translate_syscall_error("sendto", errno);
@@ -306,38 +306,44 @@ set_multicast(int ifindex, uint8_t ttl, bool loop)
       mreq.imr_multiaddr.s_addr = INADDR_ANY;
       mreq.imr_address.s_addr = INADDR_ANY;
       mreq.imr_ifindex = ifindex;
-      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_IF, &mreq, sizeof(mreq)) != 0)
+      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_IF,
+                      &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW("Failed to set IPv4 multicast interface to `$2`\n"
                        "[`setsockopt()` failed: $1]",
                        format_errno(errno), ifindex);
 
       int value = ttl;
-      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_TTL, &value, sizeof(value)) != 0)
+      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_TTL,
+                      &value, sizeof(value)) != 0)
         POSEIDON_THROW("Failed to set IPv4 multicast TTL to `$2`\n"
                        "[`setsockopt()` failed: $1]",
                        format_errno(errno), value);
 
       value = -loop;
-      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_LOOP, &value, sizeof(value)) != 0)
+      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_LOOP,
+                      &value, sizeof(value)) != 0)
         POSEIDON_THROW("Failed to set IPv4 multicast loopback to `$2`\n"
                        "[`setsockopt()` failed: $1]",
                        format_errno(errno), value);
     }
     else if(family == AF_INET6) {
       // IPv6
-      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_IF, &ifindex, sizeof(ifindex)) != 0)
+      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_IF,
+                      &ifindex, sizeof(ifindex)) != 0)
         POSEIDON_THROW("Failed to set IPv6 multicast interface to `$2`\n"
                        "[`setsockopt()` failed: $1]",
                        format_errno(errno), ifindex);
 
       int value = ttl;
-      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &value, sizeof(value)) != 0)
+      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
+                      &value, sizeof(value)) != 0)
         POSEIDON_THROW("Failed to set IPv6 multicast TTL to `$2`\n"
                        "[`setsockopt()` failed: $1]",
                        format_errno(errno), value);
 
       value = -loop;
-      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &value, sizeof(value)) != 0)
+      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
+                      &value, sizeof(value)) != 0)
         POSEIDON_THROW("Failed to set IPv6 multicast loopback to `$2`\n"
                        "[`setsockopt()` failed: $1]",
                        format_errno(errno), value);
@@ -366,7 +372,8 @@ join_multicast_group(const Socket_Address& maddr, int ifindex)
       mreq.imr_multiaddr = maddr.data().addr4.sin_addr;
       mreq.imr_address.s_addr = INADDR_ANY;
       mreq.imr_ifindex = ifindex;
-      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_ADD_MEMBERSHIP,
+                      &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW("Failed to join IPv4 multicast group '$2' via interface `$3`\n"
                        "[`setsockopt()` failed: $1]",
                        format_errno(errno), maddr, ifindex);
@@ -376,7 +383,8 @@ join_multicast_group(const Socket_Address& maddr, int ifindex)
       ::ipv6_mreq mreq;
       mreq.ipv6mr_multiaddr = maddr.data().addr6.sin6_addr;
       mreq.ipv6mr_interface = static_cast<unsigned>(ifindex);
-      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
+                      &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW("Failed to join IPv6 multicast group '$2' via interface `$3`\n"
                        "[`setsockopt()` failed: $1]",
                        format_errno(errno), maddr, ifindex);
@@ -405,7 +413,8 @@ leave_multicast_group(const Socket_Address& maddr, int ifindex)
       mreq.imr_multiaddr = maddr.data().addr4.sin_addr;
       mreq.imr_address.s_addr = INADDR_ANY;
       mreq.imr_ifindex = ifindex;
-      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP,
+                      &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW("Failed to leave IPv4 multicast group '$2' via interface `$3`\n"
                        "[`setsockopt()` failed: $1]",
                        format_errno(errno), maddr, ifindex);
@@ -415,7 +424,8 @@ leave_multicast_group(const Socket_Address& maddr, int ifindex)
       ::ipv6_mreq mreq;
       mreq.ipv6mr_multiaddr = maddr.data().addr6.sin6_addr;
       mreq.ipv6mr_interface = static_cast<unsigned>(ifindex);
-      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP,
+                      &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW("Failed to leave IPv6 multicast group '$2' via interface `$3`\n"
                        "[`setsockopt()` failed: $1]",
                        format_errno(errno), maddr, ifindex);

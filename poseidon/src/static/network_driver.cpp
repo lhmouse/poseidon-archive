@@ -271,7 +271,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
         // Insert this node at the end of the doubly linked list.
         uint32_t prev = ::std::exchange(root.tail, index);
-        ((prev != poll_index_end) ? (self->m_poll_elems[prev].*mptrT).next : root.head) = index;
+        ((prev != poll_index_end)
+           ? (self->m_poll_elems[prev].*mptrT).next : root.head) = index;
         (elem.*mptrT).next = poll_index_end;
         (elem.*mptrT).prev = prev;
         return true;
@@ -291,8 +292,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         // Remove this node from the doubly linked list.
         uint32_t next = ::std::exchange((elem.*mptrT).next, poll_index_nil);
         uint32_t prev = ::std::exchange((elem.*mptrT).prev, poll_index_nil);
-        ((next != poll_index_end) ? (self->m_poll_elems[next].*mptrT).prev : root.tail) = prev;
-        ((prev != poll_index_end) ? (self->m_poll_elems[prev].*mptrT).next : root.head) = next;
+        ((next != poll_index_end)
+           ? (self->m_poll_elems[next].*mptrT).prev : root.tail) = prev;
+        ((prev != poll_index_end)
+           ? (self->m_poll_elems[prev].*mptrT).next : root.head) = next;
         return true;
       }
 
@@ -383,7 +386,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           POSEIDON_LOG_TRACE("Socket closed: $1 ($2)", sock, format_errno(err));
 
           // Remove the socket from epoll. Errors are ignored.
-          if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_DEL, sock->get_fd(), (::epoll_event*)1) != 0)
+          if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_DEL, sock->get_fd(),
+                         (::epoll_event*)1) != 0)
             POSEIDON_LOG_FATAL("failed to remove socket from epoll\n"
                                "[`epoll_ctl()` failed: $1]",
                                format_errno(errno));
@@ -448,10 +452,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             else {
               // If the socket is not throttled, try reading some bytes.
               auto io_res = sock->do_on_async_poll_read(lock,
-                                       self->m_io_buffer.data(), self->m_io_buffer.size());
+                               self->m_io_buffer.data(), self->m_io_buffer.size());
 
-              // If the read operation reports `io_result_again` or `io_result_eof`, the socket
-              // shall be removed from read queue and the `EPOLLIN` status shall be cleared.
+              // If the read operation reports `io_result_again` or `io_result_eof`, the
+              // socket shall be removed from read queue and the `EPOLLIN` status shall
+              // be cleared.
               detach = io_res <= 0;
               clear_status = io_res <= 0;
             }
@@ -465,8 +470,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             // Close the connection.
             sock->abort();
 
-            // If a read error occurs, the socket shall be removed from read queue and the
-            // `EPOLLIN` status shall be cleared.
+            // If a read error occurs, the socket shall be removed from read queue and
+            // the `EPOLLIN` status shall be cleared.
             throttle = false;
             detach = true;
             clear_status = true;
@@ -498,14 +503,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           // Perform a single write operation (no retry upon EINTR).
           try {
             auto io_res = sock->do_on_async_poll_write(lock,
-                                       self->m_io_buffer.data(), self->m_io_buffer.size());
+                             self->m_io_buffer.data(), self->m_io_buffer.size());
 
-            // If the write operation reports `io_result_again` or `io_result_eof`, the socket
-            // shall be removed from write queue.
+            // If the write operation reports `io_result_again` or `io_result_eof`, the
+            // socket shall be removed from write queue.
             detach = io_res <= 0;
 
-            // If the write operation reports `io_result_again`, in addition to the removal,
-            // the `EPOLLOUT` status shall be cleared.
+            // If the write operation reports `io_result_again`, in addition to the
+            // removal, the `EPOLLOUT` status shall be cleared.
             clear_status = io_res == io_result_again;
 
             // Check whether the socket should be unthrottled.
@@ -520,8 +525,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             // Close the connection.
             sock->abort();
 
-            // If a write error occurs, the socket shall be removed from write queue and the
-            // `EPOLLOUT` status shall be cleared.
+            // If a write error occurs, the socket shall be removed from write queue and
+            // the `EPOLLOUT` status shall be cleared.
             detach = true;
             clear_status = true;
             throttle = true;

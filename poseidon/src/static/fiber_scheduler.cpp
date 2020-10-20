@@ -362,7 +362,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
                          format_errno(err));
 
         auto key_guard = ::rocket::make_unique_handle(ckey,
-                               [](::pthread_key_t* ptr) { ::pthread_key_delete(*ptr);  });
+                      [](::pthread_key_t* ptr) { ::pthread_key_delete(*ptr);  });
 
         // Set up initialized data.
         simple_mutex::unique_lock lock(self->m_sched_mutex);
@@ -528,8 +528,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             fiber->m_sched_version += 2;
 
             auto& elem = self->m_sched_pq.back();
-            int64_t fail_timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
-            elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_since + fail_timeout);
+            int64_t timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
+            elem.time = ::rocket::min(now + conf.warn_timeout,
+                                      fiber->m_sched_yield_since + timeout);
             elem.version = fiber->m_sched_version;
             elem.fiber = ::std::move(fiber);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
@@ -580,7 +581,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             // If a signal has been received, force execution of all fibers.
             if(self->m_sched_pq.empty()) {
               // Exit if there are no more fibers.
-              POSEIDON_LOG_INFO("Shutting down due to signal $1: $2", sig, ::sys_siglist[sig]);
+              POSEIDON_LOG_INFO("Shutting down due to signal $1: $2",
+                                sig, ::sys_siglist[sig]);
               Async_Logger::synchronize(1000);
               ::std::quick_exit(0);
             }
@@ -601,8 +603,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           // Check for early exit conditions.
           if(fiber->state() == async_state_pending) {
             // Note cancellation is only possible before initialization.
-            // If the fiber stack is in use, it cannot be deallocated without possibility of
-            // resource leaks.
+            // If the fiber stack is in use, it cannot be deallocated without possibility
+            // of resource leaks.
             if(sig != 0) {
               // Delete this fiber when the process is shutting down.
               POSEIDON_LOG_DEBUG("Killed pending fiber because of shutdown: $1", fiber);
@@ -626,19 +628,22 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           }
 
           // Check for blocking conditions.
-          // Note that `Promise::set_value()` first attempts to lock the future, then constructs
-          // the value. Only after the construction succeeds, does it call `Fiber_Scheduler::signal()`.
+          // Note that `Promise::set_value()` first attempts to lock the future, then
+          // constructs the value. Only after the construction succeeds, does it call
+          // `Fiber_Scheduler::signal()`.
           if((sig == 0) && fiber->m_sched_futp && fiber->m_sched_futp->do_is_empty()) {
             // Check wait duration.
             int64_t delta = now - fiber->m_sched_yield_since;
-            int64_t fail_timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
-            if(delta < fail_timeout) {
+            int64_t timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
+            if(delta < timeout) {
               // Print a warning message if the fiber has been suspended for too long.
               if(delta >= conf.warn_timeout)
-                POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds.", fiber, delta);
+                POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds.",
+                                  fiber, delta);
 
               // Put the fiber back into the queue.
-              elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_since + fail_timeout);
+              elem.time = ::rocket::min(now + conf.warn_timeout,
+                                        fiber->m_sched_yield_since + timeout);
               elem.fiber = ::std::move(fiber);
               ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
               continue;
@@ -647,8 +652,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             // Proceed anyway.
             // This usually causes an exception to be thrown after `yield()` returns.
             POSEIDON_LOG_ERROR("Suspension of fiber `$1` has exceeded `$2` seconds.\n"
-                               "This circumstance looks permanent. Please check for deadlocks.",
-                               fiber, fail_timeout);
+                        "This circumstance looks permanent. Please check for deadlocks.",
+                        fiber, timeout);
           }
 
           // Process this fiber!
