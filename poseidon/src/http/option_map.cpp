@@ -56,7 +56,7 @@ do_encode_query(tinyfmt& fmt, const cow_string& str)
     for(;;) {
       // Get the first sequence of safe characters.
       auto mptr = ::std::find_if(bptr, eptr,
-                      [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_query_safe);  });
+              [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_query_safe);  });
 
       if(mptr != bptr)
         fmt.putn(bptr, static_cast<size_t>(mptr - bptr));
@@ -151,10 +151,10 @@ do_bucket_index(cow_string::shallow_type key, size_t hash)
     // in the table.
     auto mptr = ::rocket::get_probing_origin(bptr, eptr, hash);
     auto qbkt = ::rocket::linear_probe(bptr, mptr, mptr, eptr,
-                    [&](const Bucket& r) {
-                      return (r.hash == hash) &&
-                             this->do_key_equal(::rocket::sref(r.key), key);
-                    });
+            [&](const Bucket& r) {
+              return (r.hash == hash) &&
+                     this->do_key_equal(::rocket::sref(r.key), key);
+            });
     ROCKET_ASSERT(qbkt);
     return static_cast<size_t>(qbkt - bptr);
   }
@@ -304,7 +304,7 @@ do_erase(cow_string::shallow_type key, size_t hash)
         // need to check for collisions.
         auto mptr = ::rocket::get_probing_origin(bptr, eptr, r.hash);
         auto qbkt = ::rocket::linear_probe(bptr, mptr, mptr, eptr,
-                                           [&](const Bucket&) { return false;  });
+                                    [&](const Bucket&) { return false;  });
         ROCKET_ASSERT(qbkt);
 
         // Make the new bucket non-empty.
@@ -337,7 +337,8 @@ print(tinyfmt& fmt)
           fmt << "  ";
 
           // Print the key and value.
-          fmt << ::asteria::quote(bkt.key) << " = " << ::asteria::quote(value) << '\n';
+          fmt << ::asteria::quote(bkt.key) << " = "
+              << ::asteria::quote(value) << '\n';
         };
 
       if(bkt.vstor.index() == 1) {
@@ -345,8 +346,8 @@ print(tinyfmt& fmt)
         print_one(bkt.vstor.as<1>());
       }
       else if(bkt.vstor.index() == 2) {
-        // If the bucket holds an array of values, write each one after the key
-        // as a separated line.
+        // If the bucket holds an array of values, write each one after the
+        // key as a separated line.
         ::rocket::for_each(bkt.vstor.as<2>(), print_one);
       }
     }
@@ -381,8 +382,8 @@ print_url_query(tinyfmt& fmt)
         print_one(bkt.vstor.as<1>());
       }
       else if(bkt.vstor.index() == 2) {
-        // If the bucket holds an array of values, write each one after the key
-        // as a separated line.
+        // If the bucket holds an array of values, write each one after the
+        // key as a separated line.
         ::rocket::for_each(bkt.vstor.as<2>(), print_one);
       }
     }
@@ -399,8 +400,9 @@ parse_url_query(const cow_string& str)
     this->clear();
 
     // Ensure the string doesn't contain blank or control characters.
-    if(::rocket::any_of(str, [&](char ch) { return ::rocket::is_any_of(ch, {' ', '\t'}) ||
-                                                   do_is_opt_ctype(ch, opt_ctype_control);  }))
+    if(::rocket::any_of(str,
+                   [&](char ch) { return ::rocket::is_any_of(ch, {' ', '\t'}) ||
+                                         do_is_opt_ctype(ch, opt_ctype_control);  }))
       POSEIDON_THROW("Invalid character in URL query string: $1", str);
 
     // Why pointers? Why not iterators?
@@ -421,7 +423,8 @@ parse_url_query(const cow_string& str)
         break;
 
       // A key is terminated by either delimiter.
-      mptr = ::std::find_if(bptr, eptr, [&](char ch) { return ::rocket::is_any_of(ch, {'=', '&'});  });
+      mptr = ::std::find_if(bptr, eptr,
+                      [&](char ch) { return ::rocket::is_any_of(ch, {'=', '&'});  });
 
       // Decode the key.
       cow_string key;
@@ -455,7 +458,8 @@ print_http_header(tinyfmt& fmt)
 
       // All non-options must not contain control characters.
       const auto& str = *(r.first);
-      if(::rocket::any_of(str, [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  }))
+      if(::rocket::any_of(str,
+                         [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  }))
         POSEIDON_THROW("Invalid character in HTTP header: $1", str);
 
       // Write the non-option unquoted.
@@ -477,7 +481,8 @@ print_http_header(tinyfmt& fmt)
             fmt << "; ";
 
           // The key must be a valid token.
-          if(::rocket::any_of(bkt.key, [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_http_tchar);  }))
+          if(::rocket::any_of(bkt.key,
+                     [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_http_tchar);  }))
             POSEIDON_THROW("Invalid token in HTTP header: $1", bkt.key);
 
           // Write the key.
@@ -491,7 +496,7 @@ print_http_header(tinyfmt& fmt)
           const char* bptr = value.c_str();
           const char* const eptr = bptr + value.size();
           const char* mptr = ::std::find_if(bptr, eptr,
-                               [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_http_tchar);  });
+                     [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_http_tchar);  });
           if(mptr == eptr) {
             // Write the string verbatim.
             fmt << '=' << value;
@@ -504,13 +509,12 @@ print_http_header(tinyfmt& fmt)
           for(;;) {
             // Search for the first character that needs escaping.
             mptr = ::std::find_if(bptr, eptr,
-                            [&](char ch) {
-                              // Note that only non-control characters and TAB may be escaped.
-                              if(do_is_opt_ctype(ch, opt_ctype_control))
-                                POSEIDON_THROW("Invalid character in HTTP header value: $1", value);
-
-                              return ::rocket::is_any_of(ch, {'\"', '\\'});
-                            });
+                      [&](char ch) {
+                        // Note that only non-control characters and TAB may be escaped.
+                        if(do_is_opt_ctype(ch, opt_ctype_control))
+                          POSEIDON_THROW("Invalid character in HTTP header value: $1", value);
+                        return ::rocket::is_any_of(ch, {'\"', '\\'});
+                      });
 
             // Write all characters before this escape sequence, if any.
             if(mptr != bptr)
@@ -551,7 +555,8 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
     this->clear();
 
     // Ensure the string doesn't contain control characters.
-    if(::rocket::any_of(str, [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  }))
+    if(::rocket::any_of(str,
+                    [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  }))
       POSEIDON_THROW("Invalid character in HTTP header: $1", str);
 
     // Why pointers? Why not iterators?
@@ -572,7 +577,7 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
     // Skip leading blank characters and commas.
     // Note that leading commas are always skipped despite `comma_opt`.
     bptr = ::std::find_if(bptr, eptr,
-                          [&](char ch) { return ::rocket::is_none_of(ch, {' ', '\t', ','});  });
+                [&](char ch) { return ::rocket::is_none_of(ch, {' ', '\t', ','});  });
     if(bptr == eptr)
       return *this;
 
@@ -582,7 +587,7 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
     for(;;) {
       // Skip leading blank characters.
       bptr = ::std::find_if(bptr, eptr,
-                            [&](char ch) { return ::rocket::is_none_of(ch, {' ', '\t'});  });
+                     [&](char ch) { return ::rocket::is_none_of(ch, {' ', '\t'});  });
       if(bptr == eptr)
         break;
 
@@ -602,7 +607,7 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
       if(count >= nonopts) {
         // Get a key, which shall be a token.
         mptr = ::std::find_if(bptr, eptr,
-                              [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_http_tchar);  });
+                 [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_http_tchar);  });
         if(mptr == bptr)
           POSEIDON_THROW("Invalid HTTP header (token expected): $1", str);
 
@@ -611,7 +616,7 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
 
         // Skip trailing blank characters.
         bptr = ::std::find_if(bptr, eptr,
-                              [&](char ch) { return ::rocket::is_none_of(ch, {' ', '\t'});  });
+                 [&](char ch) { return ::rocket::is_none_of(ch, {' ', '\t'});  });
 
         // If the key is terminated by a comma, semicolon, or the end of
         // input, accept a key with an empty value.
@@ -626,11 +631,12 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
 
         // Skip trailing blank characters.
         bptr = ::std::find_if(++bptr, eptr,
-                              [&](char ch) { return ::rocket::is_none_of(ch, {' ', '\t'});  });
+                 [&](char ch) { return ::rocket::is_none_of(ch, {' ', '\t'});  });
       }
 
       // Get a value.
-      cow_string& value = this->do_mutable_append(key, this->do_key_hash(::rocket::sref(key)));
+      cow_string& value = this->do_mutable_append(key,
+                                    this->do_key_hash(::rocket::sref(key)));
 
       if(*bptr == '\"') {
         // If the value starts with a double quote, it shall be a quoted string.
@@ -669,12 +675,14 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
           if(*bptr == ';')
             break;
 
-          // Record the start of this whitespace sequence in `mptr`, but don't append it now.
+          // Record the start of this whitespace sequence in `mptr`, but don't append
+          // it now.
           char ch = *(bptr++);
           if(::rocket::is_any_of(ch, {' ', '\t'}))
             continue;
 
-          // Append the non-whitespace character along with any preceding whitespace characters.
+          // Append the non-whitespace character along with any preceding whitespace
+          // characters.
           value.append(mptr, bptr);
           mptr = bptr;
         }
@@ -684,7 +692,6 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
     // Output the end position.
     if(comma_opt)
       *comma_opt = static_cast<size_t>(bptr - str.data());
-
     return *this;
   }
 
