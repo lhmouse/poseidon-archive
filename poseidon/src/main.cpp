@@ -11,13 +11,13 @@
 #include "static/fiber_scheduler.hpp"
 #include "util.hpp"
 #include <locale.h>
-#include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <dlfcn.h>
 #include <sys/resource.h>
+#include <sys/wait.h>
 
 using namespace poseidon;
 
@@ -128,7 +128,6 @@ enum Exit_Code : uint8_t
     exit_success            = 0,
     exit_system_error       = 1,
     exit_invalid_argument   = 2,
-    exit_root_disallowed    = 3,
   };
 
 [[noreturn]] ROCKET_NOINLINE
@@ -173,7 +172,6 @@ do_parse_command_line(int argc, char** argv)
     // Parse command-line options.
     int ch;
     while((ch = ::getopt(argc, argv, "+dhVv")) != -1) {
-      // Identify a single option.
       switch(ch) {
         case 'd':
           daemonize = true;
@@ -190,11 +188,12 @@ do_parse_command_line(int argc, char** argv)
         case 'v':
           verbose = true;
           continue;
-      }
 
-      // `getopt()` will have written an error message to standard error.
-      do_exit(exit_invalid_argument, "Try `%s -h` for help.\n",
-                                     argv[0]);
+        default:
+          // `getopt()` will have written a message to standard error.
+          do_exit(exit_invalid_argument, "Try `%s -h` for help.\n",
+                                         argv[0]);
+      }
     }
 
     // Check for early exit conditions.
@@ -229,6 +228,19 @@ do_parse_command_line(int argc, char** argv)
 
 ROCKET_NOINLINE
 void
+do_set_working_directory()
+  {
+    if(cmdline.cd_here.empty())
+      return;
+
+    if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
+      POSEIDON_THROW("Could not set working directory to '$2'\n"
+                     "[`chdir()` failed: $1]",
+                     format_errno(errno), cmdline.cd_here);
+  }
+
+ROCKET_NOINLINE
+void
 do_check_euid()
   {
     const auto file = Main_Config::copy();
@@ -237,12 +249,72 @@ do_check_euid()
       return;
 
     if(::geteuid() == 0)
-      do_exit(exit_root_disallowed,
-              "Please do not start this program as root.\n"
-              "If you insist, you may set `general.permit_root_startup` in `main.conf`\n"
-              "to `true` to bypass this check. Note that starting as root is considered\n"
-              "insecure. An unprivileged user should have been created for this service.\n"
-              "You have been warned.\n");
+      POSEIDON_THROW(
+          "Please do not start this program as root.\n"
+          "If you insist, you may set `general.permit_root_startup` in `main.conf`\n"
+          "to `true` to bypass this check. Note that starting as root is considered\n"
+          "insecure. An unprivileged user should have been created for this service.\n"
+          "You have been warned.\n");
+  }
+
+ROCKET_NOINLINE
+::rocket::unique_posix_fd
+do_daemonize()
+  {
+    ::rocket::unique_posix_fd rfd(::close);
+    ::rocket::unique_posix_fd wfd(::close);
+
+    if(!cmdline.daemonize)
+      return wfd;
+
+    // If the child process has started up successfully, it should write a message
+    // through this pipe. If it is closed without any data received, the parent
+    // process shall assume there is an error and wait.
+    int pipefds[2];
+    if(::pipe(pipefds) != 0)
+      POSEIDON_THROW("Could not create pipe for child process\n"
+                     "[`pipe()` failed: $1]",
+                     format_errno(errno));
+
+    rfd.reset(pipefds[0]);
+    wfd.reset(pipefds[1]);
+
+    ::pid_t child = ::fork();
+    if(child < 0)
+      POSEIDON_THROW("Could not create child process\n"
+                     "[`fork()` failed: $1]",
+                     format_errno(errno));
+
+    if(child != 0) {
+      // This is the parent process.
+      wfd.reset();
+      ::fflush(nullptr);
+
+      // Wait for the notification from the child process.
+      char msg[64];
+      ::ssize_t nread;
+      do
+        nread = ::read(rfd, msg, sizeof(msg));
+      while((nread < 0) && (errno == EINTR));
+
+      // If a response has been received, exit normally.
+      if(nread > 0)
+        ::quick_exit(0);
+
+      // Otherwise, wait for the child and forward its exit status.
+      int wstat;
+      if(::waitpid(child, &wstat, 0) > 0) {
+        if(WIFEXITED(wstat))
+          ::quick_exit(WEXITSTATUS(wstat));
+
+        if(WIFSIGNALED(wstat))
+          ::quick_exit(128 + WTERMSIG(wstat));
+      }
+      ::quick_exit(1);
+    }
+
+    // This is the child process.
+    return wfd;
   }
 
 ROCKET_NOINLINE
@@ -271,6 +343,7 @@ do_load_addons()
       return;
 
     POSEIDON_LOG_DEBUG("List of add-ons to load:\n$1", *qaddons);
+
     ::std::vector<cow_string> paths;
     paths.reserve(qaddons->size());
 
@@ -306,11 +379,7 @@ main(int argc, char** argv)
     do_parse_command_line(argc, argv);
 
     // Set current working directory if one is specified.
-    if(cmdline.cd_here.size())
-      if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
-        POSEIDON_THROW("Could not set working directory to '$2'\n"
-                       "[`chdir()` failed: $1]",
-                       format_errno(errno), cmdline.cd_here);
+    do_set_working_directory();
 
     // Load 'main.conf' before daemonization, so any earlier failures are
     // visible to the user.
@@ -323,11 +392,7 @@ main(int argc, char** argv)
     do_check_euid();
 
     // Daemonize the process before entering modal loop.
-    if(cmdline.daemonize)
-      if(::daemon(1, 0) != 0)
-        POSEIDON_THROW("Could not daemonize process\n"
-                       "[`chdir()` failed: $1]",
-                       format_errno(errno));
+    auto parent_pipefd = do_daemonize();
 
     // Set name of the main thread. Failure to set the name is ignored.
     ::pthread_setname_np(::pthread_self(), "poseidon");
@@ -356,6 +421,10 @@ main(int argc, char** argv)
     do_load_addons();
 
     POSEIDON_LOG_INFO("Started up and running: $1 (PID $2)", PACKAGE_STRING, ::getpid());
+
+    // Notify the parent. Errors are ignored.
+    if(auto fd = ::std::move(parent_pipefd))
+      ::write(fd, "OK", 2);
 
     // Schedule fibers until a termination signal is caught.
     Fiber_Scheduler::modal_loop(exit_sig);
