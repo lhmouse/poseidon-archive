@@ -36,12 +36,14 @@ size_t
 dump_ssl_errors()
   noexcept;
 
-#define POSEIDON_SSL_THROW(...)   (::poseidon::dump_ssl_errors(), POSEIDON_THROW(__VA_ARGS__))
+#define POSEIDON_SSL_THROW(...)  \
+      (::poseidon::dump_ssl_errors(), POSEIDON_THROW(__VA_ARGS__))
 
 // Creates an `SSL_CTX` object for server use.
-// If neither `cert_opt` nor `pkey_opt` is null, they shall denote PEM files containing the
-// certificate chain and private key, respectively.
-// If both `cert_opt` and `pkey_opt` are null, the default ones in `main.conf` are used.
+// If neither `cert_opt` nor `pkey_opt` is null, they shall denote PEM
+// files containing the certificate chain and private key, respectively.
+// If both `cert_opt` and `pkey_opt` are null, the default ones in
+// `main.conf` are used.
 unique_SSL_CTX
 create_server_ssl_ctx(const char* cert_opt, const char* pkey_opt);
 

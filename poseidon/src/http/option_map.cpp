@@ -509,12 +509,12 @@ print_http_header(tinyfmt& fmt)
           for(;;) {
             // Search for the first character that needs escaping.
             mptr = ::std::find_if(bptr, eptr,
-                      [&](char ch) {
-                        // Note that only non-control characters and TAB may be escaped.
-                        if(do_is_opt_ctype(ch, opt_ctype_control))
-                          POSEIDON_THROW("Invalid character in HTTP header value: $1", value);
-                        return ::rocket::is_any_of(ch, {'\"', '\\'});
-                      });
+                  [&](char ch) {
+                    // Note that only non-control characters and TAB may be escaped.
+                    if(do_is_opt_ctype(ch, opt_ctype_control))
+                      POSEIDON_THROW("Invalid character in HTTP header value: $1", value);
+                    return ::rocket::is_any_of(ch, {'\"', '\\'});
+                  });
 
             // Write all characters before this escape sequence, if any.
             if(mptr != bptr)
