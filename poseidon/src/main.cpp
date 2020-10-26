@@ -119,8 +119,9 @@ struct Command_Line_Options
     cow_string cd_here;
   };
 
-// This may also be automatic objects. It is declared here for convenience.
+// They are declared here for convenience.
 Command_Line_Options cmdline;
+::rocket::unique_posix_fd daemon_wfd(::close);
 
 // These are process exit status codes.
 enum Exit_Code : uint8_t
@@ -258,14 +259,11 @@ do_check_euid()
   }
 
 ROCKET_NOINLINE
-::rocket::unique_posix_fd
-do_daemonize()
+void
+do_daemonize_fork()
   {
-    ::rocket::unique_posix_fd rfd(::close);
-    ::rocket::unique_posix_fd wfd(::close);
-
     if(!cmdline.daemonize)
-      return wfd;
+      return;
 
     // If the child process has started up successfully, it should write a message
     // through this pipe. If it is closed without any data received, the parent
@@ -276,8 +274,8 @@ do_daemonize()
                      "[`pipe()` failed: $1]",
                      format_errno(errno));
 
-    rfd.reset(pipefds[0]);
-    wfd.reset(pipefds[1]);
+    const ::rocket::unique_posix_fd rfd(pipefds[0], ::close);
+    daemon_wfd.reset(pipefds[1]);
 
     ::pid_t child = ::fork();
     if(child < 0)
@@ -285,36 +283,51 @@ do_daemonize()
                      "[`fork()` failed: $1]",
                      format_errno(errno));
 
-    if(child != 0) {
-      // This is the parent process.
-      wfd.reset();
-      ::fflush(nullptr);
+    // Return in the child process.
+    if(child == 0)
+      return;
 
-      // Wait for the notification from the child process.
-      char msg[64];
-      ::ssize_t nread;
-      do
-        nread = ::read(rfd, msg, sizeof(msg));
-      while((nread < 0) && (errno == EINTR));
+    // This is the parent process.
+    daemon_wfd.reset();
+    ::fflush(nullptr);
 
-      // If a response has been received, exit normally.
-      if(nread > 0)
-        ::quick_exit(0);
+    // Wait for the notification from the child process.
+    char msg[64];
+    ::ssize_t nread;
+    do
+      nread = ::read(rfd, msg, sizeof(msg));
+    while((nread < 0) && (errno == EINTR));
 
-      // Otherwise, wait for the child and forward its exit status.
-      int wstat;
-      if(::waitpid(child, &wstat, 0) > 0) {
-        if(WIFEXITED(wstat))
-          ::quick_exit(WEXITSTATUS(wstat));
+    // If a response has been received, exit normally.
+    if(nread > 0)
+      ::quick_exit(0);
 
-        if(WIFSIGNALED(wstat))
-          ::quick_exit(128 + WTERMSIG(wstat));
-      }
-      ::quick_exit(1);
+    // Otherwise, wait for the child and forward its exit status.
+    int wstat;
+    if(::waitpid(child, &wstat, 0) > 0) {
+      if(WIFEXITED(wstat))
+        ::quick_exit(WEXITSTATUS(wstat));
+
+      if(WIFSIGNALED(wstat))
+        ::quick_exit(128 + WTERMSIG(wstat));
     }
+    ::quick_exit(255);
+  }
 
-    // This is the child process.
-    return wfd;
+ROCKET_NOINLINE
+void
+do_daemonize_finish()
+  {
+    if(!daemon_wfd)
+      return;
+
+    // Notify the parent. Errors are ignored.
+    ::ssize_t nwritten;
+    do
+      nwritten = ::write(daemon_wfd, "OK", 2);
+    while((nwritten < 0) && (errno == EINTR));
+
+    daemon_wfd.reset();
   }
 
 ROCKET_NOINLINE
@@ -390,9 +403,7 @@ main(int argc, char** argv)
     Fiber_Scheduler::reload();
 
     do_check_euid();
-
-    // Daemonize the process before entering modal loop.
-    auto parent_pipefd = do_daemonize();
+    do_daemonize_fork();
 
     // Set name of the main thread. Failure to set the name is ignored.
     ::pthread_setname_np(::pthread_self(), "poseidon");
@@ -422,11 +433,8 @@ main(int argc, char** argv)
 
     POSEIDON_LOG_INFO("Started up and running: $1 (PID $2)", PACKAGE_STRING, ::getpid());
 
-    // Notify the parent. Errors are ignored.
-    if(auto fd = ::std::move(parent_pipefd))
-      ::write(fd, "OK", 2);
-
     // Schedule fibers until a termination signal is caught.
+    do_daemonize_finish();
     Fiber_Scheduler::modal_loop(exit_sig);
   }
   catch(exception& stdex) {
