@@ -303,15 +303,19 @@ do_daemonize_fork()
       ::quick_exit(0);
 
     // Otherwise, wait for the child and forward its exit status.
-    int wstat;
-    if(::waitpid(child, &wstat, 0) > 0) {
+    // Note: `waitpid()` may return if the child has been stopped or continued.
+    do {
+      int wstat;
+      if(::waitpid(child, &wstat, 0) == -1)
+        ::quick_exit(255);
+
       if(WIFEXITED(wstat))
         ::quick_exit(WEXITSTATUS(wstat));
 
       if(WIFSIGNALED(wstat))
         ::quick_exit(128 + WTERMSIG(wstat));
     }
-    ::quick_exit(255);
+    while(true);
   }
 
 ROCKET_NOINLINE
@@ -326,6 +330,10 @@ do_daemonize_finish()
     do
       nwritten = ::write(daemon_wfd, "OK", 2);
     while((nwritten < 0) && (errno == EINTR));
+
+    if(nwritten < 0)
+      POSEIDON_LOG_DEBUG("Failed to notify parent process: $1",
+                         format_errno(errno));
 
     daemon_wfd.reset();
   }
