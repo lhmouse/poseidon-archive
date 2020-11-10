@@ -19,9 +19,8 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 
-using namespace poseidon;
-
 namespace {
+using namespace poseidon;
 
 [[noreturn]]
 int
@@ -53,23 +52,8 @@ Report bugs to <%s>.
       PACKAGE_URL,
       PACKAGE_BUGREPORT);
 
-    ::fflush(stdout);
+    ::fflush(nullptr);
     ::quick_exit(0);
-  }
-
-const char*
-do_tell_build_time()
-  {
-    static char s_time_str[64];
-    if(ROCKET_EXPECT(s_time_str[0]))
-      return s_time_str;
-
-    // Convert the build time to ISO 8601 format.
-    ::tm tr;
-    ::std::memset(&tr, 0, sizeof(tr));
-    ::strptime(__DATE__ " " __TIME__, "%b %d %Y %H:%M:%S", &tr);
-    ::strftime(s_time_str, sizeof(s_time_str), "%Y-%m-%d %H:%M:%S", &tr);
-    return s_time_str;
   }
 
 [[noreturn]]
@@ -80,18 +64,18 @@ do_print_version_and_exit()
 //        1         2         3         4         5         6         7     |
 // 3456789012345678901234567890123456789012345678901234567890123456789012345|
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""" R"'''''''''''''''(
-%s [built on %s]
+%s
 
 Visit the homepage at <%s>.
 Report bugs to <%s>.
 )'''''''''''''''" """"""""""""""""""""""""""""""""""""""""""""""""""""""""+1,
 // 3456789012345678901234567890123456789012345678901234567890123456789012345|
 //        1         2         3         4         5         6         7     |
-      PACKAGE_STRING, do_tell_build_time(),
+      PACKAGE_STRING,
       PACKAGE_URL,
       PACKAGE_BUGREPORT);
 
-    ::fflush(stdout);
+    ::fflush(nullptr);
     ::quick_exit(0);
   }
 
@@ -133,7 +117,7 @@ enum Exit_Code : uint8_t
 
 [[noreturn]] ROCKET_NOINLINE
 int
-do_exit(Exit_Code code, const char* fmt, ...)
+do_exit_printf(Exit_Code code, const char* fmt, ...)
   noexcept
   {
     // Sleep for a few moments so pending logs are flushed.
@@ -192,8 +176,8 @@ do_parse_command_line(int argc, char** argv)
 
         default:
           // `getopt()` will have written a message to standard error.
-          do_exit(exit_invalid_argument, "Try `%s -h` for help.\n",
-                                         argv[0]);
+          do_exit_printf(exit_invalid_argument,
+              "Try `%s -h` for help.\n", argv[0]);
       }
     }
 
@@ -206,10 +190,11 @@ do_parse_command_line(int argc, char** argv)
 
     // If more arguments follow, they denote the working directory.
     if(argc - optind > 1)
-      do_exit(exit_invalid_argument, "%s: too many arguments -- '%s'\n"
-                                     "Try `%s -h` for help.\n",
-                                     argv[0], argv[optind+1],
-                                     argv[0]);
+      do_exit_printf(exit_invalid_argument,
+          "%s: too many arguments -- '%s'\n"
+          "Try `%s -h` for help.\n",
+          argv[0], argv[optind+1],
+          argv[0]);
 
     if(argc - optind > 0)
       cd_here = cow_string(argv[optind]);
@@ -292,28 +277,29 @@ do_daemonize_fork()
     ::fflush(nullptr);
 
     // Wait for the notification from the child process.
-    char msg[64];
     ::ssize_t nread;
-    do
+    do {
+      char msg[64];
       nread = ::read(rfd, msg, sizeof(msg));
+    }
     while((nread < 0) && (errno == EINTR));
 
     // If a response has been received, exit normally.
     if(nread > 0)
-      ::quick_exit(0);
+      ::_Exit(0);
 
     // Otherwise, wait for the child and forward its exit status.
     // Note: `waitpid()` may return if the child has been stopped or continued.
     do {
       int wstat;
       if(::waitpid(child, &wstat, 0) == -1)
-        ::quick_exit(255);
+        ::_Exit(255);
 
       if(WIFEXITED(wstat))
-        ::quick_exit(WEXITSTATUS(wstat));
+        ::_Exit(WEXITSTATUS(wstat));
 
       if(WIFSIGNALED(wstat))
-        ::quick_exit(128 + WTERMSIG(wstat));
+        ::_Exit(128 + WTERMSIG(wstat));
     }
     while(true);
   }
@@ -327,8 +313,10 @@ do_daemonize_finish()
 
     // Notify the parent. Errors are ignored.
     ::ssize_t nwritten;
-    do
-      nwritten = ::write(daemon_wfd, "OK", 2);
+    do {
+      static const char msg[] = "OK";
+      nwritten = ::write(daemon_wfd, msg, sizeof(msg));
+    }
     while((nwritten < 0) && (errno == EINTR));
 
     if(nwritten < 0)
@@ -364,7 +352,6 @@ do_load_addons()
       return;
 
     POSEIDON_LOG_DEBUG("List of add-ons to load:\n$1", *qaddons);
-
     ::std::vector<cow_string> paths;
     paths.reserve(qaddons->size());
 
@@ -439,7 +426,7 @@ main(int argc, char** argv)
     do_check_core_dump();
     do_load_addons();
 
-    POSEIDON_LOG_INFO("Started up and running: $1 (PID $2)", PACKAGE_STRING, ::getpid());
+    POSEIDON_LOG_INFO("Startup complete: $1 (PID $2)", PACKAGE_STRING, ::getpid());
 
     // Schedule fibers until a termination signal is caught.
     do_daemonize_finish();
@@ -447,6 +434,6 @@ main(int argc, char** argv)
   }
   catch(exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.
-    do_exit(exit_system_error, "%s\n[exception class `%s`]\n",
-                               stdex.what(), typeid(stdex).name());
+    do_exit_printf(exit_system_error,
+        "%s\n[exception class `%s`]\n", stdex.what(), typeid(stdex).name());
   }
