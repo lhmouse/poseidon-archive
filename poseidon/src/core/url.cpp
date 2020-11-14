@@ -114,106 +114,128 @@ URL::~URL()
   {
   }
 
+URL&
+URL::
+set_scheme(const cow_string& val)
+  {
+    // The scheme string is always in lowercase.
+    cow_string str = val;
+    if(val.size()) {
+      // The first character must be an alphabetic character.
+      //   scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+      if(!do_is_url_ctype(val[0], url_ctype_alpha))
+        POSEIDON_THROW("Invalid URL scheme: $1", val);
+
+      for(size_t k = 0;  k < val.size();  ++k) {
+        // Convert alphabetic characters into lowercase.
+        if(do_is_url_ctype(val[k], url_ctype_alpha)) {
+          str.mut(k) |= 0x20;
+          continue;
+        }
+
+        // Other characters require no conversion.
+        if(do_is_url_ctype(val[k], url_ctype_digit))
+          continue;
+
+        if(::rocket::is_any_of(val[k], {'+', '-', '.'}))
+          continue;
+
+        // Reject invalid characters.
+        POSEIDON_THROW("Invalid URL scheme: $1", val);
+      }
+    }
+
+    // Set the new scheme string.
+    this->m_scheme = ::std::move(str);
+    return *this;
+  }
+
+URL&
+URL::
+set_userinfo(const cow_string& val)
+  {
+    this->m_userinfo = val;
+    return *this;
+  }
+
+URL&
+URL::
+set_host(const cow_string& val)
+  {
+    // Host names that are not IP addresses are all acceptable.
+    // Note this check does not fail if `val` is empty.
+    if(val[0] == '[') {
+      // Validate the IP address.
+      if(val.back() != ']')
+        POSEIDON_THROW("Missing ']' after IP address: $1", val);
+
+      if(val.size() == 2)
+        POSEIDON_THROW("Empty IP address: $1", val);
+
+      for(size_t k = 1;  k < val.size() - 1;  ++k) {
+        // Hexadecimal characters are copied verbatim.
+        if(do_is_url_ctype(val[k], url_ctype_hex_digit))
+          continue;
+
+        // Delimiters are allowed.
+        if(::rocket::is_any_of(val[k], {'.', ':'}))
+          continue;
+
+        // Reject invalid characters.
+        POSEIDON_THROW("Invalid character in IP address: $1", val);
+      }
+    }
+
+    // Set the new host name.
+    this->m_host = val;
+    return *this;
+  }
+
 uint16_t
 URL::
-do_get_default_port()
+default_port()
   const noexcept
   {
     // Look up the well-known port for the current scheme.
     // Note the scheme string is always in lowercase.
-    if(this->m_scheme == "http")
+    if(this->m_scheme == ::rocket::sref("http"))
       return 80;
 
-    if(this->m_scheme == "https")
+    if(this->m_scheme == ::rocket::sref("https"))
       return 443;
 
-    if(this->m_scheme == "ws")
+    if(this->m_scheme == ::rocket::sref("ws"))
       return 80;
 
-    if(this->m_scheme == "wss")
+    if(this->m_scheme == ::rocket::sref("wss"))
       return 443;
 
-    if(this->m_scheme == "ftp")
+    if(this->m_scheme == ::rocket::sref("ftp"))
       return 21;
 
     // Return zero to indicate an unknown port.
     return 0;
   }
 
-cow_string&
+URL&
 URL::
-do_verify_and_set_scheme(cow_string&& val)
+set_port(uint16_t val)
   {
-    // An empty scheme is valid.
-    if(val.empty())
-      return this->m_scheme.clear();
-
-    // The first character must be an alphabetic character.
-    //   scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
-    if(!do_is_url_ctype(val[0], url_ctype_alpha))
-      POSEIDON_THROW("Invalid URL scheme: $1", val);
-
-    for(size_t k = 0;  k < val.size();  ++k) {
-      // Convert alphabetic characters into lowercase.
-      if(do_is_url_ctype(val[k], url_ctype_alpha)) {
-        val.mut(k) |= 0x20;
-        continue;
-      }
-
-      // Other characters require no conversion.
-      if(do_is_url_ctype(val[k], url_ctype_digit))
-        continue;
-
-      if(::rocket::is_any_of(val[k], {'+', '-', '.'}))
-        continue;
-
-      // Reject invalid characters.
-      POSEIDON_THROW("Invalid URL scheme: $1", val);
-    }
-
-    // Set the new scheme string.
-    return this->m_scheme = ::std::move(val);
+    this->m_port = val;
+    return *this;
   }
 
-cow_string&
+URL&
 URL::
-do_verify_and_set_host(cow_string&& val)
+set_path(const cow_string& val)
   {
-    // Host names that are not IP addresses are all acceptable.
-    // Note this check does not fail if `val` is empty.
-    if(val[0] != '[')
-      return this->m_host = ::std::move(val);
-
-    if(val.back() != ']')
-      POSEIDON_THROW("Missing ']' after IP address: $1", val);
-
-    if(val.size() == 2)
-      POSEIDON_THROW("Empty IP address: $1", val);
-
-    for(size_t k = 1;  k < val.size() - 1;  ++k) {
-      // Convert alphabetic characters into lowercase.
-      if(do_is_url_ctype(val[k], url_ctype_alpha)) {
-        val.mut(k) |= 0x20;
-        continue;
-      }
-
-      if(do_is_url_ctype(val[k], url_ctype_digit))
-        continue;
-
-      if(::rocket::is_any_of(val[k], {'.', ':'}))
-        continue;
-
-      // Reject invalid characters.
-      POSEIDON_THROW("Invalid character in IP address: $1", val);
-    }
-
-    // Set the new host name.
-    return this->m_host = ::std::move(val);
+    this->m_path = val;
+    return *this;
   }
 
-cow_string&
+URL&
 URL::
-do_verify_and_set_query(cow_string&& val)
+set_raw_query(const cow_string& val)
   {
     for(size_t k = 0;  k < val.size();  ++k) {
       // Ensure the query string does not contain unsafe characters.
@@ -229,7 +251,60 @@ do_verify_and_set_query(cow_string&& val)
     }
 
     // Set the new query string.
-    return this->m_query = ::std::move(val);
+    this->m_raw_query = val;
+    return *this;
+  }
+
+URL&
+URL::
+set_raw_fragment(const cow_string& val)
+  {
+    for(size_t k = 0;  k < val.size();  ++k) {
+      // Ensure the fragment string does not contain unsafe characters.
+      //   fragment = *( pchar / "/" / "?" )
+      if(do_is_url_ctype(val[k], url_ctype_pchar))
+        continue;
+
+      if(::rocket::is_any_of(val[k], {'/', '?'}))
+        continue;
+
+      // Reject invalid characters.
+      POSEIDON_THROW("Invalid character in fragment string: $1", val);
+    }
+
+    // Set the new fragment string.
+    this->m_raw_fragment = val;
+    return *this;
+  }
+
+URL&
+URL::
+clear()
+  noexcept
+  {
+    this->m_scheme.clear();
+    this->m_userinfo.clear();
+    this->m_host.clear();
+    this->m_port.reset();
+    this->m_path.clear();
+    this->m_raw_query.clear();
+    this->m_raw_fragment.clear();
+    return *this;
+  }
+
+URL&
+URL::
+swap(URL& other)
+  noexcept
+  {
+    this->m_scheme.swap(other.m_scheme);
+    this->m_userinfo.swap(other.m_userinfo);
+    this->m_host.swap(other.m_host);
+    this->m_port.swap(other.m_port);
+    this->m_path.swap(other.m_path);
+    this->m_raw_query.swap(other.m_raw_query);
+    this->m_raw_fragment.swap(other.m_raw_fragment);
+    return *this;
   }
 
 tinyfmt&
@@ -298,26 +373,14 @@ print(tinyfmt& fmt)
         });
 
     // If a query string field is present, write it.
-    if(this->m_query.size())
-      fmt << '?' << this->m_query;
+    if(this->m_raw_query.size())
+      fmt << '?' << this->m_raw_query;
 
     // If a fragment field is present, write it.
     // This has to be the last field.
-    if(this->m_fragment.size()) {
-      fmt << '#';
+    if(this->m_raw_fragment.size())
+      fmt << '#' << this->m_raw_fragment;
 
-      // Escape unsafe characters.
-      //   fragment = *( pchar / "/" / "?" )
-      ::rocket::for_each(this->m_fragment,
-          [&](char ch) {
-            if(do_is_url_ctype(ch, url_ctype_pchar))
-              fmt << ch;
-            else if(::rocket::is_any_of(ch, {'/', '?'}))
-              fmt << ch;
-            else
-              do_percent_encode(fmt, ch);
-          });
-    }
     return fmt;
   }
 
@@ -444,7 +507,7 @@ parse(const cow_string& str)
 
       // Accept the query string without the question mark.
       // Note that it is not decoded.
-      this->m_query.assign(bptr + 1, mptr);
+      this->m_raw_query.assign(bptr + 1, mptr);
       bptr = mptr;
     }
 
@@ -457,13 +520,14 @@ parse(const cow_string& str)
                  });
 
       // Accept the query string without the hashtag.
-      do_percent_decode(this->m_fragment, bptr + 1, mptr);
+      do_percent_decode(this->m_raw_fragment, bptr + 1, mptr);
       bptr = mptr;
     }
 
-    if(bptr != eptr) {
+    // All characters shall have been consumed so far.
+    if(bptr != eptr)
       POSEIDON_THROW("Invalid URL string: $1", str);
-    }
+
     return *this;
   }
 

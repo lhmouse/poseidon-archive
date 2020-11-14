@@ -26,14 +26,13 @@ class URL
     cow_string m_host;
     opt<uint16_t> m_port;
     cow_string m_path;
-    cow_string m_query;
-    cow_string m_fragment;
+    cow_string m_raw_query;
+    cow_string m_raw_fragment;
 
   public:
     constexpr
     URL()
-      noexcept
-      { }
+      = default;
 
     explicit
     URL(const cow_string& str)
@@ -44,20 +43,6 @@ class URL
       { return this->parse(str);  }
 
     ASTERIA_COPYABLE_DESTRUCTOR(URL);
-
-  private:
-    uint16_t
-    do_get_default_port()
-      const noexcept;
-
-    cow_string&
-    do_verify_and_set_scheme(cow_string&& val);
-
-    cow_string&
-    do_verify_and_set_host(cow_string&& val);
-
-    cow_string&
-    do_verify_and_set_query(cow_string&& val);
 
   public:
     // Gets the scheme.
@@ -71,13 +56,12 @@ class URL
     // conforms to RFC 3986 and converts letters into lowercase.
     // An exception is thrown if the scheme is invalid.
     URL&
-    set_scheme(cow_string val)
-      { return this->do_verify_and_set_scheme(::std::move(val)), *this;  }
-
-    URL&
     clear_scheme()
       noexcept
       { return this->m_scheme.clear(), *this;  }
+
+    URL&
+    set_scheme(const cow_string& val);
 
     // Gets the user information.
     const cow_string&
@@ -87,13 +71,12 @@ class URL
 
     // Sets the user information, which may comprise arbitrary characters.
     URL&
-    set_userinfo(cow_string val)
-      { return this->m_userinfo = ::std::move(val), *this;  }
-
-    URL&
     clear_userinfo()
       noexcept
       { return this->m_userinfo.clear(), *this;  }
+
+    URL&
+    set_userinfo(const cow_string& val);
 
     // Gets the host name.
     const cow_string&
@@ -106,32 +89,34 @@ class URL
     // But it may comprise arbitrary characters otherwise.
     // An exception is thrown if the host name is not a valid IP address.
     URL&
-    set_host(cow_string val)
-      { return this->do_verify_and_set_host(::std::move(val)), *this;  }
-
-    URL&
     clear_host()
       noexcept
       { return this->m_host.clear(), *this;  }
 
+    URL&
+    set_host(const cow_string& val);
+
     // Gets the port.
     // If the port field is absent, a default one is chosen according to
     // the scheme. If no default port is available, zero is returned.
+    ROCKET_PURE_FUNCTION
+    uint16_t
+    default_port()
+      const noexcept;
+
     uint16_t
     port()
       const noexcept
-      { return this->m_port ? *(this->m_port) : this->do_get_default_port();  }
+      { return this->m_port ? *(this->m_port) : this->default_port();  }
 
     // Sets the port.
-    URL&
-    set_port(uint16_t val)
-      noexcept
-      { return this->m_port = val, *this;  }
-
     URL&
     clear_port()
       noexcept
       { return this->m_port.reset(), *this;  }
+
+    URL&
+    set_port(uint16_t val);
 
     // Gets the path.
     // The slash initiator is not included.
@@ -143,80 +128,57 @@ class URL
     // Sets the path.
     // A path may comprise arbitrary characters.
     URL&
-    set_path(cow_string val)
-      noexcept
-      { return this->m_path = ::std::move(val), *this;  }
-
-    URL&
     clear_path()
       noexcept
       { return this->m_path.clear(), *this;  }
 
-    // Gets the query string.
+    URL&
+    set_path(const cow_string& val);
+
+    // Gets the percent-encoded query string.
     const cow_string&
-    query()
+    raw_query()
       const noexcept
-      { return this->m_query;  }
+      { return this->m_raw_query;  }
 
     // Sets the query string.
     // The query string is pasted to the URL intact, so it cannot contain unsafe
-    // characters. This function ensures that it really conforms to RFC 3986.
-    // An exception is thrown if the query string is invalid.
+    // characters. It must really conform to RFC 3986. An exception is thrown if
+    // the query string is invalid.
     URL&
-    set_query(cow_string val)
-      { return this->do_verify_and_set_query(::std::move(val)), *this;  }
-
-    URL&
-    clear_query()
+    clear_raw_query()
       noexcept
-      { return this->m_query.clear(), *this;  }
+      { return this->m_raw_query.clear(), *this;  }
 
-    // Gets the fragment.
+    URL&
+    set_raw_query(const cow_string& val);
+
+    // Gets the percent-encoded fragment.
     const cow_string&
-    fragment()
+    raw_fragment()
       const noexcept
-      { return this->m_fragment;  }
+      { return this->m_raw_fragment;  }
 
-    // Sets the fragment.
-    // A fragment may comprise arbitrary characters.
+    // Sets the fragment stirng.
+    // The fragment string is pasted to the URL intact, so it cannot contain
+    // unsafe characters. It must really conform to RFC 3986. An exception is
+    // thrown if the fragment string is invalid.
     URL&
-    set_fragment(cow_string val)
+    clear_raw_fragment()
       noexcept
-      { return this->m_fragment = ::std::move(val), *this;  }
+      { return this->m_raw_fragment.clear(), *this;  }
 
     URL&
-    clear_fragment()
-      noexcept
-      { return this->m_fragment.clear(), *this;  }
+    set_raw_fragment(const cow_string& val);
 
     // These are general modifiers.
     URL&
     clear()
-      noexcept
-      {
-        this->m_scheme.clear();
-        this->m_userinfo.clear();
-        this->m_host.clear();
-        this->m_port.reset();
-        this->m_path.clear();
-        this->m_query.clear();
-        this->m_fragment.clear();
-        return *this;
-      }
+      noexcept;
 
     URL&
     swap(URL& other)
-      noexcept
-      {
-        this->m_scheme.swap(other.m_scheme);
-        this->m_userinfo.swap(other.m_userinfo);
-        this->m_host.swap(other.m_host);
-        this->m_port.swap(other.m_port);
-        this->m_path.swap(other.m_path);
-        this->m_query.swap(other.m_query);
-        this->m_fragment.swap(other.m_fragment);
-        return *this;
-      }
+      noexcept;
 
     // Converts this URL to a string.
     // This is the inverse function of `parse()`.
