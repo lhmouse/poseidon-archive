@@ -7,27 +7,31 @@
 #include <asteria/library/system.hpp>
 
 namespace poseidon {
+namespace {
 
-Config_File::
-~Config_File()
-  {
-  }
-
-const ::asteria::Value&
-Config_File::
-do_throw_type_mismatch(const char* const* bptr, size_t epos, const char* expect,
+[[noreturn]]
+void
+do_throw_type_mismatch(const cow_string& abspath, const char* const* bptr,
+                       size_t epos, const char* expect,
                        const ::asteria::Value& value)
-  const
   {
     cow_string path;
     path << '`';
-    ::std::for_each(bptr, bptr + epos, [&](const char* s) { path << s << '.';  });
+    ::std::for_each(bptr, bptr + epos,
+             [&](const char* s) { path << s << '.';  });
     path.mut_back() = '`';
 
     POSEIDON_THROW("Unexpected type of $1 (expecting $2, got `$3`)\n"
                    "[in file '$4']",
                    path, expect, ::asteria::describe_type(value.type()),
-                   this->m_abspath);
+                   abspath);
+  }
+
+}  // namespace
+
+Config_File::
+~Config_File()
+  {
   }
 
 Config_File&
@@ -50,7 +54,8 @@ get_value(const char* const* psegs, size_t nsegs)
 
     for(;;) {
       // Find the child denoted by `*sptr`.
-      // Return null if no such child exists or if an explicit null is found.
+      // Return null if no such child exists or if an explicit null
+      // is found.
       auto qchild = qobj->ptr(::rocket::sref(psegs[icur]));
       if(!qchild || qchild->is_null())
         return ::asteria::null_value;
@@ -62,7 +67,8 @@ get_value(const char* const* psegs, size_t nsegs)
 
       // If more segments follow, the child must be an object.
       if(!qchild->is_object())
-        do_throw_type_mismatch(psegs, icur, "`object`", *qchild);
+        do_throw_type_mismatch(this->m_abspath, psegs, icur,
+                               "`object`", *qchild);
 
       qobj = &(qchild->as_object());
     }
@@ -78,7 +84,8 @@ get_bool_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_boolean())
-      do_throw_type_mismatch(psegs, nsegs, "`boolean`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
+                             "`boolean`", value);
 
     return value.as_boolean();
   }
@@ -93,7 +100,8 @@ get_int64_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_integer())
-      do_throw_type_mismatch(psegs, nsegs, "`integer`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
+                             "`integer`", value);
 
     return value.as_integer();
   }
@@ -108,7 +116,8 @@ get_double_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_convertible_to_real())
-      do_throw_type_mismatch(psegs, nsegs, "`integer` or `real`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
+                             "`integer` or `real`", value);
 
     return value.convert_to_real();
   }
@@ -123,7 +132,8 @@ get_string_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_string())
-      do_throw_type_mismatch(psegs, nsegs, "`string`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
+                             "`string`", value);
 
     return value.as_string();
   }
@@ -138,7 +148,8 @@ get_array_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_array())
-      do_throw_type_mismatch(psegs, nsegs, "`array`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
+                             "`array`", value);
 
     return value.as_array();
   }
@@ -153,7 +164,8 @@ get_object_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_object())
-      do_throw_type_mismatch(psegs, nsegs, "`object`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
+                             "`object`", value);
 
     return value.as_object();
   }
