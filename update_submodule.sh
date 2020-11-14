@@ -9,9 +9,9 @@ END_OF_MESSGAE
   exit 0
 fi
 
-_submodule="$1"
+_submodule="${1%/}"
 _tag="${2:-master}"
-_message="submodule/${_submodule}: Update to ${_tag}"
+_message="submodules/${_submodule}: Update to ${_tag}"
 
 # Update to target branch
 git submodule update --init -- "${_submodule}"
