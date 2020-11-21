@@ -87,6 +87,8 @@ using ::asteria::end;
 using ::asteria::swap;
 using ::asteria::xswap;
 using ::asteria::size;
+using ::asteria::nullopt;
+using ::asteria::sref;
 
 using ::asteria::uptr;
 using ::asteria::rcptr;
@@ -110,8 +112,6 @@ using simple_mutex = ::rocket::mutex;
 using ::rocket::recursive_mutex;
 using ::rocket::condition_variable;
 using ::rocket::once_flag;
-
-using ::asteria::nullopt;
 
 struct FD_Closer
   {
