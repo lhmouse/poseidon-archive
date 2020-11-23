@@ -9,6 +9,7 @@ include_poseidon_detailsdir = ${includedir}/poseidon/details
 include_poseidon_details_HEADERS =  \
   %reldir%/details/util.ipp  \
   %reldir%/details/socket_address.ipp  \
+  %reldir%/details/option_map.ipp  \
   ${NOTHING}
 
 include_poseidon_coredir = ${includedir}/poseidon/core

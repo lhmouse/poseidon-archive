@@ -5,29 +5,20 @@
 #define POSEIDON_HTTP_OPTION_MAP_HPP_
 
 #include "../fwd.hpp"
+#include "../details/option_map.ipp"
 
 namespace poseidon {
 
 class Option_Map
   {
+  public:
+    using const_iterator          = details_option_map::Iterator<const cow_string>;
+    using iterator                = details_option_map::Iterator<cow_string>;
+    using const_reverse_iterator  = ::std::reverse_iterator<const_iterator>;
+    using reverse_iterator        = ::std::reverse_iterator<iterator>;
+
   private:
-    struct Bucket
-      {
-        // Keys are case-insensitive.
-        cow_string key;
-        size_t hash;
-
-        // Values are strings or array of strings.
-        ::rocket::variant<nullopt_t, cow_string,
-              ::rocket::cow_vector<cow_string>> vstor;
-
-        operator
-        bool()
-          const noexcept
-          { return this->vstor.index() != 0;  }
-      };
-
-    ::rocket::cow_vector<Bucket> m_stor;
+    ::rocket::cow_vector<details_option_map::Bucket> m_stor;
     size_t m_nbkt = 0;
 
   public:
@@ -39,190 +30,70 @@ class Option_Map
     ASTERIA_COPYABLE_DESTRUCTOR(Option_Map);
 
   private:
-    // This function may be inlined in case of string literals.
-    static constexpr
-    size_t
-    do_key_hash(cow_string::shallow_type sh)
-      noexcept
-      {
-        auto bptr = sh.c_str();
-        auto eptr = bptr + sh.length();
-
-        // Implement the FNV-1a hash algorithm.
-        char32_t reg = 0x811C9DC5;
-        while(bptr != eptr) {
-          char32_t ch = static_cast<uint8_t>(*(bptr++));
-
-          // Upper-case letters are converted to corresponding lower-case ones,
-          // so this algorithm is case-insensitive.
-          ch |= 0x20;
-          reg = (reg ^ ch) * 0x1000193;
-        }
-        return reg;
-      }
-
-    static constexpr
-    bool
-    do_key_equal(cow_string::shallow_type s1, cow_string::shallow_type s2)
-      noexcept
-      {
-        if(s1.length() != s2.length())
-          return false;
-
-        auto bptr = s1.c_str();
-        auto eptr = bptr + s1.length();
-        auto kptr = s2.c_str();
-        if(bptr == kptr)
-          return true;
-
-        // Perform character-wise comparison.
-        while(bptr != eptr) {
-          char32_t ch = static_cast<uint8_t>(*(bptr++));
-          char32_t cmp = ch ^ static_cast<uint8_t>(*(kptr++));
-          if(cmp == 0)
-            continue;
-
-          // Upper-case letters are converted to corresponding lower-case ones,
-          // so this algorithm is case-insensitive.
-          ch |= 0x20;
-          if((cmp != 0x20) || (ch < 'a') || ('z' < ch))
-            return false;
-        }
-        return true;
-      }
-
     ROCKET_PURE_FUNCTION
-    inline
-    size_t
-    do_bucket_index(cow_string::shallow_type key, size_t hash)
+    pair<const cow_string*, const cow_string*>
+    do_range_hint(cow_string::shallow_type key, size_t hval)
       const noexcept;
 
-    ROCKET_PURE_FUNCTION
-    pair<const cow_string*, size_t>
-    do_equal_range(cow_string::shallow_type key, size_t hash)
-      const noexcept;
-
-    inline
-    void
-    do_reserve_more();
-
-    cow_string&
-    do_mutable_scalar(const cow_string& key, size_t hash);
-
-    cow_string&
-    do_mutable_append(const cow_string& key, size_t hash);
+    pair<cow_string*, cow_string*>
+    do_mut_range_hint(cow_string::shallow_type key, size_t hval);
 
     size_t
-    do_erase(cow_string::shallow_type key, size_t hash);
+    do_erase_hint(cow_string::shallow_type key, size_t hval);
+
+    inline
+    details_option_map::Bucket&
+    do_reserve(const cow_string& key, size_t hval);
+
+    cow_string&
+    do_open_hint(const cow_string& key, size_t hval);
+
+    cow_string&
+    do_append_hint(const cow_string& key, size_t hval);
 
   public:
-    // Checks whether any buckets are in use.
-    bool
-    empty()
+    // iterators
+    const_iterator
+    begin()
       const noexcept
-      { return this->m_nbkt != 0;  }
+      { return const_iterator(this->m_stor.data(),
+                                     0, this->m_stor.size());  }
 
-    // Gets a scalar value.
-    // If multiple values exist, the last one is returned.
-    const cow_string*
-    find_opt(cow_string::shallow_type key)
+    const_iterator
+    end()
       const noexcept
-      {
-        auto r = this->do_equal_range(key, this->do_key_hash(key));
-        return r.second ? (r.first + r.second - 1) : nullptr;
-      }
+      { return const_iterator(this->m_stor.data(),
+                   this->m_stor.size(), this->m_stor.size());  }
 
-    const cow_string*
-    find_opt(const cow_string& key)
+    const_reverse_iterator
+    rbegin()
       const noexcept
-      { return this->find_opt(::rocket::sref(key));  }
+      { return const_reverse_iterator(this->end());  }
 
-    // Sets a scalar value.
-    // Existent values are erased.
-    template<typename... ArgsT>
-    cow_string&
-    set(const cow_string& key, ArgsT&&... args)
-      {
-        auto& s = this->do_mutable_scalar(key, this->do_key_hash(::rocket::sref(key)));
-        return s.assign(::std::forward<ArgsT>(args)...);
-      }
-
-    // Gets an array value.
-    pair<const cow_string*, const cow_string*>
-    equal_range(cow_string::shallow_type key)
+    const_reverse_iterator
+    rend()
       const noexcept
-      {
-        auto r = this->do_equal_range(key, this->do_key_hash(key));
-        return { r.first, r.first + r.second };
-      }
+      { return const_reverse_iterator(this->begin());  }
 
-    pair<const cow_string*, const cow_string*>
-    equal_range(const cow_string& key)
-      const noexcept
-      { return this->equal_range(::rocket::sref(key));  }
+    iterator
+    mut_begin()
+      { return iterator(this->m_stor.mut_data(),
+                                     0, this->m_stor.size());  }
 
-    // Appends a new value to an array.
-    // If a scalar value exists, it is converted to an array.
-    template<typename... ArgsT>
-    cow_string&
-    push(const cow_string& key, ArgsT&&... args)
-      {
-        auto& s = this->do_mutable_append(key, this->do_key_hash(::rocket::sref(key)));
-        return s.assign(::std::forward<ArgsT>(args)...);
-      }
+    iterator
+    mut_end()
+      { return iterator(this->m_stor.mut_data(),
+                   this->m_stor.size(), this->m_stor.size());  }
 
-    // Retrieves the number of values matching a key.
-    size_t
-    count(cow_string::shallow_type key)
-      const noexcept
-      {
-        auto r = this->do_equal_range(key, this->do_key_hash(key));
-        return r.second;
-      }
+    reverse_iterator
+    mut_rbegin()
+      { return reverse_iterator(this->mut_end());  }
 
-    size_t
-    count(const cow_string& key)
-      const noexcept
-      { return this->count(::rocket::sref(key));  }
+    reverse_iterator
+    mut_rend()
+      { return reverse_iterator(this->mut_begin());  }
 
-    // Removes all values matching a key.
-    // Returns the number of buckets that have been removed.
-    size_t
-    erase(cow_string::shallow_type key)
-      {
-        auto n = this->do_erase(key, this->do_key_hash(key));
-        return n;
-      }
-
-    size_t
-    erase(const cow_string& key)
-      { return this->erase(::rocket::sref(key));  }
-
-    // Invokes the given function with all key-value pairs.
-    // If the function returns `false`, this function stops to return `false`.
-    // Otherwise, this function returns `true`.
-    template<typename FuncT>
-    bool
-    enumerate(FuncT&& func)
-      const
-      {
-        for(const auto& bkt : this->m_stor) {
-          if(bkt.vstor.index() == 1) {
-            // Process a scalar value.
-            if(!func(bkt.key, bkt.vstor.as<1>()))
-              return false;
-          }
-          else if(bkt.vstor.index() == 2) {
-            // Process every value in the array.
-            for(const auto& s : bkt.vstor.as<2>())
-              if(!func(bkt.key, s))
-                return false;
-          }
-        }
-        return true;
-      }
-
-    // These are general modifiers.
+    // modifiers
     Option_Map&
     clear()
       noexcept
@@ -241,6 +112,117 @@ class Option_Map
         return *this;
       }
 
+    // Get all values with a given key.
+    // The return value is a pair of pointers denoting the beginning and end of
+    // the value array. A scalar value is considered to be an array of only one
+    // value.
+    pair<const cow_string*, const cow_string*>
+    range(cow_string::shallow_type key)
+      const noexcept
+      {
+        constexpr details_option_map::ci_hash hf;
+        return this->do_range_hint(key, hf(key));
+      }
+
+    pair<const cow_string*, const cow_string*>
+    range(const cow_string& key)
+      const noexcept
+      { return this->range(sref(key));  }
+
+    pair<cow_string*, cow_string*>
+    mut_range(cow_string::shallow_type key)
+      {
+        constexpr details_option_map::ci_hash hf;
+        return this->do_mut_range_hint(key, hf(key));
+      }
+
+    pair<cow_string*, cow_string*>
+    mut_range(const cow_string& key)
+      { return this->mut_range(sref(key));  }
+
+    // Erase all values with a given key.
+    // The return value is the number of values that have been erased.
+    // N.B. These functions might throw `std::bad_alloc`.
+    size_t
+    erase(cow_string::shallow_type key)
+      {
+        constexpr details_option_map::ci_hash hf;
+        return this->do_erase_hint(key, hf(key));
+      }
+
+    size_t
+    erase(const cow_string& key)
+      { return this->erase(sref(key));  }
+
+    // Get a scalar value.
+    // If multiple values exist, the last one is returned.
+    const cow_string*
+    find_opt(cow_string::shallow_type key)
+      const noexcept
+      {
+        constexpr details_option_map::ci_hash hf;
+        auto r = this->do_range_hint(key, hf(key));
+        return (r.first == r.second) ? nullptr : (r.second - 1);
+      }
+
+    const cow_string*
+    find_opt(const cow_string& key)
+      const noexcept
+      { return this->find_opt(sref(key));  }
+
+    cow_string*
+    mut_find_opt(cow_string::shallow_type key)
+      {
+        constexpr details_option_map::ci_hash hf;
+        auto r = this->do_mut_range_hint(key, hf(key));
+        return (r.first == r.second) ? nullptr : (r.second - 1);
+      }
+
+    cow_string*
+    mut_find_opt(const cow_string& key)
+      { return this->mut_find_opt(sref(key));  }
+
+    // Set a scalar value.
+    cow_string&
+    open(const cow_string& key)
+      {
+        constexpr details_option_map::ci_hash hf;
+        return this->do_open_hint(key, hf(key));
+      }
+
+    template<typename StringT>
+    cow_string&
+    set(const cow_string& key, StringT&& str)
+      { return this->open(key) = ::std::forward<StringT>(str);  }
+
+    // Get the number of values with the given key.
+    size_t
+    count(cow_string::shallow_type key)
+      const noexcept
+      {
+        constexpr details_option_map::ci_hash hf;
+        auto r = this->do_range_hint(key, hf(key));
+        return static_cast<size_t>(r.second - r.first);
+      }
+
+    size_t
+    count(const cow_string& key)
+      const noexcept
+      { return this->count(sref(key));  }
+
+    // Append a value to an array.
+    cow_string&
+    append(const cow_string& key)
+      {
+        constexpr details_option_map::ci_hash hf;
+        return this->do_append_hint(key, hf(key));
+      }
+
+    template<typename StringT>
+    cow_string&
+    append(const cow_string& key, StringT&& str)
+      { return this->append(key) = ::std::forward<StringT>(str);  }
+
     // Converts this map to a human-readable string.
     tinyfmt&
     print(tinyfmt& fmt)
@@ -253,8 +235,8 @@ class Option_Map
       const;
 
     // Parses a URL query string.
-    // If an element contains no equals sign (such as the `foo` in `foo&bar=42`), it is
-    // interpreted as a key having an empty value.
+    // If an element contains no equals sign (such as the `foo` in `foo&bar=42`),
+    // it is interpreted as a key having an empty value.
     // An exception is thrown if the string is invalid.
     Option_Map&
     parse_url_query(const cow_string& str);
@@ -268,17 +250,17 @@ class Option_Map
       const;
 
     // Parses an HTTP header value.
-    // A header value is a series of fields delimited by semicolons. A field may be a
-    // plain string (non-option) or an option comprising a key followed by an optional
-    // equals sign and its value. Non-options are parsed as values with empty keys.
-    // `nonopts` specifies the maximum number of non-options to accept.
-    // All non-empty keys must be valid tokens according to RFC 7230.
-    // If `comma_opt` is null, commas are parsed as part of values. This mode allows
-    // parsing values of `Set-Cookie:` headers.
-    // If `comma_opt` is non-null, parsing starts from `*comma_opt` and a header value
-    // is terminated by a non-quoted comma, whose offset is then stored into `comma_opt`.
-    // This means the caller should initialize the value of `*comma_opt` to zero, then
-    // call this function to parse and process header values repeatedly, until
+    // A header value is a series of fields delimited by semicolons. A field may
+    // be a plain string (non-option) or an option comprising a key followed by
+    // an optional equals sign and its value. Non-options are parsed as values
+    // with empty keys. `nonopts` specifies the maximum number of non-options to
+    // accept. All non-empty keys must be valid tokens according to RFC 7230. If
+    // `comma_opt` is null, commas are parsed as part of values. This mode allows
+    // parsing values of `Set-Cookie:` headers. If `comma_opt` is non-null,
+    // parsing starts from `*comma_opt` and a header value is terminated by a
+    // non-quoted comma, whose offset is then stored into `comma_opt`. This means
+    // the caller should initialize the value of `*comma_opt` to zero, then call
+    // this function to parse and process header values repeatedly, until
     // `*comma_opt` reaches `str.size()`.
     // An exception is thrown if the string is invalid.
     Option_Map&
