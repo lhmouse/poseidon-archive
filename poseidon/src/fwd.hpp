@@ -29,23 +29,16 @@ namespace noadl = poseidon;
     private:  \
       struct __attribute__((__visibility__("hidden"))) C##_self;  \
       static C##_self* const self;  \
-      \
+    \
       constexpr C() noexcept = default;  \
       C(const C&) = delete;  \
       C& operator=(const C&) = delete;  \
       ~C() = default  // no semicolon
 
 #define POSEIDON_STATIC_CLASS_DEFINE(C)  \
-    template<typename TmIkbXn1>  \
-    ROCKET_ARTIFICIAL_FUNCTION static inline  \
-    TmIkbXn1* C##_inst()  \
-      {  \
-        static TmIkbXn1 instance[1] = { };  \
-        return instance;  \
-      }  \
-    \
     class C;  \
-    struct C::C##_self* const C::self = C##_inst<C::C##_self>();  \
+    struct C::C##_self* const C::self =  \
+        ::rocket::make_unique<C::C##_self>().release();  \
     struct C::C##_self : C  \
       // add members here
 
