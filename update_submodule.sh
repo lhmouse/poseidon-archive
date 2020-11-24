@@ -9,7 +9,7 @@ END_OF_MESSGAE
   exit 0
 fi
 
-_submodule="${1%/}"
+_submodule=$(basename "${1}")
 _tag="${2:-master}"
 _message="submodules/${_submodule}: Update to ${_tag}"
 
