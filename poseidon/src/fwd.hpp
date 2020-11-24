@@ -38,7 +38,7 @@ namespace noadl = poseidon;
 #define POSEIDON_STATIC_CLASS_DEFINE(C)  \
     class C;  \
     struct C::C##_self* const C::self =  \
-        ::rocket::make_unique<C::C##_self>().release();  \
+              ::rocket::make_unique<C::C##_self>().release();  \
     struct C::C##_self : C  \
       // add members here
 
