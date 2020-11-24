@@ -319,7 +319,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             if(elem.sock.unique() && !elem.sock->m_resident.load()) {
               // Delete sockets that have no other references to them.
               POSEIDON_LOG_DEBUG("Killed orphan socket: $1", elem.sock);
-              elem.sock->abort();
+              elem.sock->terminate();
               continue;
             }
             POSEIDON_LOG_TRACE("Active socket: $1", elem.sock);
@@ -462,7 +462,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             POSEIDON_LOG_WARN("$1\n[socket class `$2`]", stdex.what(), typeid(*sock));
 
             // Close the connection.
-            sock->abort();
+            sock->terminate();
 
             // If a read error occurs, the socket shall be removed from read queue and
             // the `EPOLLIN` status shall be cleared.
@@ -514,7 +514,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             POSEIDON_LOG_WARN("$1\n[socket class `$2`]", stdex.what(), typeid(*sock));
 
             // Close the connection.
-            sock->abort();
+            sock->terminate();
 
             // If a write error occurs, the socket shall be removed from write queue and
             // the `EPOLLOUT` status shall be cleared.

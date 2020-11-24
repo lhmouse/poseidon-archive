@@ -28,7 +28,7 @@ do_set_common_options()
 
 void
 Abstract_Socket::
-abort()
+terminate()
   noexcept
   {
     // Enable linger to discard all pending data.

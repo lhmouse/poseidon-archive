@@ -97,7 +97,7 @@ class Abstract_Socket
     // Any data that have not been delivered to the other peer are discarded.
     // The other peer is likely to see a 'connection reset by peer' error.
     void
-    abort()
+    terminate()
       noexcept;
 
     // Gets the (bound) address of the local peer.

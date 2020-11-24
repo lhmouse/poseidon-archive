@@ -53,7 +53,7 @@ class Abstract_TCP_Server_Socket
 
   public:
     using Abstract_Socket::get_fd;
-    using Abstract_Socket::abort;
+    using Abstract_Socket::terminate;
     using Abstract_Socket::get_local_address;
   };
 
