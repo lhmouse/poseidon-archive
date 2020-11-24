@@ -451,8 +451,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           fiber->do_execute();
         }
         catch(exception& stdex) {
-          POSEIDON_LOG_WARN("$1\n[fiber `$2` of class `$3`]",
-                            stdex, fiber, typeid(*fiber));
+          POSEIDON_LOG_WARN("$1\n[inside fiber class `$2`]", stdex, typeid(*fiber));
         }
 
         ROCKET_ASSERT(fiber->state() == async_state_running);
