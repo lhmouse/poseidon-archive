@@ -217,7 +217,9 @@ struct PQ_Compare
 struct Thread_Context
   {
     Abstract_Fiber* current = nullptr;
+#ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
     void* asan_fiber_save;
+#endif
     ::ucontext_t return_uctx[1];
   };
 
@@ -398,7 +400,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
                          "[`pthread_setspecific()` failed: $1]",
                          format_errno(err));
 
-        POSEIDON_LOG_DEBUG("Created new fiber scheduler thread context `$1`", qctx);
+        POSEIDON_LOG_TRACE("Created new fiber scheduler thread context `$1`", qctx);
         return qctx.release();
       }
 
@@ -408,10 +410,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
       noexcept
       {
 #ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
-        auto myctx = self->open_thread_context();
-        ROCKET_ASSERT(myctx);
-        __sanitizer_start_switch_fiber(&(myctx->asan_fiber_save),
-              uctx->uc_stack.ss_sp, uctx->uc_stack.ss_size);
+        __sanitizer_start_switch_fiber(
+                   &(self->open_thread_context()->asan_fiber_save),
+                   uctx->uc_stack.ss_sp, uctx->uc_stack.ss_size);
 #endif
         return uctx;
       }
@@ -422,10 +423,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
       noexcept
       {
 #ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
-        auto myctx = self->open_thread_context();
-        ROCKET_ASSERT(myctx);
-        __sanitizer_finish_switch_fiber(myctx->asan_fiber_save,
-              nullptr, nullptr);
+        __sanitizer_finish_switch_fiber(
+                   &(self->open_thread_context()->asan_fiber_save),
+                   nullptr, nullptr);
 #endif
         return nullptr;
       }
