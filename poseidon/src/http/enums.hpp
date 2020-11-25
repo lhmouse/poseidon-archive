@@ -12,21 +12,19 @@ namespace poseidon {
 // At the moment only 1.0 and 1.1 are supported.
 enum HTTP_Version : uint16_t
   {
-    http_version_null  =      0,
-    http_version_1_0   = 0x0100,  // HTTP/1.0
-    http_version_1_1   = 0x0101,  // HTTP/1.1
+    http_version_0_0  =      0,
+    http_version_1_0  = 0x0100,  // HTTP/1.0
+    http_version_1_1  = 0x0101,  // HTTP/1.1
   };
 
 // Converts an HTTP version to a string such as `HTTP/1.1`.
-// If the version number is invalid, the invalid string `HTTP/0.0` is
-// returned.
 ROCKET_CONST_FUNCTION
 const char*
 format_http_version(HTTP_Version ver)
   noexcept;
 
 // Parses a version number from plain text.
-// `http_version_null` is returned if the string is not valid.
+// `http_version_0_0` is returned if the string is not valid.
 ROCKET_PURE_FUNCTION
 HTTP_Version
 parse_http_version(const char* bptr, const char* eptr)
@@ -47,15 +45,15 @@ parse_http_version(const char* bptr)
 // These are HTTP verbs a.k.a. methods.
 enum HTTP_Verb : uint8_t
   {
-    http_verb_null     = 0,
-    http_verb_get      = 1,
-    http_verb_head     = 2,
-    http_verb_post     = 3,
-    http_verb_put      = 4,
-    http_verb_delete   = 5,
-    http_verb_connect  = 6,
-    http_verb_options  = 7,
-    http_verb_trace    = 8,
+    http_verb_NULL     = 0,
+    http_verb_GET      = 1,
+    http_verb_HEAD     = 2,
+    http_verb_POST     = 3,
+    http_verb_PUT      = 4,
+    http_verb_DELETE   = 5,
+    http_verb_CONNECT  = 6,
+    http_verb_OPTIONS  = 7,
+    http_verb_TRACE    = 8,
   };
 
 // Converts an HTTP verb to a string such as `GET`.
@@ -88,7 +86,7 @@ parse_http_verb(const char* bptr)
 // This list is not exhaustive. Custom values may be used.
 enum HTTP_Status : uint16_t
   {
-    http_status_null                   =   0,
+    http_status_null                   =   0,  // Null
     http_status_100                    = 100,
     http_status_continue               = 100,  // Continue
     http_status_switching_protocol     = 101,  // Switching Protocol

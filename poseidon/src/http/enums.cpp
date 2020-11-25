@@ -6,21 +6,36 @@
 #include "../util.hpp"
 
 namespace poseidon {
+namespace {
+
+constexpr
+bool
+do_str_eq(const char* bptr, const char* eptr, const char* comp)
+  noexcept
+  {
+    size_t clen = ::std::strlen(comp);
+    return (static_cast<size_t>(eptr - bptr) == clen) &&
+           (::std::memcmp(bptr, comp, clen) == 0);
+  }
+
+}  // namespace
 
 const char*
 format_http_version(HTTP_Version ver)
   noexcept
   {
     switch(ver) {
+      case http_version_0_0:
+        return "HTTP/0.0";
+
       case http_version_1_0:
         return "HTTP/1.0";
 
       case http_version_1_1:
         return "HTTP/1.1";
 
-      case http_version_null:
       default:
-        return "HTTP/0.0";
+        return "[unknown HTTP version]";
     }
   }
 
@@ -28,25 +43,25 @@ HTTP_Version
 parse_http_version(const char* bptr, const char* eptr)
   noexcept
   {
-    // Check hard-coded characters.
+    // Check for hard-coded characters.
     if(eptr - bptr != 8)
-      return http_version_null;
+      return http_version_0_0;
 
-    if(::std::memcmp(bptr, "HTTP/", 5) != 0)
-      return http_version_null;
+    if(!do_str_eq(bptr, bptr + 5, "HTTP/"))
+      return http_version_0_0;
 
     // Parse the major version number.
     uint32_t maj = static_cast<uint8_t>(bptr[5]) - U'0';
     if((maj < 1) || (maj > 9))
-      return http_version_null;
+      return http_version_0_0;
 
     // Parse the minor version number.
     if(bptr[6] != '.')
-      return http_version_null;
+      return http_version_0_0;
 
     uint32_t min = static_cast<uint8_t>(bptr[7]) - U'0';
     if(min > 9)
-      return http_version_null;
+      return http_version_0_0;
 
     // Build the version number.
     return static_cast<HTTP_Version>(maj << 8 | min);
@@ -57,33 +72,35 @@ format_http_verb(HTTP_Verb verb)
   noexcept
   {
     switch(verb) {
-      case http_verb_get:
+      case http_verb_NULL:
+        return "NULL";
+
+      case http_verb_GET:
         return "GET";
 
-      case http_verb_head:
+      case http_verb_HEAD:
         return "HEAD";
 
-      case http_verb_post:
+      case http_verb_POST:
         return "POST";
 
-      case http_verb_put:
+      case http_verb_PUT:
         return "PUT";
 
-      case http_verb_delete:
+      case http_verb_DELETE:
         return "DELETE";
 
-      case http_verb_connect:
+      case http_verb_CONNECT:
         return "CONNECT";
 
-      case http_verb_options:
+      case http_verb_OPTIONS:
         return "OPTIONS";
 
-      case http_verb_trace:
+      case http_verb_TRACE:
         return "TRACE";
 
-      case http_verb_null:
       default:
-        return "NULL";
+        return "[unknown HTTP verb]";
     }
   }
 
@@ -91,54 +108,31 @@ HTTP_Verb
 parse_http_verb(const char* bptr, const char* eptr)
   noexcept
   {
-    switch(eptr - bptr) {
-      case 3: {
-        if(::std::memcmp(bptr, "GET", 3) == 0)
-          return http_verb_get;
+    if(do_str_eq(bptr, eptr, "GET"))
+      return http_verb_GET;
 
-        if(::std::memcmp(bptr, "PUT", 3) == 0)
-          return http_verb_put;
+    if(do_str_eq(bptr, eptr, "HEAD"))
+      return http_verb_HEAD;
 
-        return http_verb_null;
-      }
+    if(do_str_eq(bptr, eptr, "POST"))
+      return http_verb_POST;
 
-      case 4: {
-        if(::std::memcmp(bptr, "HEAD", 4) == 0)
-          return http_verb_head;
+    if(do_str_eq(bptr, eptr, "PUT"))
+      return http_verb_PUT;
 
-        if(::std::memcmp(bptr, "POST", 4) == 0)
-          return http_verb_post;
+    if(do_str_eq(bptr, eptr, "DELETE"))
+      return http_verb_DELETE;
 
-        return http_verb_null;
-      }
+    if(do_str_eq(bptr, eptr, "CONNECT"))
+      return http_verb_CONNECT;
 
-      case 5: {
-        if(::std::memcmp(bptr, "TRACE", 5) == 0)
-          return http_verb_trace;
+    if(do_str_eq(bptr, eptr, "OPTIONS"))
+      return http_verb_OPTIONS;
 
-        return http_verb_null;
-      }
+    if(do_str_eq(bptr, eptr, "TRACE"))
+      return http_verb_TRACE;
 
-      case 6: {
-        if(::std::memcmp(bptr, "DELETE", 6) == 0)
-          return http_verb_delete;
-
-        return http_verb_null;
-      }
-
-      case 7: {
-        if(::std::memcmp(bptr, "CONNECT", 7) == 0)
-          return http_verb_connect;
-
-        if(::std::memcmp(bptr, "OPTIONS", 7) == 0)
-          return http_verb_options;
-
-        return http_verb_null;
-      }
-
-      default:
-        return http_verb_null;
-    }
+    return http_verb_NULL;
   }
 
 const char*
@@ -146,6 +140,9 @@ describe_http_status(HTTP_Status stat)
   noexcept
   {
     switch(stat) {
+      case http_status_null:
+        return "Null";
+
       case http_status_continue:
         return "Continue";
 
@@ -320,7 +317,6 @@ describe_http_status(HTTP_Status stat)
       case http_status_network_unauthorized:
         return "Network Authentication Required";
 
-      case http_status_null:
       default:
         return "Unknown Status";
     }
