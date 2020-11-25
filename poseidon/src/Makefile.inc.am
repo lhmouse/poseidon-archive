@@ -50,6 +50,10 @@ include_poseidon_httpdir = ${includedir}/poseidon/http
 include_poseidon_http_HEADERS =  \
   %reldir%/http/enums.hpp  \
   %reldir%/http/option_map.hpp  \
+  %reldir%/http/abstract_http_server_encoder.hpp  \
+  %reldir%/http/abstract_http_client_decoder.hpp  \
+  %reldir%/http/abstract_http_client_encoder.hpp  \
+  %reldir%/http/abstract_http_server_decoder.hpp  \
   ${NOTHING}
 
 include_poseidon_staticdir = ${includedir}/poseidon/static
@@ -78,6 +82,10 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/zlib_inflator.cpp  \
   %reldir%/http/enums.cpp  \
   %reldir%/http/option_map.cpp  \
+  %reldir%/http/abstract_http_server_encoder.cpp  \
+  %reldir%/http/abstract_http_client_decoder.cpp  \
+  %reldir%/http/abstract_http_client_encoder.cpp  \
+  %reldir%/http/abstract_http_server_decoder.cpp  \
   %reldir%/socket/openssl.cpp  \
   %reldir%/socket/socket_address.cpp  \
   %reldir%/socket/abstract_socket.cpp  \

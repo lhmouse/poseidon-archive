@@ -173,6 +173,10 @@ enum WebSocket_Opcode : uint8_t;
 enum WebSocket_Status : uint16_t;
 
 class Option_Map;
+class Abstract_HTTP_Server_Encoder;
+class Abstract_HTTP_Client_Decoder;
+class Abstract_HTTP_Client_Encoder;
+class Abstract_HTTP_Server_Decoder;
 
 // Singletons
 class Main_Config;
