@@ -29,7 +29,7 @@ class Abstract_Accept_Socket
     // `lock` and `hint` are ignored.
     // Please mind thread safety, as this function is called by the network thread.
     IO_Result
-    do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
       final;
 
     // Does nothing.
@@ -43,7 +43,7 @@ class Abstract_Accept_Socket
     // This function always returns `io_result_eof`.
     // `lock` is ignored.
     IO_Result
-    do_on_async_poll_write(simple_mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size)
       final;
 
   protected:

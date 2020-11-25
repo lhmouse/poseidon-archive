@@ -13,10 +13,10 @@ IO_Result
 do_translate_syscall_error(const char* func, int err)
   {
     if(err == EINTR)
-      return io_result_not_eof;
+      return io_result_partial_work;
 
     if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
-      return io_result_again;
+      return io_result_would_block;
 
     POSEIDON_THROW("TCP socket error\n"
                    "[`$1()` failed: $2]",
@@ -36,7 +36,8 @@ do_set_common_options()
   {
     // Disables Nagle algorithm.
     static constexpr int yes[] = { -1 };
-    int res = ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY, yes, sizeof(yes));
+    int res = ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY,
+                           yes, sizeof(yes));
     ROCKET_ASSERT(res == 0);
   }
 
@@ -48,37 +49,36 @@ do_stream_preconnect_unlocked()
 
 IO_Result
 Abstract_TCP_Socket::
-do_stream_read_unlocked(void* data, size_t size)
+do_stream_read_unlocked(char*& data, size_t size)
   {
     ::ssize_t nread = ::read(this->get_fd(), data, size);
-    if(nread > 0)
-      return static_cast<IO_Result>(nread);
+    if(nread < 0)
+      return do_translate_syscall_error("read", errno);
 
     if(nread == 0)
-      return io_result_eof;
+      return io_result_end_of_stream;
 
-    return do_translate_syscall_error("read", errno);
+    data += nread;
+    return io_result_partial_work;
   }
 
 IO_Result
 Abstract_TCP_Socket::
-do_stream_write_unlocked(const void* data, size_t size)
+do_stream_write_unlocked(const char*& data, size_t size)
   {
     ::ssize_t nwritten = ::write(this->get_fd(), data, size);
-    if(nwritten > 0)
-      return static_cast<IO_Result>(nwritten);
+    if(nwritten < 0)
+      return do_translate_syscall_error("write", errno);
 
-    if(nwritten == 0)
-      return io_result_not_eof;
-
-    return do_translate_syscall_error("write", errno);
+    data += nwritten;
+    return io_result_partial_work;
   }
 
 IO_Result
 Abstract_TCP_Socket::
 do_stream_preshutdown_unlocked()
   {
-    return io_result_eof;
+    return io_result_end_of_stream;
   }
 
 void

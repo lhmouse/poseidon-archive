@@ -22,11 +22,11 @@ struct Example_Server : Abstract_UDP_Server_Socket
       }
 
     void
-    do_on_async_receive(Socket_Address&& addr, void* data, size_t size)
+    do_on_async_receive(Socket_Address&& addr, char* data, size_t size)
       override
       {
         POSEIDON_LOG_WARN("example UDP server received from '$1': $2",
-                          addr, cow_string(static_cast<char*>(data), size));
+                          addr, cow_string(data, size));
 
         this->do_async_send(addr, data, size);
       }

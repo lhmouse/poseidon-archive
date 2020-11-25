@@ -143,7 +143,7 @@ template<typename V> using prom = Promise<V>;
 template<typename V> using futp = rcptr<const Future<V>>;
 
 // Socket
-enum IO_Result : ptrdiff_t;
+enum IO_Result : uint8_t;
 enum Connection_State : uint8_t;
 enum Socket_Address_Class : uint8_t;
 

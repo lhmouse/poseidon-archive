@@ -48,7 +48,7 @@ class Abstract_Stream_Socket
     // `hint` is used as the I/O buffer. `size` specifies the maximum number of
     // bytes to read.
     IO_Result
-    do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
       final;
 
     // Returns the estimated size of data pending for writing.
@@ -59,9 +59,9 @@ class Abstract_Stream_Socket
 
     // Writes some data.
     // `lock` will lock `*this` after the call.
-    // `hint` and `size` are ignored.
+    // `hint` is ignored. `size` specifies the maximum number of bytes to write.
     IO_Result
-    do_on_async_poll_write(simple_mutex::unique_lock& lock, void* hint, size_t size)
+    do_on_async_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size)
       final;
 
     // Notifies a full-duplex channel has been closed.
@@ -79,20 +79,22 @@ class Abstract_Stream_Socket
     do_stream_preconnect_unlocked()
       = 0;
 
-    // Performs read operation.
+    // Performs read operation. Overridden functions shall update `data` to denote
+    // the end of bytes that have been read.
     // This function is called by the network thread. The current socket will have
     // been locked by its caller. No synchronization is required.
     virtual
     IO_Result
-    do_stream_read_unlocked(void* data, size_t size)
+    do_stream_read_unlocked(char*& data, size_t size)
       = 0;
 
-    // Performs write operation.
+    // Performs write operation. Overridden functions shall update `data` to denote
+    // the end of bytes that have been written.
     // This function is called by the network thread. The current socket will have
     // been locked by its caller. No synchronization is required.
     virtual
     IO_Result
-    do_stream_write_unlocked(const void* data, size_t size)
+    do_stream_write_unlocked(const char*& data, size_t size)
       = 0;
 
     // Performs shutdown preparation.
@@ -119,7 +121,7 @@ class Abstract_Stream_Socket
     // overload for convenience.
     virtual
     void
-    do_on_async_receive(void* data, size_t size);
+    do_on_async_receive(char* data, size_t size);
 
     virtual
     void
@@ -142,7 +144,7 @@ class Abstract_Stream_Socket
     // shutdown request has been initiated.
     // This function is thread-safe.
     bool
-    do_async_send(const void* data, size_t size);
+    do_async_send(const char* data, size_t size);
 
   public:
     // Gets the (connected) address of the remote peer.

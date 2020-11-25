@@ -32,9 +32,9 @@ do_get_size_config(const Config_File& file, const char* name, size_t defval)
 
 struct Config_Scalars
   {
-    size_t event_buffer_size = 1;
-    size_t io_buffer_size = 1;
-    size_t throttle_size = 1;
+    size_t event_buffer_size = 256;
+    size_t io_buffer_size = 65536;
+    size_t throttle_size = 65536;
   };
 
 enum : uint32_t
@@ -118,7 +118,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     // dynamic data
     ::std::vector<::epoll_event> m_event_buffer;
     ::std::vector<rcptr<Abstract_Socket>> m_ready_socks;
-    ::std::vector<uint8_t> m_io_buffer;
+    ::std::vector<char> m_io_buffer;
 
     template<Poll_List_mixin Poll_Socket::* mptrT>
     struct Poll_List_root
@@ -443,6 +443,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             throttle = sock->do_write_queue_size(lock) > conf.throttle_size;
             if(throttle) {
               // If the socket is throttled, remove it from read queue.
+              POSEIDON_LOG_DEBUG("Throttle socket: $1", sock);
               detach = true;
               clear_status = false;
             }
@@ -451,11 +452,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
               auto io_res = sock->do_on_async_poll_read(lock,
                                self->m_io_buffer.data(), self->m_io_buffer.size());
 
-              // If the read operation reports `io_result_again` or `io_result_eof`, the
-              // socket shall be removed from read queue and the `EPOLLIN` status shall
-              // be cleared.
-              detach = io_res <= 0;
-              clear_status = io_res <= 0;
+              // If the read operation didn't proceed, the socket shall be removed from
+              // read queue and the `EPOLLIN` status shall be cleared.
+              detach = io_res != io_result_partial_work;
+              clear_status = io_res != io_result_partial_work;
             }
           }
           catch(exception& stdex) {
@@ -490,25 +490,25 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         for(const auto& sock : self->m_ready_socks) {
           lock.unlock();
 
+          bool throttle;
           bool detach;
           bool clear_status;
-          bool throttle;
 
           // Perform a single write operation (no retry upon EINTR).
           try {
             auto io_res = sock->do_on_async_poll_write(lock,
                              self->m_io_buffer.data(), self->m_io_buffer.size());
 
-            // If the write operation reports `io_result_again` or `io_result_eof`, the
-            // socket shall be removed from write queue.
-            detach = io_res <= 0;
-
-            // If the write operation reports `io_result_again`, in addition to the
-            // removal, the `EPOLLOUT` status shall be cleared.
-            clear_status = io_res == io_result_again;
-
             // Check whether the socket should be unthrottled.
             throttle = sock->do_write_queue_size(lock) > conf.throttle_size;
+
+            // If the write operation didn't proceed, the socket shall be removed from
+            // write queue.
+            detach = io_res != io_result_partial_work;
+
+            // If the write operation reports `io_result_would_block`, in addition to the
+            // removal, the `EPOLLOUT` status shall be cleared.
+            clear_status = io_res == io_result_would_block;
           }
           catch(exception& stdex) {
             POSEIDON_LOG_WARN("$1\n[socket class `$2`]", stdex.what(), typeid(*sock));
@@ -518,9 +518,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
             // If a write error occurs, the socket shall be removed from write queue and
             // the `EPOLLOUT` status shall be cleared.
+            throttle = true;
             detach = true;
             clear_status = true;
-            throttle = true;
           }
 
           // Update the socket.
@@ -529,14 +529,16 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           if(index == poll_index_nil)
             continue;
 
+          if(!throttle && (sock->m_epoll_events & EPOLLIN)) {
+            self->poll_list_attach(self->m_poll_root_rd, index);
+            POSEIDON_LOG_DEBUG("Unthrottle socket: $1", sock);
+          }
+
           if(detach)
             self->poll_list_detach(self->m_poll_root_wr, index);
 
           if(clear_status)
             sock->m_epoll_events &= ~EPOLLOUT;
-
-          if(!throttle && (sock->m_epoll_events & EPOLLIN))
-            self->poll_list_attach(self->m_poll_root_rd, index);
         }
       }
 

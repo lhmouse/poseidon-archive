@@ -37,12 +37,12 @@ class Abstract_TLS_Socket
 
     // Calls `::SSL_read()`.
     IO_Result
-    do_stream_read_unlocked(void* data, size_t size)
+    do_stream_read_unlocked(char*& data, size_t size)
       final;
 
     // Calls `::SSL_write()`.
     IO_Result
-    do_stream_write_unlocked(const void* data, size_t size)
+    do_stream_write_unlocked(const char*& data, size_t size)
       final;
 
     // Calls `::SSL_shutdown()`.

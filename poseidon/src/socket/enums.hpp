@@ -13,12 +13,11 @@ namespace poseidon {
 // non-stream operation, such as `accept()` or `recvfrom()`.
 // I/O functions shall throw exceptions for errors that are not
 // listed here.
-// Note that positive values denote number of bytes transferred.
-enum IO_Result : ptrdiff_t
+enum IO_Result : uint8_t
   {
-    io_result_again    = -1,  // EAGAIN or EWOULDBLOCK
-    io_result_eof      =  0,
-    io_result_not_eof  =  PTRDIFF_MAX,  // EINTR
+    io_result_partial_work   = 0,  // also EINTR
+    io_result_end_of_stream  = 1,
+    io_result_would_block    = 2,  // EAGAIN or EWOULDBLOCK
   };
 
 // This describes the lifetime of a connection.

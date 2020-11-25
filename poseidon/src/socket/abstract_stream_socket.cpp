@@ -41,7 +41,7 @@ do_async_shutdown_unlocked()
         ::shutdown(this->get_fd(), SHUT_RDWR);
         this->m_cstate = connection_state_closed;
         POSEIDON_LOG_TRACE("Marked socket `$1` as CLOSED (not established)", this);
-        return io_result_eof;
+        return io_result_end_of_stream;
 
       case connection_state_established: {
         // Ensure pending data are delivered.
@@ -49,12 +49,12 @@ do_async_shutdown_unlocked()
           ::shutdown(this->get_fd(), SHUT_RD);
           this->m_cstate = connection_state_closing;
           POSEIDON_LOG_TRACE("Marked socket `$1` as CLOSING (data pending)", this);
-          return io_result_not_eof;
+          return io_result_partial_work;
         }
 
         // Wait for shutdown.
         auto io_res = this->do_call_stream_preshutdown_unlocked();
-        if(io_res != io_result_eof) {
+        if(io_res != io_result_end_of_stream) {
           ::shutdown(this->get_fd(), SHUT_RD);
           this->m_cstate = connection_state_closing;
           POSEIDON_LOG_TRACE("Marked socket `$1` as CLOSING (preshutdown pending)", this);
@@ -65,29 +65,29 @@ do_async_shutdown_unlocked()
         ::shutdown(this->get_fd(), SHUT_RDWR);
         this->m_cstate = connection_state_closed;
         POSEIDON_LOG_TRACE("Marked socket `$1` as CLOSED (pending data clear)", this);
-        return io_result_eof;
+        return io_result_end_of_stream;
       }
 
       case connection_state_closing: {
         // Ensure pending data are delivered.
         if(this->m_wqueue.size())
-          return io_result_not_eof;
+          return io_result_partial_work;
 
         // Wait for shutdown.
         auto io_res = this->do_call_stream_preshutdown_unlocked();
-        if(io_res != io_result_eof)
+        if(io_res != io_result_end_of_stream)
           return io_res;
 
         // Close the connection.
         ::shutdown(this->get_fd(), SHUT_RDWR);
         this->m_cstate = connection_state_closed;
         POSEIDON_LOG_TRACE("Marked socket `$1` as CLOSED (pending data clear)", this);
-        return io_result_eof;
+        return io_result_end_of_stream;
       }
 
       case connection_state_closed:
         // Do nothing.
-        return io_result_eof;
+        return io_result_end_of_stream;
 
       default:
         ROCKET_ASSERT(false);
@@ -96,28 +96,29 @@ do_async_shutdown_unlocked()
 
 IO_Result
 Abstract_Stream_Socket::
-do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
+do_on_async_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
   {
     lock.lock(this->m_io_mutex);
+    ROCKET_ASSERT(size != 0);
 
     // If the stream is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
-      return io_result_eof;
+      return io_result_end_of_stream;
 
     // Try reading some bytes.
-    auto io_res = this->do_stream_read_unlocked(hint, size);
-    if(io_res < 0)
-      return io_res;
-
-    if(io_res == io_result_eof) {
+    char* eptr = hint;
+    auto io_res = this->do_stream_read_unlocked(eptr, size);
+    if(io_res == io_result_end_of_stream) {
       POSEIDON_LOG_TRACE("End of stream encountered: $1", this);
       this->do_async_shutdown_unlocked();
-      return io_result_eof;
+      return io_res;
     }
+    if(io_res != io_result_partial_work)
+      return io_res;
 
     // Process the data that have been read.
     lock.unlock();
-    this->do_on_async_receive(hint, static_cast<size_t>(io_res));
+    this->do_on_async_receive(hint, static_cast<size_t>(eptr - hint));
     lock.lock(this->m_io_mutex);
     return io_res;
   }
@@ -130,9 +131,9 @@ do_write_queue_size(simple_mutex::unique_lock& lock)
     lock.lock(this->m_io_mutex);
 
     // Get the size of pending data.
-    size_t size = this->m_wqueue.size();
-    if(size != 0)
-      return size;
+    size_t navail = this->m_wqueue.size();
+    if(navail != 0)
+      return navail;
 
     // If a shutdown request is pending, report at least one byte.
     return this->m_cstate == connection_state_closing;
@@ -140,13 +141,14 @@ do_write_queue_size(simple_mutex::unique_lock& lock)
 
 IO_Result
 Abstract_Stream_Socket::
-do_on_async_poll_write(simple_mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/)
+do_on_async_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t size)
   {
     lock.lock(this->m_io_mutex);
+    ROCKET_ASSERT(size != 0);
 
     // If the stream is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
-      return io_result_eof;
+      return io_result_end_of_stream;
 
     // If the stream is in CONNECTING state, mark it ESTABLISHED.
     if(this->m_cstate < connection_state_established) {
@@ -158,21 +160,22 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, void* /*hint*/, size_t /
     }
 
     // Try writing some bytes.
-    size_t size = this->m_wqueue.size();
-    if(size == 0) {
+    size_t navail = ::std::min(this->m_wqueue.size(), size);
+    if(navail == 0) {
       if(this->m_cstate <= connection_state_established)
-        return io_result_eof;
+        return io_result_end_of_stream;
 
       // Shut down the connection completely now.
       return this->do_async_shutdown_unlocked();
     }
 
-    auto io_res = this->do_stream_write_unlocked(this->m_wqueue.data(), size);
-    if(io_res < 0)
+    const char* eptr = this->m_wqueue.data();
+    auto io_res = this->do_stream_write_unlocked(eptr, navail);
+    if(io_res != io_result_partial_work)
       return io_res;
 
     // Remove data that have been written.
-    this->m_wqueue.discard(static_cast<size_t>(io_res));
+    this->m_wqueue.discard(static_cast<size_t>(eptr - this->m_wqueue.data()));
     return io_res;
   }
 
@@ -189,12 +192,12 @@ do_on_async_poll_shutdown(int err)
 
 void
 Abstract_Stream_Socket::
-do_on_async_receive(void* data, size_t size)
+do_on_async_receive(char* data, size_t size)
   {
     // Append data to the default queue.
-    // Note the queue is provided purely for convenience for derived classes. It is not
-    // protected by the I/O mutex.
-    this->m_rqueue.putn(static_cast<const char*>(data), size);
+    // Note the queue is provided purely for convenience for derived classes.
+    // It is not protected by the I/O mutex.
+    this->m_rqueue.putn(data, size);
 
     this->do_on_async_receive(::std::move(this->m_rqueue));
   }
@@ -211,8 +214,8 @@ do_async_connect(const Socket_Address& addr)
     // Initiate the connection.
     this->do_stream_preconnect_unlocked();
 
-    // No matter whether `::connect()` succeeds or fails with `EINPROGRESS`, the current
-    // socket is set to the CONNECTING state.
+    // No matter whether `::connect()` succeeds or fails with `EINPROGRESS`,
+    // the current socket is set to the CONNECTING state.
     if(::connect(this->get_fd(), addr.data(), addr.ssize()) != 0) {
       int err = errno;
       if(err != EINPROGRESS)
@@ -225,14 +228,14 @@ do_async_connect(const Socket_Address& addr)
 
 bool
 Abstract_Stream_Socket::
-do_async_send(const void* data, size_t size)
+do_async_send(const char* data, size_t size)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate > connection_state_established)
       return false;
 
     // Append data to the write queue.
-    this->m_wqueue.putn(static_cast<const char*>(data), size);
+    this->m_wqueue.putn(data, size);
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.

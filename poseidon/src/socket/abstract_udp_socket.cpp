@@ -14,10 +14,10 @@ IO_Result
 do_translate_syscall_error(const char* func, int err)
   {
     if(err == EINTR)
-      return io_result_not_eof;
+      return io_result_partial_work;
 
     if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
-      return io_result_again;
+      return io_result_would_block;
 
     POSEIDON_THROW("UDP socket error\n"
                    "[`$1()` failed: $2]",
@@ -64,7 +64,7 @@ do_async_shutdown_unlocked()
         ::shutdown(this->get_fd(), SHUT_RDWR);
         this->m_cstate = connection_state_closed;
         POSEIDON_LOG_TRACE("Marked UDP socket as CLOSED (not open): $1", this);
-        return io_result_eof;
+        return io_result_end_of_stream;
 
       case connection_state_established:
       case connection_state_closing: {
@@ -72,19 +72,19 @@ do_async_shutdown_unlocked()
         if(this->m_wqueue.size()) {
           this->m_cstate = connection_state_closing;
           POSEIDON_LOG_TRACE("Marked UDP socket as CLOSING (data pending): $1", this);
-          return io_result_not_eof;
+          return io_result_partial_work;
         }
 
         // Pending data have been cleared. Shut it down.
         ::shutdown(this->get_fd(), SHUT_RDWR);
         this->m_cstate = connection_state_closed;
         POSEIDON_LOG_TRACE("Marked UDP socket as CLOSED (pending data clear): $1", this);
-        return io_result_eof;
+        return io_result_end_of_stream;
       }
 
       case connection_state_closed:
         // Do nothing.
-        return io_result_eof;
+        return io_result_end_of_stream;
 
       default:
         ROCKET_ASSERT(false);
@@ -93,13 +93,13 @@ do_async_shutdown_unlocked()
 
 IO_Result
 Abstract_UDP_Socket::
-do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
+do_on_async_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
   try {
     lock.lock(this->m_io_mutex);
 
     // If the socket is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
-      return io_result_eof;
+      return io_result_end_of_stream;
 
     // Try reading a packet.
     Socket_Address::storage addrst;
@@ -113,8 +113,8 @@ do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
     this->do_on_async_receive({ addrst, addrlen }, hint, static_cast<size_t>(nread));
     lock.lock(this->m_io_mutex);
 
-    // Warning: Don't return `io_result_eof` i.e. zero.
-    return io_result_not_eof;
+    // Warning: Don't return `io_result_end_of_stream` i.e. zero.
+    return io_result_partial_work;
   }
   catch(exception& stdex) {
     // It is probably bad to let the exception propagate to network driver and kill
@@ -125,7 +125,7 @@ do_on_async_poll_read(simple_mutex::unique_lock& lock, void* hint, size_t size)
                        this, stdex, typeid(*this));
 
     // Read other packets. The error is considered non-fatal.
-    return io_result_not_eof;
+    return io_result_partial_work;
   }
 
 size_t
@@ -151,13 +151,13 @@ do_write_queue_size(simple_mutex::unique_lock& lock)
 
 IO_Result
 Abstract_UDP_Socket::
-do_on_async_poll_write(simple_mutex::unique_lock& lock, void* /*hint*/, size_t /*size*/)
+do_on_async_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /*size*/)
   try {
     lock.lock(this->m_io_mutex);
 
     // If the socket is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
-      return io_result_eof;
+      return io_result_end_of_stream;
 
     // If the socket is in CONNECTING state, mark it ESTABLISHED.
     // Note UDP is connectless, so the socket is always writable unless some earlier error
@@ -176,7 +176,7 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, void* /*hint*/, size_t /
     size_t size = this->m_wqueue.getn(reinterpret_cast<char*>(&header), sizeof(header));
     if(size == 0) {
       if(this->m_cstate <= connection_state_established)
-        return io_result_eof;
+        return io_result_end_of_stream;
 
       // Shut down the connection completely now.
       return this->do_async_shutdown_unlocked();
@@ -188,7 +188,7 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, void* /*hint*/, size_t /
 
     Socket_Address::storage addrst;
     ::socklen_t addrlen = header.addrlen;
-    size = this->m_wqueue.getn(reinterpret_cast<char (&)[]>(addrst), addrlen);
+    size = this->m_wqueue.getn(reinterpret_cast<char*>(&addrst), addrlen);
     ROCKET_ASSERT(size == addrlen);
 
     // Write the payload, which shall be removed after `sendto()`, no matter whether it
@@ -199,8 +199,8 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, void* /*hint*/, size_t /
     if(nwritten < 0)
       return do_translate_syscall_error("sendto", errno);
 
-    // Warning: Don't return `io_result_eof` i.e. zero.
-    return io_result_not_eof;
+    // Warning: Don't return `io_result_end_of_stream` i.e. zero.
+    return io_result_partial_work;
   }
   catch(exception& stdex) {
     // It is probably bad to let the exception propagate to network driver and kill
@@ -211,7 +211,7 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, void* /*hint*/, size_t /
                        this, stdex, typeid(*this));
 
     // Write other packets. The error is considered non-fatal.
-    return io_result_not_eof;
+    return io_result_partial_work;
   }
 
 void
@@ -255,7 +255,7 @@ do_bind(const Socket_Address& addr)
 
 bool
 Abstract_UDP_Socket::
-do_async_send(const Socket_Address& addr, const void* data, size_t size)
+do_async_send(const Socket_Address& addr, const char* data, size_t size)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate > connection_state_established)

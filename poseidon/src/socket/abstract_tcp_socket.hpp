@@ -32,12 +32,12 @@ class Abstract_TCP_Socket
 
     // Calls `::read()`.
     IO_Result
-    do_stream_read_unlocked(void* data, size_t size)
+    do_stream_read_unlocked(char*& data, size_t size)
       final;
 
     // Calls `::write()`.
     IO_Result
-    do_stream_write_unlocked(const void* data, size_t size)
+    do_stream_write_unlocked(const char*& data, size_t size)
       final;
 
     // Does nothing as no preparation is needed.

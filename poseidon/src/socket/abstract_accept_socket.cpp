@@ -13,10 +13,10 @@ IO_Result
 do_translate_syscall_error(const char* func, int err)
   {
     if(err == EINTR)
-      return io_result_not_eof;
+      return io_result_partial_work;
 
     if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
-      return io_result_again;
+      return io_result_would_block;
 
     POSEIDON_THROW("Failed to accept incoming connection\n"
                    "[`$1()` failed: $2]",
@@ -42,7 +42,7 @@ do_set_common_options()
 
 IO_Result
 Abstract_Accept_Socket::
-do_on_async_poll_read(simple_mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
+do_on_async_poll_read(simple_mutex::unique_lock& /*lock*/, char* /*hint*/, size_t /*size*/)
   try {
     // Try accepting a socket.
     Socket_Address::storage addrst;
@@ -68,7 +68,7 @@ do_on_async_poll_read(simple_mutex::unique_lock& /*lock*/, void* /*hint*/, size_
     this->do_on_async_register(Network_Driver::insert(::std::move(sock)));
 
     // Report success.
-    return io_result_not_eof;
+    return io_result_partial_work;
   }
   catch(exception& stdex) {
     // It is probably bad to let the exception propagate to network driver and kill
@@ -77,7 +77,7 @@ do_on_async_poll_read(simple_mutex::unique_lock& /*lock*/, void* /*hint*/, size_
                        stdex, typeid(*this));
 
     // Accept other connections. The error is considered non-fatal.
-    return io_result_not_eof;
+    return io_result_partial_work;
   }
 
 size_t
@@ -90,9 +90,9 @@ do_write_queue_size(simple_mutex::unique_lock& /*lock*/)
 
 IO_Result
 Abstract_Accept_Socket::
-do_on_async_poll_write(simple_mutex::unique_lock& /*lock*/, void* /*hint*/, size_t /*size*/)
+do_on_async_poll_write(simple_mutex::unique_lock& /*lock*/, char* /*hint*/, size_t /*size*/)
   {
-    return io_result_eof;
+    return io_result_end_of_stream;
   }
 
 void
