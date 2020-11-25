@@ -434,21 +434,17 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         for(const auto& sock : self->m_ready_socks) {
           lock.unlock();
 
-          bool throttle;
           bool detach;
           bool clear_status;
 
-          // Perform a single read operation (no retry upon EINTR).
           try {
-            throttle = sock->do_write_queue_size(lock) > conf.throttle_size;
-            if(throttle) {
+            if(sock->do_write_queue_size(lock) > conf.throttle_size) {
               // If the socket is throttled, remove it from read queue.
-              POSEIDON_LOG_DEBUG("Throttle socket: $1", sock);
               detach = true;
               clear_status = false;
             }
             else {
-              // If the socket is not throttled, try reading some bytes.
+              // Perform a single read operation (no retry upon EINTR).
               auto io_res = sock->do_on_async_poll_read(lock,
                                self->m_io_buffer.data(), self->m_io_buffer.size());
 
@@ -461,12 +457,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           catch(exception& stdex) {
             POSEIDON_LOG_WARN("$1\n[socket class `$2`]", stdex.what(), typeid(*sock));
 
-            // Close the connection.
+            // Force shutdown of the connection.
             sock->terminate();
 
             // If a read error occurs, the socket shall be removed from read queue and
             // the `EPOLLIN` status shall be cleared.
-            throttle = false;
             detach = true;
             clear_status = true;
           }
@@ -490,35 +485,34 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         for(const auto& sock : self->m_ready_socks) {
           lock.unlock();
 
-          bool throttle;
+          bool unthrottle;
           bool detach;
           bool clear_status;
 
-          // Perform a single write operation (no retry upon EINTR).
           try {
+            // Perform a single write operation (no retry upon EINTR).
             auto io_res = sock->do_on_async_poll_write(lock,
                              self->m_io_buffer.data(), self->m_io_buffer.size());
 
             // Check whether the socket should be unthrottled.
-            throttle = sock->do_write_queue_size(lock) > conf.throttle_size;
+            unthrottle = (sock->m_epoll_events & EPOLLIN) &&
+                         (sock->do_write_queue_size(lock) <= conf.throttle_size);
 
             // If the write operation didn't proceed, the socket shall be removed from
-            // write queue.
+            // write queue. If the write operation reported `io_result_would_block`, in
+            // addition to the removal, the `EPOLLOUT` status shall be cleared.
             detach = io_res != io_result_partial_work;
-
-            // If the write operation reports `io_result_would_block`, in addition to the
-            // removal, the `EPOLLOUT` status shall be cleared.
             clear_status = io_res == io_result_would_block;
           }
           catch(exception& stdex) {
             POSEIDON_LOG_WARN("$1\n[socket class `$2`]", stdex.what(), typeid(*sock));
 
-            // Close the connection.
+            // Force shutdown of the connection.
             sock->terminate();
+            unthrottle = false;
 
             // If a write error occurs, the socket shall be removed from write queue and
             // the `EPOLLOUT` status shall be cleared.
-            throttle = true;
             detach = true;
             clear_status = true;
           }
@@ -529,10 +523,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           if(index == poll_index_nil)
             continue;
 
-          if(!throttle && (sock->m_epoll_events & EPOLLIN)) {
+          if(unthrottle)
             self->poll_list_attach(self->m_poll_root_rd, index);
-            POSEIDON_LOG_DEBUG("Unthrottle socket: $1", sock);
-          }
 
           if(detach)
             self->poll_list_detach(self->m_poll_root_wr, index);
