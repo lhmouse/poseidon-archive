@@ -135,11 +135,7 @@ do_write_queue_size(simple_mutex::unique_lock& lock)
       return size;
 
     // If a shutdown request is pending, report at least one byte.
-    if(this->m_cstate == connection_state_closing)
-      return 1;
-
-    // There is nothing to write.
-    return 0;
+    return this->m_cstate == connection_state_closing;
   }
 
 IO_Result
