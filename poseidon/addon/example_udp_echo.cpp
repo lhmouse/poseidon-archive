@@ -7,7 +7,6 @@
 #include "../src/util.hpp"
 
 namespace {
-
 using namespace poseidon;
 
 constexpr char bind[] = "0.0.0.0";

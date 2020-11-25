@@ -8,7 +8,6 @@
 #include "../src/util.hpp"
 
 namespace {
-
 using namespace poseidon;
 
 struct Example_Session : Abstract_TCP_Socket

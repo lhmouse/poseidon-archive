@@ -7,7 +7,6 @@
 #include "../src/util.hpp"
 
 namespace {
-
 using namespace poseidon;
 
 constexpr int64_t first = 3000;  // trigger after 3000ms

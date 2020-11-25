@@ -9,7 +9,6 @@
 #include "../src/util.hpp"
 
 namespace {
-
 using namespace poseidon;
 
 struct Promise_Timer : Abstract_Timer
