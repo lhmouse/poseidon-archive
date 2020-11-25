@@ -557,7 +557,7 @@ void
 Network_Driver::
 reload()
   {
-    // Load logger settings into temporary objects.
+    // Load network settings into temporary objects.
     auto file = Main_Config::copy();
 
     Config_Scalars conf;
