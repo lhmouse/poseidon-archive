@@ -55,11 +55,12 @@ do_on_async_poll_read(simple_mutex::unique_lock& /*lock*/, void* /*hint*/, size_
     auto sock = this->do_on_async_accept(::std::move(fd));
     if(!sock)
       POSEIDON_THROW("Null pointer returned from `do_on_async_accept()`\n"
-                     "[acceptor socket class `$1`]",
+                     "[listen socket class `$1`]",
                      typeid(*this).name());
 
     POSEIDON_LOG_INFO("Accepted incoming connection: local '$1', remote '$2'\n"
-                      "[acceptor socket class `$3`, new socket class `$4`]",
+                      "[listen socket class `$3`]\n"
+                      "[accepted socket class `$4`]",
                       sock->get_local_address(), Socket_Address(addrst, addrlen),
                       typeid(*this).name(), typeid(*sock).name());
 
@@ -72,9 +73,7 @@ do_on_async_poll_read(simple_mutex::unique_lock& /*lock*/, void* /*hint*/, size_
   catch(exception& stdex) {
     // It is probably bad to let the exception propagate to network driver and kill
     // this server socket... so we catch and ignore this exception.
-    POSEIDON_LOG_ERROR("Error accepting incoming connection:\n"
-                       "$1\n"
-                       "[socket class `$2`]",
+    POSEIDON_LOG_ERROR("$1\n[socket class `$2`]",
                        stdex, typeid(*this));
 
     // Accept other connections. The error is considered non-fatal.

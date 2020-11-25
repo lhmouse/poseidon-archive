@@ -17,16 +17,16 @@ IO_Result
 Abstract_Stream_Socket::
 do_call_stream_preshutdown_unlocked()
   noexcept
-  try {
+  {
     // Call `do_stream_preshutdown_unlocked()`, ignoring any exeptions.
-    return this->do_stream_preshutdown_unlocked();
-  }
-  catch(exception& stdex) {
-    POSEIDON_LOG_WARN("Failed to perform graceful shutdown on socket `$1`:\n"
-                      "$2\n"
-                      "[socket type `$3`]",
-                      this, stdex, typeid(*this));
-    return io_result_eof;
+    auto io_res = io_result_end_of_stream;
+    try {
+      io_res = this->do_stream_preshutdown_unlocked();
+    }
+    catch(exception& stdex) {
+      POSEIDON_LOG_WARN("$1\n[socket class `$2`]", stdex, typeid(*this));
+    }
+    return io_res;
   }
 
 IO_Result
