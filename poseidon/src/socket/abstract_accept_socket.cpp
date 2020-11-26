@@ -73,7 +73,8 @@ do_on_async_poll_read(simple_mutex::unique_lock& /*lock*/, char* /*hint*/, size_
   catch(exception& stdex) {
     // It is probably bad to let the exception propagate to network driver and kill
     // this server socket... so we catch and ignore this exception.
-    POSEIDON_LOG_ERROR("$1\n[socket class `$2`]",
+    POSEIDON_LOG_ERROR("Socket accept error: $1\n"
+                       "[socket class `$2`]",
                        stdex, typeid(*this));
 
     // Accept other connections. The error is considered non-fatal.

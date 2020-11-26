@@ -375,7 +375,9 @@ do_load_addons()
       }
       catch(exception& stdex) {
         // Print the message in `stdex`. There isn't much we can do.
-        POSEIDON_LOG_FATAL("$1\n[loading add-on '$2']", stdex);
+        POSEIDON_LOG_FATAL("Failed to load add-on: $1\n"
+                           "[loading add-on '$2']",
+                           stdex, path);
         throw;
       }
       POSEIDON_LOG_INFO("Finished loading add-on: $1", path);

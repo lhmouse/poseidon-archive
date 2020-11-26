@@ -396,7 +396,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             sock->do_on_async_poll_shutdown(err);
           }
           catch(exception& stdex) {
-            POSEIDON_LOG_WARN("$1\n[socket class `$2`]", stdex.what(), typeid(*sock));
+            POSEIDON_LOG_WARN("Socket shutdown error: $1\n"
+                              "[socket class `$2`]", stdex.what(), typeid(*sock));
           }
 
           // Remove the socket, no matter whether an exception was thrown or not.
@@ -455,7 +456,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             }
           }
           catch(exception& stdex) {
-            POSEIDON_LOG_WARN("$1\n[socket class `$2`]", stdex.what(), typeid(*sock));
+            POSEIDON_LOG_WARN("Socket read error: $1\n"
+                              "[socket class `$2`]", stdex.what(), typeid(*sock));
 
             // Force shutdown of the connection.
             sock->terminate();
@@ -505,7 +507,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             clear_status = io_res == io_result_would_block;
           }
           catch(exception& stdex) {
-            POSEIDON_LOG_WARN("$1\n[socket class `$2`]", stdex.what(), typeid(*sock));
+            POSEIDON_LOG_WARN("Socket write error: $1\n"
+                              "[socket class `$2`]", stdex.what(), typeid(*sock));
 
             // Force shutdown of the connection.
             sock->terminate();

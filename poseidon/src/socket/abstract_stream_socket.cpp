@@ -24,7 +24,9 @@ do_call_stream_preshutdown_unlocked()
       io_res = this->do_stream_preshutdown_unlocked();
     }
     catch(exception& stdex) {
-      POSEIDON_LOG_WARN("$1\n[socket class `$2`]", stdex, typeid(*this));
+      POSEIDON_LOG_WARN("Socket shutdown error: $1\n"
+                        "[socket class `$2`]",
+                        stdex, typeid(*this));
     }
     return io_res;
   }
