@@ -87,12 +87,12 @@ parse_http_verb(const char* bptr)
 enum HTTP_Status : uint16_t
   {
     http_status_null                   =   0,  // Null
-    http_status_100                    = 100,
+    http_status_class_information      = 100,
     http_status_continue               = 100,  // Continue
     http_status_switching_protocol     = 101,  // Switching Protocol
     http_status_processing             = 102,  // Processing
     http_status_early_hints            = 103,  // Early Hints
-    http_status_200                    = 200,
+    http_status_class_success          = 200,
     http_status_ok                     = 200,  // OK
     http_status_created                = 201,  // Created
     http_status_accepted               = 202,  // Accepted
@@ -103,7 +103,7 @@ enum HTTP_Status : uint16_t
     http_status_multistatus            = 207,  // Multi-status
     http_status_already_reported       = 208,  // Already Reported
     http_status_im_used                = 226,  // IM Used
-    http_status_300                    = 300,
+    http_status_class_redirection      = 300,
     http_status_multiple_choice        = 300,  // Multiple Choice
     http_status_moved_permanently      = 301,  // Moved Permanently
     http_status_found                  = 302,  // Found
@@ -112,7 +112,7 @@ enum HTTP_Status : uint16_t
     http_status_use_proxy              = 305,  // Use Proxy
     http_status_temporary_redirect     = 307,  // Temporary Redirect
     http_status_permanent_redirect     = 308,  // Permanent Redirect
-    http_status_400                    = 400,
+    http_status_class_client_error     = 400,
     http_status_bad_request            = 400,  // Bad Request
     http_status_unauthorized           = 401,  // Unauthorized
     http_status_forbidden              = 403,  // Forbidden
@@ -139,7 +139,7 @@ enum HTTP_Status : uint16_t
     http_status_precondition_required  = 428,  // Precondition Required
     http_status_too_many_requests      = 429,  // Too Many Requests
     http_status_headers_too_large      = 431,  // Request Header Fields Too Large
-    http_status_500                    = 500,
+    http_status_class_server_error     = 500,
     http_status_internal_server_error  = 500,  // Internal Server Error
     http_status_not_implemented        = 501,  // Not Implemented
     http_status_bad_gateway            = 502,  // Bad Gateway
@@ -159,30 +159,12 @@ const char*
 describe_http_status(HTTP_Status stat)
   noexcept;
 
-// These are HTTP status code classes.
-enum HTTP_Status_Class : uint8_t
-  {
-    http_status_class_null           = 0,
-    http_status_class_informational  = 1,
-    http_status_class_successful     = 2,
-    http_status_class_redirection    = 3,
-    http_status_class_client_error   = 4,
-    http_status_class_server_error   = 5,
-  };
-
 // Classifies a status code.
 constexpr
-HTTP_Status_Class
+HTTP_Status
 classify_http_status(HTTP_Status stat)
   noexcept
-  { return static_cast<HTTP_Status_Class>(static_cast<uint32_t>(stat) / 100);  }
-
-// Gets the x00 status code.
-constexpr
-HTTP_Status
-get_http_status_base(HTTP_Status_Class stcls)
-  noexcept
-  { return static_cast<HTTP_Status>(static_cast<uint32_t>(stcls) * 100);  }
+  { return static_cast<HTTP_Status>(static_cast<uint32_t>(stat) / 100 * 100);  }
 
 }  // namespace poseidon
 
