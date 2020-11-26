@@ -346,30 +346,38 @@ ROCKET_NOINLINE
 void
 do_load_addons()
   {
+    ::std::vector<cow_string> paths;
+
     const auto file = Main_Config::copy();
     const auto qaddons = file.get_array_opt({"addons"});
-    if(!qaddons)
+    if(qaddons) {
+      paths.reserve(qaddons->size());
+      for(const auto& addon : *qaddons) {
+        if(!addon.is_string())
+          POSEIDON_THROW("Invalid add-on path (`$1` is not a string)", addon);
+
+        paths.emplace_back(addon.as_string());
+        POSEIDON_LOG_DEBUG("Found add-on: $1", paths.back());
+      }
+    }
+    if(paths.empty()) {
+      POSEIDON_LOG_ERROR("There is no add-on to load. What do you expect me to do?");
       return;
-
-    POSEIDON_LOG_DEBUG("List of add-ons to load:\n$1", *qaddons);
-    ::std::vector<cow_string> paths;
-    paths.reserve(qaddons->size());
-
-    for(const auto& addon : *qaddons) {
-      if(!addon.is_string())
-        POSEIDON_THROW("Invalid add-on path (`$1` is not a string)", addon);
-
-      paths.emplace_back(addon.as_string());
     }
 
     for(const auto& path : paths) {
       POSEIDON_LOG_INFO("Loading add-on: $1", path);
-
-      if(!::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE))
-        POSEIDON_THROW("Error loading add-on '$1'\n"
-                       "[`dlopen()` failed: $2]",
-                       path, ::dlerror());
-
+      try {
+        if(!::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE))
+          POSEIDON_THROW("Error loading add-on '$1'\n"
+                         "[`dlopen()` failed: $2]",
+                         path, ::dlerror());
+      }
+      catch(exception& stdex) {
+        // Print the message in `stdex`. There isn't much we can do.
+        POSEIDON_LOG_FATAL("$1\n[loading add-on '$2']", stdex);
+        throw;
+      }
       POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
     }
   }
