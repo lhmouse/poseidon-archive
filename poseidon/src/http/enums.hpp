@@ -166,6 +166,40 @@ classify_http_status(HTTP_Status stat)
   noexcept
   { return static_cast<HTTP_Status>(static_cast<uint32_t>(stat) / 100 * 100);  }
 
+// These are WebSocket opcodes.
+// This list is exhaustive according to RFC 6455.
+enum WebSocket_Opcode : uint8_t
+  {
+    websocket_opcode_continuation  = 0b0000,
+    websocket_opcode_text          = 0b0001,
+    websocket_opcode_binary        = 0b0010,
+    websocket_opcode_close         = 0b1000,
+    websocket_opcode_ping          = 0b1001,
+    websocket_opcode_pong          = 0b1010,
+  };
+
+// These are WebSocket status codes.
+// This list is not exhaustive. Custom values may be used.
+enum WebSocket_Status : uint16_t
+  {
+    websocket_status_null                =    0,
+    websocket_status_class_rfc6455       = 1000,
+    websocket_status_normal_closure      = 1000,
+    websocket_status_going_away          = 1001,
+    websocket_status_protocol_error      = 1002,
+    websocket_status_not_acceptable      = 1003,
+    websocket_status_no_status           = 1005,  // reserved
+    websocket_status_abnormal            = 1006,  // reserved
+    websocket_status_data_error          = 1007,
+    websocket_status_forbidden           = 1008,
+    websocket_status_too_large           = 1009,
+    websocket_status_extension_required  = 1010,  // reserved
+    websocket_status_server_error        = 1011,
+    websocket_status_tls_error           = 1015,  // reserved
+    websocket_status_class_iana          = 3000,
+    websocket_status_class_private_use   = 4000,
+  };
+
 }  // namespace poseidon
 
 #endif

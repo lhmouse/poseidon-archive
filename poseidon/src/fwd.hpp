@@ -167,6 +167,9 @@ enum HTTP_Version : uint16_t;
 enum HTTP_Verb : uint8_t;
 enum HTTP_Status : uint16_t;
 
+enum WebSocket_Opcode : uint8_t;
+enum WebSocket_Status : uint16_t;
+
 class Option_Map;
 
 // Singletons
