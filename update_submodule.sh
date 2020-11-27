@@ -16,8 +16,8 @@ _message="submodules/${_submodule}: Update to ${_tag}"
 # Update to target branch
 git submodule update --init -- "${_submodule}"
 pushd "${_submodule}"
-git checkout -f "${_tag}"
-git pull --ff-only
+git fetch origin "${_tag}"
+git checkout -f FETCH_HEAD
 popd
 
 # Commit if there are diffs
