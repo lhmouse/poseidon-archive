@@ -136,6 +136,6 @@ enqueue_async_job(FuncT&& func)
                        typename ::std::decay<FuncT>::type>>(
                            details_util::random_key, ::std::forward<FuncT>(func)));  }
 
-}  // namespace asteria
+}  // namespace poseidon
 
 #endif
