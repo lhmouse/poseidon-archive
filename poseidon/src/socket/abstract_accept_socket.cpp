@@ -58,13 +58,14 @@ do_on_async_poll_read(simple_mutex::unique_lock& /*lock*/, char* /*hint*/, size_
                      "[listen socket class `$1`]",
                      typeid(*this).name());
 
-    POSEIDON_LOG_INFO("Accepted incoming connection: local '$1', remote '$2'\n"
-                      "[listen socket class `$3`]\n"
-                      "[accepted socket class `$4`]",
-                      sock->get_local_address(), Socket_Address(addrst, addrlen),
-                      typeid(*this).name(), typeid(*sock).name());
-
     // Register the socket.
+    POSEIDON_LOG_INFO("Accepted incoming connection from '$1'\n"
+                      "[server socket class `$2` listening on '$3']\n"
+                      "[accepted socket class `$4`]",
+                      Socket_Address(addrst, addrlen),
+                      typeid(*this).name(), this->get_local_address(),
+                      typeid(*sock).name());
+
     this->do_on_async_register(Network_Driver::insert(::std::move(sock)));
 
     // Report success.
