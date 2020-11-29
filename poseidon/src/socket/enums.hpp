@@ -25,7 +25,7 @@ enum IO_Result : uint8_t
 // TCP and SCTP.
 enum Connection_State : uint8_t
   {
-    connection_state_initial      = 0,  // W allowed
+    connection_state_empty        = 0,  // W allowed
     connection_state_connecting   = 1,  // W allowed
     connection_state_established  = 2,  // R/W allowed
     connection_state_closing      = 3,  // R/W forbidden

@@ -58,7 +58,7 @@ do_async_shutdown_unlocked()
   noexcept
   {
     switch(this->m_cstate) {
-      case connection_state_initial:
+      case connection_state_empty:
       case connection_state_connecting:
         // Shut down the connection. Discard pending data.
         ::shutdown(this->get_fd(), SHUT_RDWR);

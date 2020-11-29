@@ -15,7 +15,7 @@ class Abstract_Stream_Socket
   private:
     // These are I/O components.
     mutable simple_mutex m_io_mutex;
-    Connection_State m_cstate = connection_state_initial;
+    Connection_State m_cstate = connection_state_empty;
     linear_buffer m_wqueue;  // write queue
 
     linear_buffer m_rqueue;  // default read queue (not protected by I/O mutex)

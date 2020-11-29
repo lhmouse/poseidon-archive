@@ -37,7 +37,7 @@ do_async_shutdown_unlocked()
   noexcept
   {
     switch(this->m_cstate) {
-      case connection_state_initial:
+      case connection_state_empty:
       case connection_state_connecting:
         // Shut down the connection. Discard pending data.
         ::shutdown(this->get_fd(), SHUT_RDWR);
@@ -210,7 +210,7 @@ do_async_connect(const Socket_Address& addr)
   {
     // Lock the stream and examine connection state.
     simple_mutex::unique_lock lock(this->m_io_mutex);
-    if(this->m_cstate != connection_state_initial)
+    if(this->m_cstate != connection_state_empty)
       POSEIDON_THROW("Another connection already in progress or established");
 
     // Initiate the connection.
