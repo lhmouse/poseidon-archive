@@ -18,8 +18,6 @@ struct SSL_CTX_deleter
       { ::SSL_CTX_free(ctx);  }
   };
 
-using unique_SSL_CTX = uptr<::SSL_CTX, SSL_CTX_deleter>;
-
 struct SSL_deleter
   {
     void
@@ -28,6 +26,7 @@ struct SSL_deleter
       { ::SSL_free(ssl);  }
   };
 
+using unique_SSL_CTX = uptr<::SSL_CTX, SSL_CTX_deleter>;
 using unique_SSL = uptr<::SSL, SSL_deleter>;
 
 // Prints all errors in OpenSSL error queue, then clears it.

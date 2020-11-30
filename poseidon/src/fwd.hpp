@@ -147,8 +147,8 @@ enum IO_Result : uint8_t;
 enum Connection_State : uint8_t;
 enum Socket_Address_Class : uint8_t;
 
-struct SSL_deleter;
 struct SSL_CTX_deleter;
+struct SSL_deleter;
 
 class Socket_Address;
 class Abstract_Socket;

@@ -93,14 +93,6 @@ do_create_default_client_ssl_ctx()
     return ctx;
   }
 
-unique_SSL_CTX
-do_copy_default_ssl_ctx(::SSL_CTX* ctx)
-  {
-    int res = ::SSL_CTX_up_ref(ctx);
-    ROCKET_ASSERT(res == 1);
-    return unique_SSL_CTX(ctx);
-  }
-
 }  // namespace
 
 size_t
@@ -127,19 +119,27 @@ create_server_ssl_ctx(const char* cert_opt, const char* pkey_opt)
     if(cert_opt || cert_opt)
       POSEIDON_THROW("Certificate and private key must be both specified or both absent");
 
-    // Cache the default context.
+    // Create the default context.
     static const auto s_default_ctx = do_create_default_server_ssl_ctx();
-    ROCKET_ASSERT(s_default_ctx);
-    return do_copy_default_ssl_ctx(s_default_ctx);
+    auto ctx = s_default_ctx.get();
+    ROCKET_ASSERT(ctx);
+
+    // Bump up its refrence count and return an owning pointer to it.
+    int res = ::SSL_CTX_up_ref(ctx);
+    ROCKET_ASSERT(res == 1);
+    return unique_SSL_CTX(ctx);
   }
 
 ::SSL_CTX*
 get_client_ssl_ctx()
   {
-    // Cache the default context.
+    // Create the default context.
     static const auto s_default_ctx = do_create_default_client_ssl_ctx();
-    ROCKET_ASSERT(s_default_ctx);
-    return do_copy_default_ssl_ctx(s_default_ctx);
+    auto ctx = s_default_ctx.get();
+    ROCKET_ASSERT(ctx);
+
+    // Return a non-owning pointer to it.
+    return ctx;
   }
 
 unique_SSL
