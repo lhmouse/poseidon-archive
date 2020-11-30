@@ -47,7 +47,7 @@ class Abstract_TLS_Socket
 
     // Calls `::SSL_shutdown()`.
     IO_Result
-    do_stream_preshutdown_unlocked()
+    do_stream_preclose_unlocked()
       final;
 
   protected:
@@ -69,7 +69,7 @@ class Abstract_TLS_Socket
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_socket_shutdown(int err)
+    do_on_socket_close(int err)
       override;
 
   public:
@@ -78,7 +78,7 @@ class Abstract_TLS_Socket
     using Abstract_Socket::get_local_address;
 
     using Abstract_Stream_Socket::get_remote_address;
-    using Abstract_Stream_Socket::shut_down;
+    using Abstract_Stream_Socket::close;
   };
 
 }  // namespace poseidon

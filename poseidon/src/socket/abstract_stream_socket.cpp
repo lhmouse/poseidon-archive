@@ -15,13 +15,13 @@ Abstract_Stream_Socket::
 
 IO_Result
 Abstract_Stream_Socket::
-do_call_stream_preshutdown_unlocked()
+do_call_stream_preclose_unlocked()
   noexcept
   {
-    // Call `do_stream_preshutdown_unlocked()`, ignoring any exeptions.
+    // Call `do_stream_preclose_unlocked()`, ignoring any exeptions.
     auto io_res = io_result_end_of_stream;
     try {
-      io_res = this->do_stream_preshutdown_unlocked();
+      io_res = this->do_stream_preclose_unlocked();
     }
     catch(exception& stdex) {
       POSEIDON_LOG_WARN("Socket shutdown error: $1\n"
@@ -33,7 +33,7 @@ do_call_stream_preshutdown_unlocked()
 
 IO_Result
 Abstract_Stream_Socket::
-do_socket_shutdown_unlocked()
+do_socket_close_unlocked()
   noexcept
   {
     switch(this->m_cstate) {
@@ -55,11 +55,11 @@ do_socket_shutdown_unlocked()
         }
 
         // Wait for shutdown.
-        auto io_res = this->do_call_stream_preshutdown_unlocked();
+        auto io_res = this->do_call_stream_preclose_unlocked();
         if(io_res != io_result_end_of_stream) {
           ::shutdown(this->get_fd(), SHUT_RD);
           this->m_cstate = connection_state_closing;
-          POSEIDON_LOG_TRACE("Marked socket `$1` as CLOSING (preshutdown pending)", this);
+          POSEIDON_LOG_TRACE("Marked socket `$1` as CLOSING (preclose pending)", this);
           return io_res;
         }
 
@@ -76,7 +76,7 @@ do_socket_shutdown_unlocked()
           return io_result_partial_work;
 
         // Wait for shutdown.
-        auto io_res = this->do_call_stream_preshutdown_unlocked();
+        auto io_res = this->do_call_stream_preclose_unlocked();
         if(io_res != io_result_end_of_stream)
           return io_res;
 
@@ -112,7 +112,7 @@ do_on_socket_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
     auto io_res = this->do_stream_read_unlocked(eptr, size);
     if(io_res == io_result_end_of_stream) {
       POSEIDON_LOG_TRACE("End of stream encountered: $1", this);
-      this->do_socket_shutdown_unlocked();
+      this->do_socket_close_unlocked();
       return io_res;
     }
     if(io_res != io_result_partial_work)
@@ -168,7 +168,7 @@ do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
         return io_result_end_of_stream;
 
       // Shut down the connection completely now.
-      return this->do_socket_shutdown_unlocked();
+      return this->do_socket_close_unlocked();
     }
 
     const char* eptr = this->m_wqueue.data();
@@ -183,13 +183,13 @@ do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
 
 void
 Abstract_Stream_Socket::
-do_on_socket_poll_shutdown(int err)
+do_on_socket_poll_close(int err)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     this->m_cstate = connection_state_closed;
     lock.unlock();
 
-    this->do_on_socket_shutdown(err);
+    this->do_on_socket_close(err);
   }
 
 void
@@ -269,7 +269,7 @@ get_remote_address()
 
 bool
 Abstract_Stream_Socket::
-shut_down()
+close()
   noexcept
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
@@ -277,7 +277,7 @@ shut_down()
       return false;
 
     // Initiate asynchronous shutdown.
-    this->do_socket_shutdown_unlocked();
+    this->do_socket_close_unlocked();
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.

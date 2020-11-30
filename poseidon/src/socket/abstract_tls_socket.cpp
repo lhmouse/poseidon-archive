@@ -105,7 +105,7 @@ do_stream_write_unlocked(const char*& data, size_t size)
 
 IO_Result
 Abstract_TLS_Socket::
-do_stream_preshutdown_unlocked()
+do_stream_preclose_unlocked()
   {
     int ret = ::SSL_shutdown(this->m_ssl);
     if(ret == 0)
@@ -127,7 +127,7 @@ do_on_socket_establish()
 
 void
 Abstract_TLS_Socket::
-do_on_socket_shutdown(int err)
+do_on_socket_close(int err)
   {
     POSEIDON_LOG_INFO("Secure TCP connection closed: local '$1', $2",
                       this->get_local_address(), format_errno(err));

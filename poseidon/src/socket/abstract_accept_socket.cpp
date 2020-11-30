@@ -99,7 +99,7 @@ do_on_socket_poll_write(simple_mutex::unique_lock& /*lock*/, char* /*hint*/, siz
 
 void
 Abstract_Accept_Socket::
-do_on_socket_poll_shutdown(int err)
+do_on_socket_poll_close(int err)
   {
     POSEIDON_LOG_INFO("Listen socket closed: local '$1', $2",
                       this->get_local_address(), format_errno(err));

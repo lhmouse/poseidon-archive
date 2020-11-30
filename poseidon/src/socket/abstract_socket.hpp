@@ -74,7 +74,7 @@ class Abstract_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_on_socket_poll_shutdown(int err)
+    do_on_socket_poll_close(int err)
       = 0;
 
   public:

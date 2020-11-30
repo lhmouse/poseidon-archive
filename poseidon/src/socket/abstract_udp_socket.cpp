@@ -54,7 +54,7 @@ Abstract_UDP_Socket::
 
 IO_Result
 Abstract_UDP_Socket::
-do_socket_shutdown_unlocked()
+do_socket_close_unlocked()
   noexcept
   {
     switch(this->m_cstate) {
@@ -179,7 +179,7 @@ do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
         return io_result_end_of_stream;
 
       // Shut down the connection completely now.
-      return this->do_socket_shutdown_unlocked();
+      return this->do_socket_close_unlocked();
     }
 
     // Get the destination address.
@@ -216,13 +216,13 @@ do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
 
 void
 Abstract_UDP_Socket::
-do_on_socket_poll_shutdown(int err)
+do_on_socket_poll_close(int err)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     this->m_cstate = connection_state_closed;
     lock.unlock();
 
-    this->do_on_socket_shutdown(err);
+    this->do_on_socket_close(err);
   }
 
 void
@@ -233,7 +233,7 @@ do_on_socket_establish()
 
 void
 Abstract_UDP_Socket::
-do_on_socket_shutdown(int err)
+do_on_socket_close(int err)
   {
     POSEIDON_LOG_INFO("UDP socket closed: local '$1', $2",
                       this->get_local_address(), format_errno(err));
@@ -443,7 +443,7 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname)
 
 bool
 Abstract_UDP_Socket::
-shut_down()
+close()
   noexcept
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
@@ -451,7 +451,7 @@ shut_down()
       return false;
 
     // Initiate asynchronous shutdown.
-    this->do_socket_shutdown_unlocked();
+    this->do_socket_close_unlocked();
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.

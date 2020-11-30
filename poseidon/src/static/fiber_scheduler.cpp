@@ -603,7 +603,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             // of resource leaks.
             if(sig != 0) {
               // Delete this fiber when the process is shutting down.
-              POSEIDON_LOG_DEBUG("Killed pending fiber because of shutdown: $1", fiber);
+              POSEIDON_LOG_DEBUG("Killed fiber because of process termination: $1", fiber);
               self->m_sched_pq.pop_back();
               continue;
             }

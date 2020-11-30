@@ -67,7 +67,7 @@ class Abstract_Accept_Socket
     // Prints a line of text but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_socket_poll_shutdown(int err)
+    do_on_socket_poll_close(int err)
       override;
 
     // Binds this socket to the specified address and starts listening.

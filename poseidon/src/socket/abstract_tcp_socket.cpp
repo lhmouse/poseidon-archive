@@ -76,7 +76,7 @@ do_stream_write_unlocked(const char*& data, size_t size)
 
 IO_Result
 Abstract_TCP_Socket::
-do_stream_preshutdown_unlocked()
+do_stream_preclose_unlocked()
   {
     return io_result_end_of_stream;
   }
@@ -91,7 +91,7 @@ do_on_socket_establish()
 
 void
 Abstract_TCP_Socket::
-do_on_socket_shutdown(int err)
+do_on_socket_close(int err)
   {
     POSEIDON_LOG_INFO("TCP connection closed: local '$1', $2",
                       this->get_local_address(), format_errno(err));

@@ -393,10 +393,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
                                format_errno(errno));
 
           try {
-            sock->do_on_socket_poll_shutdown(err);
+            sock->do_on_socket_poll_close(err);
           }
           catch(exception& stdex) {
-            POSEIDON_LOG_WARN("Socket shutdown error: $1\n"
+            POSEIDON_LOG_WARN("Socket close error: $1\n"
                               "[socket class `$2`]", stdex.what(), typeid(*sock));
           }
 
@@ -459,7 +459,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             POSEIDON_LOG_WARN("Socket read error: $1\n"
                               "[socket class `$2`]", stdex.what(), typeid(*sock));
 
-            // Force shutdown of the connection.
+            // Force closure of the connection.
             sock->terminate();
 
             // If a read error occurs, the socket shall be removed from read queue and
@@ -510,7 +510,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             POSEIDON_LOG_WARN("Socket write error: $1\n"
                               "[socket class `$2`]", stdex.what(), typeid(*sock));
 
-            // Force shutdown of the connection.
+            // Force closure of the connection.
             sock->terminate();
             unthrottle = false;
 

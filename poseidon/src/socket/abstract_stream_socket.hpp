@@ -35,12 +35,12 @@ class Abstract_Stream_Socket
   private:
     inline
     IO_Result
-    do_call_stream_preshutdown_unlocked()
+    do_call_stream_preclose_unlocked()
       noexcept;
 
     inline
     IO_Result
-    do_socket_shutdown_unlocked()
+    do_socket_close_unlocked()
       noexcept;
 
     // Reads some data.
@@ -66,7 +66,7 @@ class Abstract_Stream_Socket
 
     // Notifies a full-duplex channel has been closed.
     void
-    do_on_socket_poll_shutdown(int err)
+    do_on_socket_poll_close(int err)
       final;
 
   protected:
@@ -104,7 +104,7 @@ class Abstract_Stream_Socket
     // either completed or failed due to some irrecoverable errors.
     virtual
     IO_Result
-    do_stream_preshutdown_unlocked()
+    do_stream_preclose_unlocked()
       = 0;
 
     // Notifies a full-duplex channel has been established.
@@ -132,7 +132,7 @@ class Abstract_Stream_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_on_socket_shutdown(int err)
+    do_on_socket_close(int err)
       = 0;
 
     // Initiates a new connection to the specified address.
@@ -159,7 +159,7 @@ class Abstract_Stream_Socket
     // considered closed. No further data may be read from or written through it.
     // Note half-closed connections are not supported.
     bool
-    shut_down()
+    close()
       noexcept;
   };
 

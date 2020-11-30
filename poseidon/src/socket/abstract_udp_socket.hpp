@@ -29,7 +29,7 @@ class Abstract_UDP_Socket
   private:
     inline
     IO_Result
-    do_socket_shutdown_unlocked()
+    do_socket_close_unlocked()
       noexcept;
 
     // Reads some data.
@@ -55,7 +55,7 @@ class Abstract_UDP_Socket
 
     // Notifies this socket has been closed.
     void
-    do_on_socket_poll_shutdown(int err)
+    do_on_socket_poll_close(int err)
       final;
 
   protected:
@@ -78,7 +78,7 @@ class Abstract_UDP_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_on_socket_shutdown(int err);
+    do_on_socket_close(int err);
 
     // Binds this socket to the specified address.
     void
@@ -131,7 +131,7 @@ class Abstract_UDP_Socket
     // Marks this socket as closed immediately. No further data may be read from or
     // written through it.
     bool
-    shut_down()
+    close()
       noexcept;
   };
 
