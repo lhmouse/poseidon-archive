@@ -393,7 +393,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
                                format_errno(errno));
 
           try {
-            sock->do_on_async_poll_shutdown(err);
+            sock->do_on_socket_poll_shutdown(err);
           }
           catch(exception& stdex) {
             POSEIDON_LOG_WARN("Socket shutdown error: $1\n"
@@ -446,7 +446,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             }
             else {
               // Perform a single read operation (no retry upon EINTR).
-              auto io_res = sock->do_on_async_poll_read(lock,
+              auto io_res = sock->do_on_socket_poll_read(lock,
                                self->m_io_buffer.data(), self->m_io_buffer.size());
 
               // If the read operation didn't proceed, the socket shall be removed from
@@ -493,7 +493,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
           try {
             // Perform a single write operation (no retry upon EINTR).
-            auto io_res = sock->do_on_async_poll_write(lock,
+            auto io_res = sock->do_on_socket_poll_write(lock,
                              self->m_io_buffer.data(), self->m_io_buffer.size());
 
             // Check whether the socket should be unthrottled.

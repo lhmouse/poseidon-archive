@@ -54,7 +54,7 @@ Abstract_UDP_Socket::
 
 IO_Result
 Abstract_UDP_Socket::
-do_async_shutdown_unlocked()
+do_socket_shutdown_unlocked()
   noexcept
   {
     switch(this->m_cstate) {
@@ -93,7 +93,7 @@ do_async_shutdown_unlocked()
 
 IO_Result
 Abstract_UDP_Socket::
-do_on_async_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
+do_on_socket_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
   try {
     lock.lock(this->m_io_mutex);
 
@@ -110,7 +110,7 @@ do_on_async_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
 
     // Process the packet that has been read.
     lock.unlock();
-    this->do_on_async_receive({ addrst, addrlen }, hint, static_cast<size_t>(nread));
+    this->do_on_socket_receive({ addrst, addrlen }, hint, static_cast<size_t>(nread));
     lock.lock(this->m_io_mutex);
 
     // Warning: Don't return `io_result_end_of_stream` i.e. zero.
@@ -151,7 +151,7 @@ do_write_queue_size(simple_mutex::unique_lock& lock)
 
 IO_Result
 Abstract_UDP_Socket::
-do_on_async_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /*size*/)
+do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /*size*/)
   try {
     lock.lock(this->m_io_mutex);
 
@@ -166,7 +166,7 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /
       this->m_cstate = connection_state_established;
 
       lock.unlock();
-      this->do_on_async_establish();
+      this->do_on_socket_establish();
       lock.lock(this->m_io_mutex);
     }
 
@@ -179,7 +179,7 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /
         return io_result_end_of_stream;
 
       // Shut down the connection completely now.
-      return this->do_async_shutdown_unlocked();
+      return this->do_socket_shutdown_unlocked();
     }
 
     // Get the destination address.
@@ -216,24 +216,24 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /
 
 void
 Abstract_UDP_Socket::
-do_on_async_poll_shutdown(int err)
+do_on_socket_poll_shutdown(int err)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     this->m_cstate = connection_state_closed;
     lock.unlock();
 
-    this->do_on_async_shutdown(err);
+    this->do_on_socket_shutdown(err);
   }
 
 void
 Abstract_UDP_Socket::
-do_on_async_establish()
+do_on_socket_establish()
   {
   }
 
 void
 Abstract_UDP_Socket::
-do_on_async_shutdown(int err)
+do_on_socket_shutdown(int err)
   {
     POSEIDON_LOG_INFO("UDP socket closed: local '$1', $2",
                       this->get_local_address(), format_errno(err));
@@ -255,7 +255,7 @@ do_bind(const Socket_Address& addr)
 
 bool
 Abstract_UDP_Socket::
-do_async_send(const Socket_Address& addr, const char* data, size_t size)
+do_socket_send(const Socket_Address& addr, const char* data, size_t size)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate > connection_state_established)
@@ -269,7 +269,7 @@ do_async_send(const Socket_Address& addr, const char* data, size_t size)
       POSEIDON_LOG_WARN("UDP packet truncated (size `$1` too large)", size);
 
     // Please mind thread safety.
-    // This function shall match `do_on_async_poll_write()`.
+    // This function shall match `do_on_socket_poll_write()`.
     this->m_wqueue.reserve(sizeof(header) + header.addrlen + header.datalen);
 
     ::std::memcpy(this->m_wqueue.mut_end(), &header, sizeof(header));
@@ -451,7 +451,7 @@ shut_down()
       return false;
 
     // Initiate asynchronous shutdown.
-    this->do_async_shutdown_unlocked();
+    this->do_socket_shutdown_unlocked();
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.

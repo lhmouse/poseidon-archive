@@ -44,11 +44,11 @@ class Abstract_TLS_Server_Socket
 
   private:
     uptr<Abstract_Socket>
-    do_on_async_accept(unique_FD&& fd)
+    do_on_socket_accept(unique_FD&& fd)
       final;
 
     void
-    do_on_async_register(rcptr<Abstract_Socket>&& sock)
+    do_on_socket_register(rcptr<Abstract_Socket>&& sock)
       final;
 
   protected:
@@ -57,7 +57,7 @@ class Abstract_TLS_Server_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     uptr<Abstract_TLS_Socket>
-    do_on_async_accept_tls(unique_FD&& fd, ::SSL_CTX* ctx)
+    do_on_socket_accept_tls(unique_FD&& fd, ::SSL_CTX* ctx)
       = 0;
 
     // Registers a socket object.
@@ -66,7 +66,7 @@ class Abstract_TLS_Server_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_on_async_register_tls(rcptr<Abstract_TLS_Socket>&& sock)
+    do_on_socket_register_tls(rcptr<Abstract_TLS_Socket>&& sock)
       = 0;
 
   public:

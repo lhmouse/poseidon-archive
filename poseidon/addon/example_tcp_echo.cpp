@@ -18,13 +18,13 @@ struct Example_Session : Abstract_TCP_Socket
       { }
 
     void
-    do_on_async_receive(linear_buffer&& rqueue)
+    do_on_socket_receive(linear_buffer&& rqueue)
       override
       {
         POSEIDON_LOG_WARN("example TCP session received: $1",
                           cow_string(rqueue.data(), rqueue.size()));
 
-        this->do_async_send(rqueue.data(), rqueue.size());
+        this->do_socket_send(rqueue.data(), rqueue.size());
         rqueue.clear();
       }
   };
@@ -44,14 +44,14 @@ struct Example_Server : Abstract_TCP_Server_Socket
       }
 
     uptr<Abstract_TCP_Socket>
-    do_on_async_accept_tcp(unique_FD&& fd)
+    do_on_socket_accept_tcp(unique_FD&& fd)
       override
       {
         return ::rocket::make_unique<Example_Session>(::std::move(fd));
       }
 
     void
-    do_on_async_register_tcp(rcptr<Abstract_TCP_Socket>&& sock)
+    do_on_socket_register_tcp(rcptr<Abstract_TCP_Socket>&& sock)
       {
         POSEIDON_LOG_WARN("example TCP server accepted client: $1",
                           sock->get_remote_address());

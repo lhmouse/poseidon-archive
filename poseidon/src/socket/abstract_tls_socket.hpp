@@ -55,13 +55,13 @@ class Abstract_TLS_Socket
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_async_establish()
+    do_on_socket_establish()
       override;
 
     // Consumes incoming data.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_async_receive(linear_buffer&& rqueue)
+    do_on_socket_receive(linear_buffer&& rqueue)
       override
       = 0;
 
@@ -69,7 +69,7 @@ class Abstract_TLS_Socket
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_async_shutdown(int err)
+    do_on_socket_shutdown(int err)
       override;
 
   public:

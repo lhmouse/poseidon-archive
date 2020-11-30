@@ -30,7 +30,7 @@ class Abstract_UDP_Client_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_on_async_receive(Socket_Address&& addr, char* data, size_t size)
+    do_on_socket_receive(Socket_Address&& addr, char* data, size_t size)
       = 0;
 
   public:

@@ -15,16 +15,16 @@ Abstract_TLS_Server_Socket::
 
 uptr<Abstract_Socket>
 Abstract_TLS_Server_Socket::
-do_on_async_accept(unique_FD&& fd)
+do_on_socket_accept(unique_FD&& fd)
   {
-    return this->do_on_async_accept_tls(::std::move(fd), this->m_ctx);
+    return this->do_on_socket_accept_tls(::std::move(fd), this->m_ctx);
   }
 
 void
 Abstract_TLS_Server_Socket::
-do_on_async_register(rcptr<Abstract_Socket>&& sock)
+do_on_socket_register(rcptr<Abstract_Socket>&& sock)
   {
-    return this->do_on_async_register_tls(
+    return this->do_on_socket_register_tls(
         ::rocket::static_pointer_cast<Abstract_TLS_Socket>(::std::move(sock)));
   }
 

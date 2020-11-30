@@ -16,7 +16,7 @@ class Abstract_TCP_Client_Socket
     explicit
     Abstract_TCP_Client_Socket(const Socket_Address& addr)
       : Abstract_TCP_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP))
-      { this->do_async_connect(addr);  }
+      { this->do_socket_connect(addr);  }
 
     Abstract_TCP_Client_Socket(const char* host, uint16_t port)
       : Abstract_TCP_Client_Socket(Socket_Address(host, port))
@@ -26,7 +26,7 @@ class Abstract_TCP_Client_Socket
 
   private:
     // This functions is forbidden for derived classes.
-    using Abstract_TCP_Socket::do_async_connect;
+    using Abstract_TCP_Socket::do_socket_connect;
 
   public:
     using Abstract_Socket::get_fd;

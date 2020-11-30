@@ -33,7 +33,7 @@ do_call_stream_preshutdown_unlocked()
 
 IO_Result
 Abstract_Stream_Socket::
-do_async_shutdown_unlocked()
+do_socket_shutdown_unlocked()
   noexcept
   {
     switch(this->m_cstate) {
@@ -98,7 +98,7 @@ do_async_shutdown_unlocked()
 
 IO_Result
 Abstract_Stream_Socket::
-do_on_async_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
+do_on_socket_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
   {
     lock.lock(this->m_io_mutex);
     ROCKET_ASSERT(size != 0);
@@ -112,7 +112,7 @@ do_on_async_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
     auto io_res = this->do_stream_read_unlocked(eptr, size);
     if(io_res == io_result_end_of_stream) {
       POSEIDON_LOG_TRACE("End of stream encountered: $1", this);
-      this->do_async_shutdown_unlocked();
+      this->do_socket_shutdown_unlocked();
       return io_res;
     }
     if(io_res != io_result_partial_work)
@@ -120,7 +120,7 @@ do_on_async_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
 
     // Process the data that have been read.
     lock.unlock();
-    this->do_on_async_receive(hint, static_cast<size_t>(eptr - hint));
+    this->do_on_socket_receive(hint, static_cast<size_t>(eptr - hint));
     lock.lock(this->m_io_mutex);
     return io_res;
   }
@@ -143,7 +143,7 @@ do_write_queue_size(simple_mutex::unique_lock& lock)
 
 IO_Result
 Abstract_Stream_Socket::
-do_on_async_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t size)
+do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t size)
   {
     lock.lock(this->m_io_mutex);
     ROCKET_ASSERT(size != 0);
@@ -157,7 +157,7 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t s
       this->m_cstate = connection_state_established;
 
       lock.unlock();
-      this->do_on_async_establish();
+      this->do_on_socket_establish();
       lock.lock(this->m_io_mutex);
     }
 
@@ -168,7 +168,7 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t s
         return io_result_end_of_stream;
 
       // Shut down the connection completely now.
-      return this->do_async_shutdown_unlocked();
+      return this->do_socket_shutdown_unlocked();
     }
 
     const char* eptr = this->m_wqueue.data();
@@ -183,30 +183,30 @@ do_on_async_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t s
 
 void
 Abstract_Stream_Socket::
-do_on_async_poll_shutdown(int err)
+do_on_socket_poll_shutdown(int err)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     this->m_cstate = connection_state_closed;
     lock.unlock();
 
-    this->do_on_async_shutdown(err);
+    this->do_on_socket_shutdown(err);
   }
 
 void
 Abstract_Stream_Socket::
-do_on_async_receive(char* data, size_t size)
+do_on_socket_receive(char* data, size_t size)
   {
     // Append data to the default queue.
     // Note the queue is provided purely for convenience for derived classes.
     // It is not protected by the I/O mutex.
     this->m_rqueue.putn(data, size);
 
-    this->do_on_async_receive(::std::move(this->m_rqueue));
+    this->do_on_socket_receive(::std::move(this->m_rqueue));
   }
 
 void
 Abstract_Stream_Socket::
-do_async_connect(const Socket_Address& addr)
+do_socket_connect(const Socket_Address& addr)
   {
     // Lock the stream and examine connection state.
     simple_mutex::unique_lock lock(this->m_io_mutex);
@@ -230,7 +230,7 @@ do_async_connect(const Socket_Address& addr)
 
 bool
 Abstract_Stream_Socket::
-do_async_send(const char* data, size_t size)
+do_socket_send(const char* data, size_t size)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate > connection_state_established)
@@ -277,7 +277,7 @@ shut_down()
       return false;
 
     // Initiate asynchronous shutdown.
-    this->do_async_shutdown_unlocked();
+    this->do_socket_shutdown_unlocked();
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.
