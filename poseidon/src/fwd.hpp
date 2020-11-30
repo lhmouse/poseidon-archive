@@ -129,6 +129,8 @@ using unique_FD = ::rocket::unique_handle<int, FD_Closer>;
 static_assert(sizeof(unique_FD) == sizeof(int));
 
 // Core
+struct Z_stream;
+
 class Config_File;
 class Abstract_Timer;
 class Abstract_Async_Job;
