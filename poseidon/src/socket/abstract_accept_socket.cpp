@@ -42,7 +42,7 @@ do_set_common_options()
 
 IO_Result
 Abstract_Accept_Socket::
-do_on_socket_poll_read(simple_mutex::unique_lock& /*lock*/, char* /*hint*/, size_t /*size*/)
+do_socket_on_poll_read(simple_mutex::unique_lock& /*lock*/, char* /*hint*/, size_t /*size*/)
   try {
     // Try accepting a socket.
     Socket_Address::storage addrst;
@@ -52,9 +52,9 @@ do_on_socket_poll_read(simple_mutex::unique_lock& /*lock*/, char* /*hint*/, size
       return do_translate_syscall_error("accept4", errno);
 
     // Create a new socket object.
-    auto sock = this->do_on_socket_accept(::std::move(fd));
+    auto sock = this->do_socket_on_accept(::std::move(fd));
     if(!sock)
-      POSEIDON_THROW("Null pointer returned from `do_on_socket_accept()`\n"
+      POSEIDON_THROW("Null pointer returned from `do_socket_on_accept()`\n"
                      "[listen socket class `$1`]",
                      typeid(*this).name());
 
@@ -66,7 +66,7 @@ do_on_socket_poll_read(simple_mutex::unique_lock& /*lock*/, char* /*hint*/, size
                       typeid(*this).name(), this->get_local_address(),
                       typeid(*sock).name());
 
-    this->do_on_socket_register(Network_Driver::insert(::std::move(sock)));
+    this->do_socket_on_register(Network_Driver::insert(::std::move(sock)));
 
     // Report success.
     return io_result_partial_work;
@@ -92,14 +92,14 @@ do_write_queue_size(simple_mutex::unique_lock& /*lock*/)
 
 IO_Result
 Abstract_Accept_Socket::
-do_on_socket_poll_write(simple_mutex::unique_lock& /*lock*/, char* /*hint*/, size_t /*size*/)
+do_socket_on_poll_write(simple_mutex::unique_lock& /*lock*/, char* /*hint*/, size_t /*size*/)
   {
     return io_result_end_of_stream;
   }
 
 void
 Abstract_Accept_Socket::
-do_on_socket_poll_close(int err)
+do_socket_on_poll_close(int err)
   {
     POSEIDON_LOG_INFO("Listen socket closed: local '$1', $2",
                       this->get_local_address(), format_errno(err));

@@ -29,7 +29,7 @@ class Abstract_Accept_Socket
     // `lock` and `hint` are ignored.
     // Please mind thread safety, as this function is called by the network thread.
     IO_Result
-    do_on_socket_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
+    do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
       final;
 
     // Does nothing.
@@ -43,7 +43,7 @@ class Abstract_Accept_Socket
     // This function always returns `io_result_eof`.
     // `lock` is ignored.
     IO_Result
-    do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size)
+    do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size)
       final;
 
   protected:
@@ -52,7 +52,7 @@ class Abstract_Accept_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     uptr<Abstract_Socket>
-    do_on_socket_accept(unique_FD&& fd)
+    do_socket_on_accept(unique_FD&& fd)
       = 0;
 
     // Registers a socket object.
@@ -61,13 +61,13 @@ class Abstract_Accept_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_on_socket_register(rcptr<Abstract_Socket>&& sock)
+    do_socket_on_register(rcptr<Abstract_Socket>&& sock)
       = 0;
 
     // Prints a line of text but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_socket_poll_close(int err)
+    do_socket_on_poll_close(int err)
       override;
 
     // Binds this socket to the specified address and starts listening.

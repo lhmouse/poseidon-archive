@@ -98,7 +98,7 @@ do_socket_close_unlocked()
 
 IO_Result
 Abstract_Stream_Socket::
-do_on_socket_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
+do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
   {
     lock.lock(this->m_io_mutex);
     ROCKET_ASSERT(size != 0);
@@ -120,7 +120,7 @@ do_on_socket_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
 
     // Process the data that have been read.
     lock.unlock();
-    this->do_on_socket_receive(hint, static_cast<size_t>(eptr - hint));
+    this->do_socket_on_receive(hint, static_cast<size_t>(eptr - hint));
     lock.lock(this->m_io_mutex);
     return io_res;
   }
@@ -143,7 +143,7 @@ do_write_queue_size(simple_mutex::unique_lock& lock)
 
 IO_Result
 Abstract_Stream_Socket::
-do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t size)
+do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t size)
   {
     lock.lock(this->m_io_mutex);
     ROCKET_ASSERT(size != 0);
@@ -157,7 +157,7 @@ do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
       this->m_cstate = connection_state_established;
 
       lock.unlock();
-      this->do_on_socket_establish();
+      this->do_socket_on_establish();
       lock.lock(this->m_io_mutex);
     }
 
@@ -183,25 +183,25 @@ do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
 
 void
 Abstract_Stream_Socket::
-do_on_socket_poll_close(int err)
+do_socket_on_poll_close(int err)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     this->m_cstate = connection_state_closed;
     lock.unlock();
 
-    this->do_on_socket_close(err);
+    this->do_socket_on_close(err);
   }
 
 void
 Abstract_Stream_Socket::
-do_on_socket_receive(char* data, size_t size)
+do_socket_on_receive(char* data, size_t size)
   {
     // Append data to the default queue.
     // Note the queue is provided purely for convenience for derived classes.
     // It is not protected by the I/O mutex.
     this->m_rqueue.putn(data, size);
 
-    this->do_on_socket_receive(::std::move(this->m_rqueue));
+    this->do_socket_on_receive(::std::move(this->m_rqueue));
   }
 
 void

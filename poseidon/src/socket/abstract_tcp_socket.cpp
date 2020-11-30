@@ -83,7 +83,7 @@ do_stream_preclose_unlocked()
 
 void
 Abstract_TCP_Socket::
-do_on_socket_establish()
+do_socket_on_establish()
   {
     POSEIDON_LOG_INFO("TCP connection established: local '$1', remote '$2'",
                       this->get_local_address(), this->get_remote_address());
@@ -91,7 +91,7 @@ do_on_socket_establish()
 
 void
 Abstract_TCP_Socket::
-do_on_socket_close(int err)
+do_socket_on_close(int err)
   {
     POSEIDON_LOG_INFO("TCP connection closed: local '$1', $2",
                       this->get_local_address(), format_errno(err));

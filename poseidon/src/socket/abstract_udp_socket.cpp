@@ -93,7 +93,7 @@ do_socket_close_unlocked()
 
 IO_Result
 Abstract_UDP_Socket::
-do_on_socket_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
+do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
   try {
     lock.lock(this->m_io_mutex);
 
@@ -110,7 +110,7 @@ do_on_socket_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
 
     // Process the packet that has been read.
     lock.unlock();
-    this->do_on_socket_receive({ addrst, addrlen }, hint, static_cast<size_t>(nread));
+    this->do_socket_on_receive({ addrst, addrlen }, hint, static_cast<size_t>(nread));
     lock.lock(this->m_io_mutex);
 
     // Warning: Don't return `io_result_end_of_stream` i.e. zero.
@@ -151,7 +151,7 @@ do_write_queue_size(simple_mutex::unique_lock& lock)
 
 IO_Result
 Abstract_UDP_Socket::
-do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /*size*/)
+do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /*size*/)
   try {
     lock.lock(this->m_io_mutex);
 
@@ -166,7 +166,7 @@ do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
       this->m_cstate = connection_state_established;
 
       lock.unlock();
-      this->do_on_socket_establish();
+      this->do_socket_on_establish();
       lock.lock(this->m_io_mutex);
     }
 
@@ -216,24 +216,24 @@ do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
 
 void
 Abstract_UDP_Socket::
-do_on_socket_poll_close(int err)
+do_socket_on_poll_close(int err)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     this->m_cstate = connection_state_closed;
     lock.unlock();
 
-    this->do_on_socket_close(err);
+    this->do_socket_on_close(err);
   }
 
 void
 Abstract_UDP_Socket::
-do_on_socket_establish()
+do_socket_on_establish()
   {
   }
 
 void
 Abstract_UDP_Socket::
-do_on_socket_close(int err)
+do_socket_on_close(int err)
   {
     POSEIDON_LOG_INFO("UDP socket closed: local '$1', $2",
                       this->get_local_address(), format_errno(err));
@@ -269,7 +269,7 @@ do_socket_send(const Socket_Address& addr, const char* data, size_t size)
       POSEIDON_LOG_WARN("UDP packet truncated (size `$1` too large)", size);
 
     // Please mind thread safety.
-    // This function shall match `do_on_socket_poll_write()`.
+    // This function shall match `do_socket_on_poll_write()`.
     this->m_wqueue.reserve(sizeof(header) + header.addrlen + header.datalen);
 
     ::std::memcpy(this->m_wqueue.mut_end(), &header, sizeof(header));

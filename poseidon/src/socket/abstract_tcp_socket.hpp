@@ -51,13 +51,13 @@ class Abstract_TCP_Socket
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_socket_establish()
+    do_socket_on_establish()
       override;
 
     // Consumes incoming data.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_socket_receive(linear_buffer&& rqueue)
+    do_socket_on_receive(linear_buffer&& rqueue)
       override
       = 0;
 
@@ -65,7 +65,7 @@ class Abstract_TCP_Socket
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_on_socket_close(int err)
+    do_socket_on_close(int err)
       override;
 
   public:

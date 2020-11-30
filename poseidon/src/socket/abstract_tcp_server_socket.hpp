@@ -26,11 +26,11 @@ class Abstract_TCP_Server_Socket
 
   private:
     uptr<Abstract_Socket>
-    do_on_socket_accept(unique_FD&& fd)
+    do_socket_on_accept(unique_FD&& fd)
       final;
 
     void
-    do_on_socket_register(rcptr<Abstract_Socket>&& sock)
+    do_socket_on_register(rcptr<Abstract_Socket>&& sock)
       final;
 
   protected:
@@ -39,7 +39,7 @@ class Abstract_TCP_Server_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     uptr<Abstract_TCP_Socket>
-    do_on_socket_accept_tcp(unique_FD&& fd)
+    do_socket_on_accept_tcp(unique_FD&& fd)
       = 0;
 
     // Registers a socket object.
@@ -48,7 +48,7 @@ class Abstract_TCP_Server_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_on_socket_register_tcp(rcptr<Abstract_TCP_Socket>&& sock)
+    do_socket_on_register_tcp(rcptr<Abstract_TCP_Socket>&& sock)
       = 0;
 
   public:

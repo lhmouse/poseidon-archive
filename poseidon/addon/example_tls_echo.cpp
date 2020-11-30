@@ -18,7 +18,7 @@ struct Example_Session : Abstract_TLS_Socket
       { }
 
     void
-    do_on_socket_receive(linear_buffer&& rqueue)
+    do_socket_on_receive(linear_buffer&& rqueue)
       override
       {
         POSEIDON_LOG_WARN("example TLS session received: $1",
@@ -44,14 +44,14 @@ struct Example_Server : Abstract_TLS_Server_Socket
       }
 
     uptr<Abstract_TLS_Socket>
-    do_on_socket_accept_tls(unique_FD&& fd, ::SSL_CTX* ctx)
+    do_socket_on_accept_tls(unique_FD&& fd, ::SSL_CTX* ctx)
       override
       {
         return ::rocket::make_unique<Example_Session>(::std::move(fd), ctx);
       }
 
     void
-    do_on_socket_register_tls(rcptr<Abstract_TLS_Socket>&& sock)
+    do_socket_on_register_tls(rcptr<Abstract_TLS_Socket>&& sock)
       {
         POSEIDON_LOG_WARN("example TLS server accepted client: $1",
                           sock->get_remote_address());

@@ -48,7 +48,7 @@ class Abstract_Stream_Socket
     // `hint` is used as the I/O buffer. `size` specifies the maximum number of
     // bytes to read.
     IO_Result
-    do_on_socket_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
+    do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
       final;
 
     // Returns the estimated size of data pending for writing.
@@ -61,12 +61,12 @@ class Abstract_Stream_Socket
     // `lock` will lock `*this` after the call.
     // `hint` is ignored. `size` specifies the maximum number of bytes to write.
     IO_Result
-    do_on_socket_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size)
+    do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size)
       final;
 
     // Notifies a full-duplex channel has been closed.
     void
-    do_on_socket_poll_close(int err)
+    do_socket_on_poll_close(int err)
       final;
 
   protected:
@@ -111,7 +111,7 @@ class Abstract_Stream_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_on_socket_establish()
+    do_socket_on_establish()
       = 0;
 
     // Consumes an incoming packet.
@@ -121,18 +121,18 @@ class Abstract_Stream_Socket
     // overload for convenience.
     virtual
     void
-    do_on_socket_receive(char* data, size_t size);
+    do_socket_on_receive(char* data, size_t size);
 
     virtual
     void
-    do_on_socket_receive(linear_buffer&& rqueue)
+    do_socket_on_receive(linear_buffer&& rqueue)
       = 0;
 
     // Notifies a socket has been closed.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_on_socket_close(int err)
+    do_socket_on_close(int err)
       = 0;
 
     // Initiates a new connection to the specified address.
