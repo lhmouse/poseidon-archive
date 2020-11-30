@@ -72,31 +72,31 @@ format_http_verb(HTTP_Verb verb)
   noexcept
   {
     switch(verb) {
-      case http_verb_NULL:
+      case http_verb_null:
         return "NULL";
 
-      case http_verb_GET:
+      case http_verb_get:
         return "GET";
 
-      case http_verb_HEAD:
+      case http_verb_head:
         return "HEAD";
 
-      case http_verb_POST:
+      case http_verb_post:
         return "POST";
 
-      case http_verb_PUT:
+      case http_verb_put:
         return "PUT";
 
-      case http_verb_DELETE:
+      case http_verb_delete:
         return "DELETE";
 
-      case http_verb_CONNECT:
+      case http_verb_connect:
         return "CONNECT";
 
-      case http_verb_OPTIONS:
+      case http_verb_options:
         return "OPTIONS";
 
-      case http_verb_TRACE:
+      case http_verb_trace:
         return "TRACE";
 
       default:
@@ -109,30 +109,30 @@ parse_http_verb(const char* bptr, const char* eptr)
   noexcept
   {
     if(do_str_eq(bptr, eptr, "GET"))
-      return http_verb_GET;
+      return http_verb_get;
 
     if(do_str_eq(bptr, eptr, "HEAD"))
-      return http_verb_HEAD;
+      return http_verb_head;
 
     if(do_str_eq(bptr, eptr, "POST"))
-      return http_verb_POST;
+      return http_verb_post;
 
     if(do_str_eq(bptr, eptr, "PUT"))
-      return http_verb_PUT;
+      return http_verb_put;
 
     if(do_str_eq(bptr, eptr, "DELETE"))
-      return http_verb_DELETE;
+      return http_verb_delete;
 
     if(do_str_eq(bptr, eptr, "CONNECT"))
-      return http_verb_CONNECT;
+      return http_verb_connect;
 
     if(do_str_eq(bptr, eptr, "OPTIONS"))
-      return http_verb_OPTIONS;
+      return http_verb_options;
 
     if(do_str_eq(bptr, eptr, "TRACE"))
-      return http_verb_TRACE;
+      return http_verb_trace;
 
-    return http_verb_NULL;
+    return http_verb_null;
   }
 
 const char*

@@ -45,15 +45,15 @@ parse_http_version(const char* bptr)
 // These are HTTP verbs a.k.a. methods.
 enum HTTP_Verb : uint8_t
   {
-    http_verb_NULL     = 0,
-    http_verb_GET      = 1,
-    http_verb_HEAD     = 2,
-    http_verb_POST     = 3,
-    http_verb_PUT      = 4,
-    http_verb_DELETE   = 5,
-    http_verb_CONNECT  = 6,
-    http_verb_OPTIONS  = 7,
-    http_verb_TRACE    = 8,
+    http_verb_null     = 0,
+    http_verb_get      = 1,
+    http_verb_head     = 2,
+    http_verb_post     = 3,
+    http_verb_put      = 4,
+    http_verb_delete   = 5,
+    http_verb_connect  = 6,
+    http_verb_options  = 7,
+    http_verb_trace    = 8,
   };
 
 // Converts an HTTP verb to a string such as `GET`.
