@@ -135,7 +135,8 @@ class Abstract_Async_Job;
 class Abstract_Future;
 class Abstract_Fiber;
 class URL;
-class Z_stream;
+class zlib_Deflator;
+class zlib_Inflator;
 
 template<typename V> class Promise;
 template<typename V> class Future;

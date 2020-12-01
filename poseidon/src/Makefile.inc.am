@@ -22,7 +22,8 @@ include_poseidon_core_HEADERS =  \
   %reldir%/core/abstract_async_job.hpp  \
   %reldir%/core/abstract_fiber.hpp  \
   %reldir%/core/url.hpp  \
-  %reldir%/core/zlib.hpp  \
+  %reldir%/core/zlib_deflator.hpp  \
+  %reldir%/core/zlib_inflator.hpp  \
   ${NOTHING}
 
 include_poseidon_socketdir = ${includedir}/poseidon/socket
@@ -71,7 +72,8 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/abstract_async_job.cpp  \
   %reldir%/core/abstract_fiber.cpp  \
   %reldir%/core/url.cpp  \
-  %reldir%/core/zlib.cpp  \
+  %reldir%/core/zlib_deflator.cpp  \
+  %reldir%/core/zlib_inflator.cpp  \
   %reldir%/http/enums.cpp  \
   %reldir%/http/option_map.cpp  \
   %reldir%/socket/openssl.cpp  \
