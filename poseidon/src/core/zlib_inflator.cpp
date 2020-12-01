@@ -103,27 +103,23 @@ zlib_Inflator&
 zlib_Inflator::
 write(const char* data, size_t size)
   {
-    auto bptr = reinterpret_cast<const uint8_t*>(data);
-    auto eptr = bptr + size;
+    // Set up the read pointer.
+    const auto eptr = reinterpret_cast<const uint8_t*>(data + size);
+    this->m_strm.next_in = eptr - size;
     for(;;) {
-      // Put some bytes into the stream.
-      uint32_t navail = static_cast<uint32_t>(
-                            ::rocket::min(eptr - bptr, INT_MAX));
-      this->m_strm.next_in = bptr;
-      this->m_strm.avail_in = navail;
-      if(navail == 0)
+      // The stupid zlib library uses a 32-bit integer for number of bytes.
+      this->m_strm.avail_in = static_cast<uint32_t>(
+                     ::rocket::min(eptr - this->m_strm.next_in, INT32_MAX));
+      if(this->m_strm.avail_in == 0)
         break;
 
-      while(this->m_strm.avail_in != 0) {
-        // Extend the output buffer so we never get `Z_BUF_ERROR`.
-        this->do_reserve_output_buffer();
-        int res = ::inflate(&(this->m_strm), Z_NO_FLUSH);
-        if(res != Z_OK)
-          this->do_throw_zlib_error("inflate", res);
+      // Extend the output buffer so we never get `Z_BUF_ERROR`.
+      this->do_reserve_output_buffer();
+      int res = ::deflate(&(this->m_strm), Z_NO_FLUSH);
+      if(res != Z_OK)
+        this->do_throw_zlib_error("deflate", res);
 
-        this->do_update_output_buffer();
-      }
-      bptr += navail;
+      this->do_update_output_buffer();
     }
     return *this;
   }
