@@ -126,12 +126,11 @@ do_decode_query(cow_string& str, const char* bptr, const char* eptr)
       // Note `do_xdigit_value()` shall throw an exception if `*bp` is zero
       // i.e. when `bp == eptr`.
       for(uint32_t k = 0;  k != 2;  ++k) {
-        const void* dp = ::std::memchr(s_xdigits, *(bp++), 32);
+        auto dp = static_cast<const char*>(::std::memchr(s_xdigits, *(bp++), 32));
         if(!dp)
           POSEIDON_THROW("Invalid hexadecimal digit: $1", bp[-1]);
 
-        val = val << 4 | static_cast<uint32_t>(
-                             static_cast<const char*>(dp) - s_xdigits) >> 1;
+        val = val << 4 | static_cast<uint32_t>(dp - s_xdigits) >> 1;
       }
       str += static_cast<char>(val);
     }
