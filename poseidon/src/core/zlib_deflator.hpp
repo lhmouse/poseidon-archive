@@ -59,7 +59,7 @@ class zlib_Deflator
       { return this->m_obuf.size();  }
 
     zlib_Deflator&
-    discard(size_t size)
+    output_consume(size_t size)
       noexcept
       { return this->m_obuf.discard(size), *this;  }
 

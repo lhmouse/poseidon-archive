@@ -60,7 +60,7 @@ class zlib_Inflator
       { return this->m_obuf.size();  }
 
     zlib_Inflator&
-    discard(size_t size)
+    output_consume(size_t size)
       noexcept
       { return this->m_obuf.discard(size), *this;  }
 
