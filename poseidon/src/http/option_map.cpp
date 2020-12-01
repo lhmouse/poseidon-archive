@@ -10,8 +10,7 @@ namespace {
 
 template<typename BucketT>
 BucketT&
-do_linear_probe(BucketT* bptr, BucketT* eptr,
-                cow_string::shallow_type key, size_t hval)
+do_linear_probe(BucketT* bptr, BucketT* eptr, cow_string::shallow_type key, size_t hval)
   {
     // Find a bucket using linear probing.
     // We keep the load factor below 1.0 so there will always be some empty
@@ -246,7 +245,7 @@ do_reserve(const cow_string& key, size_t hval)
     // Move-assign buckets into the new table.
     ::std::for_each(this->m_stor.mut_begin(), this->m_stor.mut_end(),
       [&](details_option_map::Bucket& r) {
-        if(r)
+        if(r.count())
           do_linear_probe(bptr, eptr, sref(r.key()), r.hash()) = ::std::move(r);
       });
 
