@@ -68,71 +68,71 @@ parse_http_version(const char* bptr, const char* eptr)
   }
 
 const char*
-format_http_verb(HTTP_Verb verb)
+format_http_method(HTTP_Method method)
   noexcept
   {
-    switch(verb) {
-      case http_verb_null:
+    switch(method) {
+      case http_method_null:
         return "NULL";
 
-      case http_verb_get:
+      case http_method_get:
         return "GET";
 
-      case http_verb_head:
+      case http_method_head:
         return "HEAD";
 
-      case http_verb_post:
+      case http_method_post:
         return "POST";
 
-      case http_verb_put:
+      case http_method_put:
         return "PUT";
 
-      case http_verb_delete:
+      case http_method_delete:
         return "DELETE";
 
-      case http_verb_connect:
+      case http_method_connect:
         return "CONNECT";
 
-      case http_verb_options:
+      case http_method_options:
         return "OPTIONS";
 
-      case http_verb_trace:
+      case http_method_trace:
         return "TRACE";
 
       default:
-        return "[unknown HTTP verb]";
+        return "[unknown HTTP method]";
     }
   }
 
-HTTP_Verb
-parse_http_verb(const char* bptr, const char* eptr)
+HTTP_Method
+parse_http_method(const char* bptr, const char* eptr)
   noexcept
   {
     if(do_str_eq(bptr, eptr, "GET"))
-      return http_verb_get;
+      return http_method_get;
 
     if(do_str_eq(bptr, eptr, "HEAD"))
-      return http_verb_head;
+      return http_method_head;
 
     if(do_str_eq(bptr, eptr, "POST"))
-      return http_verb_post;
+      return http_method_post;
 
     if(do_str_eq(bptr, eptr, "PUT"))
-      return http_verb_put;
+      return http_method_put;
 
     if(do_str_eq(bptr, eptr, "DELETE"))
-      return http_verb_delete;
+      return http_method_delete;
 
     if(do_str_eq(bptr, eptr, "CONNECT"))
-      return http_verb_connect;
+      return http_method_connect;
 
     if(do_str_eq(bptr, eptr, "OPTIONS"))
-      return http_verb_options;
+      return http_method_options;
 
     if(do_str_eq(bptr, eptr, "TRACE"))
-      return http_verb_trace;
+      return http_method_trace;
 
-    return http_verb_null;
+    return http_method_null;
   }
 
 const char*
