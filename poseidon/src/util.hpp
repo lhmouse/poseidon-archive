@@ -40,6 +40,15 @@ ascii_lowercase(cow_string str);
 cow_string
 ascii_trim(cow_string str);
 
+// Checks whether two strings equal.
+template<typename StringT, typename OtherT>
+constexpr
+bool
+ascii_ci_equal(const StringT& str, const OtherT& oth)
+  {
+    return ::rocket::ascii_ci_equal(str.c_str(), str.length(), oth.c_str(), oth.length());
+  }
+
 // Composes a string and submits it to the logger.
 #define POSEIDON_LOG_X_(level, ...)  \
     (::poseidon::Async_Logger::enabled(level) &&  \
@@ -93,48 +102,58 @@ create_daemon_thread(const char* name, void* param = nullptr)
 template<typename FuncT>
 rcptr<Abstract_Timer>
 create_async_timer(int64_t next, int64_t period, FuncT&& func)
-  { return Timer_Driver::insert(
+  {
+    return Timer_Driver::insert(
                  ::rocket::make_unique<details_util::Timer<
                        typename ::std::decay<FuncT>::type>>(
-                           next, period, ::std::forward<FuncT>(func)));  }
+                           next, period, ::std::forward<FuncT>(func)));
+  }
 
 // Creates a one-shot timer.
 template<typename FuncT>
 rcptr<Abstract_Timer>
 create_async_timer_oneshot(int64_t next, FuncT&& func)
-  { return Timer_Driver::insert(
+  {
+    return Timer_Driver::insert(
                  ::rocket::make_unique<details_util::Timer<
                        typename ::std::decay<FuncT>::type>>(
-                           next, 0, ::std::forward<FuncT>(func)));  }
+                           next, 0, ::std::forward<FuncT>(func)));
+  }
 
 // Creates a periodic timer.
 template<typename FuncT>
 rcptr<Abstract_Timer>
 create_async_timer_periodic(int64_t period, FuncT&& func)
-  { return Timer_Driver::insert(
+  {
+    return Timer_Driver::insert(
                  ::rocket::make_unique<details_util::Timer<
                        typename ::std::decay<FuncT>::type>>(
-                           period, period, ::std::forward<FuncT>(func)));  }
+                           period, period, ::std::forward<FuncT>(func)));
+  }
 
 // Enqueues an asynchronous job and returns a future to its result.
 // Functions with the same key will always be delivered to the same worker.
 template<typename FuncT>
 futp<typename ::std::result_of<typename ::std::decay<FuncT>::type& ()>::type>
 enqueue_async_job(uintptr_t key, FuncT&& func)
-  { return details_util::promise(
+  {
+    return details_util::promise(
                  ::rocket::make_unique<details_util::Async<
                        typename ::std::decay<FuncT>::type>>(
-                           key, ::std::forward<FuncT>(func)));  }
+                           key, ::std::forward<FuncT>(func)));
+  }
 
 // Enqueues an asynchronous job and returns a future to its result.
 // The function is delivered to a random worker.
 template<typename FuncT>
 futp<typename ::std::result_of<typename ::std::decay<FuncT>::type& ()>::type>
 enqueue_async_job(FuncT&& func)
-  { return details_util::promise(
+  {
+    return details_util::promise(
                  ::rocket::make_unique<details_util::Async<
                        typename ::std::decay<FuncT>::type>>(
-                           details_util::random_key, ::std::forward<FuncT>(func)));  }
+                           details_util::random_key, ::std::forward<FuncT>(func)));
+  }
 
 }  // namespace poseidon
 
