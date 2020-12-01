@@ -54,7 +54,7 @@ class zlib_Deflator
 
     // Puts some data for compression/decompression.
     void
-    write(const void* data, size_t size);
+    write(const char* data, size_t size);
 
     // Synchronizes output to a byte boundary and returns the output
     // buffer, which may be partially consumed. This causes an extra

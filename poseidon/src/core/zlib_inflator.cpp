@@ -95,9 +95,9 @@ reset()
 
 void
 zlib_Inflator::
-write(const void* data, size_t size)
+write(const char* data, size_t size)
   {
-    auto bptr = static_cast<const uint8_t*>(data);
+    auto bptr = reinterpret_cast<const uint8_t*>(data);
     auto eptr = bptr + size;
     for(;;) {
       // Put some bytes into the stream.
