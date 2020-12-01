@@ -43,28 +43,44 @@ class zlib_Inflator
     do_reserve_output_buffer();
 
     inline
-    ::rocket::linear_buffer&
-    do_update_output_buffer();
+    void
+    do_update_output_buffer()
+      noexcept;
 
   public:
+    // Gets the output buffer.
+    const char*
+    output_data()
+      const noexcept
+      { return this->m_obuf.begin();  }
+
+    size_t
+    output_size()
+      const noexcept
+      { return this->m_obuf.size();  }
+
+    zlib_Inflator&
+    discard(size_t size)
+      noexcept
+      { return this->m_obuf.discard(size), *this;  }
+
     // Resets internal states and clears the output buffer.
     // Unprocessed data are discarded.
-    void
+    zlib_Inflator&
     reset()
       noexcept;
 
     // Puts some data for compression/decompression.
-    void
+    zlib_Inflator&
     write(const char* data, size_t size);
 
-    // Synchronizes output to a byte boundary and returns the output
-    // buffer, which may be partially consumed. This causes an extra
-    // 4 bytes (00 00 FF FF) to be appended to the output buffer.
-    ::rocket::linear_buffer&
+    // Causes as many bytes as possible to be flushed into the
+    // output buffer, which may be consumed immediately.
+    zlib_Inflator&
     synchronize();
 
-    // Terminates the stream returns the output buffer.
-    ::rocket::linear_buffer&
+    // Terminates the stream.
+    zlib_Inflator&
     finish();
   };
 

@@ -60,26 +60,29 @@ void
 zlib_Deflator::
 do_reserve_output_buffer()
   {
-    // Ensure there is some space in the output buffer.
-    if((this->m_strm.next_out == reinterpret_cast<uint8_t*>(
-               this->m_obuf.mut_end())) && (this->m_strm.avail_out > 64))
+    // Ensure there is enough space in the output buffer.
+    ROCKET_ASSERT((this->m_strm.avail_out == 0) ||
+                  (this->m_strm.next_out ==
+                       reinterpret_cast<const uint8_t*>(this->m_obuf.end())));
+    if(this->m_strm.avail_out >= 64)
       return;
 
     uint32_t navail = static_cast<uint32_t>(this->m_obuf.reserve(256));
-    this->m_strm.next_out = reinterpret_cast<uint8_t*>(
-                                          this->m_obuf.mut_end());
+    this->m_strm.next_out = reinterpret_cast<uint8_t*>(this->m_obuf.mut_end());
     this->m_strm.avail_out = navail;
   }
 
-::rocket::linear_buffer&
+void
 zlib_Deflator::
 do_update_output_buffer()
+  noexcept
   {
-    return this->m_obuf.accept(static_cast<size_t>(this->m_strm.next_out -
-             reinterpret_cast<uint8_t*>(this->m_obuf.mut_end())));
+    // Consume output bytes, if any.
+    this->m_obuf.accept(static_cast<uint32_t>(this->m_strm.next_out -
+                    reinterpret_cast<const uint8_t*>(this->m_obuf.end())));
   }
 
-void
+zlib_Deflator&
 zlib_Deflator::
 reset()
   noexcept
@@ -87,10 +90,13 @@ reset()
     int res = ::deflateReset(&(this->m_strm));
     ROCKET_ASSERT(res == Z_OK);
 
+    this->m_strm.next_out = nullptr;
+    this->m_strm.avail_out = 0;
     this->m_obuf.clear();
+    return *this;
   }
 
-void
+zlib_Deflator&
 zlib_Deflator::
 write(const char* data, size_t size)
   {
@@ -103,56 +109,56 @@ write(const char* data, size_t size)
       this->m_strm.next_in = bptr;
       this->m_strm.avail_in = navail;
       if(navail == 0)
-            break;
+        break;
 
       while(this->m_strm.avail_in != 0) {
         // Extend the output buffer so we never get `Z_BUF_ERROR`.
         this->do_reserve_output_buffer();
-
         int res = ::deflate(&(this->m_strm), Z_NO_FLUSH);
         if(res != Z_OK)
           this->do_throw_zlib_error("deflate", res);
+
+        this->do_update_output_buffer();
       }
       bptr += navail;
     }
+    return *this;
   }
 
-::rocket::linear_buffer&
+zlib_Deflator&
 zlib_Deflator::
 synchronize()
   {
-    // Put nothing, but force `Z_SYNC_FLUSH`. If there is nothing
-    // to do, `deflate()` will return `Z_BUF_ERROR`.
+    // Put nothing, but force `Z_SYNC_FLUSH`.
     this->m_strm.next_in = nullptr;
     this->m_strm.avail_in = 0;
 
+    // If there is nothing to do, `deflate()` will return `Z_BUF_ERROR`.
     this->do_reserve_output_buffer();
-
     int res = ::deflate(&(this->m_strm), Z_SYNC_FLUSH);
     if((res != Z_OK) && (res != Z_BUF_ERROR))
       this->do_throw_zlib_error("deflate", res);
 
-    // The output buffer is now ready for consumption.
-    return this->do_update_output_buffer();
+    this->do_update_output_buffer();
+    return *this;
   }
 
-::rocket::linear_buffer&
+zlib_Deflator&
 zlib_Deflator::
 finish()
   {
-    // Put nothing, but force `Z_FINISH`. If there is nothing to
-    // do, `deflate()` will return `Z_STREAM_END`.
+    // Put nothing, but force `Z_FINISH`.
     this->m_strm.next_in = nullptr;
     this->m_strm.avail_in = 0;
 
+    // If there is nothing to do, `deflate()` will return `Z_STREAM_END`.
     this->do_reserve_output_buffer();
-
     int res = ::deflate(&(this->m_strm), Z_FINISH);
     if(res != Z_STREAM_END)
       this->do_throw_zlib_error("deflate", res);
 
-    // The output buffer is now ready for consumption.
-    return this->do_update_output_buffer();
+    this->do_update_output_buffer();
+    return *this;
   }
 
 }  // namespace poseidon
