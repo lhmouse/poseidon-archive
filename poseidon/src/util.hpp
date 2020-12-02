@@ -155,6 +155,31 @@ enqueue_async_job(FuncT&& func)
                            details_util::random_key, ::std::forward<FuncT>(func)));
   }
 
+// Checks whether this list contains the specified token.
+// Tokens are case-insensitive.
+ROCKET_PURE_FUNCTION
+bool
+contains_token(const cow_string& str, char delim, const char* tok, size_t len)
+  noexcept;
+
+template<typename OtherT>
+inline
+bool
+contains_token(const cow_string& str, char delim, const OtherT& oth)
+  { return noadl::contains_token(str, delim, oth.c_str(), oth.length());  }
+
+ROCKET_PURE_FUNCTION inline
+bool
+contains_token(const cow_string& str, const char* tok, size_t len)
+  noexcept
+  { return noadl::contains_token(str, ',', tok, len);  }
+
+template<typename OtherT>
+inline
+bool
+contains_token(const cow_string& str, const OtherT& oth)
+  { return noadl::contains_token(str, oth.c_str(), oth.length());  }
+
 }  // namespace poseidon
 
 #endif

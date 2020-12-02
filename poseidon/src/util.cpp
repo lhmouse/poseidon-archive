@@ -63,4 +63,31 @@ ascii_trim(cow_string str)
     return ::std::move(str);
   }
 
+bool
+contains_token(const cow_string& str, char delim, const char* tok, size_t len)
+  noexcept
+  {
+    size_t epos = 0;
+    while(epos < str.size()) {
+      // Get a token.
+      size_t bpos = epos;
+      epos = ::std::min(str.find(bpos, delim), str.size()) + 1;
+      size_t mpos = epos - 1;
+
+      // Skip leading and trailing blank characters, if any.
+      while((bpos != mpos) && ::asteria::is_cctype(str[bpos],
+                                   ::asteria::cctype_blank))
+        bpos++;
+
+      while((bpos != mpos) && ::asteria::is_cctype(str[mpos - 1],
+                                   ::asteria::cctype_blank))
+        mpos--;
+
+      // If the token matches `close`, the connection shall be closed.
+      if(::rocket::ascii_ci_equal(str.data() + bpos, mpos - bpos, tok, len))
+        return true;
+    }
+    return false;
+  }
+
 }  // namespace poseidon
