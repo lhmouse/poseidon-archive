@@ -185,6 +185,9 @@ describe_http_status(HTTP_Status stat)
       case http_status_im_used:
         return "IM Used";
 
+      case http_status_connection_established:
+        return "Connection Established";
+
       case http_status_multiple_choice:
         return "Multiple Choice";
 
@@ -230,7 +233,7 @@ describe_http_status(HTTP_Status stat)
       case http_status_proxy_unauthorized:
         return "Proxy Authentication Required";
 
-      case http_status_request_timedout:
+      case http_status_request_timeout:
         return "Request Timeout";
 
       case http_status_conflict:
@@ -251,7 +254,7 @@ describe_http_status(HTTP_Status stat)
       case http_status_uri_too_long:
         return "URI Too Long";
 
-      case http_status_unsupported_media:
+      case http_status_unsupported_media_type:
         return "Unsupported Media Type";
 
       case http_status_range_not_satisfiable:
@@ -263,7 +266,7 @@ describe_http_status(HTTP_Status stat)
       case http_status_misdirected_request:
         return "Misdirected Request";
 
-      case http_status_unprocessable:
+      case http_status_unprocessable_entity:
         return "Unprocessable Entity";
 
       case http_status_locked:
