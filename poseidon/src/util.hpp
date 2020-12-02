@@ -46,8 +46,34 @@ constexpr
 bool
 ascii_ci_equal(const StringT& str, const OtherT& oth)
   {
-    return ::rocket::ascii_ci_equal(str.c_str(), str.length(), oth.c_str(), oth.length());
+    return ::rocket::ascii_ci_equal(
+               str.c_str(), str.length(), oth.c_str(), oth.length());
   }
+
+// Checks whether this list contains the specified token.
+// Tokens are case-insensitive.
+ROCKET_PURE_FUNCTION
+bool
+ascii_has_token_ci(const cow_string& str, char delim, const char* tok, size_t len)
+  noexcept;
+
+template<typename OtherT>
+inline
+bool
+ascii_has_token_ci(const cow_string& str, char delim, const OtherT& oth)
+  { return noadl::ascii_has_token_ci(str, delim, oth.c_str(), oth.length());  }
+
+ROCKET_PURE_FUNCTION inline
+bool
+ascii_has_token_ci(const cow_string& str, const char* tok, size_t len)
+  noexcept
+  { return noadl::ascii_has_token_ci(str, ',', tok, len);  }
+
+template<typename OtherT>
+inline
+bool
+ascii_has_token_ci(const cow_string& str, const OtherT& oth)
+  { return noadl::ascii_has_token_ci(str, oth.c_str(), oth.length());  }
 
 // Composes a string and submits it to the logger.
 #define POSEIDON_LOG_X_(level, ...)  \
@@ -154,31 +180,6 @@ enqueue_async_job(FuncT&& func)
                        typename ::std::decay<FuncT>::type>>(
                            details_util::random_key, ::std::forward<FuncT>(func)));
   }
-
-// Checks whether this list contains the specified token.
-// Tokens are case-insensitive.
-ROCKET_PURE_FUNCTION
-bool
-contains_token(const cow_string& str, char delim, const char* tok, size_t len)
-  noexcept;
-
-template<typename OtherT>
-inline
-bool
-contains_token(const cow_string& str, char delim, const OtherT& oth)
-  { return noadl::contains_token(str, delim, oth.c_str(), oth.length());  }
-
-ROCKET_PURE_FUNCTION inline
-bool
-contains_token(const cow_string& str, const char* tok, size_t len)
-  noexcept
-  { return noadl::contains_token(str, ',', tok, len);  }
-
-template<typename OtherT>
-inline
-bool
-contains_token(const cow_string& str, const OtherT& oth)
-  { return noadl::contains_token(str, oth.c_str(), oth.length());  }
 
 }  // namespace poseidon
 
