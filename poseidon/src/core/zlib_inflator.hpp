@@ -57,7 +57,7 @@ class zlib_Inflator
     // Causes as many bytes as possible to be flushed into the
     // output buffer, which may be consumed immediately.
     zlib_Inflator&
-    synchronize();
+    flush();
 
     // Terminates the stream.
     zlib_Inflator&

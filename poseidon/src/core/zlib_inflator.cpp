@@ -86,7 +86,7 @@ write(const char* data, size_t size)
 
 zlib_Inflator&
 zlib_Inflator::
-synchronize()
+flush()
   {
     // Put nothing, but force `Z_SYNC_FLUSH`.
     this->m_zlib.strm.next_in = nullptr;

@@ -56,7 +56,7 @@ class zlib_Deflator
     // Synchronizes output to a byte boundary. This causes 4 extra
     // bytes (00 00 FF FF) to be appended to the output buffer.
     zlib_Deflator&
-    synchronize();
+    flush();
 
     // Terminates the stream.
     zlib_Deflator&
