@@ -147,13 +147,22 @@ classify_http_status(HTTP_Status stat)
 // This list is exhaustive according to RFC 6455.
 enum WebSocket_Opcode : uint8_t
   {
-    websocket_opcode_continuation  = 0b0000,
-    websocket_opcode_text          = 0b0001,
-    websocket_opcode_binary        = 0b0010,
-    websocket_opcode_close         = 0b1000,
-    websocket_opcode_ping          = 0b1001,
-    websocket_opcode_pong          = 0b1010,
+    websocket_opcode_class_data     = 0b0000,
+    websocket_opcode_continuation   = 0b0000,
+    websocket_opcode_text           = 0b0001,
+    websocket_opcode_binary         = 0b0010,
+    websocket_opcode_class_control  = 0b1000,
+    websocket_opcode_close          = 0b1000,
+    websocket_opcode_ping           = 0b1001,
+    websocket_opcode_pong           = 0b1010,
   };
+
+// Classifies an opcode.
+constexpr
+WebSocket_Opcode
+classify_websocket_opcode(WebSocket_Opcode opcode)
+  noexcept
+  { return static_cast<WebSocket_Opcode>(opcode & 0b1000);  }
 
 // These are WebSocket status codes.
 // This list is not exhaustive. Custom values may be used.
@@ -176,6 +185,17 @@ enum WebSocket_Status : uint16_t
     websocket_status_class_iana          = 3000,
     websocket_status_class_private_use   = 4000,
   };
+
+// Classifies a status code.
+constexpr
+WebSocket_Status
+classify_websocket_status(WebSocket_Status stat)
+  noexcept
+  {
+    uint32_t cls = static_cast<uint32_t>(stat) / 1000 * 1000;
+    return (cls == 2000) ? websocket_status_class_rfc6455
+                         : static_cast<WebSocket_Status>(cls);
+  }
 
 }  // namespace poseidon
 
