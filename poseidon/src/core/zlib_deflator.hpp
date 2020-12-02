@@ -5,6 +5,7 @@
 #define POSEIDON_CORE_ZLIB_DEFLATOR_HPP_
 
 #include "../fwd.hpp"
+#include "../details/zlib_stream_common.hpp"
 #define ZLIB_CONST 1
 #include <zlib.h>
 
@@ -22,8 +23,7 @@ class zlib_Deflator
       };
 
   private:
-    ::z_stream m_strm;
-    ::rocket::linear_buffer m_obuf;
+    details_zlib_stream_common::zlib_Stream_Common m_zlib;
 
   public:
     explicit
@@ -31,37 +31,17 @@ class zlib_Deflator
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(zlib_Deflator);
 
-  private:
-    [[noreturn]] inline
-    void
-    do_throw_zlib_error(const char* func, int err)
-      const;
-
-    inline
-    void
-    do_reserve_output_buffer();
-
-    inline
-    void
-    do_update_output_buffer()
-      noexcept;
-
   public:
     // Gets the output buffer.
-    const char*
-    output_data()
+    const ::rocket::linear_buffer&
+    output_buffer()
       const noexcept
-      { return this->m_obuf.begin();  }
+      { return this->m_zlib.obuf;  }
 
-    size_t
-    output_size()
-      const noexcept
-      { return this->m_obuf.size();  }
-
-    zlib_Deflator&
-    output_consume(size_t size)
+    ::rocket::linear_buffer&
+    output_buffer()
       noexcept
-      { return this->m_obuf.discard(size), *this;  }
+      { return this->m_zlib.obuf;  }
 
     // Resets internal states and clears the output buffer.
     // Unprocessed data are discarded.

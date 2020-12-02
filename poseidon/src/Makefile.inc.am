@@ -10,6 +10,7 @@ include_poseidon_details_HEADERS =  \
   %reldir%/details/util.ipp  \
   %reldir%/details/socket_address.ipp  \
   %reldir%/details/option_map.ipp  \
+  %reldir%/details/zlib_stream_common.hpp  \
   ${NOTHING}
 
 include_poseidon_coredir = ${includedir}/poseidon/core
@@ -66,6 +67,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/exit_stubs.c  \
   %reldir%/fwd.cpp  \
   %reldir%/util.cpp  \
+  %reldir%/details/zlib_stream_common.cpp  \
   %reldir%/core/config_file.cpp  \
   %reldir%/core/abstract_timer.cpp  \
   %reldir%/core/abstract_future.cpp  \
