@@ -228,7 +228,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
 
         this->m_gzip = !!qstr;
         if(this->m_gzip)
-          headers.set(sref("Transfer-Encoding"), sref("gzip"));
+          headers.open(sref("Transfer-Encoding")).insert(0, "gzip, ");
       }
 
       // Check for upgradable connections. Note that code above might have
