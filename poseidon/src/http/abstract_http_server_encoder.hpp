@@ -24,6 +24,7 @@ class Abstract_HTTP_Server_Encoder
 
   private:
     Encoder_State m_state = encoder_state_headers;
+
     uint8_t m_final : 1;      // close connection after entity
     uint8_t m_chunked : 1;    // use HTTP/1.1 chunked encoding
     uint8_t m_gzip : 1;       // use GZIP transfer encoding
