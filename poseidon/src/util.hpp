@@ -54,26 +54,26 @@ ascii_ci_equal(const StringT& str, const OtherT& oth)
 // Tokens are case-insensitive.
 ROCKET_PURE_FUNCTION
 bool
-ascii_has_token_ci(const cow_string& str, char delim, const char* tok, size_t len)
+ascii_ci_has_token(const cow_string& str, char delim, const char* tok, size_t len)
   noexcept;
 
 template<typename OtherT>
 inline
 bool
-ascii_has_token_ci(const cow_string& str, char delim, const OtherT& oth)
-  { return noadl::ascii_has_token_ci(str, delim, oth.c_str(), oth.length());  }
+ascii_ci_has_token(const cow_string& str, char delim, const OtherT& oth)
+  { return noadl::ascii_ci_has_token(str, delim, oth.c_str(), oth.length());  }
 
 ROCKET_PURE_FUNCTION inline
 bool
-ascii_has_token_ci(const cow_string& str, const char* tok, size_t len)
+ascii_ci_has_token(const cow_string& str, const char* tok, size_t len)
   noexcept
-  { return noadl::ascii_has_token_ci(str, ',', tok, len);  }
+  { return noadl::ascii_ci_has_token(str, ',', tok, len);  }
 
 template<typename OtherT>
 inline
 bool
-ascii_has_token_ci(const cow_string& str, const OtherT& oth)
-  { return noadl::ascii_has_token_ci(str, oth.c_str(), oth.length());  }
+ascii_ci_has_token(const cow_string& str, const OtherT& oth)
+  { return noadl::ascii_ci_has_token(str, oth.c_str(), oth.length());  }
 
 // Composes a string and submits it to the logger.
 #define POSEIDON_LOG_X_(level, ...)  \
