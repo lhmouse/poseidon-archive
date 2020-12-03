@@ -195,8 +195,8 @@ class Bucket
       { return this->mut_range();  }
   };
 
-template<typename valueT,
-         typename bucketT = typename ::rocket::copy_cv<Bucket, valueT>::type>
+template<typename valueT, typename bucketT =
+                     typename ::rocket::copy_cv<Bucket, valueT>::type>
 class Iterator
   {
     friend Option_Map;
@@ -398,6 +398,20 @@ class Iterator
       const noexcept
       { return this->m_local_ptrs.second != other.m_local_ptrs.second;  }
   };
+
+template<typename valueT>
+constexpr
+valueT*
+range_back(const pair<valueT*, valueT*>& pair)
+  noexcept
+  { return (pair.first == pair.second) ? nullptr : (pair.second - 1);  }
+
+template<typename valueT>
+constexpr
+size_t
+range_size(const pair<valueT*, valueT*>& pair)
+  noexcept
+  { return static_cast<size_t>(pair.second - pair.first);  }
 
 }  // namespace details_option_map
 }  // namespace poseidon

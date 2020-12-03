@@ -56,14 +56,13 @@ class Option_Map
     const_iterator
     begin()
       const noexcept
-      { return const_iterator(this->m_stor.data(),
-                                     0, this->m_stor.size());  }
+      { return const_iterator(this->m_stor.data(), 0, this->m_stor.size());  }
 
     const_iterator
     end()
       const noexcept
       { return const_iterator(this->m_stor.data(),
-                   this->m_stor.size(), this->m_stor.size());  }
+                              this->m_stor.size(), this->m_stor.size());  }
 
     const_reverse_iterator
     rbegin()
@@ -77,13 +76,12 @@ class Option_Map
 
     iterator
     mut_begin()
-      { return iterator(this->m_stor.mut_data(),
-                                     0, this->m_stor.size());  }
+      { return iterator(this->m_stor.mut_data(), 0, this->m_stor.size());  }
 
     iterator
     mut_end()
       { return iterator(this->m_stor.mut_data(),
-                   this->m_stor.size(), this->m_stor.size());  }
+                        this->m_stor.size(), this->m_stor.size());  }
 
     reverse_iterator
     mut_rbegin()
@@ -119,22 +117,32 @@ class Option_Map
     pair<const cow_string*, const cow_string*>
     range(cow_string::shallow_type key)
       const noexcept
-      {
-        constexpr details_option_map::ci_hash hf;
-        return this->do_range_hint(key, hf(key));
-      }
+      { return this->do_range_hint(key, details_option_map::ci_hash()(key));  }
 
     pair<const cow_string*, const cow_string*>
     range(const cow_string& key)
       const noexcept
       { return this->range(sref(key));  }
 
+    template<typename FuncT>
+    void
+    for_each(cow_string::shallow_type key, FuncT&& func)
+      const
+      {
+        auto r = this->range(key);
+        while(r.first != r.second)
+          ::std::forward<FuncT>(func)(*(r.first++));
+      }
+
+    template<typename FuncT>
+    void
+    for_each(const cow_string& key, FuncT&& func)
+      const
+      { return this->for_each(sref(key), ::std::forward<FuncT>(func));  }
+
     pair<cow_string*, cow_string*>
     mut_range(cow_string::shallow_type key)
-      {
-        constexpr details_option_map::ci_hash hf;
-        return this->do_mut_range_hint(key, hf(key));
-      }
+      { return this->do_mut_range_hint(key, details_option_map::ci_hash()(key));  }
 
     pair<cow_string*, cow_string*>
     mut_range(const cow_string& key)
@@ -145,10 +153,7 @@ class Option_Map
     // N.B. These functions might throw `std::bad_alloc`.
     size_t
     erase(cow_string::shallow_type key)
-      {
-        constexpr details_option_map::ci_hash hf;
-        return this->do_erase_hint(key, hf(key));
-      }
+      { return this->do_erase_hint(key, details_option_map::ci_hash()(key));  }
 
     size_t
     erase(const cow_string& key)
@@ -159,24 +164,34 @@ class Option_Map
     const cow_string*
     find_opt(cow_string::shallow_type key)
       const noexcept
-      {
-        constexpr details_option_map::ci_hash hf;
-        auto r = this->do_range_hint(key, hf(key));
-        return (r.first == r.second) ? nullptr : (r.second - 1);
-      }
+      { return details_option_map::range_back(this->range(key));  }
 
     const cow_string*
     find_opt(const cow_string& key)
       const noexcept
       { return this->find_opt(sref(key));  }
 
+    template<typename PredT>
+    const cow_string*
+    find_if_opt(cow_string::shallow_type key, PredT&& pred)
+      const
+      {
+        auto r = this->range(key);
+        while(r.first != r.second)
+          if(::std::forward<PredT>(pred)(*--(r.second)))
+            return r.second;
+        return nullptr;
+      }
+
+    template<typename PredT>
+    const cow_string*
+    find_if_opt(const cow_string& key, PredT&& pred)
+      const
+      { return this->find_if_opt(sref(key), ::std::forward<PredT>(pred));  }
+
     cow_string*
     mut_find_opt(cow_string::shallow_type key)
-      {
-        constexpr details_option_map::ci_hash hf;
-        auto r = this->do_mut_range_hint(key, hf(key));
-        return (r.first == r.second) ? nullptr : (r.second - 1);
-      }
+      { return details_option_map::range_back(this->mut_range(key));  }
 
     cow_string*
     mut_find_opt(const cow_string& key)
@@ -185,10 +200,7 @@ class Option_Map
     // Set a scalar value.
     cow_string&
     open(const cow_string& key)
-      {
-        constexpr details_option_map::ci_hash hf;
-        return this->do_open_hint(key, hf(key));
-      }
+      { return this->do_open_hint(key, details_option_map::ci_hash()(key));  }
 
     template<typename StringT>
     cow_string&
@@ -199,11 +211,7 @@ class Option_Map
     size_t
     count(cow_string::shallow_type key)
       const noexcept
-      {
-        constexpr details_option_map::ci_hash hf;
-        auto r = this->do_range_hint(key, hf(key));
-        return static_cast<size_t>(r.second - r.first);
-      }
+      { return details_option_map::range_size(this->range(key));  }
 
     size_t
     count(const cow_string& key)
@@ -213,10 +221,7 @@ class Option_Map
     // Append a value to an array.
     cow_string&
     append(const cow_string& key)
-      {
-        constexpr details_option_map::ci_hash hf;
-        return this->do_append_hint(key, hf(key));
-      }
+      { return this->do_append_hint(key, details_option_map::ci_hash()(key));  }
 
     template<typename StringT>
     cow_string&
