@@ -64,7 +64,7 @@ do_encode_http_entity(const char* data, size_t size)
 
 bool
 Abstract_HTTP_Server_Encoder::
-do_finish_http_message(State next)
+do_finish_http_message(Encoder_State next)
   {
     // If the connection is marked for closure, shut it down.
     bool sent = true;
@@ -75,7 +75,7 @@ do_finish_http_message(State next)
     if(this->m_final) {
       // Close the connection now.
       sent = sent && this->do_http_on_server_close();
-      this->m_state = state_closed;
+      this->m_state = encoder_state_closed;
     }
     return sent;
   }
@@ -115,10 +115,10 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
                     const cow_string& req_path, HTTP_Version req_ver,
                     const Option_Map& req_headers)
   {
-    if(this->m_state == state_closed)
+    if(this->m_state == encoder_state_closed)
       return false;
 
-    if(this->m_state != state_headers)
+    if(this->m_state != encoder_state_headers)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'headers')");
 
     // Get the HTTP version that the response will use.
@@ -167,7 +167,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
         headers.set(sref("Connection"), sref("close"));
 
       return this->do_encode_headers(ver, stat, headers) &&
-             this->do_finish_http_message(state_tunnel);
+             this->do_finish_http_message(encoder_state_tunnel);
     }
 
     Option_Map opts;
@@ -297,7 +297,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     // Encode response headers now.
     bool sent = this->do_encode_headers(ver, stat, headers);
     if(no_content || (req_method == http_method_head))
-      return sent && this->do_finish_http_message(state_headers);
+      return sent && this->do_finish_http_message(encoder_state_headers);
 
     if(upgrade == Upgrade::websocket) {
       // WebSocket uses a raw deflate compressor, while HTTP uses GZIP.
@@ -305,12 +305,12 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
       this->m_deflator = nullptr;
 
       // Switch to WebSocket after the response headers.
-      this->m_state = state_websocket;
+      this->m_state = encoder_state_websocket;
       return sent;
     }
 
     // Expect the entity.
-    this->m_state = state_entity;
+    this->m_state = encoder_state_entity;
     return sent;
   }
 
@@ -318,13 +318,13 @@ bool
 Abstract_HTTP_Server_Encoder::
 http_encode_entity(const char* data, size_t size)
   {
-    if(this->m_state == state_closed)
+    if(this->m_state == encoder_state_closed)
       return false;
 
-    if(this->m_state == state_tunnel)
+    if(this->m_state == encoder_state_tunnel)
       return this->do_http_on_server_send(data, size);
 
-    if(this->m_state != state_entity)
+    if(this->m_state != encoder_state_entity)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'entity')");
 
     // If compression is not enabled, send outgoing data verbatim.
@@ -354,19 +354,19 @@ bool
 Abstract_HTTP_Server_Encoder::
 http_encode_end_of_entity()
   {
-    if(this->m_state == state_closed)
+    if(this->m_state == encoder_state_closed)
       return false;
 
-    if(this->m_state == state_headers)
+    if(this->m_state == encoder_state_headers)
       return true;
 
-    if(this->m_state == state_tunnel)
+    if(this->m_state == encoder_state_tunnel)
       return this->do_http_on_server_close();
 
-    if(this->m_state != state_entity)
+    if(this->m_state != encoder_state_entity)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'entity')");
 
-    this->do_finish_http_message(state_headers);
+    this->do_finish_http_message(encoder_state_headers);
     return true;
   }
 
@@ -374,10 +374,10 @@ bool
 Abstract_HTTP_Server_Encoder::
 http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t size)
   {
-    if(this->m_state == state_closed)
+    if(this->m_state == encoder_state_closed)
       return false;
 
-    if(this->m_state != state_websocket)
+    if(this->m_state != encoder_state_websocket)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'websocket')");
 
     if(opcode == websocket_opcode_close) {
