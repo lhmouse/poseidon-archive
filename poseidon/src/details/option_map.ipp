@@ -39,26 +39,6 @@ struct ci_equal
       }
   };
 
-template<typename valueT>
-struct Range
-  : pair<valueT*, valueT*>
-  {
-    using pair<valueT*, valueT*>::pair;
-    using pair<valueT*, valueT*>::operator=;
-
-    constexpr
-    valueT*
-    begin()
-      const noexcept
-      { return this->first;  }
-
-    constexpr
-    valueT*
-    end()
-      const noexcept
-      { return this->second;  }
-  };
-
 class Bucket
   {
   private:
@@ -114,7 +94,7 @@ class Bucket
       }
 
     ROCKET_PURE_FUNCTION
-    Range<const cow_string>
+    pair<const cow_string*, const cow_string*>
     range()
       const noexcept
       {
@@ -133,7 +113,7 @@ class Bucket
         return { ptr, ptr + arr.size() };
       }
 
-    Range<cow_string>
+    pair<cow_string*, cow_string*>
     mut_range()
       {
         if(this->m_val.index() == 0)  // nothing
@@ -205,18 +185,18 @@ class Bucket
       }
 
     // These two functions are used by iterators.
-    Range<const cow_string>
+    pair<const cow_string*, const cow_string*>
     xlocal_range()
       const noexcept
       { return this->range();  }
 
-    Range<cow_string>
+    pair<cow_string*, cow_string*>
     xlocal_range()
       { return this->mut_range();  }
   };
 
-template<typename valueT, typename bucketT =
-                     typename ::rocket::copy_cv<Bucket, valueT>::type>
+template<typename valueT,
+         typename bucketT = typename ::rocket::copy_cv<Bucket, valueT>::type>
 class Iterator
   {
     friend Option_Map;
@@ -234,7 +214,7 @@ class Iterator
     bucketT* m_end;
 
     valueT* m_local_begin;
-    pair<const valueT*, valueT*> m_local_ptrs;
+    pair<const cow_string*, valueT*> m_local_ptrs;
     valueT* m_local_end;
 
   private:
