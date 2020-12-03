@@ -89,12 +89,14 @@ class Abstract_HTTP_Server_Encoder
                         const Option_Map& req_headers);
 
     // Puts a chunk of entity.
-    // `http_encoder_state()` must be `encoder_state_entity`, `encoder_state_tunnel` or `encoder_state_closed`.
+    // `http_encoder_state()` must be `encoder_state_entity`, `encoder_state_tunnel` or
+    // `encoder_state_closed`.
     bool
     http_encode_entity(const char* data, size_t size);
 
     // Finishes the entity.
-    // `http_encoder_state()` must be `encoder_state_entity`, `encoder_state_tunnel` or `encoder_state_closed`.
+    // `http_encoder_state()` must be `encoder_state_entity`, `encoder_state_tunnel` or
+    // `encoder_state_closed`.
     bool
     http_encode_end_of_entity();
 
