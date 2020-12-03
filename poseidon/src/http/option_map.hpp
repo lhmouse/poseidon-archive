@@ -31,11 +31,11 @@ class Option_Map
 
   private:
     ROCKET_PURE_FUNCTION
-    pair<const cow_string*, const cow_string*>
+    details_option_map::Range<const cow_string>
     do_range_hint(cow_string::shallow_type key, size_t hval)
       const noexcept;
 
-    pair<cow_string*, cow_string*>
+    details_option_map::Range<cow_string>
     do_mut_range_hint(cow_string::shallow_type key, size_t hval);
 
     size_t
@@ -116,7 +116,7 @@ class Option_Map
     // The return value is a pair of pointers denoting the beginning and end of
     // the value array. A scalar value is considered to be an array of only one
     // value.
-    pair<const cow_string*, const cow_string*>
+    details_option_map::Range<const cow_string>
     range(cow_string::shallow_type key)
       const noexcept
       {
@@ -124,19 +124,19 @@ class Option_Map
         return this->do_range_hint(key, hf(key));
       }
 
-    pair<const cow_string*, const cow_string*>
+    details_option_map::Range<const cow_string>
     range(const cow_string& key)
       const noexcept
       { return this->range(sref(key));  }
 
-    pair<cow_string*, cow_string*>
+    details_option_map::Range<cow_string>
     mut_range(cow_string::shallow_type key)
       {
         constexpr details_option_map::ci_hash hf;
         return this->do_mut_range_hint(key, hf(key));
       }
 
-    pair<cow_string*, cow_string*>
+    details_option_map::Range<cow_string>
     mut_range(const cow_string& key)
       { return this->mut_range(sref(key));  }
 

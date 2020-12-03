@@ -144,7 +144,7 @@ Option_Map::
   {
   }
 
-pair<const cow_string*, const cow_string*>
+details_option_map::Range<const cow_string>
 Option_Map::
 do_range_hint(cow_string::shallow_type key, size_t hval)
   const noexcept
@@ -156,7 +156,7 @@ do_range_hint(cow_string::shallow_type key, size_t hval)
     return this->m_stor[index].range();
   }
 
-pair<cow_string*, cow_string*>
+details_option_map::Range<cow_string>
 Option_Map::
 do_mut_range_hint(cow_string::shallow_type key, size_t hval)
   {
