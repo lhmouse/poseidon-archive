@@ -130,7 +130,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     bool no_content = (req_method == http_method_connect) ||
             (classify_http_status(stat) == http_status_class_information) ||
             ::rocket::is_any_of(stat,
-            { http_status_no_content, http_status_not_modified });
+                { http_status_no_content, http_status_not_modified });
 
     enum class Upgrade
       { none, websocket }  // TODO HTTP/2
