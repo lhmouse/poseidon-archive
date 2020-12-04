@@ -78,6 +78,15 @@ do_finish_http_message(Encoder_State next)
   {
     // Terminate the message body.
     bool sent = true;
+    if(this->m_gzip) {
+      auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
+      if(defl) {
+        defl->finish();
+        auto& obuf = defl->output_buffer();
+        sent = sent && this->do_encode_http_entity(obuf.data(), obuf.size());
+        obuf.clear();
+      }
+    }
     if(this->m_chunked)
       sent = sent && this->do_http_on_server_send("0\r\n\r\n", 5);
     this->m_state = next;
@@ -204,38 +213,6 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
         // The `chunked` encoding is enforced for simplicity.
         this->m_chunked = true;
         headers.set(sref("Transfer-Encoding"), sref("chunked"));
-
-        // Check whether the entity can be compressed.
-        // This is only examined if no explicit `Content-Encoding` has been set.
-        if(!headers.find_opt(sref("Content-Encoding"))) {
-          // At the moment only `gzip` is supported.
-          this->m_gzip = !!req_headers.find_if_opt(sref("Accept-Encoding"),
-              [&](const cow_string& reqh) {
-                size_t comma = 0;
-                while(comma != reqh.size()) {
-                  opts.parse_http_header(&comma, reqh, 1);
-                  auto qstr = opts.find_opt(sref(""));  // algorithm
-                  if(!qstr)
-                    continue;
-
-                  if(ascii_ci_equal(*qstr, sref("gzip"))) {  // only 'gzip'
-                    // GZIP is enabled unless suppressed by a zero quality value.
-                    double q = 1.0;
-                    qstr = opts.find_opt(sref("q"));
-                    if(qstr) {
-                      const char* sp = qstr->data();
-                      if(numg.parse_F(sp, qstr->data() + qstr->size(), 10))
-                        numg.cast_F(q, 0.0, 1.0);
-                    }
-                    if(q > 0)
-                      return true;
-                  }
-                }
-                return false;
-              });
-          if(this->m_gzip)
-            headers.set(sref("Content-Encoding"), sref("gzip"));
-        }
       }
 
       // Check for upgradable connections.
@@ -296,6 +273,38 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
       }
     }
 
+    // Check whether the entity can be compressed.
+    // This is only examined if no explicit `Content-Encoding` has been set.
+    if(!no_content && !headers.find_opt(sref("Content-Encoding"))) {
+      // At the moment only `gzip` is supported.
+      this->m_gzip = !!req_headers.find_if_opt(sref("Accept-Encoding"),
+          [&](const cow_string& reqh) {
+            size_t comma = 0;
+            while(comma != reqh.size()) {
+              opts.parse_http_header(&comma, reqh, 1);
+              auto qstr = opts.find_opt(sref(""));  // algorithm
+              if(!qstr)
+                continue;
+
+              if(ascii_ci_equal(*qstr, sref("gzip"))) {  // only 'gzip'
+                // GZIP is enabled unless suppressed by a zero quality value.
+                double q = 1.0;
+                qstr = opts.find_opt(sref("q"));
+                if(qstr) {
+                  const char* sp = qstr->data();
+                  if(numg.parse_F(sp, qstr->data() + qstr->size(), 10))
+                    numg.cast_F(q, 0.0, 1.0);
+                }
+                if(q > 0)
+                  return true;
+              }
+            }
+            return false;
+          });
+      if(this->m_gzip)
+        headers.set(sref("Content-Encoding"), sref("gzip"));
+    }
+
     // Encode response headers now.
     bool sent = this->do_encode_headers(ver, stat, headers);
     if(no_content || (req_method == http_method_head))
@@ -310,6 +319,11 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
       this->m_state = encoder_state_websocket;
       return sent;
     }
+
+    // Reset the deflator used by the previous message, if any.
+    auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
+    if(defl)
+      defl->reset();
 
     // Expect the entity.
     this->m_state = encoder_state_entity;
@@ -339,11 +353,7 @@ http_encode_entity(const char* data, size_t size)
       defl = ::rocket::make_refcnt<zlib_Deflator>(zlib_Deflator::format_gzip);
       this->m_deflator = defl;
     }
-    else {
-      defl->reset();
-    }
     defl->write(data, size);
-    defl->finish();
 
     // Consume all compressed data.
     auto& obuf = defl->output_buffer();
@@ -404,7 +414,7 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
     if(!this->m_gzip)
       return this->do_encode_websocket_frame(0, opcode, data, size);
 
-    // Compress outgoing data using deflat.
+    // Compress outgoing data using deflate.
     auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
     if(!defl) {
       defl = ::rocket::make_refcnt<zlib_Deflator>(zlib_Deflator::format_raw);
@@ -414,13 +424,18 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
       defl->reset();
     }
     defl->write(data, size);
-    defl->flush();
 
-    // Consume all compressed data.
+    // Finish this deflate block. This results in four extra bytes `00 00 FF FF` in
+    // the stream, which shall be removed according to RFC 7692. All the other bytes
+    // are consumed as usual.
+    defl->flush();
     auto& obuf = defl->output_buffer();
+
     ROCKET_ASSERT(obuf.size() >= 4);
-    ROCKET_ASSERT(::memcmp(obuf.data() + obuf.size() - 4, "\x00\x00\xFF\xFF", 4) == 0);
-    bool sent = this->do_encode_websocket_frame(2, opcode, obuf.data(), obuf.size() - 4);
+    size_t real_size = obuf.size() - 4;
+    ROCKET_ASSERT(::memcmp(obuf.data() + real_size, "\x00\x00\xFF\xFF", 4) == 0);
+
+    bool sent = this->do_encode_websocket_frame(2, opcode, obuf.data(), real_size);
     obuf.clear();
     return sent;
   }
