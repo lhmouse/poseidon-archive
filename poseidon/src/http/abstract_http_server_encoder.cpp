@@ -172,7 +172,6 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
 
     Option_Map opts;
     ::rocket::ascii_numget numg;
-    const cow_string* qstr;
 
     auto connection_header_name = sref("Connection");
     if(req_path[0] != '/')
@@ -186,12 +185,10 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     else {
       // If a closure header is sent, shut the connection down.
       // For HTTP/1.1, persistent connections are enabled by default.
-      qstr = req_headers.find_if_opt(connection_header_name,
+      this->m_final = !!req_headers.find_if_opt(connection_header_name,
           [&](const cow_string& reqh) {
             return ascii_ci_has_token(reqh, sref("close"));
           });
-
-      this->m_final = !!qstr;
       if(this->m_final)
         headers.set(connection_header_name, sref("close"));
 
@@ -201,88 +198,85 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
         headers.set(sref("Transfer-Encoding"), sref("chunked"));
 
         // Check whether the entity can be compressed.
-        qstr = req_headers.find_if_opt(sref("Accept-Encoding"),
-            [&](const cow_string& reqh) {
-              size_t comma = 0;
-              while(comma != reqh.size()) {
-                opts.parse_http_header(&comma, reqh, 1);
-                qstr = opts.find_opt(sref(""));  // algorithm
-                if(!qstr)
-                  continue;
+        // This is only examined if no explicit `Content-Encoding` has been set.
+        if(!headers.find_opt(sref("Content-Encoding"))) {
+          // At the moment only `gzip` is supported.
+          this->m_gzip = !!req_headers.find_if_opt(sref("Accept-Encoding"),
+              [&](const cow_string& reqh) {
+                size_t comma = 0;
+                while(comma != reqh.size()) {
+                  opts.parse_http_header(&comma, reqh, 1);
+                  auto qstr = opts.find_opt(sref(""));  // algorithm
+                  if(!qstr)
+                    continue;
 
-                if(ascii_ci_equal(*qstr, sref("gzip"))) {  // only 'gzip'
-                  // GZIP is enabled unless suppressed by a zero quality value.
-                  double q = 1.0;
-                  qstr = opts.find_opt(sref("q"));
-                  if(qstr) {
-                    const char* sp = qstr->data();
-                    if(numg.parse_F(sp, qstr->data() + qstr->size(), 10))
-                      numg.cast_F(q, 0.0, 1.0);
+                  if(ascii_ci_equal(*qstr, sref("gzip"))) {  // only 'gzip'
+                    // GZIP is enabled unless suppressed by a zero quality value.
+                    double q = 1.0;
+                    qstr = opts.find_opt(sref("q"));
+                    if(qstr) {
+                      const char* sp = qstr->data();
+                      if(numg.parse_F(sp, qstr->data() + qstr->size(), 10))
+                        numg.cast_F(q, 0.0, 1.0);
+                    }
+                    if(q > 0)
+                      return true;
                   }
-                  if(q > 0)
-                    return true;
                 }
-              }
-              return false;
-            });
-
-        this->m_gzip = !!qstr;
-        if(this->m_gzip)
-          headers.open(sref("Transfer-Encoding")).insert(0, "gzip, ");
+                return false;
+              });
+          if(this->m_gzip)
+            headers.set(sref("Content-Encoding"), sref("gzip"));
+        }
       }
 
-      // Check for upgradable connections. Note that code above might have
+      // Check for upgradable connections.
+      // First, look at `Connection:`. Only if an `upgrade` token exists, shall we
+      // check `Upgrade:` for available protocols. Note that code above might have
       // set `Connection: close`, in which case no upgrade is possible.
-      qstr = headers.find_if_opt(connection_header_name,
-          [&](const cow_string& resph) {
-            return ascii_ci_has_token(resph, sref("upgrade"));
-          });
+      auto upgrade_str = headers.find_if_opt(connection_header_name,
+                [&](const cow_string& resph) {
+                  return ascii_ci_has_token(resph, sref("upgrade"));
+                });
+      if(upgrade_str)
+        upgrade_str = headers.find_opt(sref("Upgrade"));
 
-      if(qstr) {
-        const auto& upgrade_str = headers.open(sref("Upgrade"));
-        if(upgrade_str.empty()) {
-          POSEIDON_LOG_ERROR("`Connection: upgrade` used without `Upgrade:`");
-        }
-        else if(ascii_ci_equal(upgrade_str, sref("websocket"))) {
+      if(upgrade_str) {
+        // This upgrade mechanism is utilized by WebSocket and HTTP/2.
+        // Note we don't check whether this was actually requested by the client,
+        // because we are unable to fabricate a failure response if it is proved to
+        // be the case. It is the caller that has to ensure the response is valid.
+        // TODO: At the moment, only WebSocket is supported.
+        if(ascii_ci_equal(*upgrade_str, sref("websocket"))) {
           // Upgrade to WebSocket.
-          // Note we don't check whether this was actually requested by the
-          // client, because we are unable to fabricate a failure response if
-          // it is proved to be the case.
-          bool no_context_takeover = false;
+          upgrade = Upgrade::websocket;
 
-          // Check whether compression has been enabled.
+          // Check whether compression can be enabled.
           // Refer to RFC 7692 for details.
-          qstr = headers.find_if_opt(sref("Sec-WebSocket-Extensions"),
+          this->m_ws_pmce = !!headers.find_if_opt(sref("Sec-WebSocket-Extensions"),
               [&](const cow_string& resph) {
                 size_t comma = 0;
                 while(comma != resph.size()) {
                   opts.parse_http_header(&comma, resph, 1);
-                  qstr = opts.find_opt(sref(""));  // extension name
+                  auto qstr = opts.find_opt(sref(""));  // extension name
                   if(!qstr)
                     continue;
 
                   if(ascii_ci_equal(*qstr, sref("permessage-deflate"))) {
                     // Check for context options.
-                    qstr = opts.find_opt(sref("server_no_context_takeover"));
-                    if(qstr)
-                      no_context_takeover = true;
-
                     // FIXME: RFC 7692 says if an option is not supported, the
                     //        extension must not be used. But we just accept and
                     //        ignore them here.
+                    qstr = opts.find_opt(sref("server_no_context_takeover"));
+                    this->m_ws_nctxto = !!qstr;
                     return true;
                   }
                 }
                 return false;
               });
-
-          this->m_ws_pmce = !!qstr;
-          this->m_ws_nctxto = no_context_takeover;
-
-          upgrade = Upgrade::websocket;
         }
         else
-          POSEIDON_LOG_ERROR("Protocol `$1` not upgradable", upgrade_str);
+          POSEIDON_LOG_ERROR("Protocol `$1` not upgradable", *upgrade_str);
 
         // If upgrade is not possible, fail.
         if(upgrade == Upgrade::none) {
