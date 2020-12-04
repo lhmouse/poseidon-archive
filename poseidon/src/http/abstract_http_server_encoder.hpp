@@ -85,7 +85,7 @@ class Abstract_HTTP_Server_Encoder
     // next state will be `encoder_state_entity`.
     bool
     http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_method,
-                        const cow_string& req_path, HTTP_Version req_ver,
+                        const cow_string& req_target, HTTP_Version req_ver,
                         const Option_Map& req_headers);
 
     // Puts a chunk of entity.

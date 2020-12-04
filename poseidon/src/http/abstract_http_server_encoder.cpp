@@ -112,7 +112,7 @@ do_encode_websocket_frame(uint8_t flags, WebSocket_Opcode opcode,
 bool
 Abstract_HTTP_Server_Encoder::
 http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_method,
-                    const cow_string& req_path, HTTP_Version req_ver,
+                    const cow_string& req_target, HTTP_Version req_ver,
                     const Option_Map& req_headers)
   {
     if(this->m_state == encoder_state_closed)
@@ -174,7 +174,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     ::rocket::ascii_numget numg;
 
     auto connection_header_name = sref("Connection");
-    if(req_path[0] != '/')
+    if(req_target[0] != '/')
       connection_header_name = sref("Proxy-Connection");
 
     if(ver < http_version_1_1) {
