@@ -135,6 +135,7 @@ class Abstract_Async_Job;
 class Abstract_Future;
 class Abstract_Fiber;
 class URL;
+class LCG48;
 class zlib_Deflator;
 class zlib_Inflator;
 

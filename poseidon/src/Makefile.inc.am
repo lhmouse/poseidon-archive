@@ -23,6 +23,7 @@ include_poseidon_core_HEADERS =  \
   %reldir%/core/abstract_async_job.hpp  \
   %reldir%/core/abstract_fiber.hpp  \
   %reldir%/core/url.hpp  \
+  %reldir%/core/lcg48.hpp  \
   %reldir%/core/zlib_deflator.hpp  \
   %reldir%/core/zlib_inflator.hpp  \
   ${NOTHING}
@@ -78,6 +79,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/abstract_async_job.cpp  \
   %reldir%/core/abstract_fiber.cpp  \
   %reldir%/core/url.cpp  \
+  %reldir%/core/lcg48.cpp  \
   %reldir%/core/zlib_deflator.cpp  \
   %reldir%/core/zlib_inflator.cpp  \
   %reldir%/http/enums.cpp  \
