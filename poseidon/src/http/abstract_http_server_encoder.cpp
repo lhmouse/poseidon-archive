@@ -57,16 +57,11 @@ do_encode_http_entity(const char* data, size_t size)
       return this->do_http_on_server_send(data, size);
 
     // For HTTP/1.1, encode the data as a single chunk.
-    ::rocket::static_vector<char, 30> head;
-
     ::rocket::ascii_numput nump;
     nump.put_XU(size);
-    head.append(nump.begin(), nump.end());
 
-    head.emplace_back('\r');
-    head.emplace_back('\n');
-
-    return this->do_http_on_server_send(head.data(), head.size()) &&
+    return this->do_http_on_server_send(nump.data(), nump.size()) &&
+           this->do_http_on_server_send("\r\n", 2) &&
            this->do_http_on_server_send(data, size) &&
            this->do_http_on_server_send("\r\n", 2);
   }
@@ -86,13 +81,15 @@ do_finish_http_message(Encoder_State next)
         obuf.clear();
       }
     }
-    if(this->m_chunked)
+    if(this->m_chunked) {
       sent = sent && this->do_http_on_server_send("0\r\n\r\n", 5);
+    }
     this->m_state = next;
 
     // If this is the final message, shut the connection down.
-    if(this->m_final)
+    if(this->m_final) {
       sent = sent && this->do_close_connection();
+    }
     return sent;
   }
 
@@ -406,6 +403,8 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
       size_t rlen = ::std::min<size_t>(size, 125);
       if(rlen != size)
         POSEIDON_LOG_WARN("Control frame truncated (size `$1`)", size);
+
+      // Encode a trivial control frame.
       return this->do_encode_websocket_frame(0, opcode, data, rlen);
     }
 
@@ -443,14 +442,14 @@ bool
 Abstract_HTTP_Server_Encoder::
 http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t size)
   {
-    // Compose the frame header.
-    ::rocket::static_vector<char, 14> head;
-    head.emplace_back(0x81);  // CLOSE, FIN
-
     // Truncate the payload, as control frames cannot be fragmented.
     size_t rlen = ::std::min<size_t>(size, 123);
     if(rlen != size)
       POSEIDON_LOG_WARN("Closure frame truncated (size `$1`)", size);
+
+    // Compose the frame header.
+    ::rocket::static_vector<char, 14> head;
+    head.emplace_back(0x81);  // CLOSE, FIN
     head.emplace_back(2 + rlen);  // payload length
 
     head.emplace_back(stat >> 8);  // status (high)
