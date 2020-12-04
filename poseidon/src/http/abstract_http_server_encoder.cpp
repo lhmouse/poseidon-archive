@@ -17,6 +17,16 @@ Abstract_HTTP_Server_Encoder::
 
 bool
 Abstract_HTTP_Server_Encoder::
+do_close_connection()
+  {
+    // Mark the connection being closed before calling the user-defined
+    // function, which might throw exceptions.
+    this->m_state = encoder_state_closed;
+    return this->do_http_on_server_close();
+  }
+
+bool
+Abstract_HTTP_Server_Encoder::
 do_encode_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers)
   {
     // Send 200 in the case of `http_status_connection_established`.
@@ -66,17 +76,15 @@ bool
 Abstract_HTTP_Server_Encoder::
 do_finish_http_message(Encoder_State next)
   {
-    // If the connection is marked for closure, shut it down.
+    // Terminate the message body.
     bool sent = true;
     if(this->m_chunked)
       sent = sent && this->do_http_on_server_send("0\r\n\r\n", 5);
     this->m_state = next;
 
-    if(this->m_final) {
-      // Close the connection now.
-      sent = sent && this->do_http_on_server_close();
-      this->m_state = encoder_state_closed;
-    }
+    // If the connection is marked for closure, shut it down.
+    if(this->m_final)
+      sent = sent && this->do_close_connection();
     return sent;
   }
 
@@ -355,7 +363,7 @@ http_encode_end_of_entity()
       return true;
 
     if(this->m_state == encoder_state_tunnel)
-      return this->do_http_on_server_close();
+      return this->do_close_connection();
 
     if(this->m_state != encoder_state_entity)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'entity')");
@@ -436,7 +444,7 @@ http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t si
 
     return this->do_http_on_server_send(head.data(), head.size()) &&
            this->do_http_on_server_send(data, size) &&
-           this->do_http_on_server_close();
+           this->do_close_connection();
   }
 
 }  // namespace poseidon
