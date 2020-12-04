@@ -16,10 +16,10 @@ class Abstract_HTTP_Server_Encoder
     enum Encoder_State : uint8_t
       {
         encoder_state_headers    = 0,
-        encoder_state_entity     = 1,
-        encoder_state_tunnel     = 2,
-        encoder_state_websocket  = 3,
-        encoder_state_closed     = 9,
+        encoder_state_closed     = 1,
+        encoder_state_entity     = 2,
+        encoder_state_tunnel     = 3,
+        encoder_state_websocket  = 4,
       };
 
   private:
@@ -83,36 +83,34 @@ class Abstract_HTTP_Server_Encoder
       { return this->m_state;  }
 
     // Puts the HTTP status line and headers.
-    // `http_encoder_state()` must be `encoder_state_headers` or `encoder_state_closed`.
+    // `http_encoder_state()` must be 'closed' or 'headers'.
     // Arguments whose names begin with `req_` should be copied from requests. Unless
     // the response 'MUST NOT' include a message body (see RFC 7230 section 3.3), the
-    // next state will be `encoder_state_entity`.
+    // next state will be 'entity'.
     bool
     http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_method,
                         const cow_string& req_target, HTTP_Version req_ver,
                         const Option_Map& req_headers);
 
     // Puts a chunk of entity.
-    // `http_encoder_state()` must be `encoder_state_entity`, `encoder_state_tunnel` or
-    // `encoder_state_closed`.
+    // `http_encoder_state()` must be 'closed', 'entity' or 'tunnel'.
     bool
     http_encode_entity(const char* data, size_t size);
 
     // Finishes the entity.
-    // `http_encoder_state()` must be `encoder_state_entity`, `encoder_state_tunnel` or
-    // `encoder_state_closed`.
+    // `http_encoder_state()` must be 'closed', 'entity' or 'tunnel'.
     bool
     http_encode_end_of_entity();
 
     // Puts a WebSocket frame.
-    // `http_encoder_state()` must be `encoder_state_websocket` or `encoder_state_closed`.
+    // `http_encoder_state()` must be 'closed' or 'websocket'.
     // `opcode` shall specify a valid opcode other than `websocket_opcode_continuation`
     // and `websocket_opcode_close`.
     bool
     http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t size);
 
     // Puts a WebSocket closure frame.
-    // `http_encoder_state()` must be `encoder_state_websocket` or `encoder_state_closed`.
+    // `http_encoder_state()` must be 'closed' or 'websocket'.
     // The additional payload is appended to the status code. It is truncated to 123
     // bytes if it is longer.
     bool

@@ -42,7 +42,6 @@ do_encode_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers)
       fmt << pair.first << ": " << pair.second << "\r\n";
     fmt << "\r\n";
 
-    // Send encoded data.
     return this->do_http_on_server_send(fmt.c_str(), fmt.length());
   }
 
@@ -91,7 +90,7 @@ do_finish_http_message(Encoder_State next)
       sent = sent && this->do_http_on_server_send("0\r\n\r\n", 5);
     this->m_state = next;
 
-    // If the connection is marked for closure, shut it down.
+    // If this is the final message, shut the connection down.
     if(this->m_final)
       sent = sent && this->do_close_connection();
     return sent;
