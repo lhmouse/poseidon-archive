@@ -453,6 +453,7 @@ http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t si
     head.emplace_back(0x81);  // CLOSE, FIN
     head.emplace_back(2 + rlen);  // payload length
 
+    // Write the status in big-endian order.
     head.emplace_back(stat >> 8);  // status (high)
     head.emplace_back(stat);       // status (low)
 
