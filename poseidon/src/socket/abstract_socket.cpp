@@ -57,10 +57,9 @@ get_local_address()
                          "[`getsockname()` failed: $1]",
                          format_errno(errno));
 
-        // Cache the result.
+        // The result is cached once it becomes available.
         this->m_local_addr.assign(addrst, addrlen);
       });
-
     return this->m_local_addr;
   }
 
