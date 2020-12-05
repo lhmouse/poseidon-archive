@@ -117,7 +117,7 @@ do_encode_websocket_frame(uint8_t flags, WebSocket_Opcode opcode,
       exlen = 8;
     }
     while(exlen != 0)
-      head.emplace_back(size >> --exlen * 8);
+      head.emplace_back(static_cast<uint64_t>(size) >> --exlen * 8);
 
     return this->do_http_on_server_send(head.data(), head.size()) &&
            this->do_http_on_server_send(data, size);
