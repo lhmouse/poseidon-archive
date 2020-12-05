@@ -49,9 +49,9 @@ bool
 Abstract_HTTP_Server_Encoder::
 do_encode_http_entity(const char* data, size_t size)
   {
-    // Don't send empty chunks. Return `true` to allow postprocessing.
+    // Don't send empty chunks. Test the connection state only.
     if(size == 0)
-      return true;
+      return this->do_http_on_server_send("", 0);
 
     // For HTTP/1.0, send outgoing data verbatim.
     if(!this->m_chunked)
@@ -71,8 +71,9 @@ bool
 Abstract_HTTP_Server_Encoder::
 do_finish_http_message(Encoder_State next)
   {
+    bool sent = this->do_http_on_server_send("", 0);
+
     // Terminate the message body.
-    bool sent = true;
     if(this->m_gzip) {
       auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
       if(defl) {
@@ -262,7 +263,8 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
           this->m_final = true;
           headers.set(connection_header_name, sref("close"));
 
-          headers.erase(sref("Upgrade"));  // invalidates `upgrade_str`
+          upgrade_str = nullptr;
+          headers.erase(sref("Upgrade"));
         }
       }
     }
