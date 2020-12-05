@@ -402,7 +402,6 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
       if(rlen != size)
         POSEIDON_LOG_WARN("Control frame truncated (size `$1`)", size);
 
-      // Encode a trivial control frame.
       return this->do_encode_websocket_frame(0, opcode, data, rlen);
     }
 
