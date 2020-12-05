@@ -83,15 +83,17 @@ do_finish_http_message(Encoder_State next)
         obuf.clear();
       }
     }
-    if(this->m_chunked) {
+
+    if(this->m_chunked)
       sent = sent && this->do_http_on_server_send("0\r\n\r\n", 5);
-    }
+
     this->m_state = next;
 
     // If this is the final message, shut the connection down.
-    if(this->m_final) {
+    // This may overwrite `m_state` so has to be the last operation.
+    if(this->m_final)
       sent = sent && this->do_close_connection();
-    }
+
     return sent;
   }
 
