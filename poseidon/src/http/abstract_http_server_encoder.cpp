@@ -49,6 +49,7 @@ bool
 Abstract_HTTP_Server_Encoder::
 do_encode_http_entity(const char* data, size_t size)
   {
+    // Don't send empty chunks. Return `true` to allow postprocessing.
     if(size == 0)
       return true;
 
@@ -145,10 +146,6 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
             ::rocket::is_any_of(stat,
                 { http_status_no_content, http_status_not_modified });
 
-    enum class Upgrade
-      { none, websocket }  // TODO HTTP/2
-      upgrade = Upgrade::none;
-
     this->m_final = false;
     this->m_chunked = false;
     this->m_gzip = false;
@@ -183,6 +180,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
              this->do_finish_http_message(encoder_state_tunnel);
     }
 
+    HTTP_Upgrade upg = http_upgrade_null;
     Option_Map opts;
     ::rocket::ascii_numget numg;
 
@@ -229,9 +227,6 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
         // be the case. It is the caller that has to ensure the response is valid.
         // TODO: At the moment, only WebSocket is supported.
         if(ascii_ci_equal(*upgrade_str, sref("websocket"))) {
-          // Upgrade to WebSocket.
-          upgrade = Upgrade::websocket;
-
           // Check whether compression can be enabled.
           // Refer to RFC 7692 for details.
           this->m_ws_pmce = !!headers.find_if_opt(sref("Sec-WebSocket-Extensions"),
@@ -255,12 +250,15 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
                 }
                 return false;
               });
+
+          // Upgrade to WebSocket.
+          upg = http_upgrade_websocket;
         }
         else
           POSEIDON_LOG_ERROR("Protocol `$1` not upgradable", *upgrade_str);
 
         // If upgrade is not possible, fail.
-        if(upgrade == Upgrade::none) {
+        if(upg == http_upgrade_null) {
           this->m_final = true;
           headers.set(connection_header_name, sref("close"));
 
@@ -306,7 +304,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     if(no_content || (req_method == http_method_head))
       return sent && this->do_finish_http_message(encoder_state_headers);
 
-    if(upgrade == Upgrade::websocket) {
+    if(upg == http_upgrade_websocket) {
       // WebSocket uses a raw deflate compressor, while HTTP uses GZIP.
       // It cannot be reused so delete it.
       this->m_deflator = nullptr;

@@ -143,6 +143,15 @@ classify_http_status(HTTP_Status stat)
   noexcept
   { return static_cast<HTTP_Status>(static_cast<uint32_t>(stat) / 100 * 100);  }
 
+// These are values for `Upgrade:` headers.
+enum HTTP_Upgrade : uint8_t
+  {
+    http_upgrade_null       = 0,
+    http_upgrade_tunnel     = 1,  // special value for the CONNECT method
+    http_upgrade_websocket  = 2,
+    // TODO: http_upgrade_http_2     = 3,
+  };
+
 // These are WebSocket opcodes.
 // This list is exhaustive according to RFC 6455.
 enum WebSocket_Opcode : uint8_t

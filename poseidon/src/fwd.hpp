@@ -169,6 +169,7 @@ class Abstract_UDP_Socket;
 enum HTTP_Version : uint16_t;
 enum HTTP_Method : uint8_t;
 enum HTTP_Status : uint16_t;
+enum HTTP_Upgrade : uint8_t;
 
 enum WebSocket_Opcode : uint8_t;
 enum WebSocket_Status : uint16_t;
