@@ -103,7 +103,7 @@ do_encode_websocket_frame(uint8_t flags, WebSocket_Opcode opcode,
     ::rocket::static_vector<char, 14> head;
     head.emplace_back(opcode << 4 | flags | 1);  // opcode, flags, FIN
 
-    int exlen;
+    size_t exlen;
     if(size <= 125) {
       head.emplace_back(size);  // payload length
       exlen = 0;
