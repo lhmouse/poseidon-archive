@@ -96,8 +96,6 @@ Abstract_UDP_Socket::
 do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
   {
     lock.lock(this->m_io_mutex);
-
-    // If the socket is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
       return io_result_end_of_stream;
 
@@ -147,8 +145,6 @@ Abstract_UDP_Socket::
 do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /*size*/)
   {
     lock.lock(this->m_io_mutex);
-
-    // If the socket is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
       return io_result_end_of_stream;
 

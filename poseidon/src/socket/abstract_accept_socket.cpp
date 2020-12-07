@@ -137,6 +137,9 @@ do_listen(const Socket_Address& addr, int backlog)
                      "[`listen()` failed: $1]",
                      format_errno(errno), this->get_local_address());
 
+    // Mark this socket listening.
+    this->m_cstate = connection_state_established;
+
     POSEIDON_LOG_INFO("Accept socket listening: local '$1'",
                       this->get_local_address());
   }

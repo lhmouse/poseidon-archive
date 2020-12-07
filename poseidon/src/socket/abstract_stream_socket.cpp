@@ -100,10 +100,8 @@ IO_Result
 Abstract_Stream_Socket::
 do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
   {
-    lock.lock(this->m_io_mutex);
     ROCKET_ASSERT(size != 0);
-
-    // If the stream is in CLOSED state, fail.
+    lock.lock(this->m_io_mutex);
     if(this->m_cstate == connection_state_closed)
       return io_result_end_of_stream;
 
@@ -146,10 +144,8 @@ IO_Result
 Abstract_Stream_Socket::
 do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t size)
   {
-    lock.lock(this->m_io_mutex);
     ROCKET_ASSERT(size != 0);
-
-    // If the stream is in CLOSED state, fail.
+    lock.lock(this->m_io_mutex);
     if(this->m_cstate == connection_state_closed)
       return io_result_end_of_stream;
 
