@@ -17,16 +17,6 @@ Abstract_HTTP_Server_Encoder::
 
 bool
 Abstract_HTTP_Server_Encoder::
-do_close_connection()
-  {
-    // Mark the connection being closed before calling the user-defined
-    // function, which might throw exceptions.
-    this->m_state = encoder_state_closed;
-    return this->do_http_on_server_close();
-  }
-
-bool
-Abstract_HTTP_Server_Encoder::
 do_encode_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers)
   {
     // Send 200 in the case of `http_status_connection_established`.
@@ -38,6 +28,7 @@ do_encode_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers)
     ::rocket::tinyfmt_str fmt;
     fmt << format_http_version(ver) << ' ' << real_stat << ' '
         << describe_http_status(stat) << "\r\n";
+
     for(const auto& pair : headers)
       fmt << pair.first << ": " << pair.second << "\r\n";
     fmt << "\r\n";
@@ -73,7 +64,7 @@ do_finish_http_message(Encoder_State next)
   {
     bool sent = this->do_http_on_server_send("", 0);
 
-    // Terminate the message body.
+    // Terminate the entity.
     if(this->m_gzip) {
       auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
       if(defl) {
@@ -87,13 +78,12 @@ do_finish_http_message(Encoder_State next)
     if(this->m_chunked)
       sent = sent && this->do_http_on_server_send("0\r\n\r\n", 5);
 
-    this->m_state = next;
-
     // If this is the final message, shut the connection down.
-    // This may overwrite `m_state` so has to be the last operation.
-    if(this->m_final)
-      sent = sent && this->do_close_connection();
-
+    this->m_state = next;
+    if(this->m_final) {
+      this->m_state = encoder_state_closed;
+      sent = sent && this->do_http_on_server_close();
+    }
     return sent;
   }
 
@@ -304,18 +294,19 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     }
 
     // Encode response headers now.
-    bool sent = this->do_encode_headers(ver, stat, headers);
     if(no_content || (req_method == http_method_head))
-      return sent && this->do_finish_http_message(encoder_state_headers);
+      return this->do_encode_headers(ver, stat, headers) &&
+             this->do_finish_http_message(encoder_state_headers);
 
+    // Check for upgradable connections.
     if(upg == http_upgrade_websocket) {
       // WebSocket uses a raw deflate compressor, while HTTP uses GZIP.
       // It cannot be reused so delete it.
       this->m_deflator = nullptr;
 
       // Switch to WebSocket after the response headers.
-      this->m_state = encoder_state_websocket;
-      return sent;
+      return this->do_encode_headers(ver, stat, headers) &&
+             this->do_finish_http_message(encoder_state_websocket);
     }
 
     // Reset the deflator used by the previous message, if any.
@@ -324,6 +315,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
       defl->reset();
 
     // Expect the entity.
+    bool sent = this->do_encode_headers(ver, stat, headers);
     this->m_state = encoder_state_entity;
     return sent;
   }
@@ -367,17 +359,17 @@ http_encode_end_of_entity()
     if(this->m_state == encoder_state_closed)
       return false;
 
-    if(this->m_state == encoder_state_headers)
-      return true;
-
-    if(this->m_state == encoder_state_tunnel)
-      return this->do_close_connection();
+    if(this->m_state == encoder_state_tunnel) {
+      // Shut the tunnel down.
+      this->m_state = encoder_state_closed;
+      return this->do_http_on_server_close();
+    }
 
     if(this->m_state != encoder_state_entity)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'entity')");
 
-    this->do_finish_http_message(encoder_state_headers);
-    return true;
+    // Finish this response message and expect the next one.
+    return this->do_finish_http_message(encoder_state_headers);
   }
 
 bool
@@ -443,6 +435,12 @@ bool
 Abstract_HTTP_Server_Encoder::
 http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t size)
   {
+    if(this->m_state == encoder_state_closed)
+      return false;
+
+    if(this->m_state != encoder_state_websocket)
+      POSEIDON_THROW("HTTP server encoder state error (expecting 'websocket')");
+
     // Truncate the payload, as control frames cannot be fragmented.
     size_t rlen = ::std::min<size_t>(size, 123);
     if(rlen != size)
@@ -453,13 +451,16 @@ http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t si
     head.emplace_back(0x81);  // CLOSE, FIN
     head.emplace_back(2 + rlen);  // payload length
 
-    // Write the status in big-endian order.
     head.emplace_back(stat >> 8);  // status (high)
     head.emplace_back(stat);       // status (low)
 
-    return this->do_http_on_server_send(head.data(), head.size()) &&
-           this->do_http_on_server_send(data, size) &&
-           this->do_close_connection();
+    bool sent = this->do_http_on_server_send(head.data(), head.size()) &&
+                this->do_http_on_server_send(data, size);
+
+    // Shut the connection down after the final frame.
+    this->m_state = encoder_state_closed;
+    sent = sent && this->do_http_on_server_close();
+    return sent;
   }
 
 }  // namespace poseidon
