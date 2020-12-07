@@ -17,7 +17,7 @@ Abstract_HTTP_Server_Encoder::
 
 bool
 Abstract_HTTP_Server_Encoder::
-do_encode_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers)
+do_encode_http_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers)
   {
     // Send 200 in the case of `http_status_connection_established`.
     HTTP_Status real_stat = stat;
@@ -169,7 +169,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
       if(this->m_final)
         headers.set(sref("Connection"), sref("close"));
 
-      return this->do_encode_headers(ver, stat, headers) &&
+      return this->do_encode_http_headers(ver, stat, headers) &&
              this->do_finish_http_message(encoder_state_tunnel);
     }
 
@@ -295,7 +295,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
 
     // Encode response headers now.
     if(no_content || (req_method == http_method_head))
-      return this->do_encode_headers(ver, stat, headers) &&
+      return this->do_encode_http_headers(ver, stat, headers) &&
              this->do_finish_http_message(encoder_state_headers);
 
     // Check for upgradable connections.
@@ -305,7 +305,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
       this->m_deflator = nullptr;
 
       // Switch to WebSocket after the response headers.
-      return this->do_encode_headers(ver, stat, headers) &&
+      return this->do_encode_http_headers(ver, stat, headers) &&
              this->do_finish_http_message(encoder_state_websocket);
     }
 
@@ -315,7 +315,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
       defl->reset();
 
     // Expect the entity.
-    bool sent = this->do_encode_headers(ver, stat, headers);
+    bool sent = this->do_encode_http_headers(ver, stat, headers);
     this->m_state = encoder_state_entity;
     return sent;
   }

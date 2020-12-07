@@ -43,7 +43,7 @@ class Abstract_HTTP_Server_Encoder
   private:
     inline
     bool
-    do_encode_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers);
+    do_encode_http_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers);
 
     inline
     bool
