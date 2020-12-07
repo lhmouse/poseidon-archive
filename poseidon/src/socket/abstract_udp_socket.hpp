@@ -53,13 +53,13 @@ class Abstract_UDP_Socket
     do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size)
       final;
 
-    // Notifies this socket has been closed.
+    // Notifies that this socket has been closed.
     void
     do_socket_on_poll_close(int err)
       final;
 
   protected:
-    // Notifies a socket has been open for sending data.
+    // Notifies that this socket has been open for incoming data.
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
@@ -73,7 +73,7 @@ class Abstract_UDP_Socket
     do_socket_on_receive(Socket_Address&& addr, char* data, size_t size)
       = 0;
 
-    // Notifies this socket has been fully closed.
+    // Notifies that this socket has been fully closed.
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     virtual

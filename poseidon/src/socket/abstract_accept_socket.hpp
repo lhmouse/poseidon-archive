@@ -12,6 +12,11 @@ class Abstract_Accept_Socket
   : public ::asteria::Rcfwd<Abstract_Accept_Socket>,
     public Abstract_Socket
   {
+  private:
+    // These are I/O components.
+    mutable simple_mutex m_io_mutex;
+    Connection_State m_cstate = connection_state_empty;
+
   public:
     explicit
     Abstract_Accept_Socket(unique_FD&& fd)
@@ -26,7 +31,7 @@ class Abstract_Accept_Socket
     do_set_common_options();
 
     // Accepts a socket in non-blocking mode.
-    // `lock` and `hint` are ignored.
+    // `hint` and `size` are ignored.
     // Please mind thread safety, as this function is called by the network thread.
     IO_Result
     do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
@@ -34,16 +39,20 @@ class Abstract_Accept_Socket
 
     // Does nothing.
     // This function always returns zero.
-    // `lock` is ignored.
     size_t
     do_write_queue_size(simple_mutex::unique_lock& lock)
       const final;
 
     // Does nothing.
     // This function always returns `io_result_eof`.
-    // `lock` is ignored.
     IO_Result
     do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size)
+      final;
+
+    // Prints a line of text but does nothing otherwise.
+    // Please mind thread safety, as this function is called by the network thread.
+    void
+    do_socket_on_poll_close(int err)
       final;
 
   protected:
@@ -64,17 +73,24 @@ class Abstract_Accept_Socket
     do_socket_on_register(rcptr<Abstract_Socket>&& sock)
       = 0;
 
-    // Prints a line of text but does nothing otherwise.
+    // Notifies that this socket has been fully closed.
+    // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
+    virtual
     void
-    do_socket_on_poll_close(int err)
-      override;
+    do_socket_on_close(int err);
 
     // Binds this socket to the specified address and starts listening.
     // `backlog` is clamped between `1` and `SOMAXCONN`. Out-of-bound values
     // are truncated silently.
     void
     do_listen(const Socket_Address& addr, int backlog = INT_MAX);
+
+  public:
+    // Marks this socket as closed immediately.
+    bool
+    close()
+      noexcept;
   };
 
 }  // namespace poseidon

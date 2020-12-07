@@ -121,6 +121,7 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
     // Process the data that have been read.
     lock.unlock();
     this->do_socket_on_receive(hint, static_cast<size_t>(eptr - hint));
+
     lock.lock(this->m_io_mutex);
     return io_res;
   }
@@ -158,8 +159,8 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
 
       lock.unlock();
       this->do_socket_on_establish();
-      lock.lock(this->m_io_mutex);
     }
+    lock.lock(this->m_io_mutex);
 
     // Try writing some bytes.
     size_t navail = ::std::min(this->m_wqueue.size(), size);

@@ -94,37 +94,34 @@ do_socket_close_unlocked()
 IO_Result
 Abstract_UDP_Socket::
 do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
-  try {
+  {
     lock.lock(this->m_io_mutex);
 
     // If the socket is in CLOSED state, fail.
     if(this->m_cstate == connection_state_closed)
       return io_result_end_of_stream;
 
-    // Try reading a packet.
-    Socket_Address::storage addrst;
-    ::socklen_t addrlen = sizeof(addrst);
-    ::ssize_t nread = ::recvfrom(this->get_fd(), hint, size, 0, addrst, &addrlen);
-    if(nread < 0)
-      return do_translate_syscall_error("recvfrom", errno);
+    try {
+      // Try reading a packet.
+      Socket_Address::storage addrst;
+      ::socklen_t addrlen = sizeof(addrst);
+      ::ssize_t nread = ::recvfrom(this->get_fd(), hint, size, 0, addrst, &addrlen);
+      if(nread < 0)
+        return do_translate_syscall_error("recvfrom", errno);
 
-    // Process the packet that has been read.
-    lock.unlock();
-    this->do_socket_on_receive({ addrst, addrlen }, hint, static_cast<size_t>(nread));
+      // Process the packet that has been read.
+      lock.unlock();
+      this->do_socket_on_receive({ addrst, addrlen }, hint, static_cast<size_t>(nread));
+    }
+    catch(exception& stdex) {
+      // It is probably bad to let the exception propagate to network driver and kill
+      // this server socket... so we catch and ignore this exception.
+      POSEIDON_LOG_ERROR("UDP socket read error: $1\n"
+                         "[socket class `$2`]",
+                         stdex, typeid(*this));
+    }
+
     lock.lock(this->m_io_mutex);
-
-    // Warning: Don't return `io_result_end_of_stream` i.e. zero.
-    return io_result_partial_work;
-  }
-  catch(exception& stdex) {
-    // It is probably bad to let the exception propagate to network driver and kill
-    // this server socket... so we catch and ignore this exception.
-    POSEIDON_LOG_ERROR("Error reading UDP socket `$1`:\n"
-                       "$2\n"
-                       "[socket class `$3`]",
-                       this, stdex, typeid(*this));
-
-    // Read other packets. The error is considered non-fatal.
     return io_result_partial_work;
   }
 
@@ -152,7 +149,7 @@ do_write_queue_size(simple_mutex::unique_lock& lock)
 IO_Result
 Abstract_UDP_Socket::
 do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /*size*/)
-  try {
+  {
     lock.lock(this->m_io_mutex);
 
     // If the socket is in CLOSED state, fail.
@@ -167,50 +164,48 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
 
       lock.unlock();
       this->do_socket_on_establish();
-      lock.lock(this->m_io_mutex);
+    }
+    lock.lock(this->m_io_mutex);
+
+    try {
+      // Try extracting a packet.
+      // This function shall match `async_send()`.
+      Packet_Header header;
+      size_t size = this->m_wqueue.getn(reinterpret_cast<char*>(&header), sizeof(header));
+      if(size == 0) {
+        if(this->m_cstate <= connection_state_established)
+          return io_result_end_of_stream;
+
+        // Shut down the connection completely now.
+        return this->do_socket_close_unlocked();
+      }
+
+      // Get the destination address.
+      ROCKET_ASSERT(size == sizeof(header));
+      ROCKET_ASSERT(this->m_wqueue.size() >= header.addrlen + header.datalen);
+
+      Socket_Address::storage addrst;
+      ::socklen_t addrlen = header.addrlen;
+      size = this->m_wqueue.getn(reinterpret_cast<char*>(&addrst), addrlen);
+      ROCKET_ASSERT(size == addrlen);
+
+      // Write the payload, which shall be removed after `sendto()`, no matter whether it
+      // succeeds or not.
+      ::ssize_t nwritten = ::sendto(this->get_fd(), this->m_wqueue.data(), header.datalen,
+                                    0, addrst, addrlen);
+      this->m_wqueue.discard(header.datalen);
+      if(nwritten < 0)
+        return do_translate_syscall_error("sendto", errno);
+    }
+    catch(exception& stdex) {
+      // It is probably bad to let the exception propagate to network driver and kill
+      // this server socket... so we catch and ignore this exception.
+      POSEIDON_LOG_ERROR("UDP socket write error: $1\n"
+                         "[socket class `$2`]",
+                         stdex, typeid(*this));
     }
 
-    // Try extracting a packet.
-    // This function shall match `async_send()`.
-    Packet_Header header;
-    size_t size = this->m_wqueue.getn(reinterpret_cast<char*>(&header), sizeof(header));
-    if(size == 0) {
-      if(this->m_cstate <= connection_state_established)
-        return io_result_end_of_stream;
-
-      // Shut down the connection completely now.
-      return this->do_socket_close_unlocked();
-    }
-
-    // Get the destination address.
-    ROCKET_ASSERT(size == sizeof(header));
-    ROCKET_ASSERT(this->m_wqueue.size() >= header.addrlen + header.datalen);
-
-    Socket_Address::storage addrst;
-    ::socklen_t addrlen = header.addrlen;
-    size = this->m_wqueue.getn(reinterpret_cast<char*>(&addrst), addrlen);
-    ROCKET_ASSERT(size == addrlen);
-
-    // Write the payload, which shall be removed after `sendto()`, no matter whether it
-    // succeeds or not.
-    ::ssize_t nwritten = ::sendto(this->get_fd(), this->m_wqueue.data(), header.datalen,
-                                  0, addrst, addrlen);
-    this->m_wqueue.discard(header.datalen);
-    if(nwritten < 0)
-      return do_translate_syscall_error("sendto", errno);
-
-    // Warning: Don't return `io_result_end_of_stream` i.e. zero.
-    return io_result_partial_work;
-  }
-  catch(exception& stdex) {
-    // It is probably bad to let the exception propagate to network driver and kill
-    // this server socket... so we catch and ignore this exception.
-    POSEIDON_LOG_ERROR("Error writing UDP socket `$1`:\n"
-                       "$2\n"
-                       "[socket class `$3`]",
-                       this, stdex, typeid(*this));
-
-    // Write other packets. The error is considered non-fatal.
+    lock.lock(this->m_io_mutex);
     return io_result_partial_work;
   }
 
@@ -229,6 +224,8 @@ void
 Abstract_UDP_Socket::
 do_socket_on_establish()
   {
+    POSEIDON_LOG_INFO("UDP socket listening: local '$1'",
+                      this->get_local_address());
   }
 
 void
@@ -243,14 +240,10 @@ void
 Abstract_UDP_Socket::
 do_bind(const Socket_Address& addr)
   {
-    // Bind onto `addr`.
     if(::bind(this->get_fd(), addr.data(), addr.ssize()) != 0)
       POSEIDON_THROW("Failed to bind UDP socket onto '$2'\n"
                      "[`bind()` failed: $1]",
                      format_errno(errno), addr);
-
-    POSEIDON_LOG_INFO("UDP socket opened: local '$1'",
-                      this->get_local_address());
   }
 
 bool
@@ -271,16 +264,12 @@ do_socket_send(const Socket_Address& addr, const char* data, size_t size)
     // Please mind thread safety.
     // This function shall match `do_socket_on_poll_write()`.
     this->m_wqueue.reserve(sizeof(header) + header.addrlen + header.datalen);
-
     ::std::memcpy(this->m_wqueue.mut_end(), &header, sizeof(header));
     this->m_wqueue.accept(sizeof(header));
-
     ::std::memcpy(this->m_wqueue.mut_end(), addr.data(), header.addrlen);
     this->m_wqueue.accept(header.addrlen);
-
     ::std::memcpy(this->m_wqueue.mut_end(), data, header.datalen);
     this->m_wqueue.accept(header.datalen);
-
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.
