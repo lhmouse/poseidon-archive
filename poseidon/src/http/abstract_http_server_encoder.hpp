@@ -89,14 +89,24 @@ class Abstract_HTTP_Server_Encoder
                         const Option_Map& req_headers);
 
     // Puts a chunk of entity.
-    // `http_encoder_state()` must be 'closed', 'entity' or 'tunnel'.
+    // `http_encoder_state()` must be 'closed' or 'entity'.
     bool
     http_encode_entity(const char* data, size_t size);
 
     // Finishes the entity.
-    // `http_encoder_state()` must be 'closed', 'entity' or 'tunnel'.
+    // `http_encoder_state()` must be 'closed' or 'entity'.
     bool
     http_encode_end_of_entity();
+
+    // Sends data through this tunnel.
+    // `http_encoder_state()` must be 'closed' or 'tunnel'.
+    bool
+    http_encode_tunnel_data(const char* data, size_t size);
+
+    // Shuts the entity down.
+    // `http_encoder_state()` must be 'closed' or 'tunnel'.
+    bool
+    http_encode_tunnel_closure();
 
     // Puts a WebSocket frame.
     // `http_encoder_state()` must be 'closed' or 'websocket'.

@@ -327,9 +327,6 @@ http_encode_entity(const char* data, size_t size)
     if(this->m_state == encoder_state_closed)
       return false;
 
-    if(this->m_state == encoder_state_tunnel)
-      return this->do_http_on_server_send(data, size);
-
     if(this->m_state != encoder_state_entity)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'entity')");
 
@@ -359,17 +356,40 @@ http_encode_end_of_entity()
     if(this->m_state == encoder_state_closed)
       return false;
 
-    if(this->m_state == encoder_state_tunnel) {
-      // Shut the tunnel down.
-      this->m_state = encoder_state_closed;
-      return this->do_http_on_server_close();
-    }
-
     if(this->m_state != encoder_state_entity)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'entity')");
 
     // Finish this response message and expect the next one.
     return this->do_finish_http_message(encoder_state_headers);
+  }
+
+bool
+Abstract_HTTP_Server_Encoder::
+http_encode_tunnel_data(const char* data, size_t size)
+  {
+    if(this->m_state == encoder_state_closed)
+      return false;
+
+    if(this->m_state != encoder_state_tunnel)
+      POSEIDON_THROW("HTTP server encoder state error (expecting 'tunnel')");
+
+    // Forward outgoing data verbatim.
+    return this->do_http_on_server_send(data, size);
+  }
+
+bool
+Abstract_HTTP_Server_Encoder::
+http_encode_tunnel_closure()
+  {
+    if(this->m_state == encoder_state_closed)
+      return false;
+
+    if(this->m_state != encoder_state_tunnel)
+      POSEIDON_THROW("HTTP server encoder state error (expecting 'tunnel')");
+
+    // Shut the tunnel down.
+    this->m_state = encoder_state_closed;
+    return this->do_http_on_server_close();
   }
 
 bool
