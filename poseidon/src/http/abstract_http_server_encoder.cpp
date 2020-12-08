@@ -423,10 +423,10 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
     auto& obuf = defl->output_buffer();
 
     ROCKET_ASSERT(obuf.size() >= 4);
-    size_t real_size = obuf.size() - 4;
-    ROCKET_ASSERT(::memcmp(obuf.data() + real_size, "\x00\x00\xFF\xFF", 4) == 0);
+    size_t rlen = obuf.size() - 4;
+    ROCKET_ASSERT(::memcmp(obuf.data() + rlen, "\x00\x00\xFF\xFF", 4) == 0);
 
-    bool sent = this->do_encode_websocket_frame(2, opcode, obuf.data(), real_size);
+    bool sent = this->do_encode_websocket_frame(2, opcode, obuf.data(), rlen);
     obuf.clear();
     return sent;
   }
@@ -446,18 +446,14 @@ http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t si
     if(rlen != size)
       POSEIDON_LOG_WARN("Closure frame truncated (size `$1`)", size);
 
-    // Compose the frame header.
-    ::rocket::static_vector<char, 14> head;
-    head.emplace_back(0x81);  // CLOSE, FIN
-    head.emplace_back(2 + rlen);  // payload length
+    ::rocket::static_vector<char, 125> payload;
+    payload.emplace_back(stat >> 8);  // status (high)
+    payload.emplace_back(stat);  // status (low)
+    payload.append(data, data + size);
 
-    head.emplace_back(stat >> 8);  // status (high)
-    head.emplace_back(stat);       // status (low)
-
-    bool sent = this->do_http_on_server_send(head.data(), head.size()) &&
-                this->do_http_on_server_send(data, size);
-
-    // Shut the connection down after the final frame.
+    // Send the closure frame and shut the connection down.
+    bool sent = this->do_encode_websocket_frame(0, websocket_opcode_close,
+                                                payload.data(), payload.size());
     this->m_state = encoder_state_closed;
     sent = sent && this->do_http_on_server_close();
     return sent;
