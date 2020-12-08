@@ -20,7 +20,7 @@ class Abstract_Socket
     unique_FD m_fd;
 
     // These are used by network driver.
-    uint64_t m_epoll_data = 1234567890123456789;
+    uint64_t m_epoll_data = UINT64_MAX;
     uint32_t m_epoll_events = UINT32_MAX;
 
     // This the local address. It is initialized upon the first request.
