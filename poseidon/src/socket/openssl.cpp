@@ -3,6 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "openssl.hpp"
+#include "enums.hpp"
 #include "../core/config_file.hpp"
 #include "../static/main_config.hpp"
 #include "../util.hpp"
@@ -10,6 +11,21 @@
 
 namespace poseidon {
 namespace {
+
+void
+do_dump_ssl_errors()
+  noexcept
+  {
+    char sbuf[1024];
+    long index = -1;
+
+    while(unsigned long err = ::ERR_get_error())
+      ::ERR_error_string_n(err, sbuf, sizeof(sbuf)),
+        POSEIDON_LOG_ERROR("OpenSSL error: [$1] $2", ++index, sbuf);
+  }
+
+#define POSEIDON_SSL_THROW(...)  \
+      (::poseidon::do_dump_ssl_errors(), POSEIDON_THROW(__VA_ARGS__))
 
 unique_SSL_CTX
 do_create_server_ssl_ctx(const char* cert, const char* pkey)
@@ -96,21 +112,6 @@ do_create_default_client_ssl_ctx()
 
 }  // namespace
 
-size_t
-dump_ssl_errors()
-  noexcept
-  {
-    char sbuf[1024];
-    size_t index = 0;
-
-    while(unsigned long err = ::ERR_get_error()) {
-      ::ERR_error_string_n(err, sbuf, sizeof(sbuf));
-      POSEIDON_LOG_ERROR("OpenSSL error: [$1] $2", index, sbuf);
-      ++index;
-    }
-    return index;
-  }
-
 unique_SSL_CTX
 create_server_ssl_ctx(const char* cert_opt, const char* pkey_opt)
   {
@@ -155,7 +156,33 @@ create_ssl(::SSL_CTX* ctx, int fd)
     if(::SSL_set_fd(ssl, fd) != 1)
       POSEIDON_SSL_THROW("Could not set OpenSSL file descriptor\n"
                          "[`SSL_set_fd()` failed]");
+
+    // Return the I/O object.
     return ssl;
+  }
+
+IO_Result
+get_io_result_from_ssl_error(const char* func, const ::SSL* ssl, int ret)
+  {
+    int err = ::SSL_get_error(ssl, ret);
+    switch(err) {
+      case SSL_ERROR_NONE:
+      case SSL_ERROR_ZERO_RETURN:
+        return io_result_end_of_stream;
+
+      case SSL_ERROR_WANT_READ:
+      case SSL_ERROR_WANT_WRITE:
+      case SSL_ERROR_WANT_CONNECT:
+      case SSL_ERROR_WANT_ACCEPT:
+        return io_result_would_block;
+
+      case SSL_ERROR_SYSCALL:
+        return get_io_result_from_errno(func, errno);
+
+      default:
+        POSEIDON_SSL_THROW("OpenSSL error\n[`$1()` returned `$2`]",
+                           func, ret);
+    }
   }
 
 }  // namespace poseidon

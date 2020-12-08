@@ -7,23 +7,6 @@
 #include <netinet/tcp.h>
 
 namespace poseidon {
-namespace {
-
-IO_Result
-do_translate_syscall_error(const char* func, int err)
-  {
-    if(err == EINTR)
-      return io_result_partial_work;
-
-    if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
-      return io_result_would_block;
-
-    POSEIDON_THROW("TCP socket error\n"
-                   "[`$1()` failed: $2]",
-                   func, format_errno(err));
-  }
-
-}  // namespace
 
 Abstract_TCP_Socket::
 ~Abstract_TCP_Socket()
@@ -53,7 +36,7 @@ do_stream_read_unlocked(char*& data, size_t size)
   {
     ::ssize_t nread = ::read(this->get_fd(), data, size);
     if(nread < 0)
-      return do_translate_syscall_error("read", errno);
+      return get_io_result_from_errno("read", errno);
 
     if(nread == 0)
       return io_result_end_of_stream;
@@ -68,7 +51,7 @@ do_stream_write_unlocked(const char*& data, size_t size)
   {
     ::ssize_t nwritten = ::write(this->get_fd(), data, size);
     if(nwritten < 0)
-      return do_translate_syscall_error("write", errno);
+      return get_io_result_from_errno("write", errno);
 
     data += nwritten;
     return io_result_partial_work;

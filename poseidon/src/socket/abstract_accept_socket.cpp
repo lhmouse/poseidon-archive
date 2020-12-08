@@ -7,23 +7,6 @@
 #include "../util.hpp"
 
 namespace poseidon {
-namespace {
-
-IO_Result
-do_translate_syscall_error(const char* func, int err)
-  {
-    if(err == EINTR)
-      return io_result_partial_work;
-
-    if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
-      return io_result_would_block;
-
-    POSEIDON_THROW("Failed to accept incoming connection\n"
-                   "[`$1()` failed: $2]",
-                   func, format_errno(err));
-  }
-
-}  // namespace
 
 Abstract_Accept_Socket::
 ~Abstract_Accept_Socket()
@@ -52,7 +35,7 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /
       ::socklen_t addrlen = sizeof(addrst);
       unique_FD fd(::accept4(this->get_fd(), addrst, &addrlen, SOCK_NONBLOCK));
       if(!fd)
-        return do_translate_syscall_error("accept4", errno);
+        return get_io_result_from_errno("accept4", errno);
 
       // Create a new socket object.
       lock.unlock();

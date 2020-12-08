@@ -10,20 +10,6 @@
 namespace poseidon {
 namespace {
 
-IO_Result
-do_translate_syscall_error(const char* func, int err)
-  {
-    if(err == EINTR)
-      return io_result_partial_work;
-
-    if(::rocket::is_any_of(err, { EAGAIN, EWOULDBLOCK }))
-      return io_result_would_block;
-
-    POSEIDON_THROW("UDP socket error\n"
-                   "[`$1()` failed: $2]",
-                   func, format_errno(err));
-  }
-
 struct Packet_Header
   {
     uint16_t addrlen;
@@ -105,7 +91,7 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
       ::socklen_t addrlen = sizeof(addrst);
       ::ssize_t nread = ::recvfrom(this->get_fd(), hint, size, 0, addrst, &addrlen);
       if(nread < 0)
-        return do_translate_syscall_error("recvfrom", errno);
+        return get_io_result_from_errno("recvfrom", errno);
 
       // Process the packet that has been read.
       lock.unlock();
@@ -187,7 +173,7 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
                                     0, addrst, addrlen);
       this->m_wqueue.discard(header.datalen);
       if(nwritten < 0)
-        return do_translate_syscall_error("sendto", errno);
+        return get_io_result_from_errno("sendto", errno);
     }
     catch(exception& stdex) {
       // It is probably bad to let the exception propagate to network driver and kill

@@ -88,6 +88,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/http/abstract_http_client_decoder.cpp  \
   %reldir%/http/abstract_http_client_encoder.cpp  \
   %reldir%/http/abstract_http_server_decoder.cpp  \
+  %reldir%/socket/enums.cpp  \
   %reldir%/socket/openssl.cpp  \
   %reldir%/socket/socket_address.cpp  \
   %reldir%/socket/abstract_socket.cpp  \

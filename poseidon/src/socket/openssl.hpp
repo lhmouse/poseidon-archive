@@ -29,15 +29,6 @@ struct SSL_deleter
 using unique_SSL_CTX = uptr<::SSL_CTX, SSL_CTX_deleter>;
 using unique_SSL = uptr<::SSL, SSL_deleter>;
 
-// Prints all errors in OpenSSL error queue, then clears it.
-// Returns the number of errors that have been dumped.
-size_t
-dump_ssl_errors()
-  noexcept;
-
-#define POSEIDON_SSL_THROW(...)  \
-      (::poseidon::dump_ssl_errors(), POSEIDON_THROW(__VA_ARGS__))
-
 // Creates an `SSL_CTX` object for server use.
 // If neither `cert_opt` nor `pkey_opt` is null, they shall denote PEM
 // files containing the certificate chain and private key, respectively.
@@ -53,6 +44,10 @@ get_client_ssl_ctx();
 // Creates an `SSL` structure for a socket.
 unique_SSL
 create_ssl(::SSL_CTX* ctx, int fd);
+
+// Translate an OpenSSL error to `IO_Result` or throw an exception.
+IO_Result
+get_io_result_from_ssl_error(const char* func, const ::SSL* ssl, int ret);
 
 }  // namespace poseidon
 
