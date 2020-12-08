@@ -27,11 +27,11 @@ class Future
   public:
     Future()
       noexcept
-      { }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Future);
+      = default;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Future);
+
     // Gets the state, which is any of `future_state_empty`, `future_state_value`
     // or `future_state_except`.
     //

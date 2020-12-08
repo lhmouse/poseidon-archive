@@ -22,13 +22,11 @@ class Abstract_Timer
     int64_t m_first;
     int64_t m_period;
 
-  public:
+  protected:
     Abstract_Timer(int64_t first, int64_t period)
       noexcept
       : m_first(first), m_period(period)
       { }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Timer);
 
   protected:
     // `now` is the time of `CLOCK_MONOTONIC`.
@@ -40,6 +38,8 @@ class Abstract_Timer
       = 0;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Timer);
+
     // Marks this timer to be deleted.
     bool
     shut_down()

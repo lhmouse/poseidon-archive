@@ -12,13 +12,11 @@ class Abstract_TCP_Socket
   : public ::asteria::Rcfwd<Abstract_TCP_Socket>,
     public Abstract_Stream_Socket
   {
-  public:
+  protected:
     explicit
     Abstract_TCP_Socket(unique_FD&& fd)
       : Abstract_Stream_Socket(::std::move(fd))
       { this->do_set_common_options();  }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TCP_Socket);
 
   private:
     // Disables Nagle algorithm, etc.
@@ -69,6 +67,8 @@ class Abstract_TCP_Socket
       override;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TCP_Socket);
+
     using Abstract_Socket::get_fd;
     using Abstract_Socket::terminate;
     using Abstract_Socket::get_local_address;

@@ -18,13 +18,11 @@ class Abstract_UDP_Socket
     Connection_State m_cstate = connection_state_empty;
     linear_buffer m_wqueue;  // write queue
 
-  public:
+  protected:
     explicit
     Abstract_UDP_Socket(unique_FD&& fd)
       : Abstract_Socket(::std::move(fd))
       { }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_UDP_Socket);
 
   private:
     inline
@@ -92,6 +90,8 @@ class Abstract_UDP_Socket
     do_socket_send(const Socket_Address& addr, const char* data, size_t size);
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_UDP_Socket);
+
     using Abstract_Socket::get_fd;
     using Abstract_Socket::terminate;
     using Abstract_Socket::get_local_address;

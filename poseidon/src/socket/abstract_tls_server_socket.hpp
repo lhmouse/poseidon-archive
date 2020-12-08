@@ -16,7 +16,7 @@ class Abstract_TLS_Server_Socket
   private:
     unique_SSL_CTX m_ctx;
 
-  public:
+  protected:
     Abstract_TLS_Server_Socket(const Socket_Address& addr,
                                const char* cert_opt, const char* pkey_opt)
       : Abstract_Accept_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP)),
@@ -39,8 +39,6 @@ class Abstract_TLS_Server_Socket
       : Abstract_TLS_Server_Socket(bind, port,
                     nullptr, nullptr)  // use default key in 'main.conf'
       { }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Server_Socket);
 
   private:
     uptr<Abstract_Socket>
@@ -70,6 +68,8 @@ class Abstract_TLS_Server_Socket
       = 0;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Server_Socket);
+
     using Abstract_Socket::get_fd;
     using Abstract_Socket::terminate;
     using Abstract_Socket::get_local_address;

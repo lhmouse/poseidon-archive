@@ -33,12 +33,10 @@ class Abstract_HTTP_Server_Encoder
 
     rcfwdp<zlib_Deflator> m_deflator;
 
-  public:
+  protected:
     Abstract_HTTP_Server_Encoder()
       noexcept
-      { }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_HTTP_Server_Encoder);
+      = default;
 
   private:
     inline
@@ -72,6 +70,8 @@ class Abstract_HTTP_Server_Encoder
       = 0;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_HTTP_Server_Encoder);
+
     // Gets the state.
     Encoder_State
     http_encoder_state()

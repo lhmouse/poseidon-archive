@@ -36,9 +36,6 @@ class Abstract_Socket
     explicit
     Abstract_Socket(::sa_family_t family, int type, int protocol = 0);
 
-  public:
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Socket);
-
   protected:
     // The network driver notifies incoming data via this callback.
     // `lock` shall lock `*this` after the call if locking is supported.
@@ -77,6 +74,8 @@ class Abstract_Socket
       = 0;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Socket);
+
     // Marks this socket to be deleted if network driver holds its last reference.
     bool
     set_resident(bool value = true)

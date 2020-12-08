@@ -29,9 +29,9 @@ class zlib_Deflator
     explicit
     zlib_Deflator(Format fmt, int level = Z_DEFAULT_COMPRESSION);
 
+  public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(zlib_Deflator);
 
-  public:
     // Gets the output buffer.
     const ::rocket::linear_buffer&
     output_buffer()

@@ -30,9 +30,9 @@ class zlib_Inflator
     explicit
     zlib_Inflator(Format fmt);
 
+  public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(zlib_Inflator);
 
-  public:
     // Gets the output buffer.
     const ::rocket::linear_buffer&
     output_buffer()

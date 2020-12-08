@@ -13,11 +13,12 @@ class Abstract_HTTP_Server_Decoder
   {
   public:
 
-  public:
+  protected:
     Abstract_HTTP_Server_Decoder()
       noexcept
-      { }
+      = default;
 
+  public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_HTTP_Server_Decoder);
   };
 

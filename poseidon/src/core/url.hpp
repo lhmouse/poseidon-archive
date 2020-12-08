@@ -43,9 +43,9 @@ class URL
     operator=(const cow_string& str)
       { return this->parse(str);  }
 
+  public:
     ASTERIA_COPYABLE_DESTRUCTOR(URL);
 
-  public:
     // Gets the scheme.
     const cow_string&
     scheme()

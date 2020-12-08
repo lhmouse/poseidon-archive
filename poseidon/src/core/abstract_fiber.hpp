@@ -30,12 +30,10 @@ class Abstract_Fiber
 
     ::ucontext_t m_sched_uctx[1];
 
-  public:
+  protected:
     Abstract_Fiber()
       noexcept
-      { }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Fiber);
+      = default;
 
   protected:
     // Executes this fiber.
@@ -69,6 +67,8 @@ class Abstract_Fiber
       noexcept;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Fiber);
+
     // Marks this fiber to be deleted.
     bool
     shut_down()

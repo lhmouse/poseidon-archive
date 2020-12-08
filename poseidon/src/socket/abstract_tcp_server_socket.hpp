@@ -12,7 +12,7 @@ class Abstract_TCP_Server_Socket
   : public ::asteria::Rcfwd<Abstract_TCP_Server_Socket>,
     public Abstract_Accept_Socket
   {
-  public:
+  protected:
     explicit
     Abstract_TCP_Server_Socket(const Socket_Address& addr)
       : Abstract_Accept_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP))
@@ -21,8 +21,6 @@ class Abstract_TCP_Server_Socket
     Abstract_TCP_Server_Socket(const char* bind, uint16_t port)
       : Abstract_TCP_Server_Socket(Socket_Address(bind, port))
       { }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TCP_Server_Socket);
 
   private:
     uptr<Abstract_Socket>
@@ -52,6 +50,8 @@ class Abstract_TCP_Server_Socket
       = 0;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TCP_Server_Socket);
+
     using Abstract_Socket::get_fd;
     using Abstract_Socket::terminate;
     using Abstract_Socket::get_local_address;

@@ -20,14 +20,12 @@ class Abstract_Async_Job
     atomic_relaxed<bool> m_resident;  // don't delete if orphaned
     atomic_relaxed<Async_State> m_state;
 
-  public:
+  protected:
     explicit
     Abstract_Async_Job(uintptr_t key)
       noexcept
       : m_key(key)
       { }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Async_Job);
 
   protected:
     // Executes this job and satisfies some promise of the derived class.
@@ -39,6 +37,8 @@ class Abstract_Async_Job
       = 0;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Async_Job);
+
     // Marks this job to be deleted immediately.
     bool
     shut_down()

@@ -24,13 +24,11 @@ class Abstract_Stream_Socket
     mutable once_flag m_remote_addr_once;
     mutable Socket_Address m_remote_addr;
 
-  public:
+  protected:
     explicit
     Abstract_Stream_Socket(unique_FD&& fd)
       : Abstract_Socket(::std::move(fd))
       { }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Stream_Socket);
 
   private:
     inline
@@ -147,6 +145,8 @@ class Abstract_Stream_Socket
     do_socket_send(const char* data, size_t size);
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Stream_Socket);
+
     // Gets the (connected) address of the remote peer.
     // This function throws an exception if no peer has connected.
     const Socket_Address&

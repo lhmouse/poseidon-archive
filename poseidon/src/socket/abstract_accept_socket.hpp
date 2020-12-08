@@ -17,13 +17,11 @@ class Abstract_Accept_Socket
     mutable simple_mutex m_io_mutex;
     Connection_State m_cstate = connection_state_empty;
 
-  public:
+  protected:
     explicit
     Abstract_Accept_Socket(unique_FD&& fd)
       : Abstract_Socket(::std::move(fd))
       { this->do_set_common_options();  }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Accept_Socket);
 
   private:
     // Enables `SO_REUSEADDR`, etc.
@@ -87,6 +85,8 @@ class Abstract_Accept_Socket
     do_listen(const Socket_Address& addr, int backlog = INT_MAX);
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Accept_Socket);
+
     // Marks this socket as closed immediately.
     bool
     close()

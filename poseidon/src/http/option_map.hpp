@@ -27,8 +27,6 @@ class Option_Map
       noexcept
       { }
 
-    ASTERIA_COPYABLE_DESTRUCTOR(Option_Map);
-
   private:
     ROCKET_PURE_FUNCTION
     pair<const cow_string*, const cow_string*>
@@ -52,6 +50,8 @@ class Option_Map
     do_append_hint(const cow_string& key, size_t hval);
 
   public:
+    ASTERIA_COPYABLE_DESTRUCTOR(Option_Map);
+
     // iterators
     const_iterator
     begin()

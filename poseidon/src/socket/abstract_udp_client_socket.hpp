@@ -13,7 +13,7 @@ class Abstract_UDP_Client_Socket
   : public ::asteria::Rcfwd<Abstract_UDP_Client_Socket>,
     public Abstract_UDP_Socket
   {
-  public:
+  protected:
     explicit
     Abstract_UDP_Client_Socket(const Socket_Address& addr)
       : Abstract_UDP_Socket(addr.create_socket(SOCK_DGRAM, IPPROTO_UDP))
@@ -22,8 +22,6 @@ class Abstract_UDP_Client_Socket
     Abstract_UDP_Client_Socket(const char* host, uint16_t port)
       : Abstract_UDP_Client_Socket(Socket_Address(host, port))
       { }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_UDP_Client_Socket);
 
   protected:
     // Consumes an incoming packet.
@@ -34,6 +32,8 @@ class Abstract_UDP_Client_Socket
       = 0;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_UDP_Client_Socket);
+
     using Abstract_Socket::get_fd;
     using Abstract_Socket::terminate;
     using Abstract_Socket::get_local_address;

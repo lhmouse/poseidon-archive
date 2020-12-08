@@ -21,12 +21,10 @@ class Abstract_Future
     // These are scheduler data.
     mutable Abstract_Fiber* m_sched_ready_head = nullptr;
 
-  public:
+  protected:
     Abstract_Future()
       noexcept
-      { }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Future);
+      = default;
 
   private:
     // Checks whether a value or exception has been set.
@@ -38,6 +36,8 @@ class Abstract_Future
       { return this->state() == future_state_empty;  }
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Future);
+
     // Gets the state, which is any of `future_state_empty`, `future_state_value`
     // or `future_state_except`.
     ROCKET_PURE_FUNCTION virtual

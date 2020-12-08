@@ -16,13 +16,11 @@ class Abstract_TLS_Socket
   private:
     unique_SSL m_ssl;
 
-  public:
+  protected:
     Abstract_TLS_Socket(unique_FD&& fd, ::SSL_CTX* ctx)
       : Abstract_Stream_Socket(::std::move(fd)),
         m_ssl(noadl::create_ssl(ctx, this->get_fd()))
       { this->do_set_common_options();  }
-
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Socket);
 
   private:
     // Disables Nagle algorithm, etc.
@@ -73,6 +71,8 @@ class Abstract_TLS_Socket
       override;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Socket);
+
     using Abstract_Socket::get_fd;
     using Abstract_Socket::terminate;
     using Abstract_Socket::get_local_address;

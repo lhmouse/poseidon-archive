@@ -12,7 +12,7 @@ class Abstract_TLS_Client_Socket
   : public ::asteria::Rcfwd<Abstract_TLS_Client_Socket>,
     public Abstract_TLS_Socket
   {
-  public:
+  protected:
     explicit
     Abstract_TLS_Client_Socket(const Socket_Address& addr)
       : Abstract_TLS_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP),
@@ -23,13 +23,13 @@ class Abstract_TLS_Client_Socket
       : Abstract_TLS_Client_Socket(Socket_Address(host, port))
       { }
 
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Client_Socket);
-
   private:
     // This functions is forbidden for derived classes.
     using Abstract_TLS_Socket::do_socket_connect;
 
   public:
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Client_Socket);
+
     using Abstract_Socket::get_fd;
     using Abstract_Socket::terminate;
     using Abstract_Socket::get_local_address;
