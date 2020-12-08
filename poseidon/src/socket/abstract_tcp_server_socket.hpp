@@ -53,7 +53,7 @@ class Abstract_TCP_Server_Socket
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TCP_Server_Socket);
 
     using Abstract_Socket::get_fd;
-    using Abstract_Socket::terminate;
+    using Abstract_Socket::kill;
     using Abstract_Socket::get_local_address;
   };
 

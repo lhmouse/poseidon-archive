@@ -38,7 +38,7 @@ Abstract_Socket::
 
 void
 Abstract_Socket::
-terminate()
+kill()
   noexcept
   {
     // Enable linger to discard all pending data.

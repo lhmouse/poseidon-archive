@@ -31,7 +31,7 @@ class Abstract_TLS_Client_Socket
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Client_Socket);
 
     using Abstract_Socket::get_fd;
-    using Abstract_Socket::terminate;
+    using Abstract_Socket::kill;
     using Abstract_Socket::get_local_address;
 
     using Abstract_Stream_Socket::get_remote_address;
