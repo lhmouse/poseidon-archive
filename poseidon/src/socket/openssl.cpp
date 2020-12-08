@@ -79,11 +79,12 @@ do_create_default_client_ssl_ctx()
       POSEIDON_LOG_WARN("Note: CA certificate validation has been disabled."
                         " This configuration is not suitable for production use.\n"
                         "      Set `network.tls.trusted_ca_path` to enable.");
+
       ::SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, nullptr);
       return ctx;
     }
-
     POSEIDON_LOG_INFO("Setting SSL CA certificate path: $1", *ktpath);
+
     if(::SSL_CTX_load_verify_locations(ctx, nullptr, ktpath->safe_c_str()) != 1)
       POSEIDON_SSL_THROW("Could not set CA certificate path to '$1'\n"
                          "[`SSL_CTX_set_default_verify_paths()` failed]",
@@ -117,7 +118,8 @@ create_server_ssl_ctx(const char* cert_opt, const char* pkey_opt)
       return do_create_server_ssl_ctx(cert_opt, pkey_opt);
 
     if(cert_opt || cert_opt)
-      POSEIDON_THROW("Certificate and private key must be both specified or both absent");
+      POSEIDON_THROW("Certificate and private key must be both "
+                     "specified or both absent");
 
     // Create the default context.
     static const auto s_default_ctx = do_create_default_server_ssl_ctx();
