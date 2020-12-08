@@ -3,7 +3,7 @@
 
 #include "../precompiled.hpp"
 #include "zlib_stream_common.hpp"
-#include "../util.hpp"
+#include "../utils.hpp"
 
 namespace poseidon {
 namespace details_zlib_stream_common {

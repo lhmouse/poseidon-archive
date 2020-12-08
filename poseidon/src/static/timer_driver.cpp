@@ -4,7 +4,7 @@
 #include "../precompiled.hpp"
 #include "timer_driver.hpp"
 #include "../core/abstract_timer.hpp"
-#include "../util.hpp"
+#include "../utils.hpp"
 
 namespace poseidon {
 namespace {

@@ -6,7 +6,7 @@
 #include "option_map.hpp"
 #include "enums.hpp"
 #include "../core/zlib_deflator.hpp"
-#include "../util.hpp"
+#include "../utils.hpp"
 
 namespace poseidon {
 

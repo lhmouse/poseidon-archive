@@ -5,7 +5,7 @@
 #include "async_logger.hpp"
 #include "main_config.hpp"
 #include "../core/config_file.hpp"
-#include "../util.hpp"
+#include "../utils.hpp"
 #include <sys/syscall.h>
 
 namespace poseidon {

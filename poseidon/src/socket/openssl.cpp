@@ -6,7 +6,7 @@
 #include "enums.hpp"
 #include "../core/config_file.hpp"
 #include "../static/main_config.hpp"
-#include "../util.hpp"
+#include "../utils.hpp"
 #include <openssl/err.h>
 
 namespace poseidon {
