@@ -16,8 +16,8 @@ class Abstract_Socket
     friend Network_Driver;
 
   private:
-    atomic_relaxed<bool> m_resident;  // don't delete if orphaned
     unique_FD m_fd;
+    atomic_relaxed<bool> m_resident = { false };  // don't delete if orphaned
 
     // These are used by network driver.
     uint64_t m_epoll_data = UINT64_MAX;
@@ -27,18 +27,17 @@ class Abstract_Socket
     mutable once_flag m_local_addr_once;
     mutable Socket_Address m_local_addr;
 
-  public:
+  protected:
+    // Adopts a foreign or accepted socket.
     explicit
-    Abstract_Socket(unique_FD&& fd)
-      : m_resident(false), m_fd(::std::move(fd))
-      { this->do_set_common_options();  }
+    Abstract_Socket(unique_FD&& fd);
 
+    // Creates a new non-blocking socket.
+    explicit
+    Abstract_Socket(::sa_family_t family, int type, int protocol = 0);
+
+  public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Socket);
-
-  private:
-    // Enables non-blocking mode, etc.
-    void
-    do_set_common_options();
 
   protected:
     // The network driver notifies incoming data via this callback.

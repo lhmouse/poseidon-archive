@@ -9,21 +9,31 @@
 namespace poseidon {
 
 Abstract_Socket::
-~Abstract_Socket()
+Abstract_Socket(unique_FD&& fd)
   {
+    // Adopt the socket and enable non-blocking mode.
+    this->m_fd = ::std::move(fd);
+
+    int flags = ::fcntl(this->m_fd, F_GETFL);
+    if(!(flags & O_NONBLOCK))
+      ::fcntl(this->m_fd, F_SETFL, flags | O_NONBLOCK);
   }
 
-void
 Abstract_Socket::
-do_set_common_options()
+Abstract_Socket(::sa_family_t family, int type, int protocol)
   {
-    // Enable non-blocking mode.
-    int fl_old = ::fcntl(this->get_fd(), F_GETFL);
-    int fl_new = fl_old | O_NONBLOCK;
-    if(fl_old != fl_new) {
-      int res = ::fcntl(this->get_fd(), F_SETFL, fl_new);
-      ROCKET_ASSERT(res == 0);
-    }
+    // Create a non-blocking socket.
+    this->m_fd.reset(::socket(family, type | SOCK_NONBLOCK, protocol));
+    if(!this->m_fd)
+      POSEIDON_THROW(
+        "Could not create socket (family `$2`, type `$3`, protocol `$4`)\n"
+        "[`socket()` failed: $1]",
+        format_errno(errno), family, type, protocol);
+  }
+
+Abstract_Socket::
+~Abstract_Socket()
+  {
   }
 
 void
