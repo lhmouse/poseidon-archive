@@ -36,11 +36,6 @@ class Abstract_Stream_Socket
   private:
     inline
     IO_Result
-    do_call_stream_preclose_unlocked()
-      noexcept;
-
-    inline
-    IO_Result
     do_socket_close_unlocked()
       noexcept;
 
@@ -87,16 +82,6 @@ class Abstract_Stream_Socket
     virtual
     IO_Result
     do_stream_write_unlocked(const char*& data, size_t size)
-      = 0;
-
-    // Performs shutdown preparation.
-    // This function is called by the network thread. The current socket will have
-    // been locked by its caller. No synchronization is required.
-    // This function shall return `io_result_eof` if the shutdown operation has
-    // either completed or failed due to some irrecoverable errors.
-    virtual
-    IO_Result
-    do_stream_preclose_unlocked()
       = 0;
 
     // Notifies a full-duplex channel has been established.

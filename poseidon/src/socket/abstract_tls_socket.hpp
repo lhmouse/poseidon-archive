@@ -36,11 +36,6 @@ class Abstract_TLS_Socket
     do_stream_write_unlocked(const char*& data, size_t size)
       final;
 
-    // Calls `::SSL_shutdown()`.
-    IO_Result
-    do_stream_preclose_unlocked()
-      final;
-
   protected:
     // Notifies a full-duplex channel has been established.
     // The default implementation prints a message but does nothing otherwise.

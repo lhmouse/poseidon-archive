@@ -51,13 +51,6 @@ do_stream_write_unlocked(const char*& data, size_t size)
     return io_result_partial_work;
   }
 
-IO_Result
-Abstract_TCP_Socket::
-do_stream_preclose_unlocked()
-  {
-    return io_result_end_of_stream;
-  }
-
 void
 Abstract_TCP_Socket::
 do_socket_on_establish()

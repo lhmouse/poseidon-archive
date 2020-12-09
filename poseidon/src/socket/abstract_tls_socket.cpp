@@ -100,20 +100,6 @@ do_stream_write_unlocked(const char*& data, size_t size)
     return io_result_partial_work;
   }
 
-IO_Result
-Abstract_TLS_Socket::
-do_stream_preclose_unlocked()
-  {
-    int ret = ::SSL_shutdown(this->m_ssl);
-    if(ret == 0)
-      ret = ::SSL_shutdown(this->m_ssl);
-
-    if(ret < 0)
-      return do_translate_ssl_error("SSL_shutdown", this->m_ssl, ret);
-
-    return io_result_end_of_stream;
-  }
-
 void
 Abstract_TLS_Socket::
 do_socket_on_establish()
