@@ -16,7 +16,7 @@ class Config_File
     ::asteria::V_object m_root;
 
   public:
-    constexpr
+    explicit constexpr
     Config_File()
       noexcept
       = default;

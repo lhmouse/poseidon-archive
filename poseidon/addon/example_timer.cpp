@@ -14,6 +14,7 @@ constexpr int64_t period = 5000;  // repeat evert 5000ms
 
 struct Example_Timer : Abstract_Timer
   {
+    explicit
     Example_Timer()
       : Abstract_Timer(first, period)
       {

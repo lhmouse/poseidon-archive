@@ -23,6 +23,7 @@ class Abstract_Timer
     int64_t m_period;
 
   protected:
+    explicit
     Abstract_Timer(int64_t first, int64_t period)
       noexcept
       : m_first(first), m_period(period)

@@ -14,6 +14,7 @@ class Abstract_HTTP_Server_Decoder
   public:
 
   protected:
+    explicit
     Abstract_HTTP_Server_Decoder()
       noexcept
       = default;

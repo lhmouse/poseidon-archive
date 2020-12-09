@@ -9,6 +9,13 @@
 namespace poseidon {
 
 Abstract_TCP_Server_Socket::
+Abstract_TCP_Server_Socket(const Socket_Address& addr)
+  : Abstract_Accept_Socket(addr, SOCK_STREAM, IPPROTO_TCP)
+  {
+    this->do_socket_listen(addr);
+  }
+
+Abstract_TCP_Server_Socket::
 ~Abstract_TCP_Server_Socket()
   {
   }

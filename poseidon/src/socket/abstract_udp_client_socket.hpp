@@ -19,6 +19,7 @@ class Abstract_UDP_Client_Socket
       : Abstract_UDP_Socket(addr.create_socket(SOCK_DGRAM, IPPROTO_UDP))
       { }
 
+    explicit
     Abstract_UDP_Client_Socket(const char* host, uint16_t port)
       : Abstract_UDP_Client_Socket(Socket_Address(host, port))
       { }

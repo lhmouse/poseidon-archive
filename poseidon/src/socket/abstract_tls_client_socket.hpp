@@ -19,6 +19,7 @@ class Abstract_TLS_Client_Socket
                             noadl::get_client_ssl_ctx())
       { this->do_socket_connect(addr);  }
 
+    explicit
     Abstract_TLS_Client_Socket(const char* host, uint16_t port)
       : Abstract_TLS_Client_Socket(Socket_Address(host, port))
       { }

@@ -22,7 +22,7 @@ class Option_Map
     size_t m_nbkt = 0;
 
   public:
-    constexpr
+    explicit constexpr
     Option_Map()
       noexcept
       { }

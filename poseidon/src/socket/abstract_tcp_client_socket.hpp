@@ -18,6 +18,7 @@ class Abstract_TCP_Client_Socket
       : Abstract_TCP_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP))
       { this->do_socket_connect(addr);  }
 
+    explicit
     Abstract_TCP_Client_Socket(const char* host, uint16_t port)
       : Abstract_TCP_Client_Socket(Socket_Address(host, port))
       { }

@@ -22,6 +22,7 @@ class Abstract_Future
     mutable Abstract_Fiber* m_sched_ready_head = nullptr;
 
   protected:
+    explicit
     Abstract_Future()
       noexcept
       = default;

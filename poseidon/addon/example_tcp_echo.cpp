@@ -36,6 +36,7 @@ constexpr uint16_t port = 3809;
 
 struct Example_Server : Abstract_TCP_Server_Socket
   {
+    explicit
     Example_Server()
       : Abstract_TCP_Server_Socket(bind, port)
       {

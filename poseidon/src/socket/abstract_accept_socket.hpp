@@ -18,16 +18,13 @@ class Abstract_Accept_Socket
     Connection_State m_cstate = connection_state_empty;
 
   protected:
+    // Creates an accept socket.
+    // The address argument is used to determine the address family only.
+    // To bind this socket onto a given address, call `do_listen()`.
     explicit
-    Abstract_Accept_Socket(unique_FD&& fd)
-      : Abstract_Socket(::std::move(fd))
-      { this->do_set_common_options();  }
+    Abstract_Accept_Socket(const Socket_Address& addr, int type, int protocol = 0);
 
   private:
-    // Enables `SO_REUSEADDR`, etc.
-    void
-    do_set_common_options();
-
     // Accepts a socket in non-blocking mode.
     // `hint` and `size` are ignored.
     // Please mind thread safety, as this function is called by the network thread.
@@ -54,6 +51,12 @@ class Abstract_Accept_Socket
       final;
 
   protected:
+    // Binds this socket to the specified address and starts listening.
+    // `backlog` is clamped between `1` and `SOMAXCONN`. Out-of-bound values
+    // are truncated silently.
+    void
+    do_socket_listen(const Socket_Address& addr, int backlog = INT_MAX);
+
     // Consumes an accepted socket descriptor.
     // This function shall allocate and return a new socket object.
     // Please mind thread safety, as this function is called by the network thread.
@@ -77,12 +80,6 @@ class Abstract_Accept_Socket
     virtual
     void
     do_socket_on_close(int err);
-
-    // Binds this socket to the specified address and starts listening.
-    // `backlog` is clamped between `1` and `SOMAXCONN`. Out-of-bound values
-    // are truncated silently.
-    void
-    do_listen(const Socket_Address& addr, int backlog = INT_MAX);
 
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Accept_Socket);

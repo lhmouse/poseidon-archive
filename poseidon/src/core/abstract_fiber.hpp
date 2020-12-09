@@ -31,6 +31,7 @@ class Abstract_Fiber
     ::ucontext_t m_sched_uctx[1];
 
   protected:
+    explicit
     Abstract_Fiber()
       noexcept
       = default;

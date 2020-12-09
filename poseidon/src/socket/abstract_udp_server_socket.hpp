@@ -18,6 +18,7 @@ class Abstract_UDP_Server_Socket
       : Abstract_UDP_Socket(addr.create_socket(SOCK_DGRAM, IPPROTO_UDP))
       { this->do_bind(addr);  }
 
+    explicit
     Abstract_UDP_Server_Socket(const char* bind, uint16_t port)
       : Abstract_UDP_Server_Socket(Socket_Address(bind, port))
       { }

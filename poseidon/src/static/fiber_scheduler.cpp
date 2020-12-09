@@ -229,13 +229,13 @@ union Fancy_Fiber_Pointer
     Abstract_Fiber* fiber;
     int words[2];
 
-    constexpr
+    explicit constexpr
     Fancy_Fiber_Pointer(Abstract_Fiber* xfiber)
       noexcept
       : fiber(xfiber)
       { }
 
-    constexpr
+    explicit constexpr
     Fancy_Fiber_Pointer(int word_0, int word_1)
       noexcept
       : words{ word_0, word_1 }
@@ -253,6 +253,7 @@ class Queue_Semaphore
     ::sem_t m_sem[1];
 
   public:
+    explicit
     Queue_Semaphore()
       {
         int r = ::sem_init(this->m_sem, 0, 0);

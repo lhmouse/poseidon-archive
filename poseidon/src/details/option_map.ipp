@@ -49,7 +49,7 @@ class Bucket
                 ::rocket::cow_vector<cow_string>> m_val;
 
   public:
-    constexpr
+    explicit constexpr
     Bucket()
       noexcept
       = default;
@@ -219,6 +219,7 @@ class Iterator
 
   private:
     // This constructor is called by the container.
+    explicit
     Iterator(bucketT* begin, size_t ncur, size_t nend)
       noexcept
       : m_begin(begin), m_cur(begin + ncur), m_end(begin + nend)
@@ -255,7 +256,7 @@ class Iterator
       }
 
   public:
-    constexpr
+    explicit constexpr
     Iterator()
       noexcept
       : m_begin(), m_cur(), m_end(),
@@ -264,7 +265,7 @@ class Iterator
 
     template<typename yvalueT, typename ybucketT,
     ROCKET_ENABLE_IF(::std::is_convertible<ybucketT*, bucketT*>::value)>
-    constexpr
+    explicit constexpr
     Iterator(const Iterator<yvalueT, ybucketT>& other)
       noexcept
       : m_begin(other.m_begin),

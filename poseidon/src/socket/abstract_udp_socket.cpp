@@ -95,7 +95,8 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
 
       // Process the packet that has been read.
       lock.unlock();
-      this->do_socket_on_receive({ addrst, addrlen }, hint, static_cast<size_t>(nread));
+      this->do_socket_on_receive(Socket_Address(addrst, addrlen),
+                                 hint, static_cast<size_t>(nread));
     }
     catch(exception& stdex) {
       // It is probably bad to let the exception propagate to network driver and kill

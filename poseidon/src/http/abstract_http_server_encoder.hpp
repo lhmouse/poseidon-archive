@@ -34,6 +34,7 @@ class Abstract_HTTP_Server_Encoder
     rcfwdp<zlib_Deflator> m_deflator;
 
   protected:
+    explicit
     Abstract_HTTP_Server_Encoder()
       noexcept
       = default;

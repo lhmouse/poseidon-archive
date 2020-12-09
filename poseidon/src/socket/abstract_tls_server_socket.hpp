@@ -17,27 +17,28 @@ class Abstract_TLS_Server_Socket
     unique_SSL_CTX m_ctx;
 
   protected:
+    // Creates a listening socket that accepts TLS connections over TCP.
+    // If both `cert_opt` and `pkey_opt` are null, the default certificate and
+    // private key in 'main.conf' are used.
+    explicit
     Abstract_TLS_Server_Socket(const Socket_Address& addr,
-                               const char* cert_opt, const char* pkey_opt)
-      : Abstract_Accept_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP)),
-        m_ctx(noadl::create_server_ssl_ctx(cert_opt, pkey_opt))
-      { this->do_listen(addr);  }
+                               const char* cert_opt, const char* pkey_opt);
 
     explicit
-    Abstract_TLS_Server_Socket(const Socket_Address& addr)
-      : Abstract_TLS_Server_Socket(addr,
-                    nullptr, nullptr)  // use default key in 'main.conf'
-      { }
-
     Abstract_TLS_Server_Socket(const char* bind, uint16_t port,
                                const char* cert_opt, const char* pkey_opt)
       : Abstract_TLS_Server_Socket(Socket_Address(bind, port),
-                    cert_opt, pkey_opt)
+                                   cert_opt, pkey_opt)
       { }
 
+    explicit
+    Abstract_TLS_Server_Socket(const Socket_Address& addr)
+      : Abstract_TLS_Server_Socket(addr, nullptr, nullptr)
+      { }
+
+    explicit
     Abstract_TLS_Server_Socket(const char* bind, uint16_t port)
-      : Abstract_TLS_Server_Socket(bind, port,
-                    nullptr, nullptr)  // use default key in 'main.conf'
+      : Abstract_TLS_Server_Socket(Socket_Address(bind, port))
       { }
 
   private:

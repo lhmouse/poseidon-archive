@@ -13,11 +13,11 @@ class Abstract_TCP_Server_Socket
     public Abstract_Accept_Socket
   {
   protected:
+    // Creates a listening socket that accepts TCP connections.
     explicit
-    Abstract_TCP_Server_Socket(const Socket_Address& addr)
-      : Abstract_Accept_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP))
-      { this->do_listen(addr);  }
+    Abstract_TCP_Server_Socket(const Socket_Address& addr);
 
+    explicit
     Abstract_TCP_Server_Socket(const char* bind, uint16_t port)
       : Abstract_TCP_Server_Socket(Socket_Address(bind, port))
       { }

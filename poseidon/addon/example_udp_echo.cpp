@@ -14,6 +14,7 @@ constexpr uint16_t port = 3807;
 
 struct Example_Server : Abstract_UDP_Server_Socket
   {
+    explicit
     Example_Server()
       : Abstract_UDP_Server_Socket(bind, port)
       {

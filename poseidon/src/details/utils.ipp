@@ -92,19 +92,21 @@ class Timer
 
   public:
     template<typename... ParamsT>
+    explicit
     Timer(int64_t next, int64_t period, ParamsT&&... params)
       : Abstract_Timer(next, period),
         m_func(::std::forward<ParamsT>(params)...)
       { }
-
-    ~Timer()
-      override;
 
   private:
     void
     do_on_async_timer(int64_t now)
       override
       { this->m_func(now);  }
+
+  public:
+    ~Timer()
+      override;
   };
 
 template<typename FuncT>
@@ -130,19 +132,18 @@ class Async
 
   public:
     template<typename... ParamsT>
+    explicit
     Async(uintptr_t key, ParamsT&&... params)
       : Abstract_Async_Job(key),
         m_func(::std::forward<ParamsT>(params)...)
       { }
 
     template<typename... ParamsT>
+    explicit
     Async(random_key_t, ParamsT&&... params)
       : Abstract_Async_Job(reinterpret_cast<uintptr_t>(this) / alignof(max_align_t)),
         m_func(::std::forward<ParamsT>(params)...)
       { }
-
-    ~Async()
-      override;
 
   private:
     void
@@ -156,6 +157,9 @@ class Async
       }
 
   public:
+    ~Async()
+      override;
+
     futp<result_type>
     future()
       const

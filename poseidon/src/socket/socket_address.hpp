@@ -26,16 +26,18 @@ class Socket_Address
 
   public:
     // Note this is a trivially copyable and destructible class.
-    constexpr
+    explicit constexpr
     Socket_Address()
       noexcept
       : m_stor(), m_size(0)
       { }
 
+    explicit
     Socket_Address(const storage& stor, size_t size)
       noexcept
       { this->assign(stor, size);  }
 
+    explicit
     Socket_Address(const char* host, uint16_t port)
       { this->parse(host, port);  }
 

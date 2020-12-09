@@ -18,6 +18,7 @@ class Promise
     rcptr<Future<ValueT>> m_futp;
 
   public:
+    explicit
     Promise()
       noexcept
       { }
@@ -38,9 +39,6 @@ class Promise
         this->m_futp = ::std::move(other.m_futp);
         return *this;
       }
-
-    ~Promise()
-      { this->do_dispose();  }
 
   private:
     bool
@@ -74,6 +72,9 @@ class Promise
       }
 
   public:
+    ~Promise()
+      { this->do_dispose();  }
+
     // Gets a reference to the associated future.
     // If `m_futp` is null, a new future is created and associated.
     futp<ValueT>

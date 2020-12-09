@@ -9,18 +9,19 @@
 namespace poseidon {
 
 Abstract_Accept_Socket::
-~Abstract_Accept_Socket()
+Abstract_Accept_Socket(const Socket_Address& addr, int type, int protocol)
+  : Abstract_Socket(addr.family(), type, protocol)
   {
+    // Allow reuse of addresses.
+    static constexpr int yes[] = { -1 };
+    int res = ::setsockopt(this->get_fd(), SOL_SOCKET,
+                           SO_REUSEADDR, yes, sizeof(yes));
+    ROCKET_ASSERT(res == 0);
   }
 
-void
 Abstract_Accept_Socket::
-do_set_common_options()
+~Abstract_Accept_Socket()
   {
-    // Enable reusing addresses.
-    static constexpr int yes[] = { -1 };
-    int res = ::setsockopt(this->get_fd(), SOL_SOCKET, SO_REUSEADDR, yes, sizeof(yes));
-    ROCKET_ASSERT(res == 0);
   }
 
 IO_Result
@@ -96,15 +97,7 @@ do_socket_on_poll_close(int err)
 
 void
 Abstract_Accept_Socket::
-do_socket_on_close(int err)
-  {
-    POSEIDON_LOG_INFO("Accept socket closed: local '$1', $2",
-                      this->get_local_address(), format_errno(err));
-  }
-
-void
-Abstract_Accept_Socket::
-do_listen(const Socket_Address& addr, int backlog)
+do_socket_listen(const Socket_Address& addr, int backlog)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate != connection_state_empty)
@@ -125,6 +118,14 @@ do_listen(const Socket_Address& addr, int backlog)
 
     POSEIDON_LOG_INFO("Accept socket listening: local '$1'",
                       this->get_local_address());
+  }
+
+void
+Abstract_Accept_Socket::
+do_socket_on_close(int err)
+  {
+    POSEIDON_LOG_INFO("Accept socket closed: local '$1', $2",
+                      this->get_local_address(), format_errno(err));
   }
 
 bool

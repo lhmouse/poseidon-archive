@@ -25,6 +25,7 @@ class Future
       > m_stor;
 
   public:
+    explicit
     Future()
       noexcept
       = default;

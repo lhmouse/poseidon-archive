@@ -17,6 +17,7 @@ class Abstract_TLS_Socket
     unique_SSL m_ssl;
 
   protected:
+    explicit
     Abstract_TLS_Socket(unique_FD&& fd, ::SSL_CTX* ctx)
       : Abstract_Stream_Socket(::std::move(fd)),
         m_ssl(noadl::create_ssl(ctx, this->get_fd()))
