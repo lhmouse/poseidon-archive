@@ -6,8 +6,6 @@
 
 #include "../fwd.hpp"
 #include "../details/zlib_stream_common.hpp"
-#define ZLIB_CONST 1
-#include <zlib.h>
 
 namespace poseidon {
 
