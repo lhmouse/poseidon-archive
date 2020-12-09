@@ -11,7 +11,7 @@ namespace poseidon {
 Abstract_TLS_Server_Socket::
 Abstract_TLS_Server_Socket(const Socket_Address& addr,
                            const char* cert_opt, const char* pkey_opt)
-  : Abstract_Accept_Socket(addr, SOCK_STREAM, IPPROTO_TCP),
+  : Abstract_Accept_Socket(addr.family()),
     m_ctx(noadl::create_server_ssl_ctx(cert_opt, pkey_opt))
   {
     this->do_socket_listen(addr);

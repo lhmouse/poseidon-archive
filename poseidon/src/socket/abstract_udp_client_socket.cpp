@@ -8,6 +8,12 @@
 namespace poseidon {
 
 Abstract_UDP_Client_Socket::
+Abstract_UDP_Client_Socket(const Socket_Address& addr)
+  : Abstract_UDP_Socket(addr.family())
+  {
+  }
+
+Abstract_UDP_Client_Socket::
 ~Abstract_UDP_Client_Socket()
   {
   }

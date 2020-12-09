@@ -9,14 +9,9 @@
 namespace poseidon {
 
 Abstract_Accept_Socket::
-Abstract_Accept_Socket(const Socket_Address& addr, int type, int protocol)
-  : Abstract_Socket(addr.family(), type, protocol)
+Abstract_Accept_Socket(::sa_family_t family)
+  : Abstract_Socket(family, SOCK_STREAM, IPPROTO_TCP)
   {
-    // Allow reuse of addresses.
-    static constexpr int yes[] = { -1 };
-    int res = ::setsockopt(this->get_fd(), SOL_SOCKET,
-                           SO_REUSEADDR, yes, sizeof(yes));
-    ROCKET_ASSERT(res == 0);
   }
 
 Abstract_Accept_Socket::
@@ -102,6 +97,11 @@ do_socket_listen(const Socket_Address& addr, int backlog)
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate != connection_state_empty)
       POSEIDON_THROW("Socket state error (fresh socket expected)");
+
+    static constexpr int yes[] = { -1 };
+    int res = ::setsockopt(this->get_fd(), SOL_SOCKET,
+                           SO_REUSEADDR, yes, sizeof(yes));
+    ROCKET_ASSERT(res == 0);
 
     if(::bind(this->get_fd(), addr.data(), addr.ssize()) != 0)
       POSEIDON_THROW("Failed to bind accept socket onto '$2'\n"

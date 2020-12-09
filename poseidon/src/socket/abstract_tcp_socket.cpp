@@ -4,7 +4,6 @@
 #include "../precompiled.hpp"
 #include "abstract_tcp_socket.hpp"
 #include "../utils.hpp"
-#include <netinet/tcp.h>
 
 namespace poseidon {
 
@@ -12,11 +11,12 @@ Abstract_TCP_Socket::
 Abstract_TCP_Socket(unique_FD&& fd)
   : Abstract_Stream_Socket(::std::move(fd))
   {
-    // Disables Nagle algorithm.
-    static constexpr int yes[] = { -1 };
-    int res = ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY,
-                           yes, sizeof(yes));
-    ROCKET_ASSERT(res == 0);
+  }
+
+Abstract_TCP_Socket::
+Abstract_TCP_Socket(::sa_family_t family)
+  : Abstract_Stream_Socket(family)
+  {
   }
 
 Abstract_TCP_Socket::

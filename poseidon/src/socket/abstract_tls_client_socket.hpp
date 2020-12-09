@@ -13,11 +13,9 @@ class Abstract_TLS_Client_Socket
     public Abstract_TLS_Socket
   {
   protected:
+    // Creates a TCP socket that will connect to `addr`.
     explicit
-    Abstract_TLS_Client_Socket(const Socket_Address& addr)
-      : Abstract_TLS_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP),
-                            noadl::get_client_ssl_ctx())
-      { this->do_socket_connect(addr);  }
+    Abstract_TLS_Client_Socket(const Socket_Address& addr);
 
     explicit
     Abstract_TLS_Client_Socket(const char* host, uint16_t port)

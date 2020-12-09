@@ -13,10 +13,9 @@ class Abstract_TCP_Client_Socket
     public Abstract_TCP_Socket
   {
   protected:
+    // Creates a TCP socket that will connect to `addr`.
     explicit
-    Abstract_TCP_Client_Socket(const Socket_Address& addr)
-      : Abstract_TCP_Socket(addr.create_socket(SOCK_STREAM, IPPROTO_TCP))
-      { this->do_socket_connect(addr);  }
+    Abstract_TCP_Client_Socket(const Socket_Address& addr);
 
     explicit
     Abstract_TCP_Client_Socket(const char* host, uint16_t port)

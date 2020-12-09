@@ -13,8 +13,13 @@ class Abstract_TCP_Socket
     public Abstract_Stream_Socket
   {
   protected:
+    // Adopts a foreign or accepted socket.
     explicit
     Abstract_TCP_Socket(unique_FD&& fd);
+
+    // Creates a new non-blocking socket.
+    explicit
+    Abstract_TCP_Socket(::sa_family_t family);
 
   private:
     // Does nothing as no preparation is needed.

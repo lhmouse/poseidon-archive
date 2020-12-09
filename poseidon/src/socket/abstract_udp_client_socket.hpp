@@ -5,7 +5,6 @@
 #define POSEIDON_SOCKET_ABSTRACT_UDP_CLIENT_SOCKET_HPP_
 
 #include "abstract_udp_socket.hpp"
-#include "abstract_udp_socket.hpp"
 
 namespace poseidon {
 
@@ -14,10 +13,9 @@ class Abstract_UDP_Client_Socket
     public Abstract_UDP_Socket
   {
   protected:
+    // Creates a socket that sends and receives UDP datagrams.
     explicit
-    Abstract_UDP_Client_Socket(const Socket_Address& addr)
-      : Abstract_UDP_Socket(addr.create_socket(SOCK_DGRAM, IPPROTO_UDP))
-      { }
+    Abstract_UDP_Client_Socket(const Socket_Address& addr);
 
     explicit
     Abstract_UDP_Client_Socket(const char* host, uint16_t port)

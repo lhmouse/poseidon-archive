@@ -17,8 +17,13 @@ class Abstract_TLS_Socket
     unique_SSL m_ssl;
 
   protected:
+    // Adopts a foreign or accepted socket.
     explicit
     Abstract_TLS_Socket(unique_FD&& fd, ::SSL_CTX* ctx);
+
+    // Creates a new non-blocking socket.
+    explicit
+    Abstract_TLS_Socket(::sa_family_t family, ::SSL_CTX* ctx);
 
   private:
     // Calls `::SSL_set_connect_state()`.

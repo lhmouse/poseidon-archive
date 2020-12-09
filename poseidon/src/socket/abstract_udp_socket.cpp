@@ -19,19 +19,25 @@ struct Packet_Header
 int
 do_ifname_to_ifindex(const char* ifname)
   {
-    if(*ifname == 0)
-      return 0;  // default
-
-    unsigned ifindex = ::if_nametoindex(ifname);
-    if(ifindex == 0)
-      POSEIDON_THROW("Invalid network interface `$2`\n"
-                     "[`$1()` failed: $1]",
-                     format_errno(errno), ifname);
-
-    return static_cast<int>(ifindex);
+    int ifindex = 0;  // default
+    if(ifname && *ifname) {
+      // Note that valid indices start from one.
+      ifindex = static_cast<int>(::if_nametoindex(ifname));
+      if(ifindex == 0)
+        POSEIDON_THROW("Invalid network interface `$2`\n"
+                       "[`$1()` failed: $1]",
+                       format_errno(errno), ifname);
+    }
+    return ifindex;
   }
 
 }  // namespace
+
+Abstract_UDP_Socket::
+Abstract_UDP_Socket(::sa_family_t family)
+  : Abstract_Socket(family, SOCK_DGRAM, IPPROTO_UDP)
+  {
+  }
 
 Abstract_UDP_Socket::
 ~Abstract_UDP_Socket()
@@ -201,6 +207,21 @@ do_socket_on_poll_close(int err)
 
 void
 Abstract_UDP_Socket::
+do_socket_bind(const Socket_Address& addr)
+  {
+    static constexpr int yes[] = { -1 };
+    int res = ::setsockopt(this->get_fd(), SOL_SOCKET,
+                           SO_REUSEADDR, yes, sizeof(yes));
+    ROCKET_ASSERT(res == 0);
+
+    if(::bind(this->get_fd(), addr.data(), addr.ssize()) != 0)
+      POSEIDON_THROW("Failed to bind UDP socket onto '$2'\n"
+                     "[`bind()` failed: $1]",
+                     format_errno(errno), addr);
+  }
+
+void
+Abstract_UDP_Socket::
 do_socket_on_establish()
   {
     POSEIDON_LOG_INFO("UDP socket listening: local '$1'",
@@ -213,16 +234,6 @@ do_socket_on_close(int err)
   {
     POSEIDON_LOG_INFO("UDP socket closed: local '$1', $2",
                       this->get_local_address(), format_errno(err));
-  }
-
-void
-Abstract_UDP_Socket::
-do_bind(const Socket_Address& addr)
-  {
-    if(::bind(this->get_fd(), addr.data(), addr.ssize()) != 0)
-      POSEIDON_THROW("Failed to bind UDP socket onto '$2'\n"
-                     "[`bind()` failed: $1]",
-                     format_errno(errno), addr);
   }
 
 bool

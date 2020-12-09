@@ -27,8 +27,7 @@ class Abstract_TLS_Server_Socket
     explicit
     Abstract_TLS_Server_Socket(const char* bind, uint16_t port,
                                const char* cert_opt, const char* pkey_opt)
-      : Abstract_TLS_Server_Socket(Socket_Address(bind, port),
-                                   cert_opt, pkey_opt)
+      : Abstract_TLS_Server_Socket(Socket_Address(bind, port), cert_opt, pkey_opt)
       { }
 
     explicit

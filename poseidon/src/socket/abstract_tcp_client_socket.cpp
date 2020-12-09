@@ -8,6 +8,13 @@
 namespace poseidon {
 
 Abstract_TCP_Client_Socket::
+Abstract_TCP_Client_Socket(const Socket_Address& addr)
+  : Abstract_TCP_Socket(addr.family())
+  {
+    this->do_socket_connect(addr);
+  }
+
+Abstract_TCP_Client_Socket::
 ~Abstract_TCP_Client_Socket()
   {
   }

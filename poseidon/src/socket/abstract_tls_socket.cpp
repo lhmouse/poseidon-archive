@@ -4,23 +4,21 @@
 #include "../precompiled.hpp"
 #include "abstract_tls_socket.hpp"
 #include "../utils.hpp"
-#include <netinet/tcp.h>
 
 namespace poseidon {
 
 Abstract_TLS_Socket::
 Abstract_TLS_Socket(unique_FD&& fd, ::SSL_CTX* ctx)
   : Abstract_Stream_Socket(::std::move(fd)),
-    m_ssl(noadl::create_ssl(ctx, this->get_fd()))
+    m_ssl(create_ssl(ctx, this->get_fd()))
   {
-    // Disables Nagle algorithm.
-    static constexpr int yes[] = { -1 };
-    int res = ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY,
-                           yes, sizeof(yes));
-    ROCKET_ASSERT(res == 0);
+  }
 
-    // This can be overwritten if `async_connect()` is called later.
-    ::SSL_set_accept_state(this->m_ssl);
+Abstract_TLS_Socket::
+Abstract_TLS_Socket(::sa_family_t family, ::SSL_CTX* ctx)
+  : Abstract_Stream_Socket(family),
+    m_ssl(create_ssl(ctx, this->get_fd()))
+  {
   }
 
 Abstract_TLS_Socket::

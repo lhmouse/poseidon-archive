@@ -5,8 +5,21 @@
 #include "abstract_stream_socket.hpp"
 #include "../static/network_driver.hpp"
 #include "../utils.hpp"
+#include <netinet/tcp.h>
 
 namespace poseidon {
+
+Abstract_Stream_Socket::
+Abstract_Stream_Socket(unique_FD&& fd)
+  : Abstract_Socket(::std::move(fd))
+  {
+  }
+
+Abstract_Stream_Socket::
+Abstract_Stream_Socket(::sa_family_t family)
+  : Abstract_Socket(family, SOCK_STREAM, IPPROTO_TCP)
+  {
+  }
 
 Abstract_Stream_Socket::
 ~Abstract_Stream_Socket()
@@ -152,6 +165,12 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
     // If the stream is in CONNECTING state, mark it ESTABLISHED.
     if(this->m_cstate < connection_state_established) {
       this->m_cstate = connection_state_established;
+
+      // Disables Nagle algorithm.
+      static constexpr int yes[] = { -1 };
+      int res = ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY,
+                             yes, sizeof(yes));
+      ROCKET_ASSERT(res == 0);
 
       lock.unlock();
       this->do_socket_on_establish();

@@ -18,11 +18,9 @@ class Abstract_Accept_Socket
     Connection_State m_cstate = connection_state_empty;
 
   protected:
-    // Creates an accept socket.
-    // The address argument is used to determine the address family only.
-    // To bind this socket onto a given address, call `do_listen()`.
+    // Creates a new non-blocking socket.
     explicit
-    Abstract_Accept_Socket(const Socket_Address& addr, int type, int protocol = 0);
+    Abstract_Accept_Socket(::sa_family_t family);
 
   private:
     // Accepts a socket in non-blocking mode.

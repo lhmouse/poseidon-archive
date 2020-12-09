@@ -25,10 +25,13 @@ class Abstract_Stream_Socket
     mutable Socket_Address m_remote_addr;
 
   protected:
+    // Adopts a foreign or accepted socket.
     explicit
-    Abstract_Stream_Socket(unique_FD&& fd)
-      : Abstract_Socket(::std::move(fd))
-      { }
+    Abstract_Stream_Socket(unique_FD&& fd);
+
+    // Creates a new non-blocking socket.
+    explicit
+    Abstract_Stream_Socket(::sa_family_t family);
 
   private:
     inline

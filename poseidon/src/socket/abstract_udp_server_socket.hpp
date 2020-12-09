@@ -13,10 +13,9 @@ class Abstract_UDP_Server_Socket
     public Abstract_UDP_Socket
   {
   protected:
+    // Creates a listening socket that accepts UDP datagrams.
     explicit
-    Abstract_UDP_Server_Socket(const Socket_Address& addr)
-      : Abstract_UDP_Socket(addr.create_socket(SOCK_DGRAM, IPPROTO_UDP))
-      { this->do_bind(addr);  }
+    Abstract_UDP_Server_Socket(const Socket_Address& addr);
 
     explicit
     Abstract_UDP_Server_Socket(const char* bind, uint16_t port)

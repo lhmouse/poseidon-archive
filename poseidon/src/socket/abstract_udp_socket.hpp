@@ -19,10 +19,9 @@ class Abstract_UDP_Socket
     linear_buffer m_wqueue;  // write queue
 
   protected:
+    // Creates a new non-blocking socket.
     explicit
-    Abstract_UDP_Socket(unique_FD&& fd)
-      : Abstract_Socket(::std::move(fd))
-      { }
+    Abstract_UDP_Socket(::sa_family_t family);
 
   private:
     inline
@@ -57,6 +56,10 @@ class Abstract_UDP_Socket
       final;
 
   protected:
+    // Binds this socket to the specified address.
+    void
+    do_socket_bind(const Socket_Address& addr);
+
     // Notifies that this socket has been open for incoming data.
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
@@ -77,10 +80,6 @@ class Abstract_UDP_Socket
     virtual
     void
     do_socket_on_close(int err);
-
-    // Binds this socket to the specified address.
-    void
-    do_bind(const Socket_Address& addr);
 
     // Enqueues a packet for writing.
     // This function returns `true` if the data have been queued, or `false` if a
