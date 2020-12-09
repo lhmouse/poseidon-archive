@@ -187,22 +187,6 @@ classify()
       return socket_address_class_reserved;
   }
 
-unique_FD
-Socket_Address::
-create_socket(int type, int protocol)
-  const
-  {
-    if(this->family() == 0)
-      POSEIDON_THROW("Null address family");
-
-    unique_FD fd(::socket(this->family(), type, protocol));
-    if(!fd)
-      POSEIDON_THROW("Could not create socket (family `$2`, type `$3`, protocol `$4`)\n"
-                     "[`socket()` failed: $1]",
-                     format_errno(errno), this->family(), type, protocol);
-    return fd;
-  }
-
 Socket_Address&
 Socket_Address::
 parse(const char* host, uint16_t port)
