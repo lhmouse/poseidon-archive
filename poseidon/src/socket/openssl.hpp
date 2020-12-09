@@ -45,10 +45,6 @@ get_client_ssl_ctx();
 unique_SSL
 create_ssl(::SSL_CTX* ctx, int fd);
 
-// Translate an OpenSSL error to `IO_Result` or throw an exception.
-IO_Result
-get_io_result_from_ssl_error(const char* func, const ::SSL* ssl, int ret);
-
 }  // namespace poseidon
 
 #endif

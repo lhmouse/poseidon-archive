@@ -229,9 +229,6 @@ do_socket_connect(const Socket_Address& addr)
     if(this->m_cstate != connection_state_empty)
       POSEIDON_THROW("Another connection already in progress or established");
 
-    // Initiate the connection.
-    this->do_stream_preconnect_unlocked();
-
     // No matter whether `::connect()` succeeds or fails with `EINPROGRESS`,
     // the current socket is set to the CONNECTING state.
     if(::connect(this->get_fd(), addr.data(), addr.ssize()) != 0) {

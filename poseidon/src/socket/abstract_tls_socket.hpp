@@ -26,11 +26,6 @@ class Abstract_TLS_Socket
     Abstract_TLS_Socket(::sa_family_t family, ::SSL_CTX* ctx);
 
   private:
-    // Calls `::SSL_set_connect_state()`.
-    void
-    do_stream_preconnect_unlocked()
-      final;
-
     // Calls `::SSL_read()`.
     IO_Result
     do_stream_read_unlocked(char*& data, size_t size)

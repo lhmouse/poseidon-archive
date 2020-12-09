@@ -24,12 +24,6 @@ Abstract_TCP_Socket::
   {
   }
 
-void
-Abstract_TCP_Socket::
-do_stream_preconnect_unlocked()
-  {
-  }
-
 IO_Result
 Abstract_TCP_Socket::
 do_stream_read_unlocked(char*& data, size_t size)
@@ -76,7 +70,7 @@ void
 Abstract_TCP_Socket::
 do_socket_on_close(int err)
   {
-    POSEIDON_LOG_INFO("TCP connection closed: local '$1', $2",
+    POSEIDON_LOG_INFO("TCP connection closed: local '$1', reason: $2",
                       this->get_local_address(), format_errno(err));
   }
 

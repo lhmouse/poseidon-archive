@@ -22,11 +22,6 @@ class Abstract_TCP_Socket
     Abstract_TCP_Socket(::sa_family_t family);
 
   private:
-    // Does nothing as no preparation is needed.
-    void
-    do_stream_preconnect_unlocked()
-      final;
-
     // Calls `::read()`.
     IO_Result
     do_stream_read_unlocked(char*& data, size_t size)

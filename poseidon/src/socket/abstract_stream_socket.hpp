@@ -71,15 +71,6 @@ class Abstract_Stream_Socket
       final;
 
   protected:
-    // Performs outgoing connecting preparation.
-    // This function is called by the network thread. The current socket will have
-    // been locked by its caller. No synchronization is required.
-    // This function is not called on incoming connections.
-    virtual
-    void
-    do_stream_preconnect_unlocked()
-      = 0;
-
     // Performs read operation. Overridden functions shall update `data` to denote
     // the end of bytes that have been read.
     // This function is called by the network thread. The current socket will have
