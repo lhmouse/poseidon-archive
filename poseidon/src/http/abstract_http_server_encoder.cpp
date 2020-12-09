@@ -173,7 +173,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
              this->do_finish_http_message(encoder_state_tunnel);
     }
 
-    HTTP_Upgrade upg = http_upgrade_null;
+    HTTP_Connection conn = http_connection_keep_alive;
     Option_Map opts;
     ::rocket::ascii_numget numg;
 
@@ -181,91 +181,93 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     if(req_target[0] != '/')
       connection_header_name = sref("Proxy-Connection");
 
-    if(ver < http_version_1_1) {
-      // HTTP/1.0 does not support persistent connections.
-      this->m_final = true;
-      headers.set(connection_header_name, sref("close"));
-    }
-    else {
-      // If a closure header is sent, shut the connection down.
+    if(ver >= http_version_1_1)
       // For HTTP/1.1, persistent connections are enabled by default.
-      this->m_final = !!req_headers.find_if_opt(connection_header_name,
-          [&](const cow_string& reqh) {
-            return ascii_ci_has_token(reqh, sref("close"));
-          });
-      if(this->m_final)
-        headers.set(connection_header_name, sref("close"));
+      headers.for_each(connection_header_name,
+           [&](const cow_string& resph) {
+             // Check all options.
+             if(ascii_ci_has_token(resph, sref("keep_alive")))
+               conn = http_connection_keep_alive;
 
-      if(!no_content) {
-        // The `chunked` encoding is enforced for simplicity.
-        this->m_chunked = true;
-        headers.set(sref("Transfer-Encoding"), sref("chunked"));
+             if(ascii_ci_has_token(resph, sref("close")))
+               conn = http_connection_close;
+
+             if(ascii_ci_has_token(resph, sref("upgrade")))
+               conn = http_connection_upgrade;
+           });
+    else
+      // HTTP/1.0 does not support persistent connections.
+      conn = http_connection_close;
+
+    // If the client requested `Connection: close`, shut it down anyway.
+    if((conn != http_connection_close) &&
+           req_headers.find_if_opt(connection_header_name,
+               [&](const cow_string& reqh) {
+                 return ascii_ci_has_token(reqh, sref("close"));
+               }))
+      conn = http_connection_close;
+
+    if((conn == http_connection_upgrade) &&
+           !req_headers.find_if_opt(connection_header_name,
+               [&](const cow_string& reqh) {
+                 return ascii_ci_has_token(reqh, sref("upgrade"));
+               }))
+      conn = http_connection_close;
+
+    // Check for upgradable connections.
+    // First, look at `Connection:`. Only if an `upgrade` token exists, shall we
+    // check `Upgrade:` for available protocols. Note that code above might have
+    // set `Connection: close`, in which case no upgrade is possible.
+    if(conn == http_connection_upgrade) {
+      conn = http_connection_close;
+
+      auto upgrade_str = headers.find_opt(sref("Upgrade"));
+      if(!upgrade_str) {
+        POSEIDON_LOG_ERROR("`Connection: upgrade` sent without an `Upgrade:` header");
       }
+      else if(ascii_ci_equal(*upgrade_str, sref("websocket"))) {
+        // Check whether compression can be enabled. Refer to RFC 7692 for details.
+        conn = http_connection_websocket;
 
-      // Check for upgradable connections.
-      // First, look at `Connection:`. Only if an `upgrade` token exists, shall we
-      // check `Upgrade:` for available protocols. Note that code above might have
-      // set `Connection: close`, in which case no upgrade is possible.
-      auto upgrade_str = headers.find_if_opt(connection_header_name,
-                [&](const cow_string& resph) {
-                  return ascii_ci_has_token(resph, sref("upgrade"));
-                });
-      if(upgrade_str)
-        upgrade_str = headers.find_opt(sref("Upgrade"));
+        this->m_ws_pmce = false;
+        this->m_ws_nctxto = false;
 
-      if(upgrade_str) {
-        // This upgrade mechanism is utilized by WebSocket and HTTP/2.
-        // Note we don't check whether this was actually requested by the client,
-        // because we are unable to fabricate a failure response if it is proved to
-        // be the case. It is the caller that has to ensure the response is valid.
-        // TODO: At the moment, only WebSocket is supported.
-        if(ascii_ci_equal(*upgrade_str, sref("websocket"))) {
-          // Check whether compression can be enabled.
-          // Refer to RFC 7692 for details.
-          this->m_ws_pmce = !!headers.find_if_opt(sref("Sec-WebSocket-Extensions"),
-              [&](const cow_string& resph) {
-                size_t comma = 0;
-                while(comma != resph.size()) {
-                  opts.parse_http_header(&comma, resph, 1);
-                  auto qstr = opts.find_opt(sref(""));  // extension name
-                  if(!qstr)
-                    continue;
+        headers.for_each(sref("Sec-WebSocket-Extensions"),
+            [&](const cow_string& resph) {
+              size_t comma = 0;
+              while(comma != resph.size()) {
+                opts.parse_http_header(&comma, resph, 1);
+                auto qstr = opts.find_opt(sref(""));  // extension name
+                if(!qstr)
+                  continue;
 
-                  if(ascii_ci_equal(*qstr, sref("permessage-deflate"))) {
-                    // Check for context options.
-                    // FIXME: RFC 7692 says if an option is not supported, the
-                    //        extension must not be used. But we just accept and
-                    //        ignore them here.
-                    qstr = opts.find_opt(sref("server_no_context_takeover"));
-                    this->m_ws_nctxto = !!qstr;
-                    return true;
-                  }
+                if(ascii_ci_equal(*qstr, sref("permessage-deflate"))) {
+                  // Check for context options.
+                  // FIXME: RFC 7692 says if an option is not supported, the
+                  //        extension must not be used. But we just accept and
+                  //        ignore them here.
+                  this->m_ws_pmce = true;
+                  this->m_ws_nctxto = !!opts.count(sref("server_no_context_takeover"));
                 }
-                return false;
-              });
-
-          // Upgrade to WebSocket.
-          upg = http_upgrade_websocket;
-        }
-        else
-          POSEIDON_LOG_ERROR("Protocol `$1` not upgradable", *upgrade_str);
-
-        // If upgrade is not possible, fail.
-        if(upg == http_upgrade_null) {
-          this->m_final = true;
-          headers.set(connection_header_name, sref("close"));
-
-          upgrade_str = nullptr;
-          headers.erase(sref("Upgrade"));
-        }
+              }
+            });
       }
+      else
+        POSEIDON_LOG_ERROR("Protocol `$1` not upgradable", *upgrade_str);
+    }
+
+    // If the connection has been marked for closure, it will not be upgraded.
+    if(conn == http_connection_close) {
+      this->m_final = true;
+      headers.erase(sref("Upgrade"));
+      headers.set(connection_header_name, sref("close"));
     }
 
     // Check whether the entity can be compressed.
     // This is only examined if no explicit `Content-Encoding` has been set.
-    if(!no_content && !headers.find_opt(sref("Content-Encoding"))) {
+    if(!(no_content || headers.count(sref("Content-Encoding")))) {
       // At the moment only `gzip` is supported.
-      this->m_gzip = !!req_headers.find_if_opt(sref("Accept-Encoding"),
+      req_headers.for_each(sref("Accept-Encoding"),
           [&](const cow_string& reqh) {
             size_t comma = 0;
             while(comma != reqh.size()) {
@@ -284,11 +286,11 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
                     numg.cast_F(q, 0.0, 1.0);
                 }
                 if(q > 0)
-                  return true;
+                  this->m_gzip = true;
               }
             }
-            return false;
           });
+
       if(this->m_gzip)
         headers.set(sref("Content-Encoding"), sref("gzip"));
     }
@@ -299,7 +301,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
              this->do_finish_http_message(encoder_state_headers);
 
     // Check for upgradable connections.
-    if(upg == http_upgrade_websocket) {
+    if(conn == http_connection_websocket) {
       // WebSocket uses a raw deflate compressor, while HTTP uses GZIP.
       // It cannot be reused so delete it.
       this->m_deflator = nullptr;
@@ -307,6 +309,12 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
       // Switch to WebSocket after the response headers.
       return this->do_encode_http_headers(ver, stat, headers) &&
              this->do_finish_http_message(encoder_state_websocket);
+    }
+
+    // The `chunked` encoding is enforced for simplicity.
+    if(ver >= http_version_1_1) {
+      this->m_chunked = true;
+      headers.set(sref("Transfer-Encoding"), sref("chunked"));
     }
 
     // Reset the deflator used by the previous message, if any.
