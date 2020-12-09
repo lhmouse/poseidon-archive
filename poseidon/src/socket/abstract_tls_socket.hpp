@@ -28,12 +28,12 @@ class Abstract_TLS_Socket
   private:
     // Calls `::SSL_read()`.
     IO_Result
-    do_stream_read_unlocked(char*& data, size_t size)
+    do_socket_stream_read_unlocked(char*& data, size_t size)
       final;
 
     // Calls `::SSL_write()`.
     IO_Result
-    do_stream_write_unlocked(const char*& data, size_t size)
+    do_socket_stream_write_unlocked(const char*& data, size_t size)
       final;
 
   protected:

@@ -72,7 +72,7 @@ class Abstract_Stream_Socket
     // been locked by its caller. No synchronization is required.
     virtual
     IO_Result
-    do_stream_read_unlocked(char*& data, size_t size)
+    do_socket_stream_read_unlocked(char*& data, size_t size)
       = 0;
 
     // Performs write operation. Overridden functions shall update `data` to denote
@@ -81,7 +81,7 @@ class Abstract_Stream_Socket
     // been locked by its caller. No synchronization is required.
     virtual
     IO_Result
-    do_stream_write_unlocked(const char*& data, size_t size)
+    do_socket_stream_write_unlocked(const char*& data, size_t size)
       = 0;
 
     // Notifies a full-duplex channel has been established.

@@ -79,7 +79,7 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
 
     // Try reading some bytes.
     char* eptr = hint;
-    auto io_res = this->do_stream_read_unlocked(eptr, size);
+    auto io_res = this->do_socket_stream_read_unlocked(eptr, size);
     if(io_res == io_result_end_of_stream) {
       POSEIDON_LOG_TRACE("End of stream encountered: $1", this);
       this->do_socket_close_unlocked();
@@ -147,7 +147,7 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
     }
 
     const char* eptr = this->m_wqueue.data();
-    auto io_res = this->do_stream_write_unlocked(eptr, navail);
+    auto io_res = this->do_socket_stream_write_unlocked(eptr, navail);
     if(io_res != io_result_partial_work)
       return io_res;
 

@@ -73,7 +73,7 @@ Abstract_TLS_Socket::
 
 IO_Result
 Abstract_TLS_Socket::
-do_stream_read_unlocked(char*& data, size_t size)
+do_socket_stream_read_unlocked(char*& data, size_t size)
   {
     int nread = ::SSL_read(this->m_ssl, data,
                     static_cast<int>(::std::min<size_t>(size, INT_MAX)));
@@ -89,7 +89,7 @@ do_stream_read_unlocked(char*& data, size_t size)
 
 IO_Result
 Abstract_TLS_Socket::
-do_stream_write_unlocked(const char*& data, size_t size)
+do_socket_stream_write_unlocked(const char*& data, size_t size)
   {
     int nwritten = ::SSL_write(this->m_ssl, data,
                        static_cast<int>(::std::min<size_t>(size, INT_MAX)));

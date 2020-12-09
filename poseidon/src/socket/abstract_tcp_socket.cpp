@@ -26,7 +26,7 @@ Abstract_TCP_Socket::
 
 IO_Result
 Abstract_TCP_Socket::
-do_stream_read_unlocked(char*& data, size_t size)
+do_socket_stream_read_unlocked(char*& data, size_t size)
   {
     ::ssize_t nread = ::read(this->get_fd(), data, size);
     if(nread < 0)
@@ -41,7 +41,7 @@ do_stream_read_unlocked(char*& data, size_t size)
 
 IO_Result
 Abstract_TCP_Socket::
-do_stream_write_unlocked(const char*& data, size_t size)
+do_socket_stream_write_unlocked(const char*& data, size_t size)
   {
     ::ssize_t nwritten = ::write(this->get_fd(), data, size);
     if(nwritten < 0)
