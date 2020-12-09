@@ -14,15 +14,9 @@ class Abstract_TCP_Socket
   {
   protected:
     explicit
-    Abstract_TCP_Socket(unique_FD&& fd)
-      : Abstract_Stream_Socket(::std::move(fd))
-      { this->do_set_common_options();  }
+    Abstract_TCP_Socket(unique_FD&& fd);
 
   private:
-    // Disables Nagle algorithm, etc.
-    void
-    do_set_common_options();
-
     // Does nothing as no preparation is needed.
     void
     do_stream_preconnect_unlocked()

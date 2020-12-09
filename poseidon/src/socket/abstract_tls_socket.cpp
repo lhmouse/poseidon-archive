@@ -9,13 +9,9 @@
 namespace poseidon {
 
 Abstract_TLS_Socket::
-~Abstract_TLS_Socket()
-  {
-  }
-
-void
-Abstract_TLS_Socket::
-do_set_common_options()
+Abstract_TLS_Socket(unique_FD&& fd, ::SSL_CTX* ctx)
+  : Abstract_Stream_Socket(::std::move(fd)),
+    m_ssl(noadl::create_ssl(ctx, this->get_fd()))
   {
     // Disables Nagle algorithm.
     static constexpr int yes[] = { -1 };
@@ -25,6 +21,11 @@ do_set_common_options()
 
     // This can be overwritten if `async_connect()` is called later.
     ::SSL_set_accept_state(this->m_ssl);
+  }
+
+Abstract_TLS_Socket::
+~Abstract_TLS_Socket()
+  {
   }
 
 void

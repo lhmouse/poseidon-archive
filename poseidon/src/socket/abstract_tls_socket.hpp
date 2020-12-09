@@ -18,17 +18,9 @@ class Abstract_TLS_Socket
 
   protected:
     explicit
-    Abstract_TLS_Socket(unique_FD&& fd, ::SSL_CTX* ctx)
-      : Abstract_Stream_Socket(::std::move(fd)),
-        m_ssl(noadl::create_ssl(ctx, this->get_fd()))
-      { this->do_set_common_options();  }
+    Abstract_TLS_Socket(unique_FD&& fd, ::SSL_CTX* ctx);
 
   private:
-    // Disables Nagle algorithm, etc.
-    // Calls `::SSL_set_accept_state()`.
-    void
-    do_set_common_options();
-
     // Calls `::SSL_set_connect_state()`.
     void
     do_stream_preconnect_unlocked()

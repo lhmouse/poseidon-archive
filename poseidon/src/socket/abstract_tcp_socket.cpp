@@ -9,19 +9,19 @@
 namespace poseidon {
 
 Abstract_TCP_Socket::
-~Abstract_TCP_Socket()
-  {
-  }
-
-void
-Abstract_TCP_Socket::
-do_set_common_options()
+Abstract_TCP_Socket(unique_FD&& fd)
+  : Abstract_Stream_Socket(::std::move(fd))
   {
     // Disables Nagle algorithm.
     static constexpr int yes[] = { -1 };
     int res = ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY,
                            yes, sizeof(yes));
     ROCKET_ASSERT(res == 0);
+  }
+
+Abstract_TCP_Socket::
+~Abstract_TCP_Socket()
+  {
   }
 
 void
