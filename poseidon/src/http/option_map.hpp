@@ -25,7 +25,7 @@ class Option_Map
     explicit constexpr
     Option_Map()
       noexcept
-      { }
+      = default;
 
   private:
     ROCKET_PURE_FUNCTION
