@@ -32,6 +32,11 @@ class Abstract_TCP_Socket
     do_socket_stream_write_unlocked(const char*& data, size_t size)
       final;
 
+    // Does nothing.
+    void
+    do_socket_stream_preclose_unclocked()
+      noexcept final;
+
   protected:
     // Notifies a full-duplex channel has been established.
     // The default implementation prints a message but does nothing otherwise.

@@ -84,6 +84,16 @@ class Abstract_Stream_Socket
     do_socket_stream_write_unlocked(const char*& data, size_t size)
       = 0;
 
+    // Performs some shutdown preparation.
+    // This function is called by the network thread. The current socket will have
+    // been locked by its caller. No synchronization is required.
+    // This function shall not throw exceptions.
+    virtual
+    void
+    do_socket_stream_preclose_unclocked()
+      noexcept
+      = 0;
+
     // Notifies a full-duplex channel has been established.
     // Please mind thread safety, as this function is called by the network thread.
     virtual

@@ -52,6 +52,9 @@ do_socket_close_unlocked()
           return io_result_partial_work;
         }
 
+        // For TLS streams, this sends the 'close notify' alert.
+        this->do_socket_stream_preclose_unclocked();
+
         // Close the connection completely.
         this->m_cstate = connection_state_closed;
         ::shutdown(this->get_fd(), SHUT_RDWR);

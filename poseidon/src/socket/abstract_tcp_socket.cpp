@@ -53,6 +53,13 @@ do_socket_stream_write_unlocked(const char*& data, size_t size)
 
 void
 Abstract_TCP_Socket::
+do_socket_stream_preclose_unclocked()
+  noexcept
+  {
+  }
+
+void
+Abstract_TCP_Socket::
 do_socket_on_establish()
   {
     POSEIDON_LOG_INFO("TCP connection established: local '$1', remote '$2'",
