@@ -12,7 +12,6 @@ namespace {
 inline
 int64_t&
 do_shift_time(int64_t& value, int64_t shift)
-  noexcept
   {
     // `value` must be non-negative. `shift` may be any value.
     ROCKET_ASSERT(value >= 0);
@@ -23,7 +22,6 @@ do_shift_time(int64_t& value, int64_t shift)
 
 int64_t
 do_get_time(int64_t shift)
-  noexcept
   {
     // Get the time since the system was started.
     ::timespec ts;

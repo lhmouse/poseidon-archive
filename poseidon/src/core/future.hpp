@@ -71,10 +71,11 @@ class Future
             return static_cast<typename ::std::add_lvalue_reference<const ValueT>::type>(
                          this->m_stor.template as<future_state_value>());
 
-          case future_state_except:
+          case future_state_except: {
             // This state indicates either an exception has been set or the associated
             // promise went out of scope without setting a value.
-            if(const auto& eptr = this->m_stor.template as<future_state_except>())
+            const auto& eptr = this->m_stor.template as<future_state_except>();
+            if(eptr)
               ::std::rethrow_exception(eptr);
 
             // Report broken promise if a null exception pointer has been set,
@@ -82,6 +83,7 @@ class Future
             ::rocket::sprintf_and_throw<::std::invalid_argument>(
                   "Future: Broken promise (value type `%s`)",
                   typeid(ValueT).name());
+          }
 
           default:
             ROCKET_ASSERT(false);

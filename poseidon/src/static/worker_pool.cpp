@@ -41,41 +41,42 @@ struct Worker
 
 POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
   {
-    // constant data
+    // dynamic data
     ::std::vector<Worker> m_workers;
 
     static
     void
-    do_worker_init_once(Worker* qwrk)
+    do_worker_init_once(Worker* qworker)
       {
-        size_t index = static_cast<size_t>(qwrk - self->m_workers.data());
+        size_t index = static_cast<size_t>(qworker - self->m_workers.data());
         auto name = format_string("worker $1", index);
         POSEIDON_LOG_INFO("Creating new worker thread: $1", name);
 
-        simple_mutex::unique_lock lock(qwrk->queue_mutex);
-        qwrk->thread = create_daemon_thread<do_worker_thread_loop>(name.c_str(), qwrk);
+        simple_mutex::unique_lock lock(qworker->queue_mutex);
+        qworker->thread = create_daemon_thread<do_worker_thread_loop>(
+                                                   name.c_str(), qworker);
       }
 
     static
     void
     do_worker_thread_loop(void* param)
       {
-        auto qwrk = static_cast<Worker*>(param);
+        auto qworker = static_cast<Worker*>(param);
         rcptr<Abstract_Async_Job> job;
 
         // Await a job and pop it.
-        simple_mutex::unique_lock lock(qwrk->queue_mutex);
+        simple_mutex::unique_lock lock(qworker->queue_mutex);
         for(;;) {
           job.reset();
-          if(qwrk->queue.empty()) {
+          if(qworker->queue.empty()) {
             // Wait until an element becomes available.
-            qwrk->queue_avail.wait(lock);
+            qworker->queue_avail.wait(lock);
             continue;
           }
 
           // Pop it.
-          job = ::std::move(qwrk->queue.front());
-          qwrk->queue.pop_front();
+          job = ::std::move(qworker->queue.front());
+          qworker->queue.pop_front();
 
           if(job->m_zombie.load()) {
             // Delete this job asynchronously.
@@ -103,9 +104,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
           job->do_execute();
         }
         catch(exception& stdex) {
-          POSEIDON_LOG_WARN("Caught an exception thrown from asynchronous job:\n"
-                            "$1\n"
-                            "[job class `$2`]",
+          POSEIDON_LOG_WARN("$1\n[thrown from an asynchronous job of class `$2`]",
                             stdex, typeid(*job));
         }
 
@@ -120,8 +119,7 @@ Worker_Pool::
 reload()
   {
     // Load worker settings into temporary objects.
-    auto file = Main_Config::copy();
-
+    const auto file = Main_Config::copy();
     size_t thread_count = do_get_size_config(file, "thread_count", 256, 1);
 
     // Create the pool without creating threads.
@@ -152,23 +150,22 @@ insert(uptr<Abstract_Async_Job>&& ujob)
       POSEIDON_THROW("Job pointer must be unique");
 
     // Assign the job to a worker.
-    if(self->m_workers.empty())
+    size_t nworkers = self->m_workers.size();
+    if(nworkers == 0)
       POSEIDON_THROW("No worker available");
 
-    auto qwrk = ::rocket::get_probing_origin(self->m_workers.data(),
-                             self->m_workers.data() + self->m_workers.size(),
-                             job->m_key);
+    auto qworker = ::rocket::get_probing_origin(self->m_workers.data(),
+                           self->m_workers.data() + nworkers, job->m_key);
 
-    // Initialize the worker as necessary.
-    qwrk->init_once.call(self->do_worker_init_once, qwrk);
+    qworker->init_once.call(self->do_worker_init_once, qworker);
 
     // Perform some initialization. No locking is needed here.
     job->m_state.store(async_state_pending);
 
     // Insert the job.
-    simple_mutex::unique_lock lock(qwrk->queue_mutex);
-    qwrk->queue.emplace_back(job);
-    qwrk->queue_avail.notify_one();
+    simple_mutex::unique_lock lock(qworker->queue_mutex);
+    qworker->queue.emplace_back(job);
+    qworker->queue_avail.notify_one();
     return job;
   }
 

@@ -32,9 +32,9 @@ do_get_size_config(const Config_File& file, const char* name, size_t defval)
 
 struct Config_Scalars
   {
-    size_t event_buffer_size = 256;
-    size_t io_buffer_size = 65536;
-    size_t throttle_size = 65536;
+    size_t event_buffer_size = 1;
+    size_t io_buffer_size = 1;
+    size_t throttle_size = 1;
   };
 
 enum : uint32_t
@@ -561,9 +561,9 @@ Network_Driver::
 reload()
   {
     // Load network settings into temporary objects.
-    auto file = Main_Config::copy();
-
+    const auto file = Main_Config::copy();
     Config_Scalars conf;
+
     conf.event_buffer_size = do_get_size_config(file, "event_buffer_size", 1024);
     conf.io_buffer_size = do_get_size_config(file, "io_buffer_size", 65536);
     conf.throttle_size = do_get_size_config(file, "throttle_size", 1048576);

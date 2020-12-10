@@ -23,13 +23,17 @@ do_load_level_config(Level_Config& conf, const Config_File& file, const char* na
   {
     // Read color settings.
     // If we decide to disable color later on, we clear this string.
-    if(const auto qcolor = file.get_string_opt({"logger","levels",name,"color"}))
-      conf.color = ::std::move(*qcolor);
+    auto qstr = file.get_string_opt({"logger","levels",name,"color"});
+    if(qstr)
+      conf.color = ::std::move(*qstr);
 
     // Read stream settings.
-    if(const auto qstrm = file.get_string_opt({"logger","levels",name,"stream"})) {
+    qstr = file.get_string_opt({"logger","levels",name,"stream"});
+    if(qstr) {
+      const auto strm_str = ::std::move(*qstr);
+      auto strm = strm_str.safe_c_str();
+
       // Set standard file descriptors.
-      const char* strm = qstrm->safe_c_str();
       if(::strcmp(strm, "stdout") == 0)
         conf.out_fd = STDOUT_FILENO;
 
@@ -37,20 +41,21 @@ do_load_level_config(Level_Config& conf, const Config_File& file, const char* na
         conf.out_fd = STDERR_FILENO;
 
       // Read the color setting for this stream.
-      bool real_color;
-      if(const auto qcolor = file.get_bool_opt({"logger","streams",strm,"color"}))
-        real_color = *qcolor;
-      else
-        real_color = ::isatty(conf.out_fd);
+      // If no explicit `true` or `false` is given, color is enabled if
+      // the file descriptor denotes a terminal.
+      auto qcolor = file.get_bool_opt({"logger","streams",strm,"color"});
+      if(!qcolor)
+        qcolor = (conf.out_fd >= 0) && ::isatty(conf.out_fd);
 
-      if(!real_color)
+      if(!*qcolor)
         conf.color.clear();
 
       // Read the alternative output file.
-      if(const auto qfile = file.get_string_opt({"logger","streams",strm,"file"}))
-        conf.out_path = ::std::move(*qfile);
-      else
-        conf.out_path = ::rocket::sref("");
+      qstr = file.get_string_opt({"logger","streams",strm,"file"});
+      if(!qstr)
+        qstr.emplace();
+
+      conf.out_path = ::std::move(*qstr);
     }
   }
 
@@ -338,9 +343,9 @@ Async_Logger::
 reload()
   {
     // Load logger settings into this temporary array.
-    auto file = Main_Config::copy();
-
+    const auto file = Main_Config::copy();
     Level_Config_Array temp;
+
     for(size_t k = 0;  k < temp.size();  ++k)
       do_load_level_config(temp[k], file, s_level_names[k].conf_name);
 
