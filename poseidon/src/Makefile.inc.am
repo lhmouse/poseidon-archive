@@ -11,6 +11,7 @@ include_poseidon_details_HEADERS =  \
   %reldir%/details/socket_address.ipp  \
   %reldir%/details/option_map.ipp  \
   %reldir%/details/zlib_stream_common.hpp  \
+  %reldir%/details/openssl_common.hpp  \
   ${NOTHING}
 
 include_poseidon_coredir = ${includedir}/poseidon/core
@@ -32,7 +33,8 @@ include_poseidon_socketdir = ${includedir}/poseidon/socket
 include_poseidon_socket_HEADERS =  \
   %reldir%/socket/enums.hpp  \
   %reldir%/socket/socket_address.hpp  \
-  %reldir%/socket/openssl.hpp  \
+  %reldir%/socket/openssl_context.hpp  \
+  %reldir%/socket/openssl_stream.hpp  \
   %reldir%/socket/abstract_socket.hpp  \
   %reldir%/socket/abstract_accept_socket.hpp  \
   %reldir%/socket/abstract_stream_socket.hpp  \
@@ -73,6 +75,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/fwd.cpp  \
   %reldir%/utils.cpp  \
   %reldir%/details/zlib_stream_common.cpp  \
+  %reldir%/details/openssl_common.cpp  \
   %reldir%/core/config_file.cpp  \
   %reldir%/core/abstract_timer.cpp  \
   %reldir%/core/abstract_future.cpp  \
@@ -89,8 +92,9 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/http/abstract_http_client_encoder.cpp  \
   %reldir%/http/abstract_http_server_decoder.cpp  \
   %reldir%/socket/enums.cpp  \
-  %reldir%/socket/openssl.cpp  \
   %reldir%/socket/socket_address.cpp  \
+  %reldir%/socket/openssl_context.cpp  \
+  %reldir%/socket/openssl_stream.cpp  \
   %reldir%/socket/abstract_socket.cpp  \
   %reldir%/socket/abstract_accept_socket.cpp  \
   %reldir%/socket/abstract_stream_socket.cpp  \

@@ -5,25 +5,23 @@
 #define POSEIDON_SOCKET_ABSTRACT_TLS_SOCKET_HPP_
 
 #include "abstract_stream_socket.hpp"
-#include "openssl.hpp"
+#include "openssl_stream.hpp"
 
 namespace poseidon {
 
 class Abstract_TLS_Socket
   : public ::asteria::Rcfwd<Abstract_TLS_Socket>,
-    public Abstract_Stream_Socket
+    public Abstract_Stream_Socket,
+    public OpenSSL_Stream
   {
-  private:
-    unique_SSL m_ssl;
-
   protected:
     // Adopts a foreign or accepted socket.
     explicit
-    Abstract_TLS_Socket(unique_FD&& fd, ::SSL_CTX* ctx);
+    Abstract_TLS_Socket(unique_FD&& fd, const OpenSSL_Context& ctx);
 
     // Creates a new non-blocking socket.
     explicit
-    Abstract_TLS_Socket(::sa_family_t family, ::SSL_CTX* ctx);
+    Abstract_TLS_Socket(::sa_family_t family, const OpenSSL_Context& ctx);
 
   private:
     // Calls `::SSL_read()`.

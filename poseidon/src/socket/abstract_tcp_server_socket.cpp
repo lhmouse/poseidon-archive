@@ -32,7 +32,8 @@ Abstract_TCP_Server_Socket::
 do_socket_on_register(rcptr<Abstract_Socket>&& sock)
   {
     return this->do_socket_on_register_tcp(
-        ::rocket::static_pointer_cast<Abstract_TCP_Socket>(::std::move(sock)));
+        ::rocket::static_pointer_cast<Abstract_TCP_Socket>(
+                    ::std::move(sock)));
   }
 
 }  // namespace poseidon

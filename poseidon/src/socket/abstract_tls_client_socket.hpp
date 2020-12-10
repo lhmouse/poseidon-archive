@@ -14,12 +14,23 @@ class Abstract_TLS_Client_Socket
   {
   protected:
     // Creates a TCP socket that will connect to `addr`.
+    // If no SSL context is specified, the standard peer verfication
+    // context is used for security reasons.
     explicit
     Abstract_TLS_Client_Socket(const Socket_Address& addr);
 
     explicit
     Abstract_TLS_Client_Socket(const char* host, uint16_t port)
       : Abstract_TLS_Client_Socket(Socket_Address(host, port))
+      { }
+
+    explicit
+    Abstract_TLS_Client_Socket(const Socket_Address& addr, const OpenSSL_Context& ctx);
+
+    explicit
+    Abstract_TLS_Client_Socket(const char* host, uint16_t port,
+                               const OpenSSL_Context& ctx)
+      : Abstract_TLS_Client_Socket(Socket_Address(host, port), ctx)
       { }
 
   private:

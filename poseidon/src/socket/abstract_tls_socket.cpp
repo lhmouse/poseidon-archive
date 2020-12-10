@@ -4,22 +4,9 @@
 #include "../precompiled.hpp"
 #include "abstract_tls_socket.hpp"
 #include "../utils.hpp"
-#include <openssl/err.h>
 
 namespace poseidon {
 namespace {
-
-void
-do_dump_ssl_errors()
-  noexcept
-  {
-    char sbuf[512];
-    long index = -1;
-
-    while(unsigned long err = ::ERR_get_error())
-      ::ERR_error_string_n(err, sbuf, sizeof(sbuf)),
-        POSEIDON_LOG_WARN("OpenSSL error: [$1] $2", ++index, sbuf);
-  }
 
 IO_Result
 do_translate_ssl_error(const char* func, const ::SSL* ssl, int ret)
@@ -38,32 +25,31 @@ do_translate_ssl_error(const char* func, const ::SSL* ssl, int ret)
 
       case SSL_ERROR_SYSCALL:
         err = errno;
-        do_dump_ssl_errors();
+        details_openssl_common::log_openssl_errors();
         return get_io_result_from_errno(func, err);
 
       default:
-        do_dump_ssl_errors();
-        POSEIDON_THROW("OpenSSL I/O error\n[`$1()` returned `$2`]",
-                       func, ret);
+        POSEIDON_SSL_THROW("OpenSSL I/O error\n[`$1()` returned `$2`]",
+                           func, ret);
     }
   }
 
 }  // namespace
 
 Abstract_TLS_Socket::
-Abstract_TLS_Socket(unique_FD&& fd, ::SSL_CTX* ctx)
+Abstract_TLS_Socket(unique_FD&& fd, const OpenSSL_Context& ctx)
   : Abstract_Stream_Socket(::std::move(fd)),
-    m_ssl(create_ssl(ctx, this->get_fd()))
+    OpenSSL_Stream(ctx, *this)
   {
-    ::SSL_set_accept_state(this->m_ssl);
+    ::SSL_set_accept_state(this->open_ssl());
   }
 
 Abstract_TLS_Socket::
-Abstract_TLS_Socket(::sa_family_t family, ::SSL_CTX* ctx)
+Abstract_TLS_Socket(::sa_family_t family, const OpenSSL_Context& ctx)
   : Abstract_Stream_Socket(family),
-    m_ssl(create_ssl(ctx, this->get_fd()))
+    OpenSSL_Stream(ctx, *this)
   {
-    ::SSL_set_connect_state(this->m_ssl);
+    ::SSL_set_connect_state(this->open_ssl());
   }
 
 Abstract_TLS_Socket::
@@ -75,10 +61,10 @@ IO_Result
 Abstract_TLS_Socket::
 do_socket_stream_read_unlocked(char*& data, size_t size)
   {
-    int nread = ::SSL_read(this->m_ssl, data,
+    int nread = ::SSL_read(this->open_ssl(), data,
                     static_cast<int>(::std::min<size_t>(size, INT_MAX)));
     if(nread < 0)
-      return do_translate_ssl_error("SSL_read", this->m_ssl, nread);
+      return do_translate_ssl_error("SSL_read", this->open_ssl(), nread);
 
     if(nread == 0)
       return io_result_end_of_stream;
@@ -91,10 +77,10 @@ IO_Result
 Abstract_TLS_Socket::
 do_socket_stream_write_unlocked(const char*& data, size_t size)
   {
-    int nwritten = ::SSL_write(this->m_ssl, data,
+    int nwritten = ::SSL_write(this->open_ssl(), data,
                        static_cast<int>(::std::min<size_t>(size, INT_MAX)));
     if(nwritten < 0)
-      return do_translate_ssl_error("SSL_write", this->m_ssl, nwritten);
+      return do_translate_ssl_error("SSL_write", this->open_ssl(), nwritten);
 
     data += static_cast<unsigned>(nwritten);
     return io_result_partial_work;
@@ -105,7 +91,7 @@ Abstract_TLS_Socket::
 do_socket_stream_preclose_unclocked()
   noexcept
   {
-    ::SSL_shutdown(this->m_ssl);
+    ::SSL_shutdown(this->open_ssl());
   }
 
 void

@@ -5,39 +5,36 @@
 #define POSEIDON_SOCKET_ABSTRACT_TLS_SERVER_SOCKET_HPP_
 
 #include "abstract_accept_socket.hpp"
-#include "openssl.hpp"
+#include "openssl_context.hpp"
 
 namespace poseidon {
 
 class Abstract_TLS_Server_Socket
   : public ::asteria::Rcfwd<Abstract_TLS_Server_Socket>,
-    public Abstract_Accept_Socket
+    public Abstract_Accept_Socket,
+    public OpenSSL_Context
   {
-  private:
-    unique_SSL_CTX m_ctx;
-
   protected:
-    // Creates a listening socket that accepts TLS connections over TCP.
-    // If both `cert_opt` and `pkey_opt` are null, the default certificate and
-    // private key in 'main.conf' are used.
+    // Create a listening socket that accepts TLS connections over TCP.
+    // `cert` and `pkey` shall point to paths to files containing the server
+    // certificate and private key, respectively. The overloads that take no
+    // `cert` and `pkey` arguments use the default ones in 'main.conf'.
     explicit
-    Abstract_TLS_Server_Socket(const Socket_Address& addr,
-                               const char* cert_opt, const char* pkey_opt);
-
-    explicit
-    Abstract_TLS_Server_Socket(const char* bind, uint16_t port,
-                               const char* cert_opt, const char* pkey_opt)
-      : Abstract_TLS_Server_Socket(Socket_Address(bind, port), cert_opt, pkey_opt)
-      { }
-
-    explicit
-    Abstract_TLS_Server_Socket(const Socket_Address& addr)
-      : Abstract_TLS_Server_Socket(addr, nullptr, nullptr)
-      { }
+    Abstract_TLS_Server_Socket(const Socket_Address& addr);
 
     explicit
     Abstract_TLS_Server_Socket(const char* bind, uint16_t port)
       : Abstract_TLS_Server_Socket(Socket_Address(bind, port))
+      { }
+
+    explicit
+    Abstract_TLS_Server_Socket(const Socket_Address& addr, const char* cert,
+                               const char* pkey);
+
+    explicit
+    Abstract_TLS_Server_Socket(const char* bind, uint16_t port, const char* cert,
+                               const char* pkey)
+      : Abstract_TLS_Server_Socket(Socket_Address(bind, port), cert, pkey)
       { }
 
   private:
@@ -55,7 +52,7 @@ class Abstract_TLS_Server_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     uptr<Abstract_TLS_Socket>
-    do_socket_on_accept_tls(unique_FD&& fd, ::SSL_CTX* ctx)
+    do_socket_on_accept_tls(unique_FD&& fd)
       = 0;
 
     // Registers a socket object.

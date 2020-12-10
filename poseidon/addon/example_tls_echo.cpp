@@ -13,7 +13,7 @@ using namespace poseidon;
 struct Example_Session : Abstract_TLS_Socket
   {
     explicit
-    Example_Session(unique_FD&& fd, ::SSL_CTX* ctx)
+    Example_Session(unique_FD&& fd, const OpenSSL_Context& ctx)
       : Abstract_TLS_Socket(::std::move(fd), ctx)
       { }
 
@@ -45,10 +45,10 @@ struct Example_Server : Abstract_TLS_Server_Socket
       }
 
     uptr<Abstract_TLS_Socket>
-    do_socket_on_accept_tls(unique_FD&& fd, ::SSL_CTX* ctx)
+    do_socket_on_accept_tls(unique_FD&& fd)
       override
       {
-        return ::rocket::make_unique<Example_Session>(::std::move(fd), ctx);
+        return ::rocket::make_unique<Example_Session>(::std::move(fd), *this);
       }
 
     void
