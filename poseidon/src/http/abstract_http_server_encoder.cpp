@@ -243,9 +243,8 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
 
                 if(ascii_ci_equal(*qstr, sref("permessage-deflate"))) {
                   // Check for context options.
-                  // FIXME: RFC 7692 says if an option is not supported, the
-                  //        extension must not be used. But we just accept and
-                  //        ignore them here.
+                  // FIXME: RFC 7692 says if an option is not supported, the extension
+                  //        must not be used. But we just accept and ignore them here.
                   this->m_ws_pmce = true;
                   this->m_ws_nctxto = !!opts.count(sref("server_no_context_takeover"));
                 }
