@@ -51,14 +51,14 @@ Abstract_TLS_Server_Socket(const Socket_Address& addr)
     if(!pkey)
       POSEIDON_THROW("`network.tls.default_private_key` not configured");
 
-    do_load_cert_and_pkey(this->open_ssl_ctx(), cert->safe_c_str(),
-                          pkey->safe_c_str());
+    do_load_cert_and_pkey(this->open_ssl_ctx(),
+                          cert->safe_c_str(), pkey->safe_c_str());
     this->do_socket_listen(addr);
   }
 
 Abstract_TLS_Server_Socket::
-Abstract_TLS_Server_Socket(const Socket_Address& addr, const char* cert,
-                           const char* pkey)
+Abstract_TLS_Server_Socket(const Socket_Address& addr,
+                           const char* cert, const char* pkey)
   : Abstract_Accept_Socket(addr.family())
   {
     // Load the user-specified key/certificate pair.

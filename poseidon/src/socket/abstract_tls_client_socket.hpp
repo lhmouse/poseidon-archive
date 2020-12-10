@@ -25,7 +25,8 @@ class Abstract_TLS_Client_Socket
       { }
 
     explicit
-    Abstract_TLS_Client_Socket(const Socket_Address& addr, const OpenSSL_Context& ctx);
+    Abstract_TLS_Client_Socket(const Socket_Address& addr,
+                               const OpenSSL_Context& ctx);
 
     explicit
     Abstract_TLS_Client_Socket(const char* host, uint16_t port,
