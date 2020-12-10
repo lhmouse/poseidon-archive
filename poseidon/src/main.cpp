@@ -311,7 +311,7 @@ do_daemonize_finish()
     if(!daemon_wfd)
       return;
 
-    // Notify the parent. Errors are ignored.
+    // Notify my parent process. Errors are ignored.
     ::ssize_t nwritten;
     do {
       static const char msg[] = "OK";
@@ -346,40 +346,26 @@ ROCKET_NOINLINE
 void
 do_load_addons()
   {
-    ::std::vector<cow_string> paths;
-
     const auto file = Main_Config::copy();
     const auto qaddons = file.get_array_opt({"addons"});
-    if(qaddons) {
-      paths.reserve(qaddons->size());
-      for(const auto& addon : *qaddons) {
-        if(!addon.is_string())
-          POSEIDON_THROW("Invalid add-on path (`$1` is not a string)", addon);
-
-        paths.emplace_back(addon.as_string());
-        POSEIDON_LOG_DEBUG("Found add-on: $1", paths.back());
-      }
-    }
-    if(paths.empty()) {
-      POSEIDON_LOG_ERROR("There is no add-on to load. What do you expect me to do?");
+    if(!qaddons || qaddons->empty()) {
+      POSEIDON_LOG_FATAL("There is no add-on to load. What's the job now?");
       return;
     }
 
-    for(const auto& path : paths) {
+    for(const auto& addon : *qaddons) {
+      // Each add-on shall be a path to a shared library to load.
+      if(!addon.is_string())
+        POSEIDON_LOG_FATAL("Invalid add-on path (`$1` is not a string)", addon);
+
+      const auto& path = addon.as_string();
       POSEIDON_LOG_INFO("Loading add-on: $1", path);
-      try {
-        if(!::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE))
-          POSEIDON_THROW("Error loading add-on '$1'\n"
-                         "[`dlopen()` failed: $2]",
-                         path, ::dlerror());
-      }
-      catch(exception& stdex) {
-        // Print the message in `stdex`. There isn't much we can do.
-        POSEIDON_LOG_FATAL("Failed to load add-on: $1\n"
-                           "[loading add-on '$2']",
-                           stdex, path);
-        throw;
-      }
+
+      if(!::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE))
+        POSEIDON_THROW("Error loading add-on '$1'\n"
+                       "[`dlopen()` failed: $2]",
+                       path, ::dlerror());
+
       POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
     }
   }
