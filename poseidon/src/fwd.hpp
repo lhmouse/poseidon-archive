@@ -134,16 +134,12 @@ class Abstract_Timer;
 class Abstract_Async_Job;
 class Abstract_Future;
 class Abstract_Fiber;
+template<typename> class Promise;
+template<typename> class Future;
 class URL;
 class LCG48;
 class zlib_Deflator;
 class zlib_Inflator;
-
-template<typename V> class Promise;
-template<typename V> class Future;
-
-template<typename V> using prom = Promise<V>;
-template<typename V> using futp = rcptr<const Future<V>>;
 
 // Socket
 enum IO_Result : uint8_t;
@@ -170,7 +166,6 @@ enum HTTP_Version : uint16_t;
 enum HTTP_Method : uint8_t;
 enum HTTP_Status : uint16_t;
 enum HTTP_Connection : uint8_t;
-
 enum WebSocket_Opcode : uint8_t;
 enum WebSocket_Status : uint16_t;
 
@@ -218,6 +213,10 @@ enum Async_State : uint8_t
     async_state_running    = 3,
     async_state_finished   = 4,
   };
+
+// Aliases
+template<typename V> using prom = Promise<V>;
+template<typename V> using futp = rcptr<const Future<V>>;
 
 }  // namespace poseidon
 
