@@ -30,6 +30,7 @@ zlib_Deflator(Format fmt, int level)
     }
 
     // Create a deflate stream.
+    // Note this must be the last operation in each constructor.
     int res = ::deflateInit2(this->m_zlib, level, Z_DEFLATED,
                              wbits, 9, Z_DEFAULT_STRATEGY);
     if(res != Z_OK)

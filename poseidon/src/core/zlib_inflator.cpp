@@ -34,6 +34,7 @@ zlib_Inflator(Format fmt)
     }
 
     // Create an inflate stream.
+    // Note this must be the last operation in each constructor.
     int res = ::inflateInit2(this->m_zlib, wbits);
     if(res != Z_OK)
       this->m_zlib.throw_zlib_error("inflateInit2", res);
