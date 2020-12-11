@@ -143,14 +143,16 @@ classify_http_status(HTTP_Status stat)
   noexcept
   { return static_cast<HTTP_Status>(static_cast<uint32_t>(stat) / 100 * 100);  }
 
-// These are values for `Connection:` headers.
+// These were designed for various options in the `Connection:` header, but
+// now they denote [ method + connection + upgrade ] combinations.
 enum HTTP_Connection : uint8_t
   {
     http_connection_keep_alive  = 0,
-    http_connection_close       = 1,
-    http_connection_upgrade     = 2,  // special value for pending upgrades
-    http_connection_tunnel      = 3,  // special value for CONNECT method
-    http_connection_websocket   = 4,  // WebSocket
+    http_connection_connect     = 1,  // special value for CONNECT method
+    http_connection_head        = 2,  // special value for HEAD method
+    http_connection_close       = 3,
+    http_connection_upgrade     = 4,  // special value for pending upgrades
+    http_connection_websocket   = 5,  // WebSocket
   };
 
 // These are WebSocket opcodes.
