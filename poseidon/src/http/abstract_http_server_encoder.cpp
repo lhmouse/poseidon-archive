@@ -119,14 +119,17 @@ do_encode_websocket_frame(uint8_t flags, WebSocket_Opcode opcode,
 bool
 Abstract_HTTP_Server_Encoder::
 http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_method,
-                    const cow_string& req_target, HTTP_Version req_ver,
-                    const Option_Map& req_headers)
+                    const cow_string& req_target, HTTP_Version req_ver)
   {
     if(this->m_state == encoder_state_closed)
       return false;
 
     if(this->m_state != encoder_state_headers)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'headers')");
+
+    this->m_final = false;
+    this->m_chunked = false;
+    this->m_gzip = false;
 
     // Get the HTTP version that the response will use.
     // This will be either HTTP/1.0 or HTTP/1.1.
@@ -139,12 +142,8 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
             ::rocket::is_any_of(stat,
                 { http_status_no_content, http_status_not_modified });
 
-    this->m_final = false;
-    this->m_chunked = false;
-    this->m_gzip = false;
-
-    // In this case, erase all content headers.
     if(no_content) {
+      // In this case, erase all content headers.
       if(headers.erase(sref("Content-Type")))
         POSEIDON_LOG_WARN("`Content-Type` not allowed without a content");
 
@@ -156,18 +155,24 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
 
       if(headers.erase(sref("Content-Range")))
         POSEIDON_LOG_WARN("`Content-Range` not allowed without a content");
+
+      if(headers.erase(sref("Transfer-Encoding")))
+        POSEIDON_LOG_ERROR("`Transfer-Encoding` not allowed without a content");
     }
 
-    // Erase hop-to-hop headers.
-    if(headers.erase(sref("Transfer-Encoding")))
-      POSEIDON_LOG_ERROR("`Transfer-Encoding` not customizable");
-
-    // CONNECT is used to establish a tunnel. The connection must not be closed.
+    // CONNECT is used to establish a tunnel.
     if(req_method == http_method_connect) {
       // If a 2xx status code is sent, a tunnel will be established.
-      this->m_final = classify_http_status(stat) != http_status_class_success;
-      if(this->m_final)
+      // Otherwise, the connection shall be closed immediately.
+      if(classify_http_status(stat) != http_status_class_success) {
+        this->m_final = true;
         headers.set(sref("Connection"), sref("close"));
+      }
+      else {
+        headers.erase(sref("Content-Length"));
+        headers.erase(sref("Transfer-Encoding"));
+        headers.erase(sref("Connection"));
+      }
 
       return this->do_encode_http_headers(ver, stat, headers) &&
              this->do_finish_http_message(encoder_state_tunnel);
@@ -181,12 +186,11 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     if(req_target[0] != '/')
       connection_header_name = sref("Proxy-Connection");
 
-    if(ver >= http_version_1_1)
+    if(ver >= http_version_1_1) {
       // For HTTP/1.1, persistent connections are enabled by default.
       headers.for_each(connection_header_name,
            [&](const cow_string& resph) {
-             // Check all options.
-             if(ascii_ci_has_token(resph, sref("keep_alive")))
+             if(ascii_ci_has_token(resph, sref("keep-alive")))
                conn = http_connection_keep_alive;
 
              if(ascii_ci_has_token(resph, sref("close")))
@@ -195,23 +199,8 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
              if(ascii_ci_has_token(resph, sref("upgrade")))
                conn = http_connection_upgrade;
            });
+    }
     else
-      // HTTP/1.0 does not support persistent connections.
-      conn = http_connection_close;
-
-    // If the client requested `Connection: close`, shut it down anyway.
-    if((conn != http_connection_close) &&
-           req_headers.find_if_opt(connection_header_name,
-               [&](const cow_string& reqh) {
-                 return ascii_ci_has_token(reqh, sref("close"));
-               }))
-      conn = http_connection_close;
-
-    if((conn == http_connection_upgrade) &&
-           !req_headers.find_if_opt(connection_header_name,
-               [&](const cow_string& reqh) {
-                 return ascii_ci_has_token(reqh, sref("upgrade"));
-               }))
       conn = http_connection_close;
 
     // Check for upgradable connections.
@@ -220,15 +209,12 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     // set `Connection: close`, in which case no upgrade is possible.
     if(conn == http_connection_upgrade) {
       conn = http_connection_close;
-
       auto upgrade_str = headers.find_opt(sref("Upgrade"));
       if(!upgrade_str) {
         POSEIDON_LOG_ERROR("`Connection: upgrade` sent without an `Upgrade:` header");
       }
       else if(ascii_ci_equal(*upgrade_str, sref("websocket"))) {
         // Check whether compression can be enabled. Refer to RFC 7692 for details.
-        conn = http_connection_websocket;
-
         this->m_ws_pmce = false;
         this->m_ws_nctxto = false;
 
@@ -250,6 +236,9 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
                 }
               }
             });
+
+        // Upgrade to WebSocket.
+        conn = http_connection_websocket;
       }
       else
         POSEIDON_LOG_ERROR("Protocol `$1` not upgradable", *upgrade_str);
@@ -260,38 +249,6 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
       this->m_final = true;
       headers.erase(sref("Upgrade"));
       headers.set(connection_header_name, sref("close"));
-    }
-
-    // Check whether the entity can be compressed.
-    // This is only examined if no explicit `Content-Encoding` has been set.
-    if(!(no_content || headers.count(sref("Content-Encoding")))) {
-      // At the moment only `gzip` is supported.
-      req_headers.for_each(sref("Accept-Encoding"),
-          [&](const cow_string& reqh) {
-            size_t comma = 0;
-            while(comma != reqh.size()) {
-              opts.parse_http_header(&comma, reqh, 1);
-              auto qstr = opts.find_opt(sref(""));  // algorithm
-              if(!qstr)
-                continue;
-
-              if(ascii_ci_equal(*qstr, sref("gzip"))) {  // only 'gzip'
-                // GZIP is enabled unless suppressed by a zero quality value.
-                double q = 1.0;
-                qstr = opts.find_opt(sref("q"));
-                if(qstr) {
-                  const char* sp = qstr->data();
-                  if(numg.parse_F(sp, qstr->data() + qstr->size(), 10))
-                    numg.cast_F(q, 0.0, 1.0);
-                }
-                if(q > 0)
-                  this->m_gzip = true;
-              }
-            }
-          });
-
-      if(this->m_gzip)
-        headers.set(sref("Content-Encoding"), sref("gzip"));
     }
 
     // Encode response headers now.
@@ -313,8 +270,18 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     // The `chunked` encoding is enforced for simplicity.
     if(ver >= http_version_1_1) {
       this->m_chunked = true;
-      headers.set(sref("Transfer-Encoding"), sref("chunked"));
+      auto& trans_enc_str = headers.open(sref("Transfer-Encoding"));
+
+      // Check whether compression can be enabled.
+      this->m_gzip = ascii_ci_has_token(trans_enc_str, sref("gzip"));
+
+      // Rewrite the header.
+      trans_enc_str = sref("chunked");
+      if(this->m_gzip)
+        trans_enc_str.insert(0, "gzip, ");
     }
+    else
+      headers.erase(sref("Transfer-Encoding"));
 
     // Reset the deflator used by the previous message, if any.
     auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);

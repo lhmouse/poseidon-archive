@@ -26,8 +26,8 @@ class Abstract_HTTP_Server_Encoder
     Encoder_State m_state = encoder_state_headers;
 
     uint8_t m_final : 1;      // close connection after entity
-    uint8_t m_chunked : 1;    // use HTTP/1.1 chunked encoding
-    uint8_t m_gzip : 1;       // use GZIP transfer encoding
+    uint8_t m_chunked : 1;    // use HTTP/1.1 `chunked` transfer encoding
+    uint8_t m_gzip : 1;       // use `gzip` content encoding
     uint8_t m_ws_pmce : 1;    // use WebSocket per-message compression extension
     uint8_t m_ws_nctxto : 1;  // has WebSocket `server_no_context_takeover`
 
@@ -86,8 +86,7 @@ class Abstract_HTTP_Server_Encoder
     // next state will be 'entity'.
     bool
     http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_method,
-                        const cow_string& req_target, HTTP_Version req_ver,
-                        const Option_Map& req_headers);
+                        const cow_string& req_target, HTTP_Version req_ver);
 
     // Puts a chunk of entity.
     // `http_encoder_state()` must be 'closed' or 'entity'.
