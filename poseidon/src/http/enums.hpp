@@ -143,6 +143,21 @@ classify_http_status(HTTP_Status stat)
   noexcept
   { return static_cast<HTTP_Status>(static_cast<uint32_t>(stat) / 100 * 100);  }
 
+// These are internal states of HTTP and WebSocket encoders.
+enum HTTP_Encoder_State : uint8_t
+  {
+    http_encoder_state_headers    = 0,
+    http_encoder_state_closed     = 1,
+    http_encoder_state_entity     = 2,
+    http_encoder_state_tunnel     = 3,
+    http_encoder_state_websocket  = 4,
+  };
+
+// These are internal states of HTTP and WebSocket decoders.
+enum HTTP_Decoder_State : uint8_t
+  {
+  };
+
 // These were designed for various options in the `Connection:` header, but
 // now they denote [ method + connection + upgrade ] combinations.
 enum HTTP_Connection : uint8_t

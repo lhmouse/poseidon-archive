@@ -60,7 +60,7 @@ do_encode_http_entity(const char* data, size_t size)
 
 bool
 Abstract_HTTP_Server_Encoder::
-do_finish_http_message(Encoder_State next)
+do_finish_http_message(HTTP_Encoder_State next)
   {
     bool sent = this->do_http_on_server_send("", 0);
 
@@ -81,7 +81,7 @@ do_finish_http_message(Encoder_State next)
     // If this is the final message, shut the connection down.
     this->m_state = next;
     if(this->m_final) {
-      this->m_state = encoder_state_closed;
+      this->m_state = http_encoder_state_closed;
       sent = sent && this->do_http_on_server_close();
     }
     return sent;
@@ -121,10 +121,10 @@ Abstract_HTTP_Server_Encoder::
 http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_method,
                     const cow_string& req_target, HTTP_Version req_ver)
   {
-    if(this->m_state == encoder_state_closed)
+    if(this->m_state == http_encoder_state_closed)
       return false;
 
-    if(this->m_state != encoder_state_headers)
+    if(this->m_state != http_encoder_state_headers)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'headers')");
 
     this->m_final = false;
@@ -175,7 +175,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
       }
 
       return this->do_encode_http_headers(ver, stat, headers) &&
-             this->do_finish_http_message(encoder_state_tunnel);
+             this->do_finish_http_message(http_encoder_state_tunnel);
     }
 
     HTTP_Connection conn = http_connection_keep_alive;
@@ -254,7 +254,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     // Encode response headers now.
     if(no_content || (req_method == http_method_head))
       return this->do_encode_http_headers(ver, stat, headers) &&
-             this->do_finish_http_message(encoder_state_headers);
+             this->do_finish_http_message(http_encoder_state_headers);
 
     // Check for upgradable connections.
     if(conn == http_connection_websocket) {
@@ -264,7 +264,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
 
       // Switch to WebSocket after the response headers.
       return this->do_encode_http_headers(ver, stat, headers) &&
-             this->do_finish_http_message(encoder_state_websocket);
+             this->do_finish_http_message(http_encoder_state_websocket);
     }
 
     // The `chunked` encoding is enforced for simplicity.
@@ -290,7 +290,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
 
     // Expect the entity.
     bool sent = this->do_encode_http_headers(ver, stat, headers);
-    this->m_state = encoder_state_entity;
+    this->m_state = http_encoder_state_entity;
     return sent;
   }
 
@@ -298,10 +298,10 @@ bool
 Abstract_HTTP_Server_Encoder::
 http_encode_entity(const char* data, size_t size)
   {
-    if(this->m_state == encoder_state_closed)
+    if(this->m_state == http_encoder_state_closed)
       return false;
 
-    if(this->m_state != encoder_state_entity)
+    if(this->m_state != http_encoder_state_entity)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'entity')");
 
     // If compression is not enabled, send outgoing data verbatim.
@@ -327,24 +327,24 @@ bool
 Abstract_HTTP_Server_Encoder::
 http_encode_end_of_entity()
   {
-    if(this->m_state == encoder_state_closed)
+    if(this->m_state == http_encoder_state_closed)
       return false;
 
-    if(this->m_state != encoder_state_entity)
+    if(this->m_state != http_encoder_state_entity)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'entity')");
 
     // Finish this response message and expect the next one.
-    return this->do_finish_http_message(encoder_state_headers);
+    return this->do_finish_http_message(http_encoder_state_headers);
   }
 
 bool
 Abstract_HTTP_Server_Encoder::
 http_encode_tunnel_data(const char* data, size_t size)
   {
-    if(this->m_state == encoder_state_closed)
+    if(this->m_state == http_encoder_state_closed)
       return false;
 
-    if(this->m_state != encoder_state_tunnel)
+    if(this->m_state != http_encoder_state_tunnel)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'tunnel')");
 
     // Forward outgoing data verbatim.
@@ -355,14 +355,14 @@ bool
 Abstract_HTTP_Server_Encoder::
 http_encode_tunnel_closure()
   {
-    if(this->m_state == encoder_state_closed)
+    if(this->m_state == http_encoder_state_closed)
       return false;
 
-    if(this->m_state != encoder_state_tunnel)
+    if(this->m_state != http_encoder_state_tunnel)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'tunnel')");
 
     // Shut the tunnel down.
-    this->m_state = encoder_state_closed;
+    this->m_state = http_encoder_state_closed;
     return this->do_http_on_server_close();
   }
 
@@ -370,10 +370,10 @@ bool
 Abstract_HTTP_Server_Encoder::
 http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t size)
   {
-    if(this->m_state == encoder_state_closed)
+    if(this->m_state == http_encoder_state_closed)
       return false;
 
-    if(this->m_state != encoder_state_websocket)
+    if(this->m_state != http_encoder_state_websocket)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'websocket')");
 
     if(opcode == websocket_opcode_close) {
@@ -429,10 +429,10 @@ bool
 Abstract_HTTP_Server_Encoder::
 http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t size)
   {
-    if(this->m_state == encoder_state_closed)
+    if(this->m_state == http_encoder_state_closed)
       return false;
 
-    if(this->m_state != encoder_state_websocket)
+    if(this->m_state != http_encoder_state_websocket)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'websocket')");
 
     // Truncate the payload, as control frames cannot be fragmented.
@@ -448,7 +448,7 @@ http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t si
     // Send the closure frame and shut the connection down.
     bool sent = this->do_encode_websocket_frame(0, websocket_opcode_close,
                                                 payload.data(), payload.size());
-    this->m_state = encoder_state_closed;
+    this->m_state = http_encoder_state_closed;
     sent = sent && this->do_http_on_server_close();
     return sent;
   }

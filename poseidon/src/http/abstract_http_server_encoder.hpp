@@ -11,19 +11,8 @@ namespace poseidon {
 class Abstract_HTTP_Server_Encoder
   : public ::asteria::Rcfwd<Abstract_HTTP_Server_Encoder>
   {
-  public:
-    // The state denotes what to put next.
-    enum Encoder_State : uint8_t
-      {
-        encoder_state_headers    = 0,
-        encoder_state_closed     = 1,
-        encoder_state_entity     = 2,
-        encoder_state_tunnel     = 3,
-        encoder_state_websocket  = 4,
-      };
-
   private:
-    Encoder_State m_state = encoder_state_headers;
+    HTTP_Encoder_State m_state = { };
 
     uint8_t m_final : 1;      // close connection after entity
     uint8_t m_chunked : 1;    // use HTTP/1.1 `chunked` transfer encoding
@@ -42,7 +31,8 @@ class Abstract_HTTP_Server_Encoder
   private:
     inline
     bool
-    do_encode_http_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers);
+    do_encode_http_headers(HTTP_Version ver, HTTP_Status stat,
+                           const Option_Map& headers);
 
     inline
     bool
@@ -50,7 +40,7 @@ class Abstract_HTTP_Server_Encoder
 
     inline
     bool
-    do_finish_http_message(Encoder_State next);
+    do_finish_http_message(HTTP_Encoder_State next);
 
     inline
     bool
@@ -74,7 +64,7 @@ class Abstract_HTTP_Server_Encoder
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_HTTP_Server_Encoder);
 
     // Gets the state.
-    Encoder_State
+    HTTP_Encoder_State
     http_encoder_state()
       const noexcept
       { return this->m_state;  }
