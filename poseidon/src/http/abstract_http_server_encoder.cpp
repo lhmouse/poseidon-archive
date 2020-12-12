@@ -89,12 +89,11 @@ do_finish_http_message(HTTP_Encoder_State next)
 
 bool
 Abstract_HTTP_Server_Encoder::
-do_encode_websocket_frame(uint8_t flags, WebSocket_Opcode opcode,
-                          const char* data, size_t size)
+do_encode_websocket_frame(int flags, const char* data, size_t size)
   {
     // Compose the frame header.
     ::rocket::static_vector<char, 14> head;
-    head.emplace_back(opcode << 4 | flags | 1);  // opcode, flags, FIN
+    head.emplace_back(flags | 1);  // opcode, flags, FIN
 
     size_t exlen;
     if(size <= 125) {
@@ -118,8 +117,8 @@ do_encode_websocket_frame(uint8_t flags, WebSocket_Opcode opcode,
 
 bool
 Abstract_HTTP_Server_Encoder::
-http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_method,
-                    const cow_string& req_target, HTTP_Version req_ver)
+http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
+                    HTTP_Method method, const cow_string& target)
   {
     if(this->m_state == http_encoder_state_closed)
       return false;
@@ -131,13 +130,9 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     this->m_chunked = false;
     this->m_gzip = false;
 
-    // Get the HTTP version that the response will use.
-    // This will be either HTTP/1.0 or HTTP/1.1.
-    HTTP_Version ver = ::rocket::clamp(req_ver, http_version_1_0, http_version_1_1);
-
     // Check for special cases where no content shall be sent.
     // Refer to RFC 7230 section 3.3 for details.
-    bool no_content = (req_method == http_method_connect) ||
+    bool no_content = (method == http_method_connect) ||
             (classify_http_status(stat) == http_status_class_information) ||
             ::rocket::is_any_of(stat,
                 { http_status_no_content, http_status_not_modified });
@@ -161,7 +156,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     }
 
     // CONNECT is used to establish a tunnel.
-    if(req_method == http_method_connect) {
+    if(method == http_method_connect) {
       // If a 2xx status code is sent, a tunnel will be established.
       // Otherwise, the connection shall be closed immediately.
       if(classify_http_status(stat) != http_status_class_success) {
@@ -183,7 +178,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     ::rocket::ascii_numget numg;
 
     auto connection_header_name = sref("Connection");
-    if(req_target[0] != '/')
+    if(target[0] != '/')
       connection_header_name = sref("Proxy-Connection");
 
     if(ver >= http_version_1_1) {
@@ -252,7 +247,7 @@ http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_meth
     }
 
     // Encode response headers now.
-    if(no_content || (req_method == http_method_head))
+    if(no_content || (method == http_method_head))
       return this->do_encode_http_headers(ver, stat, headers) &&
              this->do_finish_http_message(http_encoder_state_headers);
 
@@ -392,12 +387,12 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
       if(rlen != size)
         POSEIDON_LOG_WARN("Control frame truncated (size `$1`)", size);
 
-      return this->do_encode_websocket_frame(0, opcode, data, rlen);
+      return this->do_encode_websocket_frame(opcode, data, rlen);
     }
 
     // If compression is not enabled, send outgoing data verbatim.
     if(!this->m_gzip)
-      return this->do_encode_websocket_frame(0, opcode, data, size);
+      return this->do_encode_websocket_frame(opcode, data, size);
 
     // Compress outgoing data using deflate.
     auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
@@ -420,7 +415,7 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
     size_t rlen = obuf.size() - 4;
     ROCKET_ASSERT(::memcmp(obuf.data() + rlen, "\x00\x00\xFF\xFF", 4) == 0);
 
-    bool sent = this->do_encode_websocket_frame(2, opcode, obuf.data(), rlen);
+    bool sent = this->do_encode_websocket_frame(opcode | 2, obuf.data(), rlen);
     obuf.clear();
     return sent;
   }
@@ -440,14 +435,13 @@ http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t si
     if(rlen != size)
       POSEIDON_LOG_WARN("Closure frame truncated (size `$1`)", size);
 
-    ::rocket::static_vector<char, 125> payload;
-    payload.emplace_back(stat >> 8);  // status (high)
-    payload.emplace_back(stat);  // status (low)
-    payload.append(data, data + size);
+    ::rocket::static_vector<char, 125> pbuf;
+    pbuf.emplace_back(stat >> 8);  // status (high)
+    pbuf.emplace_back(stat);  // status (low)
+    pbuf.append(data, data + size);
 
     // Send the closure frame and shut the connection down.
-    bool sent = this->do_encode_websocket_frame(0, websocket_opcode_close,
-                                                payload.data(), payload.size());
+    bool sent = this->do_encode_websocket_frame(0x80, pbuf.data(), pbuf.size());
     this->m_state = http_encoder_state_closed;
     sent = sent && this->do_http_on_server_close();
     return sent;

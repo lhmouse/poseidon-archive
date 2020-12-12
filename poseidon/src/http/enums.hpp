@@ -174,14 +174,14 @@ enum HTTP_Connection : uint8_t
 // This list is exhaustive according to RFC 6455.
 enum WebSocket_Opcode : uint8_t
   {
-    websocket_opcode_class_data     = 0b0000,
-    websocket_opcode_continuation   = 0b0000,
-    websocket_opcode_text           = 0b0001,
-    websocket_opcode_binary         = 0b0010,
-    websocket_opcode_class_control  = 0b1000,
-    websocket_opcode_close          = 0b1000,
-    websocket_opcode_ping           = 0b1001,
-    websocket_opcode_pong           = 0b1010,
+    websocket_opcode_class_data     = 0x00,
+    websocket_opcode_continuation   = 0x00,
+    websocket_opcode_text           = 0x10,
+    websocket_opcode_binary         = 0x20,
+    websocket_opcode_class_control  = 0x80,
+    websocket_opcode_close          = 0x80,
+    websocket_opcode_ping           = 0x90,
+    websocket_opcode_pong           = 0xA0,
   };
 
 // Classifies an opcode.

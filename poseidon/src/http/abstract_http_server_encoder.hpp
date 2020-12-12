@@ -31,8 +31,7 @@ class Abstract_HTTP_Server_Encoder
   private:
     inline
     bool
-    do_encode_http_headers(HTTP_Version ver, HTTP_Status stat,
-                           const Option_Map& headers);
+    do_encode_http_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers);
 
     inline
     bool
@@ -44,8 +43,7 @@ class Abstract_HTTP_Server_Encoder
 
     inline
     bool
-    do_encode_websocket_frame(uint8_t flags, WebSocket_Opcode opcode,
-                              const char* data, size_t size);
+    do_encode_websocket_frame(int flags, const char* data, size_t size);
 
   protected:
     // This function shall deliver all bytes to the other endpoint.
@@ -71,12 +69,12 @@ class Abstract_HTTP_Server_Encoder
 
     // Puts the HTTP status line and headers.
     // `http_encoder_state()` must be 'closed' or 'headers'.
-    // Arguments whose names begin with `req_` should be copied from requests. Unless
-    // the response 'MUST NOT' include a message body (see RFC 7230 section 3.3), the
-    // next state will be 'entity'.
+    // `method` and `target` shall be copied from a previous request. Unless the response
+    // 'MUST NOT' include a message body (see RFC 7230 section 3.3), the next state will
+    // be 'entity'.
     bool
-    http_encode_headers(HTTP_Status stat, Option_Map&& headers, HTTP_Method req_method,
-                        const cow_string& req_target, HTTP_Version req_ver);
+    http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
+                        HTTP_Method method, const cow_string& target);
 
     // Puts a chunk of entity.
     // `http_encoder_state()` must be 'closed' or 'entity'.
