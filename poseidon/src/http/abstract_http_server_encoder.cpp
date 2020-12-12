@@ -186,15 +186,15 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
       headers.for_each(connection_header_name,
           [&](const cow_string& resph) {
             // XXX: Options may overwrite each other.
+            if(stat == http_status_switching_protocol)
+              if(ascii_ci_has_token(resph, sref("upgrade")))
+                conn = http_connection_upgrade;
+
             if(ascii_ci_has_token(resph, sref("keep-alive")))
               conn = http_connection_keep_alive;
 
             if(ascii_ci_has_token(resph, sref("close")))
               conn = http_connection_close;
-
-            if((stat == http_status_switching_protocol)
-                 && ascii_ci_has_token(resph, sref("upgrade")))
-              conn = http_connection_upgrade;
           });
 
     // Check for upgradable connections.
