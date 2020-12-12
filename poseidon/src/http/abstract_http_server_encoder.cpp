@@ -198,6 +198,24 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
               conn = http_connection_close;
           });
 
+    if(ver < http_version_1_1) {
+      // HTTP/1.0 does not support this header.
+      headers.erase(sref("Transfer-Encoding"));
+    }
+    else {
+      // Check whether compression can be enabled.
+      auto& trans_enc_str = headers.open(sref("Transfer-Encoding"));
+      this->m_gzip = ascii_ci_has_token(trans_enc_str, sref("gzip"));
+
+      // Rewrite this header.
+      // The `chunked` encoding is enforced for simplicity.
+      this->m_chunked = true;
+      trans_enc_str = sref("chunked");
+
+      if(this->m_gzip)
+        trans_enc_str.insert(0, "gzip, ");
+    }
+
     // Check for upgradable connections.
     // First, look at `Connection:`. Only if an `upgrade` token exists, shall we
     // check `Upgrade:` for available protocols. Note that code above might have
@@ -254,24 +272,6 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
     if(no_content || (method == http_method_head))
       return this->do_encode_http_headers(ver, stat, headers) &&
              this->do_finish_http_message(http_encoder_state_headers);
-
-    if(ver < http_version_1_1) {
-      // HTTP/1.0 does not support this header.
-      headers.erase(sref("Transfer-Encoding"));
-    }
-    else {
-      // Check whether compression can be enabled.
-      auto& trans_enc_str = headers.open(sref("Transfer-Encoding"));
-      this->m_gzip = ascii_ci_has_token(trans_enc_str, sref("gzip"));
-
-      // Rewrite this header.
-      // The `chunked` encoding is enforced for simplicity.
-      this->m_chunked = true;
-      trans_enc_str = sref("chunked");
-
-      if(this->m_gzip)
-        trans_enc_str.insert(0, "gzip, ");
-    }
 
     // Reset the deflator used by the previous message, if any.
     auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
