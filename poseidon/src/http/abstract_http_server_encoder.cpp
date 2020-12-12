@@ -163,6 +163,7 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
     if(proxy)
       connection_header_name = sref("Proxy-Connection");
 
+    // The CONNECT method is very, very special.
     if(method == http_method_connect) {
       // If a 2xx status code is sent, a tunnel will be established.
       if(classify_http_status(stat) == http_status_class_success) {
