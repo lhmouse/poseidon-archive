@@ -149,8 +149,9 @@ enum HTTP_Encoder_State : uint8_t
     http_encoder_state_headers    = 0,
     http_encoder_state_closed     = 1,
     http_encoder_state_entity     = 2,
-    http_encoder_state_tunnel     = 3,
-    http_encoder_state_websocket  = 4,
+    http_encoder_state_upgrading  = 3,  // placeholder
+    http_encoder_state_tunnel     = 4,
+    http_encoder_state_websocket  = 5,
   };
 
 // These are internal states of HTTP and WebSocket decoders.
