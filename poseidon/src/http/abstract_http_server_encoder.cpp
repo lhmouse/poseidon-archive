@@ -371,6 +371,9 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
     if(this->m_state != http_encoder_state_websocket)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'websocket')");
 
+    if(opcode == websocket_opcode_continuation)
+      POSEIDON_THROW("WebSocket continuation frames cannot be sent explicitly");
+
     if(opcode == websocket_opcode_close) {
       // Send a default status code of 1000 and shut down the connection.
       // This use is discouraged.
