@@ -331,7 +331,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
                                     static_cast<int>(self->m_event_buffer.size()),
                                     60'000);  // one minute
           if(navail < 0) {
-            POSEIDON_LOG_DEBUG("`epoll_wait()` failed: $1", format_errno(errno));
+            POSEIDON_LOG_TRACE("`epoll_wait()` failed: $1", format_errno(errno));
             self->m_event_buffer.clear();
           }
           else
