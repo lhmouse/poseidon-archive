@@ -178,23 +178,23 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
       // Otherwise, the connection shall be closed immediately.
       conn = http_connection_close;
     }
-    else if(ver >= http_version_1_1) {
-      // For HTTP/1.1, persistent connections are enabled by default.
-      headers.for_each(connection_header_name,
-           [&](const cow_string& resph) {
-             // XXX: Options may overwrite each other.
-             if(ascii_ci_has_token(resph, sref("keep-alive")))
-               conn = http_connection_keep_alive;
 
-             if(ascii_ci_has_token(resph, sref("close")))
-               conn = http_connection_close;
-
-             if(ascii_ci_has_token(resph, sref("upgrade")))
-               conn = http_connection_upgrade;
-           });
-    }
-    else
+    if(ver < http_version_1_1)
       conn = http_connection_close;
+
+    if(conn == http_connection_keep_alive)
+      headers.for_each(connection_header_name,
+          [&](const cow_string& resph) {
+            // XXX: Options may overwrite each other.
+            if(ascii_ci_has_token(resph, sref("keep-alive")))
+              conn = http_connection_keep_alive;
+
+            if(ascii_ci_has_token(resph, sref("close")))
+              conn = http_connection_close;
+
+            if(ascii_ci_has_token(resph, sref("upgrade")))
+              conn = http_connection_upgrade;
+          });
 
     // Check for upgradable connections.
     // First, look at `Connection:`. Only if an `upgrade` token exists, shall we
@@ -229,23 +229,16 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
               }
             });
 
-        // Upgrade to WebSocket.
-        conn = http_connection_websocket;
+        // WebSocket uses a raw deflate compressor, while HTTP uses GZIP.
+        // It cannot be reused so delete it.
+        this->m_deflator = nullptr;
+
+        // Switch to WebSocket after the response headers.
+        return this->do_encode_http_headers(ver, stat, headers) &&
+               this->do_finish_http_message(http_encoder_state_websocket);
       }
-
-      if(conn == http_connection_upgrade)
+      else
         POSEIDON_THROW("Protocol `$1` not upgradable", *upgrade_str);
-    }
-
-    // Check for upgradable connections.
-    if(conn == http_connection_websocket) {
-      // WebSocket uses a raw deflate compressor, while HTTP uses GZIP.
-      // It cannot be reused so delete it.
-      this->m_deflator = nullptr;
-
-      // Switch to WebSocket after the response headers.
-      return this->do_encode_http_headers(ver, stat, headers) &&
-             this->do_finish_http_message(http_encoder_state_websocket);
     }
 
     // Rewrite default headers when the connection should be closed.
@@ -260,21 +253,23 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
       return this->do_encode_http_headers(ver, stat, headers) &&
              this->do_finish_http_message(http_encoder_state_headers);
 
-    // The `chunked` encoding is enforced for simplicity.
-    if(ver >= http_version_1_1) {
-      this->m_chunked = true;
-      auto& trans_enc_str = headers.open(sref("Transfer-Encoding"));
-
+    if(ver < http_version_1_1) {
+      // HTTP/1.0 does not support this header.
+      headers.erase(sref("Transfer-Encoding"));
+    }
+    else {
       // Check whether compression can be enabled.
+      auto& trans_enc_str = headers.open(sref("Transfer-Encoding"));
       this->m_gzip = ascii_ci_has_token(trans_enc_str, sref("gzip"));
 
-      // Rewrite the header.
+      // Rewrite this header.
+      // The `chunked` encoding is enforced for simplicity.
+      this->m_chunked = true;
       trans_enc_str = sref("chunked");
+
       if(this->m_gzip)
         trans_enc_str.insert(0, "gzip, ");
     }
-    else
-      headers.erase(sref("Transfer-Encoding"));
 
     // Reset the deflator used by the previous message, if any.
     auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);

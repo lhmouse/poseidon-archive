@@ -159,13 +159,12 @@ enum HTTP_Decoder_State : uint8_t
   };
 
 // These were designed for various options in the `Connection:` header, but
-// now they denote [ method + connection + upgrade ] combinations.
+// now they denote [ method + connection ] combinations.
 enum HTTP_Connection : uint8_t
   {
     http_connection_keep_alive  = 0,
     http_connection_close       = 1,
-    http_connection_upgrade     = 2,  // special value for pending upgrades
-    http_connection_websocket   = 3,  // WebSocket
+    http_connection_upgrade     = 2,
   };
 
 // These are WebSocket opcodes.
