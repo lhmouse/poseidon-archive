@@ -203,12 +203,11 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
     // check `Upgrade:` for available protocols. Note that code above might have
     // set `Connection: close`, in which case no upgrade is possible.
     if(conn == http_connection_upgrade) {
-      conn = http_connection_close;
       auto upgrade_str = headers.find_opt(sref("Upgrade"));
-      if(!upgrade_str) {
-        POSEIDON_LOG_ERROR("`Connection: upgrade` sent without an `Upgrade:` header");
-      }
-      else if(ascii_ci_equal(*upgrade_str, sref("websocket"))) {
+      if(!upgrade_str)
+        POSEIDON_THROW("`Connection: upgrade` sent without an `Upgrade:` header");
+
+      if(ascii_ci_equal(*upgrade_str, sref("websocket"))) {
         // Check whether compression can be enabled. Refer to RFC 7692 for details.
         this->m_ws_pmce = false;
         this->m_ws_nctxto = false;
@@ -235,8 +234,9 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
         // Upgrade to WebSocket.
         conn = http_connection_websocket;
       }
-      else
-        POSEIDON_LOG_ERROR("Protocol `$1` not upgradable", *upgrade_str);
+
+      if(conn == http_connection_upgrade)
+        POSEIDON_THROW("Protocol `$1` not upgradable", *upgrade_str);
     }
 
     // If the connection has been marked for closure, it will not be upgraded.
