@@ -157,7 +157,6 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
 
     HTTP_Connection conn = http_connection_keep_alive;
     Option_Map opts;
-    ::rocket::ascii_numget numg;
 
     auto connection_header_name = sref("Connection");
     if(target[0] != '/')
