@@ -130,6 +130,13 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
     this->m_chunked = false;
     this->m_gzip = false;
 
+    HTTP_Connection conn = http_connection_keep_alive;
+    Option_Map opts;
+
+    auto connection_header_name = sref("Connection");
+    if(target[0] != '/')
+      connection_header_name = sref("Proxy-Connection");
+
     // Check for special cases where no content shall be sent.
     // Refer to RFC 7230 section 3.3 for details.
     bool no_content = (method == http_method_connect) ||
@@ -139,28 +146,21 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
 
     if(no_content) {
       // In this case, erase all content headers.
-      if(headers.erase(sref("Content-Type")))
-        POSEIDON_LOG_WARN("`Content-Type` not allowed without a content");
-
       if(headers.erase(sref("Content-Length")))
         POSEIDON_LOG_WARN("`Content-Length` not allowed without a content");
+
+      if(headers.erase(sref("Transfer-Encoding")))
+        POSEIDON_LOG_ERROR("`Transfer-Encoding` not allowed without a content");
+
+      if(headers.erase(sref("Content-Type")))
+        POSEIDON_LOG_WARN("`Content-Type` not allowed without a content");
 
       if(headers.erase(sref("Content-Encoding")))
         POSEIDON_LOG_WARN("`Content-Encoding` not allowed without a content");
 
       if(headers.erase(sref("Content-Range")))
         POSEIDON_LOG_WARN("`Content-Range` not allowed without a content");
-
-      if(headers.erase(sref("Transfer-Encoding")))
-        POSEIDON_LOG_ERROR("`Transfer-Encoding` not allowed without a content");
     }
-
-    HTTP_Connection conn = http_connection_keep_alive;
-    Option_Map opts;
-
-    auto connection_header_name = sref("Connection");
-    if(target[0] != '/')
-      connection_header_name = sref("Proxy-Connection");
 
     if(method == http_method_connect) {
       // If a 2xx status code is sent, a tunnel will be established.
