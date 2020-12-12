@@ -155,24 +155,6 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
         POSEIDON_LOG_ERROR("`Transfer-Encoding` not allowed without a content");
     }
 
-    // CONNECT is used to establish a tunnel.
-    if(method == http_method_connect) {
-      // If a 2xx status code is sent, a tunnel will be established.
-      // Otherwise, the connection shall be closed immediately.
-      if(classify_http_status(stat) != http_status_class_success) {
-        this->m_final = true;
-        headers.set(sref("Connection"), sref("close"));
-      }
-      else {
-        headers.erase(sref("Content-Length"));
-        headers.erase(sref("Transfer-Encoding"));
-        headers.erase(sref("Connection"));
-      }
-
-      return this->do_encode_http_headers(ver, stat, headers) &&
-             this->do_finish_http_message(http_encoder_state_tunnel);
-    }
-
     HTTP_Connection conn = http_connection_keep_alive;
     Option_Map opts;
     ::rocket::ascii_numget numg;
@@ -181,10 +163,26 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
     if(target[0] != '/')
       connection_header_name = sref("Proxy-Connection");
 
-    if(ver >= http_version_1_1) {
+    if(method == http_method_connect) {
+      // If a 2xx status code is sent, a tunnel will be established.
+      if(classify_http_status(stat) == http_status_class_success) {
+        // Erase forbidden headers.
+        headers.erase(connection_header_name);
+        headers.erase(sref("Content-Length"));
+        headers.erase(sref("Transfer-Encoding"));
+
+        return this->do_encode_http_headers(ver, stat, headers) &&
+               this->do_finish_http_message(http_encoder_state_tunnel);
+      }
+
+      // Otherwise, the connection shall be closed immediately.
+      conn = http_connection_close;
+    }
+    else if(ver >= http_version_1_1) {
       // For HTTP/1.1, persistent connections are enabled by default.
       headers.for_each(connection_header_name,
            [&](const cow_string& resph) {
+             // XXX: Options may overwrite each other.
              if(ascii_ci_has_token(resph, sref("keep-alive")))
                conn = http_connection_keep_alive;
 
@@ -239,18 +237,6 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
         POSEIDON_THROW("Protocol `$1` not upgradable", *upgrade_str);
     }
 
-    // If the connection has been marked for closure, it will not be upgraded.
-    if(conn == http_connection_close) {
-      this->m_final = true;
-      headers.erase(sref("Upgrade"));
-      headers.set(connection_header_name, sref("close"));
-    }
-
-    // Encode response headers now.
-    if(no_content || (method == http_method_head))
-      return this->do_encode_http_headers(ver, stat, headers) &&
-             this->do_finish_http_message(http_encoder_state_headers);
-
     // Check for upgradable connections.
     if(conn == http_connection_websocket) {
       // WebSocket uses a raw deflate compressor, while HTTP uses GZIP.
@@ -261,6 +247,18 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
       return this->do_encode_http_headers(ver, stat, headers) &&
              this->do_finish_http_message(http_encoder_state_websocket);
     }
+
+    // Rewrite default headers when the connection should be closed.
+    // This must be the last operation before encoding the headers.
+    if(conn == http_connection_close) {
+      this->m_final = true;
+      headers.erase(sref("Upgrade"));
+      headers.set(connection_header_name, sref("close"));
+    }
+
+    if(no_content || (method == http_method_head))
+      return this->do_encode_http_headers(ver, stat, headers) &&
+             this->do_finish_http_message(http_encoder_state_headers);
 
     // The `chunked` encoding is enforced for simplicity.
     if(ver >= http_version_1_1) {
