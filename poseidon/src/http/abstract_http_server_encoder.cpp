@@ -191,7 +191,8 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
             if(ascii_ci_has_token(resph, sref("close")))
               conn = http_connection_close;
 
-            if(ascii_ci_has_token(resph, sref("upgrade")))
+            if((stat == http_status_switching_protocol)
+                 && ascii_ci_has_token(resph, sref("upgrade")))
               conn = http_connection_upgrade;
           });
 
