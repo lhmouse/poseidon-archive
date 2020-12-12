@@ -446,6 +446,9 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
       headers.for_each(connection_header_name,
           [&](const cow_string& resph) {
             // XXX: Options may overwrite each other.
+            if(ascii_ci_has_token(resph, sref("upgrade")))
+              conn = http_connection_close;  // not upgradable here
+
             if(ascii_ci_has_token(resph, sref("keep-alive")))
               conn = http_connection_keep_alive;
 
