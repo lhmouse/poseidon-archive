@@ -156,10 +156,11 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
     }
 
     HTTP_Connection conn = http_connection_keep_alive;
+    bool proxy = target[0] != '/';
     Option_Map opts;
 
     auto connection_header_name = sref("Connection");
-    if(target[0] != '/')
+    if(proxy)
       connection_header_name = sref("Proxy-Connection");
 
     if(method == http_method_connect) {
