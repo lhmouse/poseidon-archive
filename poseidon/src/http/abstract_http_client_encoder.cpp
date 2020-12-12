@@ -53,7 +53,7 @@ do_encode_http_entity(const char* data, size_t size)
     ::rocket::ascii_numput nump;
     nump.put_XU(size);
 
-    return this->do_http_on_client_send(nump.data(), nump.size()) &&
+    return this->do_http_on_client_send(nump.data() + 2, nump.size()) &&
            this->do_http_on_client_send("\r\n", 2) &&
            this->do_http_on_client_send(data, size) &&
            this->do_http_on_client_send("\r\n", 2);
