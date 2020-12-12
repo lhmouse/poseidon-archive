@@ -205,7 +205,7 @@ http_encode_headers(HTTP_Method method, const cow_string& target, HTTP_Version v
         if(!numg.cast_U(length, 0, INT64_MAX))
           POSEIDON_THROW("`Content-Length` value out of range: $1", *qstr);
       }
-      no_content = length > 0;
+      no_content = !length;
     }
 
     if(no_content) {
