@@ -381,8 +381,9 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
                        websocket_status_normal_closure, data, size);
     }
 
-    if(classify_websocket_opcode(opcode) == websocket_opcode_class_control) {
-      // Truncate the payload, as control frames cannot be fragmented.
+    if(opcode >= websocket_opcode_close) {
+      // Encode a control frame.
+      // Control frames are not compressed, and must not be fragmented.
       size_t rlen = ::std::min<size_t>(size, 125);
       if(rlen != size)
         POSEIDON_LOG_WARN("Control frame truncated (size `$1`)", size);

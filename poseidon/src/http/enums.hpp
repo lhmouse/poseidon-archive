@@ -141,7 +141,7 @@ constexpr
 HTTP_Status
 classify_http_status(HTTP_Status stat)
   noexcept
-  { return static_cast<HTTP_Status>(static_cast<uint32_t>(stat) / 100 * 100);  }
+  { return HTTP_Status(uint32_t(stat) / 100 * 100);  }
 
 // These are internal states of HTTP and WebSocket encoders.
 enum HTTP_Encoder_State : uint8_t
@@ -163,40 +163,28 @@ enum HTTP_Decoder_State : uint8_t
 enum HTTP_Connection : uint8_t
   {
     http_connection_keep_alive  = 0,
-    http_connection_connect     = 1,  // special value for CONNECT method
-    http_connection_head        = 2,  // special value for HEAD method
-    http_connection_close       = 3,
-    http_connection_upgrade     = 4,  // special value for pending upgrades
-    http_connection_websocket   = 5,  // WebSocket
+    http_connection_close       = 1,
+    http_connection_upgrade     = 2,  // special value for pending upgrades
+    http_connection_websocket   = 3,  // WebSocket
   };
 
 // These are WebSocket opcodes.
 // This list is exhaustive according to RFC 6455.
 enum WebSocket_Opcode : uint8_t
   {
-    websocket_opcode_class_data     = 0x00,
-    websocket_opcode_continuation   = 0x00,
-    websocket_opcode_text           = 0x10,
-    websocket_opcode_binary         = 0x20,
-    websocket_opcode_class_control  = 0x80,
-    websocket_opcode_close          = 0x80,
-    websocket_opcode_ping           = 0x90,
-    websocket_opcode_pong           = 0xA0,
+    websocket_opcode_continuation  = 0x00,
+    websocket_opcode_text          = 0x10,
+    websocket_opcode_binary        = 0x20,
+    websocket_opcode_close         = 0x80,
+    websocket_opcode_ping          = 0x90,
+    websocket_opcode_pong          = 0xA0,
   };
-
-// Classifies an opcode.
-constexpr
-WebSocket_Opcode
-classify_websocket_opcode(WebSocket_Opcode opcode)
-  noexcept
-  { return static_cast<WebSocket_Opcode>(opcode & 0b1000);  }
 
 // These are WebSocket status codes.
 // This list is not exhaustive. Custom values may be used.
 enum WebSocket_Status : uint16_t
   {
     websocket_status_null                =    0,
-    websocket_status_class_rfc6455       = 1000,
     websocket_status_normal_closure      = 1000,
     websocket_status_going_away          = 1001,
     websocket_status_protocol_error      = 1002,
@@ -209,20 +197,7 @@ enum WebSocket_Status : uint16_t
     websocket_status_extension_required  = 1010,  // reserved
     websocket_status_server_error        = 1011,
     websocket_status_tls_error           = 1015,  // reserved
-    websocket_status_class_iana          = 3000,
-    websocket_status_class_private_use   = 4000,
   };
-
-// Classifies a status code.
-constexpr
-WebSocket_Status
-classify_websocket_status(WebSocket_Status stat)
-  noexcept
-  {
-    uint32_t cls = static_cast<uint32_t>(stat) / 1000 * 1000;
-    return (cls == 2000) ? websocket_status_class_rfc6455
-                         : static_cast<WebSocket_Status>(cls);
-  }
 
 }  // namespace poseidon
 
