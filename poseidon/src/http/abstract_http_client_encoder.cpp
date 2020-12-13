@@ -149,6 +149,7 @@ http_encode_headers(HTTP_Method method, const cow_string& target, HTTP_Version v
 
     HTTP_Connection conn = http_connection_keep_alive;
     bool proxy = target[0] != '/';
+    bool no_content = false;
     Option_Map opts;
 
     auto connection_header_name = sref("Connection");
@@ -157,8 +158,7 @@ http_encode_headers(HTTP_Method method, const cow_string& target, HTTP_Version v
 
     // The CONNECT method is very, very special.
     if(method == http_method_connect) {
-      // Erase forbidden headers.
-      // This request should have no content.
+      // Erase forbidden headers. This request should have no content.
       headers.erase(connection_header_name);
       headers.erase(sref("Content-Length"));
       headers.erase(sref("Transfer-Encoding"));
@@ -169,7 +169,6 @@ http_encode_headers(HTTP_Method method, const cow_string& target, HTTP_Version v
 
     // Look for `Transfer-Encoding:` or `Content-Length:`.
     // If both are specified, the former takes precedence.
-    bool no_content = false;
     auto mut_qstr = headers.mut_find_opt(sref("Transfer-Encoding"));
     if(mut_qstr) {
       // Note that there is no way in HTTP/1.0 to send a request message with an
@@ -408,7 +407,7 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
     }
 
     // Other 1xx status codes are accepted and ignored.
-    if(classify_http_status(stat) == http_status_class_information)
+    if((100 <= stat) && (stat <= 199))
       return true;
 
     // The other status codes denote final responses so pop the first pipelined request.
@@ -428,15 +427,15 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
           POSEIDON_THROW("No data shall follow a CONNECT request");
 
         // If a 2xx status code has been received, a tunnel will have been established.
-        // Otherwise, the connection shall be closed immediately.
-        if(classify_http_status(stat) != http_status_class_success)
+        if((200 <= stat) && (stat <= 299)) {
+          // Activate the tunnel.
+          this->m_state = http_encoder_state_tunnel;
+          this->m_pipeline.clear();
+          this->m_pipeline.shrink_to_fit();
+          return true;
+        }
+        else
           POSEIDON_THROW("HTTP CONNECT failure (status $1 received)", stat);
-
-        // Activate the tunnel.
-        this->m_state = http_encoder_state_tunnel;
-        this->m_pipeline.clear();
-        this->m_pipeline.shrink_to_fit();
-        return true;
       }
 
       auto connection_header_name = sref("Connection");

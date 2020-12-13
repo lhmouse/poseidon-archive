@@ -130,12 +130,30 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
     this->m_chunked = false;
     this->m_gzip = false;
 
+    HTTP_Connection conn = http_connection_keep_alive;
+    bool proxy = target[0] != '/';
+    bool no_content = false;
+    Option_Map opts;
+
+    auto connection_header_name = sref("Connection");
+    if(proxy)
+      connection_header_name = sref("Proxy-Connection");
+
     // Check for special cases where no content shall be sent.
     // Refer to RFC 7230 section 3.3 for details.
-    bool no_content = (method == http_method_connect) ||
-            (classify_http_status(stat) == http_status_class_information) ||
-            ::rocket::is_any_of(stat,
-                { http_status_no_content, http_status_not_modified });
+    switch(static_cast<uint32_t>(stat) / 100) {
+      case 1:
+        no_content = true;
+        break;
+
+      case 2:
+        no_content = (method == http_method_connect) || (stat == 204);
+        break;
+
+      case 3:
+        no_content = (stat == 304);
+        break;
+    }
 
     if(no_content) {
       // In this case, erase all content headers.
@@ -155,18 +173,10 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
         POSEIDON_LOG_WARN("`Content-Range` not allowed without a content");
     }
 
-    HTTP_Connection conn = http_connection_keep_alive;
-    bool proxy = target[0] != '/';
-    Option_Map opts;
-
-    auto connection_header_name = sref("Connection");
-    if(proxy)
-      connection_header_name = sref("Proxy-Connection");
-
     // The CONNECT method is very, very special.
     if(method == http_method_connect) {
       // If a 2xx status code is sent, a tunnel will be established.
-      if(classify_http_status(stat) == http_status_class_success) {
+      if((200 <= stat) && (stat <= 299)) {
         // Erase forbidden headers.
         headers.erase(connection_header_name);
         headers.erase(sref("Content-Length"));

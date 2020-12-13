@@ -63,12 +63,10 @@ parse_http_method(const char* bptr, const char* eptr)
 enum HTTP_Status : uint16_t
   {
     http_status_null                    =   0,  // Null
-    http_status_class_information       = 100,
     http_status_continue                = 100,  // Continue
     http_status_switching_protocol      = 101,  // Switching Protocol
     http_status_processing              = 102,  // Processing
     http_status_early_hints             = 103,  // Early Hints
-    http_status_class_success           = 200,
     http_status_ok                      = 200,  // OK
     http_status_created                 = 201,  // Created
     http_status_accepted                = 202,  // Accepted
@@ -80,7 +78,6 @@ enum HTTP_Status : uint16_t
     http_status_already_reported        = 208,  // Already Reported
     http_status_im_used                 = 226,  // IM Used
     http_status_connection_established  = 299,  // Connection Established [x]
-    http_status_class_redirection       = 300,
     http_status_multiple_choice         = 300,  // Multiple Choice
     http_status_moved_permanently       = 301,  // Moved Permanently
     http_status_found                   = 302,  // Found
@@ -89,7 +86,6 @@ enum HTTP_Status : uint16_t
     http_status_use_proxy               = 305,  // Use Proxy
     http_status_temporary_redirect      = 307,  // Temporary Redirect
     http_status_permanent_redirect      = 308,  // Permanent Redirect
-    http_status_class_client_error      = 400,
     http_status_bad_request             = 400,  // Bad Request
     http_status_unauthorized            = 401,  // Unauthorized
     http_status_forbidden               = 403,  // Forbidden
@@ -116,7 +112,6 @@ enum HTTP_Status : uint16_t
     http_status_precondition_required   = 428,  // Precondition Required
     http_status_too_many_requests       = 429,  // Too Many Requests
     http_status_headers_too_large       = 431,  // Request Header Fields Too Large
-    http_status_class_server_error      = 500,
     http_status_internal_server_error   = 500,  // Internal Server Error
     http_status_not_implemented         = 501,  // Not Implemented
     http_status_bad_gateway             = 502,  // Bad Gateway
@@ -135,13 +130,6 @@ ROCKET_CONST_FUNCTION
 const char*
 describe_http_status(HTTP_Status stat)
   noexcept;
-
-// Classifies a status code.
-constexpr
-HTTP_Status
-classify_http_status(HTTP_Status stat)
-  noexcept
-  { return HTTP_Status(uint32_t(stat) / 100 * 100);  }
 
 // These are internal states of HTTP and WebSocket encoders.
 enum HTTP_Encoder_State : uint8_t
