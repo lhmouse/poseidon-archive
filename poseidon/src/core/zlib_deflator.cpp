@@ -3,6 +3,8 @@
 
 #include "../precompiled.hpp"
 #include "zlib_deflator.hpp"
+#include "../static/main_config.hpp"
+#include "../core/config_file.hpp"
 #include "../utils.hpp"
 
 namespace poseidon {
@@ -10,6 +12,17 @@ namespace poseidon {
 zlib_Deflator::
 zlib_Deflator(Format fmt, int level)
   {
+    // If `level` equals `Z_DEFAULT_COMPRESSION` and a default level is
+    // specified in 'main.conf', use that default level.
+    int rlevel = level;
+    if(rlevel == Z_DEFAULT_COMPRESSION) {
+      const auto file = Main_Config::copy();
+
+      auto qint = file.get_int64_opt({"general","default_compression_level"});
+      if(qint)
+        rlevel = static_cast<int>(::rocket::clamp(*qint, 0, 9));
+    }
+
     // Get the `windowBits` argument.
     int wbits;
     switch(fmt) {
@@ -31,8 +44,8 @@ zlib_Deflator(Format fmt, int level)
 
     // Create a deflate stream.
     // Note this must be the last operation in each constructor.
-    int res = ::deflateInit2(this->m_zlib, level, Z_DEFLATED,
-                             wbits, 9, Z_DEFAULT_STRATEGY);
+    int res = ::deflateInit2(this->m_zlib, rlevel, Z_DEFLATED, wbits, 9,
+                             Z_DEFAULT_STRATEGY);
     if(res != Z_OK)
       this->m_zlib.throw_zlib_error("deflateInit2", res);
   }
