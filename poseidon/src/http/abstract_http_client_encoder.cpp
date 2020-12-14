@@ -17,8 +17,9 @@ Abstract_HTTP_Client_Encoder::
 
 bool
 Abstract_HTTP_Client_Encoder::
-do_encode_http_headers(HTTP_Method method, const cow_string& target, HTTP_Version ver,
-                       const Option_Map& headers, HTTP_Connection conn)
+do_encode_http_headers(HTTP_Method method, const cow_string& target,
+                       HTTP_Version ver, const Option_Map& headers,
+                       HTTP_Connection conn)
   {
     // Pipeline this request.
     Pipelined_Request req = { method, conn, target[0] != '/' };
@@ -133,8 +134,8 @@ do_encode_websocket_frame(int flags, char* data, size_t size)
 
 bool
 Abstract_HTTP_Client_Encoder::
-http_encode_headers(HTTP_Method method, const cow_string& target, HTTP_Version ver,
-                    Option_Map&& headers)
+http_encode_headers(HTTP_Method method, const cow_string& target,
+                    HTTP_Version ver, Option_Map&& headers)
   {
     if(this->m_state == http_encoder_state_closed)
       return false;

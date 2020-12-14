@@ -42,8 +42,9 @@ class Abstract_HTTP_Client_Encoder
   private:
     inline
     bool
-    do_encode_http_headers(HTTP_Method method, const cow_string& target, HTTP_Version ver,
-                           const Option_Map& headers, HTTP_Connection conn);
+    do_encode_http_headers(HTTP_Method method, const cow_string& target,
+                           HTTP_Version ver, const Option_Map& headers,
+                           HTTP_Connection conn);
 
     inline
     bool
@@ -84,8 +85,8 @@ class Abstract_HTTP_Client_Encoder
     // Unless the request includes a message body (see RFC 7230 section 3.3), the next
     // state will be 'entity'.
     bool
-    http_encode_headers(HTTP_Method method, const cow_string& target, HTTP_Version ver,
-                        Option_Map&& headers);
+    http_encode_headers(HTTP_Method method, const cow_string& target,
+                        HTTP_Version ver, Option_Map&& headers);
 
     // Puts a chunk of entity. Note that it is not valid to switch to a new protocol
     // without receipt of a successful response.
