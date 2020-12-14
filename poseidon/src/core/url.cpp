@@ -407,17 +407,15 @@ parse(const cow_string& str)
     // If no scheme string can be accepted, `bptr` shall be left intact.
     // The URL may start with a scheme, userinfo or host name field.
     // A leading alphabetic character may initiate a scheme or host name.
-    if(do_is_url_ctype(bptr[0], url_ctype_alpha)) {
-      mptr = do_find_if_not(bptr + 1, eptr,
+    mptr = do_find_if_not(bptr, eptr,
                  [&](char ch) {
                    return do_is_url_ctype(ch, url_ctype_alpha | url_ctype_digit);
                  });
 
-      if((mptr[0] == ':') && (mptr[1] == '/') && (mptr[2] == '/')) {
-        // Accept the scheme.
-        this->m_scheme = ascii_lowercase(cow_string(bptr, mptr));
-        bptr = mptr + 3;
-      }
+    if((mptr != bptr) && (mptr[0] == ':') && (mptr[1] == '/') && (mptr[2] == '/')) {
+      // Accept the scheme.
+      this->m_scheme = ascii_lowercase(cow_string(bptr, mptr));
+      bptr = mptr + 3;
     }
 
     // Check for a userinfo.
