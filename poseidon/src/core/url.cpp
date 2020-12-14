@@ -408,9 +408,8 @@ parse(const cow_string& str)
     // The URL may start with a scheme, userinfo or host name field.
     // A leading alphabetic character may initiate a scheme or host name.
     mptr = do_find_if_not(bptr, eptr,
-                 [&](char ch) {
-                   return do_is_url_ctype(ch, url_ctype_alpha | url_ctype_digit);
-                 });
+        [&](char ch) { return do_is_url_ctype(ch, url_ctype_alpha |
+                                                  url_ctype_digit);  });
 
     if((mptr != bptr) && (mptr[0] == ':') && (mptr[1] == '/') && (mptr[2] == '/')) {
       // Accept the scheme.
@@ -420,10 +419,9 @@ parse(const cow_string& str)
 
     // Check for a userinfo.
     mptr = do_find_if_not(bptr, eptr,
-                 [&](char ch) {
-                   return do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim) ||
-                          ::rocket::is_any_of(ch, {'%', ':'});
-                 });
+        [&](char ch) { return do_is_url_ctype(ch, url_ctype_unreserved |
+                                                  url_ctype_sub_delim) ||
+                              ::rocket::is_any_of(ch, {'%', ':'});  });
 
     if(mptr[0] == '@') {
       // Accept the userinfo.
@@ -436,10 +434,9 @@ parse(const cow_string& str)
     // allowed inside brackets, but not outside.
     size_t brackets = bptr[0] == '[';
     mptr = do_find_if_not(bptr + brackets, eptr,
-                 [&](char ch) {
-                   return do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim) ||
-                          (ch == (brackets ? ':' : '%'));
-                 });
+        [&](char ch) { return do_is_url_ctype(ch, url_ctype_unreserved |
+                                                  url_ctype_sub_delim) ||
+                              (ch == (brackets ? ':' : '%'));  });
 
     if(brackets) {
       // Check the IP address.
@@ -460,9 +457,7 @@ parse(const cow_string& str)
       // Check for a port number.
       if(mptr[0] == ':') {
         mptr = do_find_if_not(bptr + 1, eptr,
-                 [&](char ch) {
-                   return do_is_url_ctype(ch, url_ctype_digit);
-                 });
+            [&](char ch) { return do_is_url_ctype(ch, url_ctype_digit);  });
 
         if(mptr - bptr == 1)
           POSEIDON_THROW("Missing port number after `:`: $1", str);
@@ -485,10 +480,8 @@ parse(const cow_string& str)
     // Check for a path.
     if(bptr[0] == '/') {
       mptr = do_find_if_not(bptr + 1, eptr,
-                 [&](char ch) {
-                   return do_is_url_ctype(ch, url_ctype_pchar) ||
-                          ::rocket::is_any_of(ch, {'%', '/'});
-                 });
+          [&](char ch) { return do_is_url_ctype(ch, url_ctype_pchar) ||
+                                ::rocket::is_any_of(ch, {'%', '/'});  });
 
       // Accept the path without the leading slash.
       do_percent_decode(this->m_path, bptr + 1, mptr);
@@ -498,10 +491,8 @@ parse(const cow_string& str)
     // Check for a query string.
     if(bptr[0] == '?') {
       mptr = do_find_if_not(bptr + 1, eptr,
-                 [&](char ch) {
-                   return do_is_url_ctype(ch, url_ctype_pchar) ||
-                          ::rocket::is_any_of(ch, {'/', '?'});
-                 });
+          [&](char ch) { return do_is_url_ctype(ch, url_ctype_pchar) ||
+                                ::rocket::is_any_of(ch, {'/', '?'});  });
 
       // Accept the query string without the question mark.
       // Note that it is not decoded.
@@ -512,10 +503,8 @@ parse(const cow_string& str)
     // Check for a fragment.
     if(bptr[0] == '#') {
       mptr = do_find_if_not(bptr + 1, eptr,
-                 [&](char ch) {
-                   return do_is_url_ctype(ch, url_ctype_pchar) ||
-                          ::rocket::is_any_of(ch, {'/', '?'});
-                 });
+          [&](char ch) { return do_is_url_ctype(ch, url_ctype_pchar) ||
+                                ::rocket::is_any_of(ch, {'/', '?'});  });
 
       // Accept the query string without the hashtag.
       do_percent_decode(this->m_raw_fragment, bptr + 1, mptr);
