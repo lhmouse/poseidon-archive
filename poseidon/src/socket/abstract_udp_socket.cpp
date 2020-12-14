@@ -210,8 +210,7 @@ Abstract_UDP_Socket::
 do_socket_bind(const Socket_Address& addr)
   {
     static constexpr int yes[] = { -1 };
-    int res = ::setsockopt(this->get_fd(), SOL_SOCKET,
-                           SO_REUSEADDR, yes, sizeof(yes));
+    int res = ::setsockopt(this->get_fd(), SOL_SOCKET, SO_REUSEADDR, yes, sizeof(yes));
     ROCKET_ASSERT(res == 0);
 
     if(::bind(this->get_fd(), addr.data(), addr.ssize()) != 0)

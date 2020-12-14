@@ -86,7 +86,6 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
     if(io_res == io_result_end_of_stream) {
       POSEIDON_LOG_TRACE("End of stream encountered: $1", this);
       this->do_socket_close_unlocked();
-      return io_res;
     }
     if(io_res != io_result_partial_work)
       return io_res;
@@ -128,11 +127,9 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
     if(this->m_cstate < connection_state_established) {
       this->m_cstate = connection_state_established;
 
-      // Disables Nagle algorithm.
+      // Disables Nagle algorithm. Errors are ignored.
       static constexpr int yes[] = { -1 };
-      int res = ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY,
-                             yes, sizeof(yes));
-      ROCKET_ASSERT(res == 0);
+      ::setsockopt(this->get_fd(), IPPROTO_TCP, TCP_NODELAY, yes, sizeof(yes));
 
       lock.unlock();
       this->do_socket_on_establish();
@@ -141,13 +138,11 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
 
     // Try writing some bytes.
     size_t navail = ::std::min(this->m_wqueue.size(), size);
-    if(navail == 0) {
-      if(this->m_cstate <= connection_state_established)
-        return io_result_end_of_stream;
-
-      // Shut down the connection completely now.
+    if((navail == 0) && (this->m_cstate > connection_state_established))
       return this->do_socket_close_unlocked();
-    }
+
+    if(navail == 0)
+      return io_result_end_of_stream;
 
     const char* eptr = this->m_wqueue.data();
     auto io_res = this->do_socket_stream_write_unlocked(eptr, navail);
