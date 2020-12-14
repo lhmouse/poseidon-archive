@@ -33,7 +33,7 @@ do_encode_http_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& hea
       fmt << pair.first << ": " << pair.second << "\r\n";
     fmt << "\r\n";
 
-    return this->do_http_on_server_send(fmt.c_str(), fmt.length());
+    return this->do_http_server_send(fmt.c_str(), fmt.length());
   }
 
 bool
@@ -42,27 +42,27 @@ do_encode_http_entity(const char* data, size_t size)
   {
     // Don't send empty chunks. Test the connection state only.
     if(size == 0)
-      return this->do_http_on_server_send("", 0);
+      return this->do_http_server_send("", 0);
 
     // For HTTP/1.0, send outgoing data verbatim.
     if(!this->m_chunked)
-      return this->do_http_on_server_send(data, size);
+      return this->do_http_server_send(data, size);
 
     // For HTTP/1.1, encode the data as a single chunk.
     ::rocket::ascii_numput nump;
     nump.put_XU(size);
 
-    return this->do_http_on_server_send(nump.data() + 2, nump.size()) &&
-           this->do_http_on_server_send("\r\n", 2) &&
-           this->do_http_on_server_send(data, size) &&
-           this->do_http_on_server_send("\r\n", 2);
+    return this->do_http_server_send(nump.data() + 2, nump.size()) &&
+           this->do_http_server_send("\r\n", 2) &&
+           this->do_http_server_send(data, size) &&
+           this->do_http_server_send("\r\n", 2);
   }
 
 bool
 Abstract_HTTP_Server_Encoder::
 do_finish_http_message(HTTP_Encoder_State next)
   {
-    bool sent = this->do_http_on_server_send("", 0);
+    bool sent = this->do_http_server_send("", 0);
 
     // Terminate the entity.
     if(this->m_gzip) {
@@ -76,13 +76,13 @@ do_finish_http_message(HTTP_Encoder_State next)
     }
 
     if(this->m_chunked)
-      sent = sent && this->do_http_on_server_send("0\r\n\r\n", 5);
+      sent = sent && this->do_http_server_send("0\r\n\r\n", 5);
 
     // If this is the final message, shut the connection down.
     this->m_state = next;
     if(this->m_final) {
       this->m_state = http_encoder_state_closed;
-      sent = sent && this->do_http_on_server_close();
+      sent = sent && this->do_http_server_close();
     }
     return sent;
   }
@@ -111,8 +111,8 @@ do_encode_websocket_frame(int flags, const char* data, size_t size)
     while(exlen != 0)
       head.emplace_back(static_cast<uint64_t>(size) >> --exlen * 8);
 
-    return this->do_http_on_server_send(head.data(), head.size()) &&
-           this->do_http_on_server_send(data, size);
+    return this->do_http_server_send(head.data(), head.size()) &&
+           this->do_http_server_send(data, size);
   }
 
 bool
@@ -348,7 +348,7 @@ http_encode_tunnel_data(const char* data, size_t size)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'tunnel')");
 
     // Forward outgoing data verbatim.
-    return this->do_http_on_server_send(data, size);
+    return this->do_http_server_send(data, size);
   }
 
 bool
@@ -363,7 +363,7 @@ http_encode_tunnel_closure()
 
     // Shut the tunnel down.
     this->m_state = http_encoder_state_closed;
-    return this->do_http_on_server_close();
+    return this->do_http_server_close();
   }
 
 bool
@@ -452,7 +452,7 @@ http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t si
     // Send the closure frame and shut the connection down.
     bool sent = this->do_encode_websocket_frame(0x80, pbuf.data(), pbuf.size());
     this->m_state = http_encoder_state_closed;
-    sent = sent && this->do_http_on_server_close();
+    sent = sent && this->do_http_server_close();
     return sent;
   }
 

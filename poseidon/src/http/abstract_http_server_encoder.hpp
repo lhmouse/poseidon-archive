@@ -49,13 +49,13 @@ class Abstract_HTTP_Server_Encoder
     // This function shall deliver all bytes to the other endpoint.
     virtual
     bool
-    do_http_on_server_send(const char* data, size_t size)
+    do_http_server_send(const char* data, size_t size)
       = 0;
 
     // This function shall close the connection.
     virtual
     bool
-    do_http_on_server_close()
+    do_http_server_close()
       = 0;
 
   public:

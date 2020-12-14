@@ -34,7 +34,7 @@ do_encode_http_headers(HTTP_Method method, const cow_string& target, HTTP_Versio
       fmt << pair.first << ": " << pair.second << "\r\n";
     fmt << "\r\n";
 
-    return this->do_http_on_client_send(fmt.c_str(), fmt.length());
+    return this->do_http_client_send(fmt.c_str(), fmt.length());
   }
 
 bool
@@ -43,27 +43,27 @@ do_encode_http_entity(const char* data, size_t size)
   {
     // Don't send empty chunks. Test the connection state only.
     if(size == 0)
-      return this->do_http_on_client_send("", 0);
+      return this->do_http_client_send("", 0);
 
     // For HTTP/1.0, send outgoing data verbatim.
     if(!this->m_chunked)
-      return this->do_http_on_client_send(data, size);
+      return this->do_http_client_send(data, size);
 
     // For HTTP/1.1, encode the data as a single chunk.
     ::rocket::ascii_numput nump;
     nump.put_XU(size);
 
-    return this->do_http_on_client_send(nump.data() + 2, nump.size()) &&
-           this->do_http_on_client_send("\r\n", 2) &&
-           this->do_http_on_client_send(data, size) &&
-           this->do_http_on_client_send("\r\n", 2);
+    return this->do_http_client_send(nump.data() + 2, nump.size()) &&
+           this->do_http_client_send("\r\n", 2) &&
+           this->do_http_client_send(data, size) &&
+           this->do_http_client_send("\r\n", 2);
   }
 
 bool
 Abstract_HTTP_Client_Encoder::
 do_finish_http_message(HTTP_Encoder_State next)
   {
-    bool sent = this->do_http_on_client_send("", 0);
+    bool sent = this->do_http_client_send("", 0);
 
     // Terminate the entity.
     if(this->m_gzip) {
@@ -77,10 +77,10 @@ do_finish_http_message(HTTP_Encoder_State next)
     }
 
     if(this->m_chunked)
-      sent = sent && this->do_http_on_client_send("0\r\n\r\n", 5);
+      sent = sent && this->do_http_client_send("0\r\n\r\n", 5);
 
     // If this is the final message, mark the connection for closure.
-    // Don't call `do_http_on_client_close()` because clients should not close
+    // Don't call `do_http_client_close()` because clients should not close
     // connections prematurely. This connection will be closed after the its
     // response is acknowledged in `Abstract_HTTP_Client_Decoder`.
     this->m_state = next;
@@ -127,8 +127,8 @@ do_encode_websocket_frame(int flags, char* data, size_t size)
       mask = mask << 8 | mask >> 24,
         data[exlen++] ^= static_cast<char>(mask);
 
-    return this->do_http_on_client_send(head.data(), head.size()) &&
-           this->do_http_on_client_send(data, size);
+    return this->do_http_client_send(head.data(), head.size()) &&
+           this->do_http_client_send(data, size);
   }
 
 bool
@@ -237,7 +237,7 @@ http_encode_headers(HTTP_Method method, const cow_string& target, HTTP_Version v
           });
 
     // Check for upgradable connections.
-    // Validation and state transition are done in `http_on_response_headers()`.
+    // Validation and state transition are done in `http_response_headers()`.
     if(conn == http_connection_upgrade) {
       this->m_final = true;
       this->m_upgrading = true;
@@ -320,7 +320,7 @@ http_encode_tunnel_data(const char* data, size_t size)
       POSEIDON_THROW("HTTP client encoder state error (expecting 'tunnel')");
 
     // Forward outgoing data verbatim.
-    return this->do_http_on_client_send(data, size);
+    return this->do_http_client_send(data, size);
   }
 
 bool
@@ -335,7 +335,7 @@ http_encode_tunnel_closure()
 
     // Shut the tunnel down.
     this->m_state = http_encoder_state_closed;
-    return this->do_http_on_client_close();
+    return this->do_http_client_close();
   }
 
 bool
@@ -461,7 +461,7 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
 
     // Close the connection if it has been marked for closure by the server.
     this->m_state = http_encoder_state_closed;
-    this->do_http_on_client_close();
+    this->do_http_client_close();
     return true;
   }
 
@@ -552,7 +552,7 @@ http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t si
     // Send the closure frame and shut the connection down.
     bool sent = this->do_encode_websocket_frame(0x80, pbuf.mut_data(), pbuf.size());
     this->m_state = http_encoder_state_closed;
-    sent = sent && this->do_http_on_client_close();
+    sent = sent && this->do_http_client_close();
     return sent;
   }
 
