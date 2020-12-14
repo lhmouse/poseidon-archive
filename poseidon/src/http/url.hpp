@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_CORE_URL_HPP_
-#define POSEIDON_CORE_URL_HPP_
+#ifndef POSEIDON_HTTP_URL_HPP_
+#define POSEIDON_HTTP_URL_HPP_
 
 #include "../fwd.hpp"
 
@@ -33,6 +33,7 @@ class URL
   public:
     constexpr
     URL()
+      noexcept
       = default;
 
     explicit

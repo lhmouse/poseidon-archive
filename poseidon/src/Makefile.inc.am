@@ -23,7 +23,6 @@ include_poseidon_core_HEADERS =  \
   %reldir%/core/future.hpp  \
   %reldir%/core/abstract_async_job.hpp  \
   %reldir%/core/abstract_fiber.hpp  \
-  %reldir%/core/url.hpp  \
   %reldir%/core/lcg48.hpp  \
   %reldir%/core/zlib_deflator.hpp  \
   %reldir%/core/zlib_inflator.hpp  \
@@ -52,6 +51,7 @@ include_poseidon_socket_HEADERS =  \
 include_poseidon_httpdir = ${includedir}/poseidon/http
 include_poseidon_http_HEADERS =  \
   %reldir%/http/enums.hpp  \
+  %reldir%/http/url.hpp  \
   %reldir%/http/option_map.hpp  \
   %reldir%/http/abstract_http_server_encoder.hpp  \
   %reldir%/http/abstract_http_client_decoder.hpp  \
@@ -81,11 +81,11 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/abstract_future.cpp  \
   %reldir%/core/abstract_async_job.cpp  \
   %reldir%/core/abstract_fiber.cpp  \
-  %reldir%/core/url.cpp  \
   %reldir%/core/lcg48.cpp  \
   %reldir%/core/zlib_deflator.cpp  \
   %reldir%/core/zlib_inflator.cpp  \
   %reldir%/http/enums.cpp  \
+  %reldir%/http/url.cpp  \
   %reldir%/http/option_map.cpp  \
   %reldir%/http/abstract_http_server_encoder.cpp  \
   %reldir%/http/abstract_http_client_decoder.cpp  \

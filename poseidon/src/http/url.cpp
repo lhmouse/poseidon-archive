@@ -323,15 +323,13 @@ print(tinyfmt& fmt)
       if(this->m_userinfo.size()) {
         // Escape unsafe characters.
         //   userinfo = *( unreserved / pct-encoded / sub-delims / ":" )
-        ::rocket::for_each(this->m_userinfo,
-            [&](char ch) {
-              if(do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim))
-                fmt << ch;
-              else if(ch == ':')
-                fmt << ch;
-              else
-                do_percent_encode(fmt, ch);
-            });
+        for(char ch : this->m_userinfo)
+          if(do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim))
+            fmt << ch;
+          else if(ch == ':')
+            fmt << ch;
+          else
+            do_percent_encode(fmt, ch);
 
         fmt << '@';
       }
@@ -345,13 +343,11 @@ print(tinyfmt& fmt)
       else {
         // Otherwise, it is treated as a reg-name.
         //   reg-name = *( unreserved / pct-encoded / sub-delims )
-        ::rocket::for_each(this->m_host,
-            [&](char ch) {
-              if(do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim))
-                fmt << ch;
-              else
-                do_percent_encode(fmt, ch);
-            });
+        for(char ch : this->m_host)
+          if(do_is_url_ctype(ch, url_ctype_unreserved | url_ctype_sub_delim))
+            fmt << ch;
+          else
+            do_percent_encode(fmt, ch);
       }
 
       // If a port field is present, write it.
@@ -362,15 +358,13 @@ print(tinyfmt& fmt)
     // Write the path.
     fmt << '/';
 
-    ::rocket::for_each(this->m_path,
-        [&](char ch) {
-          if(do_is_url_ctype(ch, url_ctype_pchar))
-            fmt << ch;
-          else if(ch == '/')
-            fmt << ch;
-          else
-            do_percent_encode(fmt, ch);
-        });
+    for(char ch : this->m_path)
+      if(do_is_url_ctype(ch, url_ctype_pchar))
+        fmt << ch;
+      else if(ch == '/')
+        fmt << ch;
+      else
+        do_percent_encode(fmt, ch);
 
     // If a query string field is present, write it.
     if(this->m_raw_query.size())

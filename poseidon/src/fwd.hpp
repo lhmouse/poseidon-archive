@@ -139,7 +139,6 @@ class Abstract_Future;
 class Abstract_Fiber;
 template<typename> class Promise;
 template<typename> class Future;
-class URL;
 class LCG48;
 class zlib_Deflator;
 class zlib_Inflator;
@@ -173,6 +172,7 @@ enum HTTP_Connection : uint8_t;
 enum WebSocket_Opcode : uint8_t;
 enum WebSocket_Status : uint16_t;
 
+class URL;
 class Option_Map;
 class Abstract_HTTP_Server_Encoder;
 class Abstract_HTTP_Client_Decoder;
