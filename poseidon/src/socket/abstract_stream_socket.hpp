@@ -112,7 +112,7 @@ class Abstract_Stream_Socket
 
     virtual
     void
-    do_socket_on_receive(linear_buffer&& rqueue)
+    do_socket_on_receive(linear_buffer& rqueue)
       = 0;
 
     // Notifies a socket has been closed.

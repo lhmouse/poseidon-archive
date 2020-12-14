@@ -172,9 +172,7 @@ do_socket_on_receive(char* data, size_t size)
     // Append data to the default queue.
     // Note the queue is provided purely for convenience for derived classes.
     // It is not protected by the I/O mutex.
-    this->m_rqueue.putn(data, size);
-
-    this->do_socket_on_receive(::std::move(this->m_rqueue));
+    this->do_socket_on_receive(this->m_rqueue.putn(data, size));
   }
 
 void

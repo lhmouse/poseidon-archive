@@ -18,7 +18,7 @@ struct Example_Session : Abstract_TCP_Socket
       { }
 
     void
-    do_socket_on_receive(linear_buffer&& rqueue)
+    do_socket_on_receive(linear_buffer& rqueue)
       override
       {
         POSEIDON_LOG_WARN("example TCP session received: $1",

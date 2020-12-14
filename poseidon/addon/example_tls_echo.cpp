@@ -18,7 +18,7 @@ struct Example_Session : Abstract_TLS_Socket
       { }
 
     void
-    do_socket_on_receive(linear_buffer&& rqueue)
+    do_socket_on_receive(linear_buffer& rqueue)
       override
       {
         POSEIDON_LOG_WARN("example TLS session received: $1",
