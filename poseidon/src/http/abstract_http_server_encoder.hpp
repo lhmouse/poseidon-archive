@@ -91,7 +91,7 @@ class Abstract_HTTP_Server_Encoder
     bool
     http_encode_tunnel_data(const char* data, size_t size);
 
-    // Shuts the entity down.
+    // Shuts the tunnel down.
     // `http_encoder_state()` must be 'closed' or 'tunnel'.
     bool
     http_encode_tunnel_closure();
