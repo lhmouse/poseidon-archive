@@ -27,6 +27,7 @@ namespace noadl = poseidon;
 // Macros
 #define POSEIDON_STATIC_CLASS_DECLARE(C)  \
     private:  \
+      /* Data members are not visible in headers. */  \
       struct __attribute__((__visibility__("hidden"))) C##_self;  \
       static C##_self* const self;  \
     \
@@ -37,8 +38,10 @@ namespace noadl = poseidon;
 
 #define POSEIDON_STATIC_CLASS_DEFINE(C)  \
     class C;  \
+    /* This hack is required by incomplete types. */  \
     struct C::C##_self* const C::self =  \
-              ::rocket::make_unique<C::C##_self>().release();  \
+        ::rocket::make_unique<C::C##_self>().release();  \
+    \
     struct C::C##_self : C  \
       // add members here
 
