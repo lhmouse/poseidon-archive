@@ -11,19 +11,20 @@ namespace {
 
 [[noreturn]]
 void
-do_throw_type_mismatch(const cow_string& abspath, const char* const* bptr,
-                       size_t epos, const char* expect,
+do_throw_type_mismatch(const cow_string& abspath, const char* const* psegs,
+                       size_t nsegs, const char* expect_type,
                        const ::asteria::Value& value)
   {
     cow_string path;
+    path.reserve(255);
     path << '`';
-    ::std::for_each(bptr, bptr + epos,
-             [&](const char* s) { path << s << '.';  });
+    ::std::for_each(psegs, psegs + nsegs,
+        [&](const char* seg) { path << seg << '.';  });
     path.mut_back() = '`';
 
-    POSEIDON_THROW("Unexpected type of $1 (expecting $2, got `$3`)\n"
-                   "[in file '$4']",
-                   path, expect, ::asteria::describe_type(value.type()),
+    POSEIDON_THROW("Unexpected type of $1 (expecting `$2`, got `$3`)\n"
+                   "[in configuration file '$4']",
+                   path, expect_type, ::asteria::describe_type(value.type()),
                    abspath);
   }
 
@@ -67,8 +68,7 @@ get_value(const char* const* psegs, size_t nsegs)
 
       // If more segments follow, the child must be an object.
       if(!qchild->is_object())
-        do_throw_type_mismatch(this->m_abspath, psegs, icur,
-                               "`object`", *qchild);
+        do_throw_type_mismatch(this->m_abspath, psegs, icur, "object", *qchild);
 
       qobj = &(qchild->as_object());
     }
@@ -84,8 +84,7 @@ get_bool_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_boolean())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
-                             "`boolean`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "boolean", value);
 
     return value.as_boolean();
   }
@@ -100,8 +99,7 @@ get_int64_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_integer())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
-                             "`integer`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "integer", value);
 
     return value.as_integer();
   }
@@ -116,8 +114,7 @@ get_double_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_convertible_to_real())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
-                             "`integer` or `real`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "real", value);
 
     return value.convert_to_real();
   }
@@ -132,8 +129,7 @@ get_string_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_string())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
-                             "`string`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "string", value);
 
     return value.as_string();
   }
@@ -148,8 +144,7 @@ get_array_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_array())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
-                             "`array`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "array", value);
 
     return value.as_array();
   }
@@ -164,8 +159,7 @@ get_object_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_object())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs,
-                             "`object`", value);
+      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "object", value);
 
     return value.as_object();
   }
