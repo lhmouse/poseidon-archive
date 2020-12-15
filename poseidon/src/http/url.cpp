@@ -353,11 +353,18 @@ print(tinyfmt& fmt)
       // If a port field is present, write it.
       if(this->m_port)
         fmt << ':' << *(this->m_port);
+
+      /* Some URLs contain no host and no extra slash, for example:
+       *
+       *   file:///usr/include/stdio.h
+       *   ^~~~   ^~~~~~~~~~~~~~~~~~~~
+       *    \      \
+       *    scheme path
+      **/
+      fmt << '/';
     }
 
     // Write the path.
-    fmt << '/';
-
     for(char ch : this->m_path)
       if(do_is_url_ctype(ch, url_ctype_pchar))
         fmt << ch;
