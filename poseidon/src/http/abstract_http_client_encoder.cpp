@@ -18,7 +18,7 @@ Abstract_HTTP_Client_Encoder::
 bool
 Abstract_HTTP_Client_Encoder::
 do_encode_http_headers(HTTP_Method method, const cow_string& target,
-                       HTTP_Version ver, const Option_Map& headers,
+                       HTTP_Version version, const Option_Map& headers,
                        HTTP_Connection conn)
   {
     // Pipeline this request.
@@ -29,7 +29,7 @@ do_encode_http_headers(HTTP_Method method, const cow_string& target,
     // Note we don't check whether `target` is a valid URI or not.
     ::rocket::tinyfmt_str fmt;
     fmt << format_http_method(method) << ' ' << target << ' '
-        << format_http_version(ver) << "\r\n";
+        << format_http_version(version) << "\r\n";
 
     for(const auto& pair : headers)
       fmt << pair.first << ": " << pair.second << "\r\n";
@@ -135,7 +135,7 @@ do_encode_websocket_frame(int flags, char* data, size_t size)
 bool
 Abstract_HTTP_Client_Encoder::
 http_encode_headers(HTTP_Method method, const cow_string& target,
-                    HTTP_Version ver, Option_Map&& headers)
+                    HTTP_Version version, Option_Map&& headers)
   {
     if(this->m_state == http_encoder_state_closed)
       return false;
@@ -164,7 +164,7 @@ http_encode_headers(HTTP_Method method, const cow_string& target,
       headers.erase(sref("Content-Length"));
       headers.erase(sref("Transfer-Encoding"));
 
-      return this->do_encode_http_headers(method, target, ver, headers, conn) &&
+      return this->do_encode_http_headers(method, target, version, headers, conn) &&
              this->do_finish_http_message(http_encoder_state_upgrading);
     }
 
@@ -176,7 +176,7 @@ http_encode_headers(HTTP_Method method, const cow_string& target,
       // indeterminate number of bytes. The server encoder in this case deletes
       // `Transfer-Encoding:` and works in the traditional one-message-per-connection
       // mode, which is unfortunately invalid on the client side.
-      if(ver < http_version_1_1)
+      if(version < http_version_1_1)
         POSEIDON_THROW("`Transfer-Encoding` cannot be specified in HTTP/1.0");
 
       // Check whether compression can be enabled.
@@ -220,7 +220,7 @@ http_encode_headers(HTTP_Method method, const cow_string& target,
         POSEIDON_LOG_WARN("`Content-Range` not allowed without a content");
     }
 
-    if(ver < http_version_1_1)
+    if(version < http_version_1_1)
       conn = http_connection_close;
 
     if(conn == http_connection_keep_alive)
@@ -253,7 +253,7 @@ http_encode_headers(HTTP_Method method, const cow_string& target,
     }
 
     if(no_content)
-      return this->do_encode_http_headers(method, target, ver, headers, conn) &&
+      return this->do_encode_http_headers(method, target, version, headers, conn) &&
              this->do_finish_http_message(http_encoder_state_headers);
 
     // Reset the deflator used by the previous message, if any.
@@ -262,7 +262,7 @@ http_encode_headers(HTTP_Method method, const cow_string& target,
       defl->reset();
 
     // Expect the entity.
-    bool sent = this->do_encode_http_headers(method, target, ver, headers, conn);
+    bool sent = this->do_encode_http_headers(method, target, version, headers, conn);
     this->m_state = http_encoder_state_entity;
     return sent;
   }
@@ -341,7 +341,7 @@ http_encode_tunnel_closure()
 
 bool
 Abstract_HTTP_Client_Encoder::
-http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
+http_on_response_headers(HTTP_Status status, const Option_Map& headers)
   {
     if(this->m_pipeline.empty())
       POSEIDON_THROW("HTTP response received without a matching request");
@@ -356,7 +356,7 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
     Option_Map opts;
 
     // Check for upgradable connections.
-    if(stat == http_status_switching_protocol) {
+    if(status == http_status_switching_protocol) {
       auto upgrade_str = headers.find_opt(sref("Upgrade"));
       if(!upgrade_str)
         POSEIDON_THROW("HTTP status 101 received without an `Upgrade:` header");
@@ -408,7 +408,7 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
     }
 
     // Other 1xx status codes are accepted and ignored.
-    if((100 <= stat) && (stat <= 199))
+    if((100 <= status) && (status <= 199))
       return true;
 
     // The other status codes denote final responses so pop the first pipelined request.
@@ -428,7 +428,7 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
           POSEIDON_THROW("No data shall follow a CONNECT request");
 
         // If a 2xx status code has been received, a tunnel will have been established.
-        if((200 <= stat) && (stat <= 299)) {
+        if((200 <= status) && (status <= 299)) {
           // Activate the tunnel.
           this->m_state = http_encoder_state_tunnel;
           this->m_pipeline.clear();
@@ -436,7 +436,7 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
           return true;
         }
         else
-          POSEIDON_THROW("HTTP CONNECT failure (status $1 received)", stat);
+          POSEIDON_THROW("HTTP CONNECT failure (status $1 received)", status);
       }
 
       auto connection_header_name = sref("Connection");
@@ -532,7 +532,7 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
 
 bool
 Abstract_HTTP_Client_Encoder::
-http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t size)
+http_encode_websocket_closure(WebSocket_Status status, const char* data, size_t size)
   {
     if(this->m_state == http_encoder_state_closed)
       return false;
@@ -546,8 +546,8 @@ http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t si
       POSEIDON_LOG_WARN("Closure frame truncated (size `$1`)", size);
 
     ::rocket::static_vector<char, 125> pbuf;
-    pbuf.emplace_back(stat >> 8);  // status (high)
-    pbuf.emplace_back(stat);  // status (low)
+    pbuf.emplace_back(status >> 8);  // status (high)
+    pbuf.emplace_back(status);  // status (low)
     pbuf.append(data, data + size);
 
     // Send the closure frame and shut the connection down.
