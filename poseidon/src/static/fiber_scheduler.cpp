@@ -554,34 +554,28 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
           }
 
-          if(sig == 0) {
-            // Try popping a fiber from the scheduler queue.
-            if(self->m_sched_pq.empty()) {
-              // Wait until a fiber becomes available.
-              lock.unlock();
-              self->m_sched_avail.wait();
-              lock.lock(self->m_sched_mutex);
-              continue;
-            }
-
-            // Check the first element.
-            int64_t delta = self->m_sched_pq.front().time - now;
-            if(delta > 0) {
-              lock.unlock();
-              self->m_sched_avail.wait_for(static_cast<long>(delta));
-              lock.lock(self->m_sched_mutex);
-              continue;
-            }
+          if(sig && self->m_sched_pq.empty()) {
+            // Exit if a signal has been received and there are no more fibers.
+            // Note the scheduler mutex is locked so it is safe to call `strsignal()`.
+            POSEIDON_LOG_INFO("Shutting down due to signal $1: $2", sig, ::strsignal(sig));
+            Async_Logger::synchronize(1000);
+            ::std::quick_exit(0);
           }
-          else {
-            // If a signal has been received, force execution of all fibers.
-            if(self->m_sched_pq.empty()) {
-              // Exit if there are no more fibers.
-              POSEIDON_LOG_INFO("Shutting down due to signal $1: $2",
-                                sig, ::sys_siglist[sig]);
-              Async_Logger::synchronize(1000);
-              ::std::quick_exit(0);
-            }
+
+          // Calculate the time to sleep.
+          long time_wait;
+          if(sig)
+            time_wait = 0;  // don't wait at all
+          else if(self->m_sched_pq.empty())
+            time_wait = LONG_MAX;  // wait infinitely
+          else
+            time_wait = self->m_sched_pq.front().time - now;
+
+          if(time_wait > 0) {
+            lock.unlock();
+            self->m_sched_avail.wait_for(time_wait);
+            lock.lock(self->m_sched_mutex);
+            continue;
           }
 
           // Pop the first fiber.
