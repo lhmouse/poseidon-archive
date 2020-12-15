@@ -176,11 +176,31 @@ class URL
     // These are general modifiers.
     URL&
     clear()
-      noexcept;
+      noexcept
+      {
+        this->m_scheme.clear();
+        this->m_userinfo.clear();
+        this->m_host.clear();
+        this->m_port.reset();
+        this->m_path.clear();
+        this->m_raw_query.clear();
+        this->m_raw_fragment.clear();
+        return *this;
+      }
 
     URL&
     swap(URL& other)
-      noexcept;
+      noexcept
+      {
+        this->m_scheme.swap(other.m_scheme);
+        this->m_userinfo.swap(other.m_userinfo);
+        this->m_host.swap(other.m_host);
+        this->m_port.swap(other.m_port);
+        this->m_path.swap(other.m_path);
+        this->m_raw_query.swap(other.m_raw_query);
+        this->m_raw_fragment.swap(other.m_raw_fragment);
+        return *this;
+      }
 
     // Converts this URL to a string.
     // This is the inverse function of `parse()`.

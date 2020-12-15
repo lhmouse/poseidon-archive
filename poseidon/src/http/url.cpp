@@ -277,36 +277,6 @@ set_raw_fragment(const cow_string& val)
     return *this;
   }
 
-URL&
-URL::
-clear()
-  noexcept
-  {
-    this->m_scheme.clear();
-    this->m_userinfo.clear();
-    this->m_host.clear();
-    this->m_port.reset();
-    this->m_path.clear();
-    this->m_raw_query.clear();
-    this->m_raw_fragment.clear();
-    return *this;
-  }
-
-URL&
-URL::
-swap(URL& other)
-  noexcept
-  {
-    this->m_scheme.swap(other.m_scheme);
-    this->m_userinfo.swap(other.m_userinfo);
-    this->m_host.swap(other.m_host);
-    this->m_port.swap(other.m_port);
-    this->m_path.swap(other.m_path);
-    this->m_raw_query.swap(other.m_raw_query);
-    this->m_raw_fragment.swap(other.m_raw_fragment);
-    return *this;
-  }
-
 tinyfmt&
 URL::
 print(tinyfmt& fmt)
