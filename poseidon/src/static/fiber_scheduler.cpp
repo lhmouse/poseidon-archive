@@ -288,7 +288,6 @@ class Queue_Semaphore
           // Ensure we don't cause overflows.
           if(secs <= ::std::numeric_limits<::time_t>::max() - ts.tv_sec) {
             ts.tv_sec += static_cast<::time_t>(secs);
-
             r = ::sem_timedwait(this->m_sem, &ts);
           }
           else
@@ -815,7 +814,7 @@ current_opt()
 
 void
 Fiber_Scheduler::
-yield(rcptr<const Abstract_Future> futp_opt, long msecs)
+yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
   {
     auto myctx = self->get_thread_context();
     if(!myctx)
@@ -832,8 +831,8 @@ yield(rcptr<const Abstract_Future> futp_opt, long msecs)
     POSEIDON_LOG_TRACE("Suspending execution of fiber `$1`", fiber);
 
     int64_t now = do_get_monotonic_seconds();
-    long timeout = ::rocket::clamp(msecs, 0, LONG_MAX - 999) + 999;
-    timeout = static_cast<long>(static_cast<unsigned long>(timeout) / 1000);
+    int64_t timeout = ::rocket::clamp(msecs, 0, INT64_MAX - 999) + 999;
+    timeout = static_cast<int64_t>(static_cast<uint64_t>(timeout) / 1000);
 
     simple_mutex::unique_lock lock(self->m_sched_mutex);
     fiber->m_sched_yield_since = now;

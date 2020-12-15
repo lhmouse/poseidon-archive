@@ -45,7 +45,7 @@ class Fiber_Scheduler
     // This function is thread-safe.
     static
     void
-    yield(rcptr<const Abstract_Future> futp_opt, long msecs = LONG_MAX);
+    yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs = INT64_MAX);
 
     // Inserts a fiber.
     // The scheduler holds a reference-counted pointer to the fiber. If the fiber has
