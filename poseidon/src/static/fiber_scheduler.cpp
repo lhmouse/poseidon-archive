@@ -837,6 +837,7 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
     simple_mutex::unique_lock lock(self->m_sched_mutex);
     fiber->m_sched_yield_since = now;
     fiber->m_sched_yield_timeout = timeout;
+
     if(futp_opt && futp_opt->do_is_empty()) {
       // The value in the future object may be still under construction, but the lock
       // here prevents the other thread from modifying the scheduler queue. We still
