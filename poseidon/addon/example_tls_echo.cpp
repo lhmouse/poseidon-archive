@@ -18,14 +18,11 @@ struct Example_Session : Abstract_TLS_Socket
       { }
 
     void
-    do_socket_on_receive(linear_buffer& rqueue)
+    do_socket_on_receive(char* data, size_t size)
       override
       {
-        POSEIDON_LOG_WARN("example TLS session received: $1",
-                          cow_string(rqueue.data(), rqueue.size()));
-
-        this->do_socket_send(rqueue.data(), rqueue.size());
-        rqueue.clear();
+        POSEIDON_LOG_WARN("example TLS session received: $1", cow_string(data, size));
+        this->do_socket_send(data, size);
       }
   };
 

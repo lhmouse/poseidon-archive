@@ -167,16 +167,6 @@ do_socket_on_poll_close(int err)
 
 void
 Abstract_Stream_Socket::
-do_socket_on_receive(char* data, size_t size)
-  {
-    // Append data to the default queue.
-    // Note the queue is provided purely for convenience for derived classes.
-    // It is not protected by the I/O mutex.
-    this->do_socket_on_receive(this->m_rqueue.putn(data, size));
-  }
-
-void
-Abstract_Stream_Socket::
 do_socket_connect(const Socket_Address& addr)
   {
     // Lock the stream and examine connection state.

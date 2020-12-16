@@ -123,7 +123,7 @@ void
 Abstract_Accept_Socket::
 do_socket_on_close(int err)
   {
-    POSEIDON_LOG_INFO("Accept socket closed: local '$1', $2",
+    POSEIDON_LOG_INFO("Accept socket closed: local '$1', reason: $2",
                       this->get_local_address(), format_errno(err));
   }
 

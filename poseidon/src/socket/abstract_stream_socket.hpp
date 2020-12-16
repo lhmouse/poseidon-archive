@@ -18,8 +18,6 @@ class Abstract_Stream_Socket
     Connection_State m_cstate = connection_state_empty;
     linear_buffer m_wqueue;  // write queue
 
-    linear_buffer m_rqueue;  // default read queue (not protected by I/O mutex)
-
     // This the remote address. It is initialized upon the first request.
     mutable once_flag m_remote_addr_once;
     mutable Socket_Address m_remote_addr;
@@ -103,16 +101,9 @@ class Abstract_Stream_Socket
 
     // Consumes an incoming packet.
     // Please mind thread safety, as this function is called by the network thread.
-    // The overload taking a pointer and a size appends data to `m_rqueue`, then
-    // calls the other overload. Derived classes may override either (but not both)
-    // overload for convenience.
     virtual
     void
-    do_socket_on_receive(char* data, size_t size);
-
-    virtual
-    void
-    do_socket_on_receive(linear_buffer& rqueue)
+    do_socket_on_receive(char* data, size_t size)
       = 0;
 
     // Notifies a socket has been closed.

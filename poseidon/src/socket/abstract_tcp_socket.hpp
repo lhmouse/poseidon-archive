@@ -48,7 +48,7 @@ class Abstract_TCP_Socket
     // Consumes incoming data.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_socket_on_receive(linear_buffer& rqueue)
+    do_socket_on_receive(char* data, size_t size)
       override
       = 0;
 
