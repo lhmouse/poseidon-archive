@@ -174,6 +174,8 @@ enum WebSocket_Status : uint16_t;
 
 class URL;
 class Option_Map;
+class HTTP_Exception;
+class WebSocket_Exception;
 class Abstract_HTTP_Server_Encoder;
 class Abstract_HTTP_Client_Decoder;
 class Abstract_HTTP_Client_Encoder;
