@@ -26,9 +26,9 @@ zlib_Stream_Common::
 reserve_output_buffer()
   {
     // Ensure there is enough space in the output buffer.
-    uint32_t navail = static_cast<uint32_t>(this->obuf.reserve(64));
+    size_t navail = this->obuf.reserve(64);
     this->strm.next_out = reinterpret_cast<uint8_t*>(this->obuf.mut_end());
-    this->strm.avail_out = navail;
+    this->strm.avail_out = static_cast<uint32_t>(navail);
   }
 
 void
@@ -37,8 +37,8 @@ update_output_buffer()
   noexcept
   {
     // Consume output bytes, if any.
-    this->obuf.accept(static_cast<uint32_t>(this->strm.next_out -
-                   reinterpret_cast<const uint8_t*>(this->obuf.end())));
+    auto pbase = reinterpret_cast<const uint8_t*>(this->obuf.end());
+    this->obuf.accept(static_cast<size_t>(this->strm.next_out - pbase));
   }
 
 }  // namespace details_zlib_stream_common
