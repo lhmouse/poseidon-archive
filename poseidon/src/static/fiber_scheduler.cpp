@@ -641,9 +641,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
             // Proceed anyway.
             // This usually causes an exception to be thrown after `yield()` returns.
-            POSEIDON_LOG_ERROR("Suspension of fiber `$1` has exceeded `$2` seconds.\n"
+            if(delta >= conf.fail_timeout)
+              POSEIDON_LOG_ERROR("Suspension of fiber `$1` has exceeded `$2` seconds.\n"
                         "This circumstance looks permanent. Please check for deadlocks.",
-                        fiber, timeout);
+                        fiber, conf.fail_timeout);
           }
 
           // Process this fiber!
