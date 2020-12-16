@@ -89,13 +89,12 @@ do_write(const char* data, size_t size)
       return;
 
     // Set up the read pointer.
-    const auto next_in_end = reinterpret_cast<const uint8_t*>(data + size);
-
     // The stupid zlib library uses a 32-bit integer for number of bytes.
+    const auto next_in_end = reinterpret_cast<const uint8_t*>(data + size);
     this->m_strm.next_in = next_in_end - size;
     this->m_strm.avail_in = static_cast<uint32_t>(::std::min<size_t>(size, INT_MAX));
-    int res;
 
+    int res;
     do {
       // Extend the output buffer first so we never get `Z_BUF_ERROR`.
       this->do_reserve_output_buffer();
@@ -103,8 +102,8 @@ do_write(const char* data, size_t size)
       this->do_update_output_buffer();
 
       // Calculate the size of remaining data.
-      ptrdiff_t dist = next_in_end - this->m_strm.next_in;
-      this->m_strm.avail_in = static_cast<uint32_t>(::std::min<ptrdiff_t>(dist, INT_MAX));
+      this->m_strm.avail_in = static_cast<uint32_t>(
+                 ::std::min<ptrdiff_t>(next_in_end - this->m_strm.next_in, INT_MAX));
     }
     while((res == Z_OK) && (this->m_strm.avail_in != 0));
   }
@@ -116,8 +115,8 @@ do_flush()
     // Put nothing, but force `Z_SYNC_FLUSH`.
     this->m_strm.next_in = nullptr;
     this->m_strm.avail_in = 0;
-    int res;
 
+    int res;
     do {
       // Flush all output data into the output buffer.
       this->do_reserve_output_buffer();
@@ -134,8 +133,8 @@ do_finish()
     // Put nothing, but force `Z_FINISH`.
     this->m_strm.next_in = nullptr;
     this->m_strm.avail_in = 0;
-    int res;
 
+    int res;
     do {
       // Flush all output data into the output buffer.
       this->do_reserve_output_buffer();
