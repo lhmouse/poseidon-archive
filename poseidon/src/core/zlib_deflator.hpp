@@ -10,7 +10,8 @@
 namespace poseidon {
 
 class zlib_Deflator
-  : public ::asteria::Rcfwd<zlib_Deflator>
+  : public ::asteria::Rcfwd<zlib_Deflator>,
+    private details_zlib_stream_common::zlib_Stream_Common
   {
   public:
     enum Format : uint8_t
@@ -19,9 +20,6 @@ class zlib_Deflator
         format_raw      = 1,
         format_gzip     = 2,
       };
-
-  private:
-    details_zlib_stream_common::zlib_Stream_Common m_zlib;
 
   public:
     explicit
@@ -34,12 +32,12 @@ class zlib_Deflator
     const ::rocket::linear_buffer&
     output_buffer()
       const noexcept
-      { return this->m_zlib.obuf;  }
+      { return this->m_obuf;  }
 
     ::rocket::linear_buffer&
     output_buffer()
       noexcept
-      { return this->m_zlib.obuf;  }
+      { return this->m_obuf;  }
 
     // Resets internal states and clears the output buffer.
     // Unprocessed data are discarded.

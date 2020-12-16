@@ -13,35 +13,40 @@ namespace details_zlib_stream_common {
 
 struct zlib_Stream_Common
   {
-    ::z_stream strm = { };
-    ::rocket::linear_buffer obuf;
+    using destructor  = int (::z_stream* strm);
+
+    ::z_stream m_strm[1] = { };
+    ::rocket::linear_buffer m_obuf;
 
     constexpr
     zlib_Stream_Common()
       noexcept
       = default;
 
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(zlib_Stream_Common)
+      {
+        // Abuse the opaque pointer for the destructor.
+        auto dtor = reinterpret_cast<destructor*>(this->m_strm->opaque);
+        if(dtor)
+          (*dtor)(this->m_strm);
+      }
+
+    void
+    do_set_destructor(destructor* dtor)
+      noexcept
+      { this->m_strm->opaque = reinterpret_cast<void*>(dtor);  }
+
     [[noreturn]]
     void
-    throw_zlib_error(const char* func, int err)
+    do_throw_zlib_error(const char* func, int err)
       const;
 
     void
-    reserve_output_buffer();
+    do_reserve_output_buffer();
 
     void
-    update_output_buffer()
+    do_update_output_buffer()
       noexcept;
-
-    constexpr operator
-    const ::z_stream*()
-      const noexcept
-      { return &(this->strm);  }
-
-    constexpr operator
-    ::z_stream*()
-      noexcept
-      { return &(this->strm);  }
   };
 
 }  // namespace details_zlib_stream_common
