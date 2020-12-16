@@ -65,7 +65,7 @@ zlib_Inflator::
 do_zlib_write_partial(int& res, ::z_stream* strm, int flush)
   {
     res = ::inflate(strm, flush);
-    if(::rocket::is_none_of(res, { Z_OK, Z_STREAM_END }))
+    if(::rocket::is_none_of(res, { Z_OK, Z_STREAM_END, Z_BUF_ERROR }))
       this->do_zlib_throw_error("inflate", res);
   }
 
