@@ -26,38 +26,47 @@ class zlib_Inflator
     explicit
     zlib_Inflator(Format fmt);
 
+  private:
+    // These are overridden callbacks.
+    void
+    do_zlib_construct(::z_stream* strm, int level, int wbits)
+      final;
+
+    void
+    do_zlib_reset(::z_stream* strm)
+      final;
+
+    void
+    do_zlib_write_partial(int& res, ::z_stream* strm, int flush)
+      final;
+
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(zlib_Inflator);
 
     // Gets the output buffer.
-    const ::rocket::linear_buffer&
-    output_buffer()
-      const noexcept
-      { return this->m_obuf;  }
-
-    ::rocket::linear_buffer&
-    output_buffer()
-      noexcept
-      { return this->m_obuf;  }
+    using zlib_Stream_Common::output_buffer;
 
     // Resets internal states and clears the output buffer.
     // Unprocessed data are discarded.
     zlib_Inflator&
     reset()
-      noexcept;
+      { return this->do_reset(), *this;  }
 
     // Puts some data for compression/decompression.
     zlib_Inflator&
-    write(const char* data, size_t size);
+    write(const char* data, size_t size)
+      { return this->do_write(data, size), *this;  }
 
-    // Causes as many bytes as possible to be flushed into the
-    // output buffer, which may be consumed immediately.
+    // Synchronizes output to a byte boundary. This causes 4 extra
+    // bytes (00 00 FF FF) to be appended to the output buffer.
     zlib_Inflator&
-    flush();
+    flush()
+      { return this->do_flush(), *this;  }
 
     // Terminates the stream.
     zlib_Inflator&
-    finish();
+    finish()
+      { return this->do_finish(), *this;  }
   };
 
 }  // namespace poseidon
