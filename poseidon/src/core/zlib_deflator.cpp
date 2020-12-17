@@ -74,7 +74,7 @@ zlib_Deflator::
 do_zlib_write_partial(int& res, ::z_stream* strm, int flush)
   {
     res = ::deflate(strm, flush);
-    if(::rocket::is_none_of(res, { Z_OK, Z_STREAM_END }))
+    if(::rocket::is_none_of(res, { Z_OK, Z_STREAM_END, Z_BUF_ERROR }))
       this->do_zlib_throw_error("deflate", res);
   }
 
