@@ -414,6 +414,10 @@ http_on_response_headers(HTTP_Status status, const Option_Map& headers)
     // The other status codes denote final responses so pop the first pipelined request.
     this->m_pipeline.erase(this->m_pipeline.begin());
 
+    // If the connection did not upgrade, restore the state so new headers may be sent.
+    if(this->m_state == http_encoder_state_upgrading)
+      this->m_state = http_encoder_state_headers;
+
     // Check for persistent connections.
     if(conn != http_connection_close) {
       // This is done only if no `Connection: close` was requested. This connection is
