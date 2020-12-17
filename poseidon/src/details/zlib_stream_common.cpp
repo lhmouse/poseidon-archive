@@ -100,7 +100,7 @@ do_write(const char* data, size_t size)
       this->do_zlib_write_partial(res, &(this->m_strm), Z_NO_FLUSH);
       this->do_update_output_buffer();
     }
-    while((res == Z_OK) && (this->m_strm.next_in != end_in));
+    while(res == Z_OK);
   }
 
 void
@@ -118,7 +118,7 @@ do_flush()
       this->do_zlib_write_partial(res, &(this->m_strm), Z_SYNC_FLUSH);
       this->do_update_output_buffer();
     }
-    while((res == Z_OK) && (this->m_strm.avail_out == 0));
+    while(res == Z_OK);
   }
 
 void
@@ -136,7 +136,7 @@ do_finish()
       this->do_zlib_write_partial(res, &(this->m_strm), Z_FINISH);
       this->do_update_output_buffer();
     }
-    while((res == Z_OK) && (this->m_strm.avail_out == 0));
+    while(res == Z_OK);
   }
 
 }  // namespace details_zlib_stream_common
