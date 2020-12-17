@@ -24,43 +24,24 @@ do_get_monotonic_seconds()
     return ts.tv_sec;
   }
 
-// Virtual memory management for fiber stacks
-const size_t page_size = static_cast<size_t>(::sysconf(_SC_PAGESIZE));
-
-size_t
-do_validate_stack_vm_size(size_t stack_vm_size)
-  {
-    if(stack_vm_size & 0xFFFF)
-      POSEIDON_THROW("Stack size `$1` not a multiple of 64KiB", stack_vm_size);
-
-    uintptr_t msize = (stack_vm_size >> 16) - 1;
-    if(msize > 0xFFF)
-      POSEIDON_THROW("Stack size `$1` out of range", stack_vm_size);
-
-    if(stack_vm_size < page_size * 4)
-      POSEIDON_THROW("Stack size `$1` less than 4 pages", stack_vm_size);
-
-    return stack_vm_size;
-  }
-
-struct stack_pointer
+struct Stack_pointer
   {
     void* base;
     size_t size;
 
     constexpr
-    stack_pointer(nullptr_t = nullptr)
+    Stack_pointer(nullptr_t = nullptr)
       noexcept
       : base(nullptr), size(0)
       { }
 
     constexpr
-    stack_pointer(const ::stack_t& st)
+    Stack_pointer(const ::stack_t& st)
       : base(st.ss_sp), size(st.ss_size)
       { }
 
     constexpr
-    stack_pointer(void* xbase, size_t xsize)
+    Stack_pointer(void* xbase, size_t xsize)
       noexcept
       : base(xbase), size(xsize)
       { }
@@ -81,43 +62,32 @@ struct stack_pointer
       }
   };
 
+const size_t s_page_size = static_cast<size_t>(::sysconf(_SC_PAGESIZE));
 simple_mutex s_stack_pool_mutex;
-stack_pointer s_stack_pool_head;
+Stack_pointer s_stack_pool_head;
 
-struct Stack_Pooler
+size_t
+do_validate_stack_vm_size(size_t stack_vm_size)
   {
-    constexpr
-    stack_pointer
-    null()
-      const noexcept
-      { return nullptr;  }
+    if(stack_vm_size & 0xFFFF)
+      POSEIDON_THROW("Stack size `$1` not a multiple of 64KiB", stack_vm_size);
 
-    constexpr
-    bool
-    is_null(stack_pointer sp)
-      const noexcept
-      { return sp.base == nullptr;  }
+    uintptr_t msize = (stack_vm_size >> 16) - 1;
+    if(msize > 0xFFF)
+      POSEIDON_THROW("Stack size `$1` out of range", stack_vm_size);
 
-    void
-    close(stack_pointer sp)
-      {
-        simple_mutex::unique_lock lock(s_stack_pool_mutex);
+    if(stack_vm_size < s_page_size * 4)
+      POSEIDON_THROW("Stack size `$1` less than 4 pages", stack_vm_size);
 
-        // Insert the region at the beginning.
-        auto qnext = static_cast<stack_pointer*>(sp.base);
-        qnext = ::rocket::construct_at(qnext, s_stack_pool_head);
-        s_stack_pool_head = sp;
-      }
-  };
-
-using poolable_stack = ::rocket::unique_handle<stack_pointer, Stack_Pooler>;
+    return stack_vm_size;
+  }
 
 void
-do_unmap_stack_aux(stack_pointer sp)
+do_unmap_stack_aux(Stack_pointer sp)
   noexcept
   {
-    char* vm_base = static_cast<char*>(sp.base) - page_size;
-    size_t vm_size = sp.size + page_size * 2;
+    char* vm_base = static_cast<char*>(sp.base) - s_page_size;
+    size_t vm_size = sp.size + s_page_size * 2;
 
     // Note that on Linux `munmap()` may fail with `ENOMEM`.
     // There is little we can do so we ignore this error.
@@ -127,10 +97,39 @@ do_unmap_stack_aux(stack_pointer sp)
                          format_errno(errno), vm_base, vm_size);
   }
 
-poolable_stack
+struct Stack_delete
+  {
+    constexpr
+    Stack_pointer
+    null()
+      const noexcept
+      { return nullptr;  }
+
+    constexpr
+    bool
+    is_null(Stack_pointer sp)
+      const noexcept
+      { return sp.base == nullptr;  }
+
+    void
+    close(Stack_pointer sp)
+      noexcept
+      {
+        simple_mutex::unique_lock lock(s_stack_pool_mutex);
+
+        // Insert the region at the beginning.
+        auto qnext = static_cast<Stack_pointer*>(sp.base);
+        qnext = ::rocket::construct_at(qnext, s_stack_pool_head);
+        s_stack_pool_head = sp;
+      }
+  };
+
+using unique_stack = ::rocket::unique_handle<Stack_pointer, Stack_delete>;
+
+unique_stack
 do_allocate_stack(size_t stack_vm_size)
   {
-    stack_pointer sp;
+    Stack_pointer sp;
     char* vm_base;
     size_t vm_size = do_validate_stack_vm_size(stack_vm_size);
 
@@ -142,14 +141,14 @@ do_allocate_stack(size_t stack_vm_size)
         break;
 
       // Remove this region from the pool.
-      auto qnext = static_cast<stack_pointer*>(sp.base);
+      auto qnext = static_cast<Stack_pointer*>(sp.base);
       s_stack_pool_head = *qnext;
       ::rocket::destroy_at(qnext);
       lock.unlock();
 
       // Use this region if it is large enough.
-      if(ROCKET_EXPECT(sp.size + page_size * 2 >= vm_size))
-        return poolable_stack(sp);
+      if(ROCKET_EXPECT(sp.size + s_page_size * 2 >= vm_size))
+        return unique_stack(sp);
 
       // Unmap this region and try the next one.
       do_unmap_stack_aux(sp);
@@ -164,8 +163,8 @@ do_allocate_stack(size_t stack_vm_size)
                      "[`mmap()` failed: $1]",
                      format_errno(errno), vm_size);
 
-    sp.base = vm_base + page_size;
-    sp.size = vm_size - page_size * 2;
+    sp.base = vm_base + s_page_size;
+    sp.size = vm_size - s_page_size * 2;
     auto sp_guard = ::rocket::make_unique_handle(sp, do_unmap_stack_aux);
 
     // Mark stack area writable.
@@ -175,7 +174,7 @@ do_allocate_stack(size_t stack_vm_size)
                      format_errno(errno), sp.base, sp.size);
 
     // The stack need not be unmapped once all permissions have been set.
-    return poolable_stack(sp_guard.release());
+    return unique_stack(sp_guard.release());
   }
 
 struct Config_Scalars
@@ -456,7 +455,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
     static
     void
-    do_initialize_context(Abstract_Fiber* fiber, poolable_stack&& stack)
+    do_initialize_context(Abstract_Fiber* fiber, unique_stack&& stack)
       noexcept
       {
         // Initialize the user-context.
@@ -481,7 +480,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
         rcptr<Abstract_Fiber> fiber;
         int64_t now;
-        poolable_stack stack;
+        unique_stack stack;
 
         // Reload configuration.
         simple_mutex::unique_lock lock(self->m_conf_mutex);
