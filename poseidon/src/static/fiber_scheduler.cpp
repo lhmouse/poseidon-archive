@@ -217,11 +217,8 @@ struct PQ_Compare
 struct Thread_Context
   {
     Abstract_Fiber* current = nullptr;
+    void* asan_fiber_save;  // used by address sanitizer
     ::ucontext_t return_uctx[1];
-
-#ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
-    void* asan_fiber_save;
-#endif
   };
 
 union Fancy_Fiber_Pointer
@@ -332,7 +329,20 @@ extern "C"
 void
 __sanitizer_finish_switch_fiber(void* save, const void** sp_base, size_t* st_size)
   noexcept;
-#endif
+
+#define POSEIDON_ASAN_START_SWITCH_FIBER(myctx, uctx)  \
+    (__sanitizer_start_switch_fiber(&((myctx)->asan_fiber_save),  \
+                               (uctx)->uc_stack.ss_sp, (uctx)->uc_stack.ss_size))
+
+#define POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx)  \
+    (__sanitizer_finish_switch_fiber((myctx)->asan_fiber_save, nullptr, nullptr))
+
+#else  // POSEIDON_ENABLE_ADDRESS_SANITIZER
+
+#define POSEIDON_ASAN_START_SWITCH_FIBER(myctx, uctx)   ((void)0)
+#define POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx)        ((void)0)
+
+#endif  // POSEIDON_ENABLE_ADDRESS_SANITIZER
 
 POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
   {
@@ -405,36 +415,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         return qctx.release();
       }
 
-    static
-    ::ucontext_t*
-    do_stack_switch_start(::ucontext_t* uctx)
-      noexcept
-      {
-#ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
-        __sanitizer_start_switch_fiber(&(self->open_thread_context()->asan_fiber_save),
-                                       uctx->uc_stack.ss_sp, uctx->uc_stack.ss_size);
-#endif
-        return uctx;
-      }
-
-    static
-    ::ucontext_t*
-    do_stack_switch_finish()
-      noexcept
-      {
-#ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
-        __sanitizer_finish_switch_fiber(self->open_thread_context()->asan_fiber_save,
-                                        nullptr, nullptr);
-#endif
-        return nullptr;
-      }
-
     [[noreturn]] static
     void
     do_execute_fiber(int word_0, int word_1)
       noexcept
       {
-        self->do_stack_switch_finish();
+        auto myctx = self->open_thread_context();
+        ROCKET_ASSERT(myctx);
+        POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
 
         // Get the fiber pointer back.
         Fancy_Fiber_Pointer fcptr(word_0, word_1);
@@ -459,10 +447,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         POSEIDON_LOG_TRACE("Finished execution of fiber `$1`", fiber);
 
         // Note the scheduler thread may have changed.
-        auto myctx = self->open_thread_context();
+        myctx = self->open_thread_context();
         ROCKET_ASSERT(myctx);
-
-        self->do_stack_switch_start(myctx->return_uctx);
+        POSEIDON_ASAN_START_SWITCH_FIBER(myctx, myctx->return_uctx);
         ::setcontext(myctx->return_uctx);
         ::std::terminate();
       }
@@ -688,10 +675,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         myctx->current = fiber;
         POSEIDON_LOG_TRACE("Resuming execution of fiber `$1`", fiber);
 
-        self->do_stack_switch_start(fiber->m_sched_uctx);
+        POSEIDON_ASAN_START_SWITCH_FIBER(myctx, fiber->m_sched_uctx);
         int r = ::swapcontext(myctx->return_uctx, fiber->m_sched_uctx);
         ROCKET_ASSERT(r == 0);
-        self->do_stack_switch_finish();
+        POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
 
         // ... and return here.
         myctx->current = nullptr;
@@ -844,10 +831,10 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
       fiber->add_reference();
       lock.unlock();
 
-      self->do_stack_switch_start(myctx->return_uctx);
+      POSEIDON_ASAN_START_SWITCH_FIBER(myctx, myctx->return_uctx);
       int r = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
       ROCKET_ASSERT(r == 0);
-      self->do_stack_switch_finish();
+      POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
 
       // Note the scheduler thread may have changed.
       myctx = self->open_thread_context();
@@ -881,10 +868,10 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
       fiber->add_reference();
       lock.unlock();
 
-      self->do_stack_switch_start(myctx->return_uctx);
+      POSEIDON_ASAN_START_SWITCH_FIBER(myctx, myctx->return_uctx);
       int r = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
       ROCKET_ASSERT(r == 0);
-      self->do_stack_switch_finish();
+      POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
 
       // Note the scheduler thread may have changed.
       myctx = self->open_thread_context();
