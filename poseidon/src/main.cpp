@@ -328,18 +328,21 @@ do_daemonize_finish()
 
 ROCKET_NOINLINE
 void
-do_check_core_dump()
+do_check_ulimits()
   {
     ::rlimit rlim;
-    if(::getrlimit(RLIMIT_CORE, &rlim) != 0)
-      POSEIDON_THROW("Could not get core dump limit\n"
-                     "[`getrlimit()` failed: $1]",
-                     format_errno(errno));
+    if((::getrlimit(RLIMIT_CORE, &rlim) == 0) && (rlim.rlim_cur <= 0))
+      POSEIDON_LOG_WARN(
+          "Core dumps are disabled. We suggest you enable them in case of crashes.\n"
+          "See `/etc/security/limits.conf` for details.");
 
-    if(rlim.rlim_cur <= 0)
-      POSEIDON_LOG_WARN("Core dumps are disabled.\n"
-                        "We highly suggest you enable them in case of crashes.\n"
-                        "See `/etc/security/limits.conf` for details.");
+    if((::getrlimit(RLIMIT_NOFILE, &rlim) == 0) && (rlim.rlim_cur <= 10'000))
+      POSEIDON_LOG_WARN(
+          "The limit of number of open files (which is `$1`) is too low. This might\n"
+          "result in denial of service when there are too many simultaneous network\n"
+          "connections. We suggest you set it to least 10,000 for production use.\n"
+          "See `/etc/security/limits.conf` for details.",
+          rlim.rlim_cur);
   }
 
 ROCKET_NOINLINE
@@ -419,7 +422,7 @@ main(int argc, char** argv)
     Timer_Driver::start();
     Network_Driver::start();
 
-    do_check_core_dump();
+    do_check_ulimits();
     do_load_addons();
 
     POSEIDON_LOG_INFO("Startup complete: $1 (PID $2)", PACKAGE_STRING, ::getpid());
