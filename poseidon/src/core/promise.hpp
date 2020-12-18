@@ -18,7 +18,7 @@ class Promise
     rcptr<Future<ValueT>> m_futp;
 
   public:
-    explicit
+    explicit constexpr
     Promise()
       noexcept
       { }
