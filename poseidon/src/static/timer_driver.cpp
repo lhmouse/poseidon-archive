@@ -210,25 +210,17 @@ invalidate_internal(const Abstract_Timer* ctimer, int64_t first, int64_t period)
   {
     // Don't do anything if the timer does not exist in the queue.
     simple_mutex::unique_lock lock(self->m_pq_mutex);
-
-    auto curp = self->m_pq.begin();
-    for(;;) {
-      if(curp == self->m_pq.end())
-        return false;
-
-      if(curp->timer.get() == ctimer)
-        break;
-
-      ++curp;
-    }
-    auto& elem = *curp;
+    auto it = ::std::find_if(self->m_pq.begin(), self->m_pq.end(),
+            [&](const PQ_Element& r) { return r.timer.get() == ctimer;  });
+    if(it == self->m_pq.end())
+      return false;
 
     // Update the timer itself.
-    elem.timer->m_first = first;
-    elem.timer->m_period = period;
+    it->timer->m_first = first;
+    it->timer->m_period = period;
 
     // Update the element in place.
-    elem.next = do_get_time(first);
+    it->next = do_get_time(first);
     ::std::make_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     self->m_pq_avail.notify_one();
     return true;
