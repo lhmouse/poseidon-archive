@@ -853,15 +853,15 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
       ROCKET_ASSERT(fiber->m_sched_futp == futp_opt);
       fiber->m_sched_futp = nullptr;
 
-      auto ref = ::std::ref(futp_opt->m_sched_waiting_head);
-      while(ref) {
-        if(ref == fiber) {
-          ref.get() = fiber->m_sched_ready_next;
+      // Search for `fiber` in the wait queue.
+      auto mref = ::std::ref(futp_opt->m_sched_waiting_head);
+      while(mref && (mref != fiber))
+        mref = ::std::ref(mref.get()->m_sched_ready_next);
+
+      // Erase it if found.
+      if(mref == fiber)
+        mref.get() = fiber->m_sched_ready_next,
           fiber->drop_reference();
-          break;
-        }
-        ref = ::std::ref(ref.get()->m_sched_ready_next);
-      }
     }
     lock.unlock();
 
