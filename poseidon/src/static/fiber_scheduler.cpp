@@ -424,7 +424,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
       noexcept
       {
         auto myctx = self->open_thread_context();
-        ROCKET_ASSERT(myctx);
         POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
 
         // Get the fiber pointer back.
@@ -451,7 +450,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
         // Note the scheduler thread may have changed.
         myctx = self->open_thread_context();
-        ROCKET_ASSERT(myctx);
         POSEIDON_ASAN_START_SWITCH_FIBER(myctx, myctx->return_uctx);
         ::setcontext(myctx->return_uctx);
         ::std::terminate();
@@ -836,10 +834,8 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
       POSEIDON_ASAN_START_SWITCH_FIBER(myctx, myctx->return_uctx);
       int r = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
       ROCKET_ASSERT(r == 0);
-      POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
-
-      // Note the scheduler thread may have changed.
       myctx = self->open_thread_context();
+      POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
 
       // If the fiber resumes execution because suspension timed out, remove it from
       // the future's wait queue.
@@ -873,10 +869,8 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
       POSEIDON_ASAN_START_SWITCH_FIBER(myctx, myctx->return_uctx);
       int r = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
       ROCKET_ASSERT(r == 0);
-      POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
-
-      // Note the scheduler thread may have changed.
       myctx = self->open_thread_context();
+      POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
     }
 
     // ... and resume here.
