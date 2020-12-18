@@ -382,7 +382,7 @@ parse(const cow_string& str)
         [&](char ch) { return do_is_url_ctype(ch, url_ctype_alpha |
                                                   url_ctype_digit);  });
 
-    if((mptr != bptr) && (mptr[0] == ':') && (mptr[1] == '/') && (mptr[2] == '/')) {
+    if((mptr - bptr >= 3) && ::asteria::mem_equal(bptr, "://", 3)) {
       // Accept the scheme.
       this->m_scheme = ascii_lowercase(cow_string(bptr, mptr));
       bptr = mptr + 3;
