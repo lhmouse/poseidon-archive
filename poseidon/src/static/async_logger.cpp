@@ -286,11 +286,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
 
     static
     void
-    do_init_once()
+    do_start()
       {
-        // Create the thread. Note it is never joined or detached.
-        simple_mutex::unique_lock lock(self->m_queue_mutex);
-        self->m_thread = create_daemon_thread<do_thread_loop>("logger");
+        self->m_init_once.call(
+          [&] {
+            // Create the thread. Note it is never joined or detached.
+            simple_mutex::unique_lock lock(self->m_queue_mutex);
+            self->m_thread = create_daemon_thread<do_thread_loop>("logger");
+          });
       }
 
     static
@@ -335,7 +338,7 @@ void
 Async_Logger::
 start()
   {
-    self->m_init_once.call(self->do_init_once);
+    self->do_start();
   }
 
 void

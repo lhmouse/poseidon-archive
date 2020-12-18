@@ -79,11 +79,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
 
     static
     void
-    do_init_once()
+    do_start()
       {
-        // Create the thread. Note it is never joined or detached.
-        simple_mutex::unique_lock lock(self->m_pq_mutex);
-        self->m_thread = create_daemon_thread<do_thread_loop>("timer");
+        self->m_init_once.call(
+          [&] {
+            // Create the thread. Note it is never joined or detached.
+            simple_mutex::unique_lock lock(self->m_pq_mutex);
+            self->m_thread = create_daemon_thread<do_thread_loop>("timer");
+          });
       }
 
     static
@@ -167,7 +170,7 @@ void
 Timer_Driver::
 start()
   {
-    self->m_init_once.call(self->do_init_once);
+    self->do_start();
   }
 
 rcptr<Abstract_Timer>

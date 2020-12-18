@@ -136,35 +136,38 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
     static
     void
-    do_init_once()
+    do_start()
       {
-        // Create an epoll object.
-        unique_FD epoll_fd(::epoll_create(100));
-        if(!epoll_fd)
-          POSEIDON_THROW("Could not create epoll object\n"
-                         "[`epoll_create()` failed: $1]",
-                         format_errno(errno));
+        self->m_init_once.call(
+          [&] {
+            // Create an epoll object.
+            unique_FD epoll_fd(::epoll_create(100));
+            if(!epoll_fd)
+              POSEIDON_THROW("Could not create epoll object\n"
+                             "[`epoll_create()` failed: $1]",
+                             format_errno(errno));
 
-        // Create the notification eventfd and add it into epoll.
-        unique_FD event_fd(::eventfd(0, EFD_NONBLOCK));
-        if(!event_fd)
-          POSEIDON_THROW("Could not create eventfd object\n"
-                         "[`eventfd()` failed: $1]",
-                         format_errno(errno));
+            // Create the notification eventfd and add it into epoll.
+            unique_FD event_fd(::eventfd(0, EFD_NONBLOCK));
+            if(!event_fd)
+              POSEIDON_THROW("Could not create eventfd object\n"
+                             "[`eventfd()` failed: $1]",
+                             format_errno(errno));
 
-        ::epoll_event event;
-        event.data.u64 = self->make_epoll_data(poll_index_event, 0);
-        event.events = EPOLLIN | EPOLLET;
-        if(::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &event) != 0)
-          POSEIDON_THROW("Failed to add socket into epoll\n"
-                         "[`epoll_ctl()` failed: $1]",
-                         format_errno(errno));
+            ::epoll_event event;
+            event.data.u64 = self->make_epoll_data(poll_index_event, 0);
+            event.events = EPOLLIN | EPOLLET;
+            if(::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &event) != 0)
+              POSEIDON_THROW("Failed to add socket into epoll\n"
+                             "[`epoll_ctl()` failed: $1]",
+                             format_errno(errno));
 
-        // Create the thread. Note it is never joined or detached.
-        simple_mutex::unique_lock lock(self->m_conf_mutex);
-        self->m_thread = create_daemon_thread<do_thread_loop>("network");
-        self->m_epoll_fd = epoll_fd.release();
-        self->m_event_fd = event_fd.release();
+            // Create the thread. Note it is never joined or detached.
+            simple_mutex::unique_lock lock(self->m_conf_mutex);
+            self->m_thread = create_daemon_thread<do_thread_loop>("network");
+            self->m_epoll_fd = epoll_fd.release();
+            self->m_event_fd = event_fd.release();
+          });
       }
 
     // The index takes up 24 bits. That's 16M simultaneous connections.
@@ -553,7 +556,7 @@ void
 Network_Driver::
 start()
   {
-    self->m_init_once.call(self->do_init_once);
+    self->do_start();
   }
 
 void

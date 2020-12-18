@@ -362,23 +362,25 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
     static
     void
-    do_init_once()
+    do_start()
       {
-        // Create a thread-specific key for the per-thread context.
-        // Note it is never destroyed.
-        ::pthread_key_t ckey[1];
-        int err = ::pthread_key_create(ckey, nullptr);
-        if(err != 0)
-          POSEIDON_THROW("Failed to allocate thread-specific key for fibers\n"
-                         "[`pthread_key_create()` failed: $1]",
-                         format_errno(err));
+        self->m_init_once.call(
+          [&] {
+            // Create a thread-specific key for the per-thread context.
+            // Note it is never destroyed.
+            ::pthread_key_t key;
+            int err = ::pthread_key_create(&key, nullptr);
+            if(err != 0)
+              POSEIDON_THROW("Failed to allocate thread-specific key for fibers\n"
+                             "[`pthread_key_create()` failed: $1]",
+                             format_errno(err));
 
-        auto key_guard = ::rocket::make_unique_handle(ckey,
-                      [](::pthread_key_t* ptr) { ::pthread_key_delete(*ptr);  });
+            auto key_guard = ::rocket::make_unique_handle(key, ::pthread_key_delete);
 
-        // Set up initialized data.
-        simple_mutex::unique_lock lock(self->m_sched_mutex);
-        self->m_sched_key = *(key_guard.release());
+            // Set up initialized data.
+            simple_mutex::unique_lock lock(self->m_sched_mutex);
+            self->m_sched_key = key_guard.release();
+          });
       }
 
     static
@@ -718,8 +720,7 @@ void
 Fiber_Scheduler::
 modal_loop(const atomic_signal& exit_sig)
   {
-    // Perform initialization as necessary.
-    self->m_init_once.call(self->do_init_once);
+    self->do_start();
 
     // Schedule fibers and block until `exit_sig` becomes non-zero.
     for(;;)
