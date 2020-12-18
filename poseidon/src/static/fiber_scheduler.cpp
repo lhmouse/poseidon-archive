@@ -12,6 +12,33 @@
 #include <semaphore.h>
 #include <signal.h>
 
+#ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
+extern "C" {
+
+void
+__sanitizer_start_switch_fiber(void** save, const void* sp_base, size_t st_size)
+  noexcept;
+
+void
+__sanitizer_finish_switch_fiber(void* save, const void** sp_base, size_t* st_size)
+  noexcept;
+
+#define POSEIDON_ASAN_START_SWITCH_FIBER(myctx, uctx)  \
+    (::__sanitizer_start_switch_fiber(&((myctx)->asan_fiber_save),  \
+                               (uctx)->uc_stack.ss_sp, (uctx)->uc_stack.ss_size))
+
+#define POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx)  \
+    (::__sanitizer_finish_switch_fiber((myctx)->asan_fiber_save, nullptr, nullptr))
+
+}  // extern "C"
+
+#else  // POSEIDON_ENABLE_ADDRESS_SANITIZER
+
+#define POSEIDON_ASAN_START_SWITCH_FIBER(myctx, uctx)   ((void)0)
+#define POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx)        ((void)0)
+
+#endif  // POSEIDON_ENABLE_ADDRESS_SANITIZER
+
 namespace poseidon {
 namespace {
 
@@ -317,31 +344,6 @@ class Queue_Semaphore
   };
 
 }  // namespace
-
-#ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
-extern "C"
-void
-__sanitizer_start_switch_fiber(void** save, const void* sp_base, size_t st_size)
-  noexcept;
-
-extern "C"
-void
-__sanitizer_finish_switch_fiber(void* save, const void** sp_base, size_t* st_size)
-  noexcept;
-
-#define POSEIDON_ASAN_START_SWITCH_FIBER(myctx, uctx)  \
-    (__sanitizer_start_switch_fiber(&((myctx)->asan_fiber_save),  \
-                               (uctx)->uc_stack.ss_sp, (uctx)->uc_stack.ss_size))
-
-#define POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx)  \
-    (__sanitizer_finish_switch_fiber((myctx)->asan_fiber_save, nullptr, nullptr))
-
-#else  // POSEIDON_ENABLE_ADDRESS_SANITIZER
-
-#define POSEIDON_ASAN_START_SWITCH_FIBER(myctx, uctx)   ((void)0)
-#define POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx)        ((void)0)
-
-#endif  // POSEIDON_ENABLE_ADDRESS_SANITIZER
 
 POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
   {
