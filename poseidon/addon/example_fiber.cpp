@@ -22,6 +22,9 @@ struct Promise_Timer : Abstract_Timer
         value(seconds)
       {
         POSEIDON_LOG_FATAL("new timer `$1`", this);
+
+        // create the future
+        this->prom.future();
       }
 
     ~Promise_Timer()
