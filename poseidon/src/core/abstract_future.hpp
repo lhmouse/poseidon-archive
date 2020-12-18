@@ -18,8 +18,9 @@ class Abstract_Future
   private:
     mutable simple_mutex m_mutex;
 
-    // These are scheduler data.
-    mutable Abstract_Fiber* m_sched_ready_head = nullptr;
+    // This is a list of fibers that are awaiting this future.
+    // It can only be accessed when the scheduler mutex is locked.
+    mutable Abstract_Fiber* m_sched_waiting_head = nullptr;
 
   protected:
     explicit
