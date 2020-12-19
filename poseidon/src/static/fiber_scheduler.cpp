@@ -841,9 +841,7 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
     POSEIDON_ASAN_START_SWITCH_FIBER(myctx, myctx->return_uctx);
     int r = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
     ROCKET_ASSERT(r == 0);
-
-    // ... (note the scheduler thread may have changed) ...
-    myctx = self->open_thread_context();
+    myctx = self->open_thread_context();  // (scheduler thread may have changed)
     POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
 
     if(fiber->m_sched_futp) {
@@ -853,13 +851,12 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
       ROCKET_ASSERT(fiber->m_sched_futp == futp_opt);
       fiber->m_sched_futp = nullptr;
 
-      // Search for `fiber` in the wait queue.
+      // Remove `fiber` from the wait queue.
       auto mref = ::std::ref(futp_opt->m_sched_waiting_head);
       while(mref && (mref != fiber))
         mref = ::std::ref(mref.get()->m_sched_ready_next);
 
-      // Erase it if found.
-      if(mref == fiber)
+      if(mref)
         mref.get() = fiber->m_sched_ready_next,
           fiber->drop_reference();
     }
