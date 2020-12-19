@@ -17,17 +17,17 @@ Abstract_HTTP_Server_Encoder::
 
 bool
 Abstract_HTTP_Server_Encoder::
-do_encode_http_headers(HTTP_Version version, HTTP_Status status, const Option_Map& headers)
+do_encode_http_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers)
   {
     // Send 200 in the case of `http_status_connection_established`.
-    HTTP_Status real_status = status;
-    if(status == http_status_connection_established)
-      real_status = http_status_ok;
+    HTTP_Status rstat = stat;
+    if(stat == http_status_connection_established)
+      rstat = http_status_ok;
 
     // Compose the status line followed by all headers.
     ::rocket::tinyfmt_str fmt;
-    fmt << format_http_version(version) << ' ' << real_status << ' '
-        << describe_http_status(status) << "\r\n";
+    fmt << format_http_version(ver) << ' ' << rstat << ' '
+        << describe_http_status(stat) << "\r\n";
 
     for(const auto& pair : headers)
       fmt << pair.first << ": " << pair.second << "\r\n";
@@ -117,8 +117,8 @@ do_encode_websocket_frame(int flags, const char* data, size_t size)
 
 bool
 Abstract_HTTP_Server_Encoder::
-http_encode_headers(HTTP_Version version, HTTP_Status status, Option_Map&& headers,
-                    HTTP_Method method, const cow_string& target)
+http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
+                    HTTP_Method meth, const cow_string& target)
   {
     if(this->m_state == http_encoder_state_closed)
       return false;
@@ -141,17 +141,17 @@ http_encode_headers(HTTP_Version version, HTTP_Status status, Option_Map&& heade
 
     // Check for special cases where no content shall be sent.
     // Refer to RFC 7230 section 3.3 for details.
-    switch(static_cast<uint32_t>(status) / 100) {
+    switch(static_cast<uint32_t>(stat) / 100) {
       case 1:
         no_content = true;
         break;
 
       case 2:
-        no_content = (method == http_method_connect) || (status == 204);
+        no_content = (meth == http_method_connect) || (stat == 204);
         break;
 
       case 3:
-        no_content = (status == 304);
+        no_content = (stat == 304);
         break;
     }
 
@@ -174,15 +174,15 @@ http_encode_headers(HTTP_Version version, HTTP_Status status, Option_Map&& heade
     }
 
     // The CONNECT method is very, very special.
-    if(method == http_method_connect) {
+    if(meth == http_method_connect) {
       // If a 2xx status code is sent, a tunnel will be established.
-      if((200 <= status) && (status <= 299)) {
+      if((200 <= stat) && (stat <= 299)) {
         // Erase forbidden headers.
         headers.erase(connection_header_name);
         headers.erase(sref("Content-Length"));
         headers.erase(sref("Transfer-Encoding"));
 
-        return this->do_encode_http_headers(version, status, headers) &&
+        return this->do_encode_http_headers(ver, stat, headers) &&
                this->do_finish_http_message(http_encoder_state_tunnel);
       }
 
@@ -190,14 +190,14 @@ http_encode_headers(HTTP_Version version, HTTP_Status status, Option_Map&& heade
       conn = http_connection_close;
     }
 
-    if(version < http_version_1_1)
+    if(ver < http_version_1_1)
       conn = http_connection_close;
 
     if(conn == http_connection_keep_alive)
       headers.for_each(connection_header_name,
           [&](const cow_string& resph) {
             // XXX: Options may overwrite each other.
-            if(status == http_status_switching_protocol)
+            if(stat == http_status_switching_protocol)
               if(ascii_ci_has_token(resph, sref("upgrade")))
                 conn = http_connection_upgrade;
 
@@ -208,7 +208,7 @@ http_encode_headers(HTTP_Version version, HTTP_Status status, Option_Map&& heade
               conn = http_connection_close;
           });
 
-    if(version < http_version_1_1) {
+    if(ver < http_version_1_1) {
       // HTTP/1.0 does not support this header.
       headers.erase(sref("Transfer-Encoding"));
     }
@@ -264,7 +264,7 @@ http_encode_headers(HTTP_Version version, HTTP_Status status, Option_Map&& heade
         this->m_deflator = nullptr;
 
         // Switch to WebSocket after the response headers.
-        return this->do_encode_http_headers(version, status, headers) &&
+        return this->do_encode_http_headers(ver, stat, headers) &&
                this->do_finish_http_message(http_encoder_state_websocket);
       }
       else
@@ -279,8 +279,8 @@ http_encode_headers(HTTP_Version version, HTTP_Status status, Option_Map&& heade
       headers.set(connection_header_name, sref("close"));
     }
 
-    if(no_content || (method == http_method_head))
-      return this->do_encode_http_headers(version, status, headers) &&
+    if(no_content || (meth == http_method_head))
+      return this->do_encode_http_headers(ver, stat, headers) &&
              this->do_finish_http_message(http_encoder_state_headers);
 
     // Reset the deflator used by the previous message, if any.
@@ -289,7 +289,7 @@ http_encode_headers(HTTP_Version version, HTTP_Status status, Option_Map&& heade
       defl->reset();
 
     // Expect the entity.
-    bool sent = this->do_encode_http_headers(version, status, headers);
+    bool sent = this->do_encode_http_headers(ver, stat, headers);
     this->m_state = http_encoder_state_entity;
     return sent;
   }
@@ -431,7 +431,7 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
 
 bool
 Abstract_HTTP_Server_Encoder::
-http_encode_websocket_closure(WebSocket_Status status, const char* data, size_t size)
+http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t size)
   {
     if(this->m_state == http_encoder_state_closed)
       return false;
@@ -445,8 +445,8 @@ http_encode_websocket_closure(WebSocket_Status status, const char* data, size_t 
       POSEIDON_LOG_WARN("Closure frame truncated (size `$1`)", size);
 
     ::rocket::static_vector<char, 125> pbuf;
-    pbuf.emplace_back(status >> 8);  // status (high)
-    pbuf.emplace_back(status);  // status (low)
+    pbuf.emplace_back(stat >> 8);  // status (high)
+    pbuf.emplace_back(stat);  // status (low)
     pbuf.append(data, data + size);
 
     // Send the closure frame and shut the connection down.
