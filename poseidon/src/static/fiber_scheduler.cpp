@@ -573,8 +573,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
           ROCKET_ASSERT(elem.version % 2 == 0);
           if(fiber->m_sched_version != elem.version) {
-            // Delete this invalidated element.
-            self->m_sched_pq.pop_back();
+            self->m_sched_pq.pop_back();  // invalidated
             continue;
           }
 
@@ -584,21 +583,18 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             // If the fiber stack is in use, it cannot be deallocated without possibility
             // of resource leaks.
             if(sig != 0) {
-              // Delete this fiber when the process is shutting down.
               POSEIDON_LOG_DEBUG("Killed fiber because of process termination: $1", fiber);
               self->m_sched_pq.pop_back();
               continue;
             }
 
             if(fiber->m_zombie.load()) {
-              // Delete this fiber asynchronously.
               POSEIDON_LOG_DEBUG("Shut down fiber: $1", fiber);
               self->m_sched_pq.pop_back();
               continue;
             }
 
             if(fiber.unique() && !fiber->m_resident.load()) {
-              // Delete this fiber when no other reference of it exists.
               POSEIDON_LOG_DEBUG("Killed orphan fiber: $1", fiber);
               self->m_sched_pq.pop_back();
               continue;
@@ -628,7 +624,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             }
 
             // Proceed anyway.
-            // This usually causes an exception to be thrown after `yield()` returns.
             if(delta >= conf.fail_timeout)
               POSEIDON_LOG_ERROR("Suspension of fiber `$1` has exceeded `$2` seconds.\n"
                         "This circumstance looks permanent. Please check for deadlocks.",
