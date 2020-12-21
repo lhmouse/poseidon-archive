@@ -79,9 +79,9 @@ Abstract_TLS_Server_Socket::
 
 uptr<Abstract_Socket>
 Abstract_TLS_Server_Socket::
-do_socket_on_accept(unique_FD&& fd)
+do_socket_on_accept(unique_FD&& fd, const Socket_Address& addr)
   {
-    return this->do_socket_on_accept_tls(::std::move(fd));
+    return this->do_socket_on_accept_tls(::std::move(fd), addr);
   }
 
 void

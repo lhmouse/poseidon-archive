@@ -22,9 +22,9 @@ Abstract_TCP_Server_Socket::
 
 uptr<Abstract_Socket>
 Abstract_TCP_Server_Socket::
-do_socket_on_accept(unique_FD&& fd)
+do_socket_on_accept(unique_FD&& fd, const Socket_Address& addr)
   {
-    return this->do_socket_on_accept_tcp(::std::move(fd));
+    return this->do_socket_on_accept_tcp(::std::move(fd), addr);
   }
 
 void

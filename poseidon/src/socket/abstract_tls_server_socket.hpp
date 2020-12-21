@@ -39,7 +39,7 @@ class Abstract_TLS_Server_Socket
 
   private:
     uptr<Abstract_Socket>
-    do_socket_on_accept(unique_FD&& fd)
+    do_socket_on_accept(unique_FD&& fd, const Socket_Address& addr)
       final;
 
     void
@@ -52,7 +52,7 @@ class Abstract_TLS_Server_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     uptr<Abstract_TLS_Socket>
-    do_socket_on_accept_tls(unique_FD&& fd)
+    do_socket_on_accept_tls(unique_FD&& fd, const Socket_Address& addr)
       = 0;
 
     // Registers a socket object.

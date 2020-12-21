@@ -42,18 +42,18 @@ struct Example_Server : Abstract_TLS_Server_Socket
       }
 
     uptr<Abstract_TLS_Socket>
-    do_socket_on_accept_tls(unique_FD&& fd)
+    do_socket_on_accept_tls(unique_FD&& fd, const Socket_Address& addr)
       override
       {
+        POSEIDON_LOG_WARN("example TLS server accepted client: $1", addr);
+
         return ::rocket::make_unique<Example_Session>(::std::move(fd), *this);
       }
 
     void
     do_socket_on_register_tls(rcptr<Abstract_TLS_Socket>&& sock)
+      override
       {
-        POSEIDON_LOG_WARN("example TLS server accepted client: $1",
-                          sock->get_remote_address());
-
         s_client = ::std::move(sock);
       }
   };

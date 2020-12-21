@@ -35,19 +35,18 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /
 
       // Create a new socket object.
       lock.unlock();
-      auto sock = this->do_socket_on_accept(::std::move(fd));
+      Socket_Address addr(addrst, addrlen);
+      auto sock = this->do_socket_on_accept(::std::move(fd), addr);
       if(!sock)
         POSEIDON_THROW("Null pointer returned from `do_socket_on_accept()`\n"
                        "[listen socket class `$1`]",
-                       typeid(*this).name());
+                       typeid(*this));
 
       // Register the socket.
       POSEIDON_LOG_INFO("Accepted incoming connection from '$1'\n"
                         "[server socket class `$2` listening on '$3']\n"
                         "[accepted socket class `$4`]",
-                        Socket_Address(addrst, addrlen),
-                        typeid(*this).name(), this->get_local_address(),
-                        typeid(*sock).name());
+                        addr, typeid(*this), this->get_local_address(), typeid(*sock));
 
       this->do_socket_on_register(Network_Driver::insert(::std::move(sock)));
     }

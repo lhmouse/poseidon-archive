@@ -24,7 +24,7 @@ class Abstract_TCP_Server_Socket
 
   private:
     uptr<Abstract_Socket>
-    do_socket_on_accept(unique_FD&& fd)
+    do_socket_on_accept(unique_FD&& fd, const Socket_Address& addr)
       final;
 
     void
@@ -37,7 +37,7 @@ class Abstract_TCP_Server_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     uptr<Abstract_TCP_Socket>
-    do_socket_on_accept_tcp(unique_FD&& fd)
+    do_socket_on_accept_tcp(unique_FD&& fd, const Socket_Address& addr)
       = 0;
 
     // Registers a socket object.
