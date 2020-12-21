@@ -207,24 +207,23 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         // Perform a brute-force search.
         for(index = 0;  index < self->m_poll_elems.size();  ++index) {
           const auto& elem = self->m_poll_elems[index];
-          if(elem.sock->m_epoll_data != epoll_data)
-            continue;
+          if(ROCKET_UNEXPECT(elem.sock->m_epoll_data == epoll_data)) {
+            // Update the lookup hint. Errors are ignored.
+            ::epoll_event event;
+            event.data.u64 = self->make_epoll_data(index, epoll_data);
+            event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+            if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_MOD, elem.sock->get_fd(), &event) != 0)
+              POSEIDON_LOG_FATAL("Failed to modify socket in epoll\n"
+                                 "[`epoll_ctl()` failed: $1]",
+                                 format_errno(errno));
 
-          // Update the lookup hint. Errors are ignored.
-          ::epoll_event event;
-          event.data.u64 = self->make_epoll_data(index, epoll_data);
-          event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-          if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_MOD, elem.sock->get_fd(), &event) != 0)
-            POSEIDON_LOG_FATAL("Failed to modify socket in epoll\n"
-                               "[`epoll_ctl()` failed: $1]",
-                               format_errno(errno));
+            elem.sock->m_epoll_data = event.data.u64;
+            POSEIDON_LOG_DEBUG("Epoll lookup hint updated: value = $1", event.data.u64);
 
-          elem.sock->m_epoll_data = event.data.u64;
-          POSEIDON_LOG_DEBUG("Epoll lookup hint updated: value = $1", event.data.u64);
-
-          // Return the new index.
-          ROCKET_ASSERT(index != poll_index_nil);
-          return index;
+            // Return the new index.
+            ROCKET_ASSERT(index != poll_index_nil);
+            return index;
+          }
         }
 
         // This should not happen at all.
