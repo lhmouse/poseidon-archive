@@ -16,6 +16,7 @@ struct Level_Config
     cow_string color;
     int out_fd = -1;
     cow_string out_path;
+    bool trivial = false;
   };
 
 void
@@ -57,6 +58,11 @@ do_load_level_config(Level_Config& conf, const Config_File& file, const char* na
 
       conf.out_path = ::std::move(*qstr);
     }
+
+    // Is this level trivial?
+    auto qbool = file.get_bool_opt({"logger","levels",name,"trivial"});
+    if(qbool)
+      conf.trivial = *qbool;
   }
 
 struct Entry
@@ -159,8 +165,7 @@ do_write_log_entry(const Level_Config& conf, Entry&& entry)
 
     if(conf.out_path.size()) {
       ::rocket::unique_posix_fd fd(::open(conf.out_path.c_str(),
-                                          O_WRONLY | O_APPEND | O_CREAT, 0666),
-                                   ::close);
+                         O_WRONLY | O_APPEND | O_CREAT, 0666), ::close);
       if(fd != -1)
         strms.emplace_back(::std::move(fd));
       else
@@ -301,7 +306,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     do_thread_loop(void* /*param*/)
       {
         Entry entry;
-        bool needs_sync;
+        size_t queue_size;
 
         // Await an entry and pop it.
         simple_mutex::unique_lock lock(self->m_queue_mutex);
@@ -316,7 +321,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
           // Pop it.
           entry = ::std::move(self->m_queue.front());
           self->m_queue.pop_front();
-          needs_sync = (entry.level < log_level_warn) || self->m_queue.empty();
+          queue_size = self->m_queue.size();
           break;
         }
         lock.unlock();
@@ -326,10 +331,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         const auto conf = self->m_conf_levels.at(entry.level);
         lock.unlock();
 
+        // If there is congestion, discard trivial ones.
+        if(conf.trivial && (queue_size >= 1024))
+          return;
+
         // Write this entry.
         do_write_log_entry(conf, ::std::move(entry));
 
-        if(needs_sync)
+        if((queue_size == 0) || (entry.level < log_level_warn))
           ::sync();
       }
   };
