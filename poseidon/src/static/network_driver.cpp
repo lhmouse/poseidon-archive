@@ -623,16 +623,16 @@ insert(uptr<Abstract_Socket>&& usock)
 
 bool
 Network_Driver::
-notify_writable_internal(const Abstract_Socket* csock)
+notify_writable_internal(const Abstract_Socket& sock)
   noexcept
   {
     // If the socket has been removed or is not writable , don't do anything.
     simple_mutex::unique_lock lock(self->m_poll_mutex);
-    if((csock->m_epoll_events & (EPOLLOUT | EPOLLERR | EPOLLHUP)) != EPOLLOUT)
+    if((sock.m_epoll_events & (EPOLLOUT | EPOLLERR | EPOLLHUP)) != EPOLLOUT)
       return false;
 
     // Don't do anything if the socket does not exist in epoll.
-    uint32_t index = self->find_poll_socket(csock->m_epoll_data);
+    uint32_t index = self->find_poll_socket(sock.m_epoll_data);
     if(index == poll_index_nil)
       return false;
 

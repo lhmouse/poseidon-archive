@@ -142,7 +142,7 @@ close()
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.
-    Network_Driver::notify_writable_internal(this);
+    Network_Driver::notify_writable_internal(*this);
     return true;
   }
 

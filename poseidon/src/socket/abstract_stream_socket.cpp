@@ -199,7 +199,7 @@ do_socket_send(const char* data, size_t size)
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.
-    Network_Driver::notify_writable_internal(this);
+    Network_Driver::notify_writable_internal(*this);
     return true;
   }
 
@@ -238,7 +238,7 @@ close()
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.
-    Network_Driver::notify_writable_internal(this);
+    Network_Driver::notify_writable_internal(*this);
     return true;
   }
 

@@ -39,7 +39,7 @@ class Network_Driver
     // This function is thread-safe.
     static
     bool
-    notify_writable_internal(const Abstract_Socket* csock)
+    notify_writable_internal(const Abstract_Socket& sock)
       noexcept;
   };
 
