@@ -10,7 +10,7 @@
 namespace poseidon {
 namespace {
 
-struct Packet_Header
+struct Queued_Packet_Header
   {
     uint16_t addrlen;
     uint16_t datalen;
@@ -101,8 +101,8 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
 
       // Process the packet that has been read.
       lock.unlock();
-      this->do_socket_on_receive(Socket_Address(addrst, addrlen),
-                                 hint, static_cast<size_t>(nread));
+      Socket_Address addr(addrst, addrlen);
+      this->do_socket_on_receive(addr, hint, static_cast<size_t>(nread));
     }
     catch(exception& stdex) {
       // It is probably bad to let the exception propagate to network driver and kill
@@ -153,33 +153,28 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
     lock.lock(this->m_io_mutex);
 
     try {
-      // Try extracting a packet.
-      // This function shall match `async_send()`.
-      Packet_Header header;
-      size_t size = this->m_wqueue.getn(reinterpret_cast<char*>(&header), sizeof(header));
-      if(size == 0) {
-        if(this->m_cstate <= connection_state_established)
-          return io_result_end_of_stream;
-
-        // Shut down the connection completely now.
+      // Try extracting a packet. This function shall match `do_socket_send()`.
+      Queued_Packet_Header head;
+      size_t size = this->m_wqueue.getn(reinterpret_cast<char*>(&head), sizeof(head));
+      if((size == 0) && (this->m_cstate > connection_state_established))
         return this->do_socket_close_unlocked();
-      }
+
+      if(size == 0)
+        return io_result_end_of_stream;
 
       // Get the destination address.
-      ROCKET_ASSERT(size == sizeof(header));
-      ROCKET_ASSERT(this->m_wqueue.size() >=
-                      static_cast<uint32_t>(header.addrlen + header.datalen));
-
+      ROCKET_ASSERT(size == sizeof(head));
       Socket_Address::storage addrst;
-      ::socklen_t addrlen = header.addrlen;
-      size = this->m_wqueue.getn(reinterpret_cast<char*>(&addrst), addrlen);
-      ROCKET_ASSERT(size == addrlen);
+      size = this->m_wqueue.getn(reinterpret_cast<char*>(&addrst), head.addrlen);
+      ROCKET_ASSERT(size == head.addrlen);
 
-      // Write the payload, which shall be removed after `sendto()`, no matter whether it
-      // succeeds or not.
-      ::ssize_t nwritten = ::sendto(this->get_fd(), this->m_wqueue.data(), header.datalen,
-                                    0, addrst, addrlen);
-      this->m_wqueue.discard(header.datalen);
+      // Send the payload. No matter whether the operation succeeds or not, it will
+      // always be removed from the send queue.
+      ROCKET_ASSERT(this->m_wqueue.size() >= head.datalen);
+      ::ssize_t nwritten = ::sendto(this->get_fd(),
+                       this->m_wqueue.data(), head.datalen, 0, addrst, head.addrlen);
+      this->m_wqueue.discard(head.datalen);
+
       if(nwritten < 0)
         return get_io_result_from_errno("sendto", errno);
     }
@@ -244,22 +239,27 @@ do_socket_send(const Socket_Address& addr, const char* data, size_t size)
     if(this->m_cstate > connection_state_established)
       return false;
 
-    // Append data to the write queue.
-    Packet_Header header;
-    header.addrlen = static_cast<uint16_t>(addr.size());
-    header.datalen = static_cast<uint16_t>(::std::min<size_t>(size, UINT16_MAX));
-    if(size != header.datalen)
+    // Reserve an exaggerate amount of space for the header, the destination
+    // address and the largest payload.
+    this->m_wqueue.reserve(0x11000);
+
+    // Write the header.
+    Queued_Packet_Header head;
+    head.addrlen = static_cast<uint16_t>(addr.size());
+    head.datalen = static_cast<uint16_t>(::std::min<size_t>(size, UINT16_MAX));
+    if(size != head.datalen)
       POSEIDON_LOG_WARN("UDP packet truncated (size `$1` too large)", size);
 
-    // Please mind thread safety.
-    // This function shall match `do_socket_on_poll_write()`.
-    this->m_wqueue.reserve(sizeof(header) + header.addrlen + header.datalen);
-    ::std::memcpy(this->m_wqueue.mut_end(), &header, sizeof(header));
-    this->m_wqueue.accept(sizeof(header));
-    ::std::memcpy(this->m_wqueue.mut_end(), addr.data(), header.addrlen);
-    this->m_wqueue.accept(header.addrlen);
-    ::std::memcpy(this->m_wqueue.mut_end(), data, header.datalen);
-    this->m_wqueue.accept(header.datalen);
+    ::std::memcpy(this->m_wqueue.mut_end(), &head, sizeof(head));
+    this->m_wqueue.accept(sizeof(head));
+
+    // Write the destination address.
+    ::std::memcpy(this->m_wqueue.mut_end(), addr.data(), head.addrlen);
+    this->m_wqueue.accept(head.addrlen);
+
+    // Write the payload.
+    ::std::memcpy(this->m_wqueue.mut_end(), data, head.datalen);
+    this->m_wqueue.accept(head.datalen);
     lock.unlock();
 
     // Notify the driver about availability of outgoing data.

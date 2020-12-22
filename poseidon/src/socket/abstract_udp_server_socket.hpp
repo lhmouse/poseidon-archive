@@ -27,7 +27,7 @@ class Abstract_UDP_Server_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_socket_on_receive(Socket_Address&& addr, char* data, size_t size)
+    do_socket_on_receive(const Socket_Address& addr, char* data, size_t size)
       = 0;
 
   public:
