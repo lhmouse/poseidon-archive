@@ -9,23 +9,28 @@
 namespace poseidon {
 namespace {
 
-[[noreturn]]
-void
-do_throw_type_mismatch(const cow_string& abspath, const char* const* psegs,
-                       size_t nsegs, const char* expect_type,
-                       const ::asteria::Value& value)
+struct Implode
   {
-    cow_string path;
-    path.reserve(255);
-    path << '`';
-    ::std::for_each(psegs, psegs + nsegs,
-        [&](const char* seg) { path << seg << '.';  });
-    path.mut_back() = '`';
+    const char* const* psegs;
+    size_t nsegs;
 
-    POSEIDON_THROW("Unexpected type of $1 (expecting `$2`, got `$3`)\n"
-                   "[in configuration file '$4']",
-                   path, expect_type, ::asteria::describe_type(value.type()),
-                   abspath);
+    constexpr
+    Implode(const char* const* p, size_t n)
+      noexcept
+      : psegs(p), nsegs(n)
+      { }
+  };
+
+tinyfmt&
+operator<<(tinyfmt& fmt, const Implode& imp)
+  {
+    if(imp.nsegs == 0)
+      return fmt;
+
+    fmt << imp.psegs[0];
+    for(size_t k = 1;  k < imp.nsegs;  ++k)
+      fmt << '.' << imp.psegs[k];
+    return fmt;
   }
 
 }  // namespace
@@ -58,7 +63,15 @@ get_value(const char* const* psegs, size_t nsegs)
       // Return null if no such child exists or if an explicit null
       // is found.
       auto qchild = qobj->ptr(::rocket::sref(psegs[icur]));
-      if(!qchild || qchild->is_null())
+      if(!qchild) {
+        POSEIDON_LOG_WARN(
+            "Undefined value `$2`\n"
+            "[in configuration file '$1']",
+            this->m_abspath, Implode(psegs, nsegs));
+
+        return ::asteria::null_value;
+      }
+      else if(qchild->is_null())
         return ::asteria::null_value;
 
       // Advance to the next segment.
@@ -68,7 +81,11 @@ get_value(const char* const* psegs, size_t nsegs)
 
       // If more segments follow, the child must be an object.
       if(!qchild->is_object())
-        do_throw_type_mismatch(this->m_abspath, psegs, icur, "object", *qchild);
+        POSEIDON_THROW(
+            "Unexpected type of `$2` (expecting `object`, got `$3`)\n"
+            "[in configuration file '$1']",
+            this->m_abspath, Implode(psegs, nsegs),
+            ::asteria::describe_type(qchild->type()));
 
       qobj = &(qchild->as_object());
     }
@@ -84,7 +101,11 @@ get_bool_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_boolean())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "boolean", value);
+      POSEIDON_THROW(
+          "Unexpected type of `$2` (expecting `boolean`, got `$3`)\n"
+          "[in configuration file '$1']",
+          this->m_abspath, Implode(psegs, nsegs),
+          ::asteria::describe_type(value.type()));
 
     return value.as_boolean();
   }
@@ -99,7 +120,11 @@ get_int64_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_integer())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "integer", value);
+      POSEIDON_THROW(
+          "Unexpected type of `$2` (expecting `integer`, got `$3`)\n"
+          "[in configuration file '$1']",
+          this->m_abspath, Implode(psegs, nsegs),
+          ::asteria::describe_type(value.type()));
 
     return value.as_integer();
   }
@@ -114,7 +139,11 @@ get_double_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_convertible_to_real())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "real", value);
+      POSEIDON_THROW(
+          "Unexpected type of `$2` (expecting `number`, got `$3`)\n"
+          "[in configuration file '$1']",
+          this->m_abspath, Implode(psegs, nsegs),
+          ::asteria::describe_type(value.type()));
 
     return value.convert_to_real();
   }
@@ -129,7 +158,11 @@ get_string_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_string())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "string", value);
+      POSEIDON_THROW(
+          "Unexpected type of `$2` (expecting `string`, got `$3`)\n"
+          "[in configuration file '$1']",
+          this->m_abspath, Implode(psegs, nsegs),
+          ::asteria::describe_type(value.type()));
 
     return value.as_string();
   }
@@ -144,7 +177,11 @@ get_array_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_array())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "array", value);
+      POSEIDON_THROW(
+          "Unexpected type of `$2` (expecting `array`, got `$3`)\n"
+          "[in configuration file '$1']",
+          this->m_abspath, Implode(psegs, nsegs),
+          ::asteria::describe_type(value.type()));
 
     return value.as_array();
   }
@@ -159,7 +196,11 @@ get_object_opt(const char* const* psegs, size_t nsegs)
       return nullopt;
 
     if(!value.is_object())
-      do_throw_type_mismatch(this->m_abspath, psegs, nsegs, "object", value);
+      POSEIDON_THROW(
+          "Unexpected type of `$2` (expecting `object`, got `$3`)\n"
+          "[in configuration file '$1']",
+          this->m_abspath, Implode(psegs, nsegs),
+          ::asteria::describe_type(value.type()));
 
     return value.as_object();
   }
