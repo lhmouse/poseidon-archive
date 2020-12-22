@@ -44,19 +44,16 @@ struct PQ_Element
 
 struct PQ_Compare
   {
-    constexpr
     bool
     operator()(const PQ_Element& lhs, const PQ_Element& rhs)
       const noexcept
       { return lhs.next > rhs.next;  }
 
-    constexpr
     bool
     operator()(const PQ_Element& lhs, int64_t rhs)
       const noexcept
       { return lhs.next > rhs;  }
 
-    constexpr
     bool
     operator()(int64_t lhs, const PQ_Element& rhs)
       const noexcept
@@ -66,13 +63,11 @@ struct PQ_Compare
 
 struct Timer_Compare
   {
-    constexpr
     bool
     operator()(const PQ_Element& lhs, const Abstract_Timer* rhs)
       const noexcept
       { return lhs.timer == rhs;  }
 
-    constexpr
     bool
     operator()(const Abstract_Timer* lhs, const PQ_Element& rhs)
       const noexcept

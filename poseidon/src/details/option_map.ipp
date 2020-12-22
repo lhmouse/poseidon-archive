@@ -55,7 +55,6 @@ class Bucket
       = default;
 
   public:
-    constexpr
     const cow_string&
     key()
       const noexcept
@@ -67,19 +66,17 @@ class Bucket
       { return this->m_key.assign(str).rdstr();  }
 
     template<typename OtherT>
-    constexpr
     bool
     key_equals(const OtherT& oth)
       const
       { return this->m_key == oth;  }
 
-    constexpr
     size_t
     hash()
       const noexcept
       { return this->m_key.rdhash();  }
 
-    constexpr operator
+    operator
     bool()
       const noexcept
       { return this->m_val.index() != 0;  }

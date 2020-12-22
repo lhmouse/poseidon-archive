@@ -167,7 +167,8 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
 
       // Get the destination address.
       ROCKET_ASSERT(size == sizeof(header));
-      ROCKET_ASSERT(this->m_wqueue.size() >= header.addrlen + header.datalen);
+      ROCKET_ASSERT(this->m_wqueue.size() >=
+                      static_cast<uint32_t>(header.addrlen + header.datalen));
 
       Socket_Address::storage addrst;
       ::socklen_t addrlen = header.addrlen;
