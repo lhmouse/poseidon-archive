@@ -64,6 +64,22 @@ struct PQ_Compare
   }
   constexpr pq_compare;
 
+struct Timer_Compare
+  {
+    constexpr
+    bool
+    operator()(const PQ_Element& lhs, const Abstract_Timer* rhs)
+      const noexcept
+      { return lhs.timer == rhs;  }
+
+    constexpr
+    bool
+    operator()(const Abstract_Timer* lhs, const PQ_Element& rhs)
+      const noexcept
+      { return lhs == rhs.timer;  }
+  }
+  constexpr timer_compare;
+
 }  // namespace
 
 POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
@@ -205,22 +221,21 @@ insert(uptr<Abstract_Timer>&& utimer)
 
 bool
 Timer_Driver::
-invalidate_internal(const Abstract_Timer* ctimer, int64_t first, int64_t period)
+invalidate_internal(const Abstract_Timer& timer, int64_t first, int64_t period)
   noexcept
   {
     // Don't do anything if the timer does not exist in the queue.
     simple_mutex::unique_lock lock(self->m_pq_mutex);
-    auto it = ::std::find_if(self->m_pq.begin(), self->m_pq.end(),
-            [&](const PQ_Element& r) { return r.timer.get() == ctimer;  });
-    if(it == self->m_pq.end())
+    auto qelem = ::rocket::find(self->m_pq, ::std::addressof(timer), timer_compare);
+    if(qelem)
       return false;
 
     // Update the timer itself.
-    it->timer->m_first = first;
-    it->timer->m_period = period;
+    qelem->timer->m_first = first;
+    qelem->timer->m_period = period;
 
     // Update the element in place.
-    it->next = do_get_time(first);
+    qelem->next = do_get_time(first);
     ::std::make_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     self->m_pq_avail.notify_one();
     return true;

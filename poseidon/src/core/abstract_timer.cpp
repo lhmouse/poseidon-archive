@@ -18,7 +18,7 @@ Abstract_Timer::
 reset(int64_t first, int64_t period)
   noexcept
   {
-    Timer_Driver::invalidate_internal(this, first, period);
+    Timer_Driver::invalidate_internal(*this, first, period);
     return *this;
   }
 
