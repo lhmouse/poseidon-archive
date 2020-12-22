@@ -890,22 +890,25 @@ Fiber_Scheduler::
 signal(const Abstract_Future& futr)
   noexcept
   {
-    // Detach all fibers from the future, if any.
+    // Do nothing if there is no fiber on this future.
     simple_mutex::unique_lock lock(self->m_sched_mutex);
-    auto head = ::std::exchange(futr.m_sched_waiting_head, nullptr);
-    if(!head)
+    auto mref = ::std::ref(futr.m_sched_waiting_head);
+    if(!mref)
       return false;
 
+    // Detach all fibers from the future, if any.
+    auto head = ::std::exchange(mref.get(), nullptr);
+
     // Get a pointer to the last node.
-    auto tail = head;
-    while(auto next = tail->m_sched_ready_next)
-      tail = next;
+    mref = ::std::ref(head->m_sched_ready_next);
+    while(mref)
+      mref = ::std::ref(mref.get()->m_sched_ready_next);
 
     // Splice the two queues.
     // Fibers are moved from one queue to the other, so there is no need to tamper
     // with reference counts here.
     self->do_signal_if_queues_empty();
-    tail->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, head);
+    mref.get() = ::std::exchange(self->m_sched_ready_head, head);
     return true;
   }
 
