@@ -350,7 +350,7 @@ void
 do_load_addons()
   {
     const auto file = Main_Config::copy();
-    const auto qaddons = file.get_array_opt({"addons"});
+    const auto qaddons = file.get_array_opt({"general","addons"});
     if(!qaddons || qaddons->empty()) {
       POSEIDON_LOG_FATAL("There is no add-on to load. What's the job now?");
       return;
