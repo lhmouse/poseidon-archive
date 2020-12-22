@@ -890,13 +890,13 @@ Fiber_Scheduler::
 signal(const Abstract_Future& futr)
   noexcept
   {
-    // Move all fibers from the future's wait queue to the ready queue.
+    // Detach all fibers from the future, if any.
     simple_mutex::unique_lock lock(self->m_sched_mutex);
     auto head = ::std::exchange(futr.m_sched_waiting_head, nullptr);
     if(!head)
       return false;
 
-    // Locate the last node.
+    // Get a pointer to the last node.
     auto tail = head;
     while(auto next = tail->m_sched_ready_next)
       tail = next;

@@ -38,10 +38,10 @@ class Fiber_Scheduler
 
     // Suspends the current fiber until a future becomes satisfied.
     // `current_opt()` must not return null when this function is called.
-    // The pointer is taken by value because it has to have a copy on the current call
-    // stack. If `futr_opt` is null, the current time slice is relinquished, similar
-    // to `sched_yield()`. Suspension may not exceed `msecs` milliseconds, which is
-    // capped to `fail_timeout` in the main configuration file.
+    // The pointer is taken by value because the future has to retain a reference
+    // count on the current call stack. If `futr_opt` is null, the current time slice
+    // is relinquished, similar to `sched_yield()`. Suspension may not exceed `msecs`
+    // milliseconds, which is capped to `fail_timeout` in 'main.conf'.
     // This function is thread-safe.
     static
     void
@@ -57,7 +57,7 @@ class Fiber_Scheduler
     rcptr<Abstract_Fiber>
     insert(uptr<Abstract_Fiber>&& ufiber);
 
-    // Wakes up a scheduler thread.
+    // Wakes up fibers that are suspended on `futr`.
     // This function is thread-safe.
     static
     bool
