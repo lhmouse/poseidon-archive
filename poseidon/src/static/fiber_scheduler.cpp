@@ -807,7 +807,6 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
     simple_mutex::unique_lock lock(self->m_sched_mutex);
     fiber->m_sched_yield_since = now;
     fiber->m_sched_yield_timeout = timeout;
-    fiber->m_sched_futp = nullptr;
 
     if(futp_opt && futp_opt->do_is_empty()) {
       // The value in the future object may be still under construction, but the lock
@@ -819,6 +818,7 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
     }
     else {
       // Attach the fiber to the ready queue of the current thread otherwise.
+      fiber->m_sched_futp = nullptr;
       self->do_signal_if_queues_empty();
       fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
     }
