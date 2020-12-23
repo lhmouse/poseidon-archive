@@ -711,8 +711,12 @@ modal_loop(const atomic_signal& exit_sig)
     self->do_start();
 
     // Schedule fibers and block until `exit_sig` becomes non-zero.
-    for(;;)
-      self->do_thread_loop((void*)&exit_sig);
+    create_daemon_thread<&Fiber_Scheduler_self::do_thread_loop>("main 1", (void*)&exit_sig);
+    create_daemon_thread<&Fiber_Scheduler_self::do_thread_loop>("main 2", (void*)&exit_sig);
+    create_daemon_thread<&Fiber_Scheduler_self::do_thread_loop>("main 3", (void*)&exit_sig);
+    create_daemon_thread<&Fiber_Scheduler_self::do_thread_loop>("main 4", (void*)&exit_sig);
+    ::sleep(9999999);
+    ::quick_exit(0);
   }
 
 void

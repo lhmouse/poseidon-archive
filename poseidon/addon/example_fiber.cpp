@@ -18,10 +18,10 @@ struct Promise_Timer : Abstract_Timer
 
     explicit
     Promise_Timer(int64_t seconds)
-      : Abstract_Timer(seconds * 1000, 0),
+      : Abstract_Timer(0, 1000),
         value(seconds)
       {
-        POSEIDON_LOG_FATAL("new timer `$1`", this);
+//        POSEIDON_LOG_FATAL("new timer `$1`", this);
 
         // create the future
         this->prom.future();
@@ -30,7 +30,7 @@ struct Promise_Timer : Abstract_Timer
     ~Promise_Timer()
       override
       {
-        POSEIDON_LOG_FATAL("delete timer `$1`", this);
+//        POSEIDON_LOG_FATAL("delete timer `$1`", this);
       }
 
     void
@@ -50,13 +50,13 @@ struct Example_Fiber : Abstract_Fiber
     Example_Fiber(int64_t seconds)
       : value(seconds)
       {
-        POSEIDON_LOG_ERROR("new fiber `$1`: $2", this, this->value);
+//        POSEIDON_LOG_ERROR("new fiber `$1`: $2", this, this->value);
       }
 
     ~Example_Fiber()
       override
       {
-        POSEIDON_LOG_ERROR("delete fiber `$1`: $2", this, this->value);
+//        POSEIDON_LOG_ERROR("delete fiber `$1`: $2", this, this->value);
       }
 
     void
@@ -64,15 +64,16 @@ struct Example_Fiber : Abstract_Fiber
       {
         POSEIDON_LOG_WARN("fiber `$1`: init", this);
 
-        auto timer = Timer_Driver::insert(::rocket::make_unique<Promise_Timer>(this->value));
-        auto futr = ::rocket::static_pointer_cast<Promise_Timer>(timer)->prom.future();
-        Fiber_Scheduler::yield(futr);
-        POSEIDON_LOG_WARN("fiber `$1`: value = $2", this, futr->value());
-
-        timer = Timer_Driver::insert(::rocket::make_unique<Promise_Timer>(this->value + 3));
-        futr = ::rocket::static_pointer_cast<Promise_Timer>(timer)->prom.future();
-        Fiber_Scheduler::yield(futr);
-        POSEIDON_LOG_WARN("fiber `$1`: value = $2", this, futr->value());
+        for(;;)
+          try {
+            auto timer = Timer_Driver::insert(::rocket::make_unique<Promise_Timer>(0));
+            auto futr = ::rocket::static_pointer_cast<Promise_Timer>(timer)->prom.future();
+            Fiber_Scheduler::yield(futr);
+            POSEIDON_LOG_WARN("fiber `$1`: value = $2", this, futr->value());
+          }
+          catch(::std::exception& e) {
+            POSEIDON_LOG_ERROR("error: $1", e);
+          }
       }
   };
 
@@ -86,8 +87,14 @@ const auto plain =
 const auto resident =
   {
     (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(1))->set_resident(), 1),
-    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(2))->set_resident(), 1),
-    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(3))->set_resident(), 1),
+    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(2))->set_resident(), 2),
+    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(3))->set_resident(), 3),
+    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(4))->set_resident(), 4),
+    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(5))->set_resident(), 5),
+    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(6))->set_resident(), 6),
+    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(7))->set_resident(), 7),
+    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(8))->set_resident(), 8),
+    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(9))->set_resident(), 9),
   };
 
 }  // namespace
