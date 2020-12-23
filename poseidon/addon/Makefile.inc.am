@@ -22,3 +22,8 @@ lib_LTLIBRARIES += lib/libposeidon_example_fiber.la
 lib_libposeidon_example_fiber_la_SOURCES =  \
   %reldir%/example_fiber.cpp  \
   ${NOTHING}
+
+lib_LTLIBRARIES += lib/libposeidon_example_http_server.la
+lib_libposeidon_example_http_server_la_SOURCES =  \
+  %reldir%/example_http_server.cpp  \
+  ${NOTHING}
