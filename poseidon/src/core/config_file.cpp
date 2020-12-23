@@ -64,7 +64,7 @@ get_value(const char* const* psegs, size_t nsegs)
       // is found.
       auto qchild = qobj->ptr(::rocket::sref(psegs[icur]));
       if(!qchild) {
-        POSEIDON_LOG_WARN(
+        POSEIDON_LOG_DEBUG(
             "Undefined value `$2`\n"
             "[in configuration file '$1']",
             this->m_abspath, Implode(psegs, nsegs));
