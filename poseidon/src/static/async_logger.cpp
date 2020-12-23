@@ -11,6 +11,21 @@
 namespace poseidon {
 namespace {
 
+struct Level_Name
+  {
+    char conf_name[8];
+    char fmt_name[8];
+  }
+constexpr s_level_names[] =
+  {
+    { "fatal",  " FATAL "  },
+    { "error",  " ERROR "  },
+    { "warn",   " WARN  "  },
+    { "info",   " INFO  "  },
+    { "debug",  " DEBUG "  },
+    { "trace",  " TRACE "  },
+  };
+
 struct Level_Config
   {
     cow_string color;
@@ -18,6 +33,9 @@ struct Level_Config
     cow_string out_path;
     bool trivial = false;
   };
+
+constexpr size_t level_count = ::rocket::size(s_level_names);
+using Level_Config_Array = array<Level_Config, level_count>;
 
 void
 do_load_level_config(Level_Config& conf, const Config_File& file, const char* name)
@@ -65,7 +83,7 @@ do_load_level_config(Level_Config& conf, const Config_File& file, const char* na
       conf.trivial = *qbool;
   }
 
-struct Entry
+struct Log_Entry
   {
     Log_Level level;
     const char* file;
@@ -73,8 +91,8 @@ struct Entry
     const char* func;
     cow_string text;
 
-    char thr_name[16];  // thread name
     ::pid_t thr_lwpid;  // kernel thread (LWP) ID, not pthread_t
+    char thr_name[16];  // thread name
   };
 
 constexpr char s_escapes[][8] =
@@ -136,25 +154,8 @@ do_end_color(cow_string& log_text, const Level_Config& conf)
     return true;
   }
 
-struct Level_Name
-  {
-    char conf_name[8];
-    char fmt_name[8];
-  }
-constexpr s_level_names[] =
-  {
-    { "fatal",  " FATAL "  },
-    { "error",  " ERROR "  },
-    { "warn",   " WARN  "  },
-    { "info",   " INFO  "  },
-    { "debug",  " DEBUG "  },
-    { "trace",  " TRACE "  },
-  };
-
-using Level_Config_Array = array<Level_Config, size(s_level_names)>;
-
 bool
-do_write_log_entry(const Level_Config& conf, Entry&& entry)
+do_write_log_entry(const Level_Config& conf, Log_Entry&& entry)
   {
     // Get list of streams to write.
     ::rocket::static_vector<::rocket::unique_posix_fd, 4> strms;
@@ -287,7 +288,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     mutable simple_mutex m_queue_mutex;
     condition_variable m_queue_avail;
     condition_variable m_queue_empty;
-    ::std::deque<Entry> m_queue;
+    ::std::deque<Log_Entry> m_queue;
 
     static
     void
@@ -305,7 +306,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     void
     do_thread_loop(void* /*param*/)
       {
-        Entry entry;
+        Log_Entry entry;
         size_t queue_size;
 
         // Await an entry and pop it.
@@ -362,8 +363,8 @@ reload()
       do_load_level_config(temp[k], file, s_level_names[k].conf_name);
 
     // During destruction of `temp` the mutex should have been unlocked.
-    // The swap operation is presumed to be fast, so we don't hold the mutex
-    // for too long.
+    // The swap operation is presumed to be fast, so we don't hold the
+    // mutex for too long.
     simple_mutex::unique_lock lock(self->m_conf_mutex);
     self->m_conf_levels.swap(temp);
   }
@@ -389,15 +390,21 @@ enqueue(Log_Level level, const char* file, long line, const char* func,
         cow_string&& text)
   {
     // Compose the entry.
-    Entry entry = { level, file, line, func, ::std::move(text), "", 0 };
-    ::pthread_getname_np(::pthread_self(), entry.thr_name, sizeof(entry.thr_name));
-    entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
+    Log_Entry entry;
+    entry.level = level;
+    entry.file = file;
+    entry.line = line;
+    entry.func = func;
+    entry.text = ::std::move(text);
 
-    if(ROCKET_UNEXPECT(self->m_thread == 0)) {
-      // If the logger thread has not been created, write it immediately.
-      const auto& conf = self->m_conf_levels.at(entry.level);
-      return do_write_log_entry(conf, ::std::move(entry));
-    }
+    entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
+    ::stpcpy(entry.thr_name, "<unknown>");
+    ::pthread_getname_np(::pthread_self(), entry.thr_name, sizeof(entry.thr_name));
+
+    // If the logger thread has not been created, write it immediately.
+    if(ROCKET_UNEXPECT(self->m_thread == 0))
+      return do_write_log_entry(
+               self->m_conf_levels.at(entry.level), ::std::move(entry));
 
     // Push the entry.
     simple_mutex::unique_lock lock(self->m_queue_mutex);
