@@ -14,27 +14,11 @@
 namespace poseidon {
 namespace {
 
-size_t
-do_get_size_config(const Config_File& file, const char* name, size_t defval)
-  {
-    const auto qval = file.get_int64_opt({"network","poll",name});
-    if(!qval)
-      return defval;
-
-    int64_t rval = ::rocket::clamp(*qval, 1, 0x10'00000);   // 16MiB
-    if(*qval != rval)
-      POSEIDON_LOG_WARN("Config value `network.poll.$1` truncated to `$2`\n"
-                        "[value `$3` out of range]",
-                        name, rval, *qval);
-
-    return static_cast<size_t>(rval);
-  }
-
 struct Config_Scalars
   {
-    size_t event_buffer_size = 1;
-    size_t io_buffer_size = 1;
-    size_t throttle_size = 1;
+    size_t event_buffer_size = 1024;
+    size_t io_buffer_size = 65536;
+    size_t throttle_size = 1048576;
   };
 
 enum : uint32_t
@@ -565,15 +549,23 @@ reload()
     const auto file = Main_Config::copy();
     Config_Scalars conf;
 
-    conf.event_buffer_size = do_get_size_config(file, "event_buffer_size", 1024);
-    conf.io_buffer_size = do_get_size_config(file, "io_buffer_size", 65536);
-    conf.throttle_size = do_get_size_config(file, "throttle_size", 1048576);
+    auto qint = file.get_int64_opt({"network","poll","event_buffer_size"});
+    if(qint)
+      conf.event_buffer_size = static_cast<size_t>(::rocket::clamp(*qint, 1, 4096));
+
+    qint = file.get_int64_opt({"network","poll","io_buffer_size"});
+    if(qint)
+      conf.io_buffer_size = static_cast<size_t>(::rocket::clamp(*qint, 1, 65536));
+
+    qint = file.get_int64_opt({"network","poll","throttle_size"});
+    if(qint)
+      conf.throttle_size = static_cast<size_t>(::rocket::clamp(*qint, 1, 1048576));
 
     // During destruction of temporary objects the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
     // for too long.
     simple_mutex::unique_lock lock(self->m_conf_mutex);
-    self->m_conf = conf;
+    self->m_conf = ::std::move(conf);
   }
 
 rcptr<Abstract_Socket>

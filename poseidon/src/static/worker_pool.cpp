@@ -11,22 +11,6 @@
 namespace poseidon {
 namespace {
 
-size_t
-do_get_size_config(const Config_File& file, const char* name, long max, size_t def)
-  {
-    const auto qval = file.get_int64_opt({"worker",name});
-    if(!qval)
-      return def;
-
-    int64_t rval = ::rocket::clamp(*qval, 1, max);
-    if(*qval != rval)
-      POSEIDON_LOG_WARN("Config value `worker.poll.$1` truncated to `$2`\n"
-                        "[value `$3` out of range]",
-                        name, rval, *qval);
-
-    return static_cast<size_t>(rval);
-  }
-
 struct Worker
   {
     once_flag init_once;
@@ -35,6 +19,19 @@ struct Worker
     mutable simple_mutex queue_mutex;
     condition_variable queue_avail;
     ::std::deque<rcptr<Abstract_Async_Job>> queue;
+
+    // Declare dummy constructors because this structure will be placed in
+    // a vector, which is only resized when it is empty so these will never
+    // be called eventually.
+    Worker()
+      = default;
+
+    Worker(const Worker&)
+      { ROCKET_ASSERT(false);  }
+
+    Worker&
+    operator=(const Worker&)
+      { ROCKET_ASSERT(false);  }
   };
 
 }  // namespace
@@ -120,13 +117,17 @@ reload()
   {
     // Load worker settings into temporary objects.
     const auto file = Main_Config::copy();
-    size_t thread_count = do_get_size_config(file, "thread_count", 256, 1);
+    uint32_t thread_count = 1;
+
+    auto qint = file.get_int64_opt({"worker","thread_count"});
+    if(qint)
+      thread_count = static_cast<uint32_t>(::rocket::clamp(*qint, 1, 127));
 
     // Create the pool without creating threads.
     // Note the pool cannot be resized, so we only have to do this once.
     // No locking is needed.
     if(self->m_workers.empty())
-      self->m_workers = ::std::vector<Worker>(thread_count);
+      self->m_workers.resize(thread_count);
   }
 
 size_t

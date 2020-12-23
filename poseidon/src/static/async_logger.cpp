@@ -357,16 +357,16 @@ reload()
   {
     // Load logger settings into this temporary array.
     const auto file = Main_Config::copy();
-    Level_Config_Array temp;
+    Level_Config_Array levels;
 
-    for(size_t k = 0;  k < temp.size();  ++k)
-      do_load_level_config(temp[k], file, s_level_names[k].conf_name);
+    for(size_t k = 0;  k < levels.size();  ++k)
+      do_load_level_config(levels[k], file, s_level_names[k].conf_name);
 
-    // During destruction of `temp` the mutex should have been unlocked.
+    // During destruction of `levels` the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the
     // mutex for too long.
     simple_mutex::unique_lock lock(self->m_conf_mutex);
-    self->m_conf_levels.swap(temp);
+    self->m_conf_levels.swap(levels);
   }
 
 bool
