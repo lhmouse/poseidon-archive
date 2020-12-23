@@ -338,7 +338,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         // Write this entry.
         do_write_log_entry(conf, ::std::move(entry));
 
-        if((queue_size == 0) || (entry.level < log_level_warn))
+        if((queue_size == 0) || (entry.level <= log_level_error))
           ::sync();
       }
   };
