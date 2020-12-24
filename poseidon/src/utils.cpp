@@ -65,7 +65,6 @@ ascii_trim(cow_string str)
 
 bool
 ascii_ci_has_token(const cow_string& str, char delim, const char* tok, size_t len)
-  noexcept
   {
     size_t epos = 0;
     while(epos < str.size()) {

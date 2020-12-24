@@ -53,7 +53,7 @@ class Abstract_Accept_Socket
     // `backlog` is clamped between `1` and `SOMAXCONN`. Out-of-bound values
     // are truncated silently.
     void
-    do_socket_listen(const Socket_Address& addr, int backlog = INT_MAX);
+    do_socket_listen(const Socket_Address& addr, uint32_t backlog = UINT32_MAX);
 
     // Consumes an accepted socket descriptor.
     // This function shall allocate and return a new socket object.

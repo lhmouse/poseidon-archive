@@ -121,7 +121,7 @@ reload()
 
     auto qint = file.get_int64_opt({"worker","thread_count"});
     if(qint)
-      thread_count = static_cast<uint32_t>(::rocket::clamp(*qint, 1, 127));
+      thread_count = clamp_cast<uint32_t>(*qint, 1, 127);
 
     // Create the pool without creating threads.
     // Note the pool cannot be resized, so we only have to do this once.

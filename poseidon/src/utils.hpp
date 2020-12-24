@@ -54,26 +54,41 @@ ascii_ci_equal(const StringT& str, const OtherT& oth)
 // Tokens are case-insensitive.
 ROCKET_PURE_FUNCTION
 bool
-ascii_ci_has_token(const cow_string& str, char delim, const char* tok, size_t len)
-  noexcept;
+ascii_ci_has_token(const cow_string& str, char delim, const char* tok, size_t len);
 
 template<typename OtherT>
 inline
 bool
 ascii_ci_has_token(const cow_string& str, char delim, const OtherT& oth)
-  { return noadl::ascii_ci_has_token(str, delim, oth.c_str(), oth.length());  }
+  {
+    return noadl::ascii_ci_has_token(str, delim, oth.c_str(), oth.length());
+  }
 
 ROCKET_PURE_FUNCTION inline
 bool
 ascii_ci_has_token(const cow_string& str, const char* tok, size_t len)
-  noexcept
-  { return noadl::ascii_ci_has_token(str, ',', tok, len);  }
+  {
+    return noadl::ascii_ci_has_token(str, ',', tok, len);
+  }
 
 template<typename OtherT>
 inline
 bool
 ascii_ci_has_token(const cow_string& str, const OtherT& oth)
-  { return noadl::ascii_ci_has_token(str, oth.c_str(), oth.length());  }
+  {
+    return noadl::ascii_ci_has_token(str, oth.c_str(), oth.length());
+  }
+
+// Cast a value using saturation arithmetic.
+template<typename ResultT, typename ValueT>
+constexpr
+ResultT
+clamp_cast(const ValueT& value,
+           const typename ::std::enable_if<true, ValueT>::type& lower,
+           const typename ::std::enable_if<true, ValueT>::type& upper)
+  {
+    return static_cast<ResultT>(::rocket::clamp(value, lower, upper));
+  }
 
 // Composes a string and submits it to the logger.
 #define POSEIDON_LOG_X_(level, ...)  \

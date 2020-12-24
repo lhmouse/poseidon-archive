@@ -20,7 +20,7 @@ zlib_Deflator(Format fmt, int level)
 
       auto qint = file.get_int64_opt({"general","default_compression_level"});
       if(qint)
-        rlevel = static_cast<int>(::rocket::clamp(*qint, 0, 9));
+        rlevel = clamp_cast<int>(*qint, 0, 9);
     }
 
     // Get the `windowBits` argument.

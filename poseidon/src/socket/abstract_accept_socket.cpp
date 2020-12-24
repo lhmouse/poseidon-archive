@@ -91,7 +91,7 @@ do_socket_on_poll_close(int err)
 
 void
 Abstract_Accept_Socket::
-do_socket_listen(const Socket_Address& addr, int backlog)
+do_socket_listen(const Socket_Address& addr, uint32_t backlog)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate != connection_state_empty)
@@ -106,7 +106,7 @@ do_socket_listen(const Socket_Address& addr, int backlog)
                      "[`bind()` failed: $1]",
                      format_errno(errno), addr);
 
-    if(::listen(this->get_fd(), ::rocket::clamp(backlog, 1, SOMAXCONN)) != 0)
+    if(::listen(this->get_fd(), clamp_cast<int>(backlog, 1, SOMAXCONN)) != 0)
       POSEIDON_THROW("Failed to set up listen socket on '$2'\n"
                      "[`listen()` failed: $1]",
                      format_errno(errno), this->get_local_address());

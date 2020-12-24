@@ -551,15 +551,15 @@ reload()
 
     auto qint = file.get_int64_opt({"network","poll","event_buffer_size"});
     if(qint)
-      conf.event_buffer_size = static_cast<size_t>(::rocket::clamp(*qint, 1, 4096));
+      conf.event_buffer_size = clamp_cast<size_t>(*qint, 1, 4096);
 
     qint = file.get_int64_opt({"network","poll","io_buffer_size"});
     if(qint)
-      conf.io_buffer_size = static_cast<size_t>(::rocket::clamp(*qint, 1, 65536));
+      conf.io_buffer_size = clamp_cast<size_t>(*qint, 1, 65536);
 
     qint = file.get_int64_opt({"network","poll","throttle_size"});
     if(qint)
-      conf.throttle_size = static_cast<size_t>(::rocket::clamp(*qint, 1, 1048576));
+      conf.throttle_size = clamp_cast<size_t>(*qint, 1, 1048576);
 
     // During destruction of temporary objects the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
