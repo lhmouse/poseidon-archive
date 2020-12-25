@@ -174,7 +174,6 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
       ::ssize_t nwritten = ::sendto(this->get_fd(),
                        this->m_wqueue.data(), head.datalen, 0, addrst, head.addrlen);
       this->m_wqueue.discard(head.datalen);
-
       if(nwritten < 0)
         return get_io_result_from_errno("sendto", errno);
     }

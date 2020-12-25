@@ -146,10 +146,6 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
 
     const char* eptr = this->m_wqueue.data();
     auto io_res = this->do_socket_stream_write_unlocked(eptr, navail);
-    if(io_res != io_result_partial_work)
-      return io_res;
-
-    // Remove data that have been written.
     this->m_wqueue.discard(static_cast<size_t>(eptr - this->m_wqueue.data()));
     return io_res;
   }
