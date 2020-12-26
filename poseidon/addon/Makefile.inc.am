@@ -9,7 +9,7 @@ lib_libposeidon_example_timer_la_LDFLAGS =  \
 lib_libposeidon_example_timer_la_LIBADD =  \
   lib/libposeidon.la
 
-lib_LTLIBRARIES += lib/libposeidon_example_tcp-echo.la
+lib_LTLIBRARIES += lib/libposeidon_example_tcp_echo.la
 lib_libposeidon_example_tcp_echo_la_SOURCES =  \
   %reldir%/example_tcp_echo.cpp  \
   ${NOTHING}
@@ -20,7 +20,7 @@ lib_libposeidon_example_tcp_echo_la_LDFLAGS =  \
 lib_libposeidon_example_tcp_echo_la_LIBADD =  \
   lib/libposeidon.la
 
-lib_LTLIBRARIES += lib/libposeidon_example_tls-echo.la
+lib_LTLIBRARIES += lib/libposeidon_example_tls_echo.la
 lib_libposeidon_example_tls_echo_la_SOURCES =  \
   %reldir%/example_tls_echo.cpp  \
   ${NOTHING}
@@ -31,7 +31,7 @@ lib_libposeidon_example_tls_echo_la_LDFLAGS =  \
 lib_libposeidon_example_tls_echo_la_LIBADD =  \
   lib/libposeidon.la
 
-lib_LTLIBRARIES += lib/libposeidon_example_udp-echo.la
+lib_LTLIBRARIES += lib/libposeidon_example_udp_echo.la
 lib_libposeidon_example_udp_echo_la_SOURCES =  \
   %reldir%/example_udp_echo.cpp  \
   ${NOTHING}
