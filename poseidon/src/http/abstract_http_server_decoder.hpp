@@ -17,6 +17,7 @@ class Abstract_HTTP_Server_Decoder
 
     uint8_t m_limits_loaded : 1;
     uint8_t m_final : 1;      // close connection after entity
+    uint8_t m_upgrading : 1;  // upgrade connection after entity
     uint8_t m_chunked : 1;    // use HTTP/1.1 `chunked` transfer encoding
     uint8_t m_gzip : 1;       // use `gzip` content encoding
     uint8_t m_ws_pmce : 1;    // use WebSocket per-message compression extension
@@ -36,6 +37,21 @@ class Abstract_HTTP_Server_Decoder
       = default;
 
   private:
+    inline
+    void
+    do_decode_http_headers();
+
+    inline
+    void
+    do_decode_http_entity();
+
+    inline
+    void
+    do_finish_http_message(HTTP_Decoder_State next);
+
+    inline
+    void
+    do_decode_websocket_frame();
 
   protected:
     // This callback is invoked after the headers of a message have been received.
@@ -97,8 +113,7 @@ class Abstract_HTTP_Server_Decoder
       { return this->m_state;  }
 
     // Consumes all input data and invoke other callbacks.
-    // This is typically called by overriders of `Abstract_Stream_Socket::
-    // do_socket_on_receive()`.
+    // This is called by overriders of `Abstract_Stream_Socket::do_socket_on_receive()`.
     bool
     http_server_decode_stream(const char* data, size_t size);
 
