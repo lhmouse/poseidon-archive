@@ -130,6 +130,10 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
     this->m_chunked = false;
     this->m_gzip = false;
 
+    auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
+    if(defl)
+      defl->reset();
+
     HTTP_Connection conn = http_connection_keep_alive;
     bool proxy = target[0] != '/';
     bool no_content = false;
@@ -282,11 +286,6 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
     if(no_content || (meth == http_method_head))
       return this->do_encode_http_headers(ver, stat, headers) &&
              this->do_finish_http_message(http_encoder_state_headers);
-
-    // Reset the deflator used by the previous message, if any.
-    auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
-    if(defl)
-      defl->reset();
 
     // Expect the entity.
     bool sent = this->do_encode_http_headers(ver, stat, headers);
