@@ -18,11 +18,6 @@
 
 namespace poseidon {
 
-using ::asteria::utf8_encode;
-using ::asteria::utf8_decode;
-using ::asteria::utf16_encode;
-using ::asteria::utf16_decode;
-
 using ::asteria::format_string;
 using ::asteria::weaken_enum;
 using ::asteria::generate_random_seed;
