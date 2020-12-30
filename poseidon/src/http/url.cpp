@@ -379,8 +379,8 @@ parse(const cow_string& str)
     // The URL may start with a scheme, userinfo or host name field.
     // A leading alphabetic character may initiate a scheme or host name.
     mptr = do_find_if_not(bptr, eptr,
-        [&](char ch) { return do_is_url_ctype(ch, url_ctype_alpha |
-                                                  url_ctype_digit);  });
+        [&](char ch) { return do_is_url_ctype(ch,
+                                 url_ctype_alpha | url_ctype_digit);  });
 
     if((mptr - bptr >= 3) && ::asteria::mem_equal(bptr, "://", 3)) {
       // Accept the scheme.
@@ -390,8 +390,8 @@ parse(const cow_string& str)
 
     // Check for a userinfo.
     mptr = do_find_if_not(bptr, eptr,
-        [&](char ch) { return do_is_url_ctype(ch, url_ctype_unreserved |
-                                                  url_ctype_sub_delim) ||
+        [&](char ch) { return do_is_url_ctype(ch,
+                                  url_ctype_unreserved | url_ctype_sub_delim) ||
                               ::rocket::is_any_of(ch, {'%', ':'});  });
 
     if(mptr[0] == '@') {
@@ -405,8 +405,8 @@ parse(const cow_string& str)
     // allowed inside brackets, but not outside.
     size_t brackets = bptr[0] == '[';
     mptr = do_find_if_not(bptr + brackets, eptr,
-        [&](char ch) { return do_is_url_ctype(ch, url_ctype_unreserved |
-                                                  url_ctype_sub_delim) ||
+        [&](char ch) { return do_is_url_ctype(ch,
+                                 url_ctype_unreserved | url_ctype_sub_delim) ||
                               (ch == (brackets ? ':' : '%'));  });
 
     if(brackets) {
