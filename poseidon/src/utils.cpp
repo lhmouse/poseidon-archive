@@ -74,12 +74,10 @@ ascii_ci_has_token(const cow_string& str, char delim, const char* tok, size_t le
       size_t mpos = epos - 1;
 
       // Skip leading and trailing blank characters, if any.
-      while((bpos != mpos) && ::asteria::is_cctype(str[bpos],
-                                   ::asteria::cctype_blank))
+      while((bpos != mpos) && ::asteria::is_cctype(str[bpos], ::asteria::cctype_blank))
         bpos++;
 
-      while((bpos != mpos) && ::asteria::is_cctype(str[mpos - 1],
-                                   ::asteria::cctype_blank))
+      while((bpos != mpos) && ::asteria::is_cctype(str[mpos-1], ::asteria::cctype_blank))
         mpos--;
 
       // If the token matches `close`, the connection shall be closed.
