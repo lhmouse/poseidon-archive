@@ -87,4 +87,46 @@ ascii_ci_has_token(const cow_string& str, char delim, const char* tok, size_t le
     return false;
   }
 
+size_t
+ascii_explode(::rocket::cow_vector<cow_string>& segments, const cow_string& text,
+              char delim, size_t limit)
+  {
+    segments.clear();
+    size_t epos = 0;
+    while(epos < text.size()) {
+      // Get a token.
+      size_t bpos = epos;
+      epos = (segments.size() + 1 >= limit) ? text.size()
+                 : ::std::min(text.find(bpos, delim), text.size()) + 1;
+      size_t mpos = epos - 1;
+
+      // Skip leading and trailing blank characters, if any.
+      while((bpos != mpos) && ::rocket::is_any_of(text[bpos], {' ', '\t'}))
+        bpos++;
+
+      while((bpos != mpos) && ::rocket::is_any_of(text[mpos-1], {' ', '\t'}))
+        mpos--;
+
+      // Push this token.
+      segments.emplace_back(text.data() + bpos, mpos - bpos);
+    }
+    return segments.size();
+  }
+
+size_t
+ascii_implode(cow_string& text, const ::rocket::cow_vector<cow_string>& segments,
+              char delim)
+  {
+    text.clear();
+    if(segments.size()) {
+      // Write the first token.
+      text << segments[0];
+
+      // Write the other tokens, each of which is preceded by a delimiter.
+      for(size_t k = 1;  k < segments.size();  ++k)
+        text << delim << segments[k];
+    }
+    return segments.size();
+  }
+
 }  // namespace poseidon

@@ -74,6 +74,15 @@ ascii_ci_has_token(const cow_string& str, const OtherT& oth)
     return noadl::ascii_ci_has_token(str, oth.c_str(), oth.length());
   }
 
+// Split a string into a vector of tokens, and vice versa.
+size_t
+ascii_explode(::rocket::cow_vector<cow_string>& segments, const cow_string& text,
+              char delim = ',', size_t limit = SIZE_MAX);
+
+size_t
+ascii_implode(cow_string& text, const ::rocket::cow_vector<cow_string>& segments,
+              char delim = ',');
+
 // Cast a value using saturation arithmetic.
 template<typename ResultT, typename ValueT>
 constexpr
