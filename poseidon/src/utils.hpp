@@ -25,53 +25,53 @@ using ::asteria::format_errno;
 
 // Converts all ASCII letters in a string into uppercase.
 cow_string
-ascii_uppercase(cow_string str);
+ascii_uppercase(cow_string text);
 
 // Converts all ASCII letters in a string into lowercase.
 cow_string
-ascii_lowercase(cow_string str);
+ascii_lowercase(cow_string text);
 
 // Removes all leading and trailing blank characters.
 cow_string
-ascii_trim(cow_string str);
+ascii_trim(cow_string text);
 
 // Checks whether two strings equal.
 template<typename StringT, typename OtherT>
 constexpr
 bool
-ascii_ci_equal(const StringT& str, const OtherT& oth)
+ascii_ci_equal(const StringT& text, const OtherT& oth)
   {
     return ::rocket::ascii_ci_equal(
-               str.c_str(), str.length(), oth.c_str(), oth.length());
+               text.c_str(), text.length(), oth.c_str(), oth.length());
   }
 
 // Checks whether this list contains the specified token.
 // Tokens are case-insensitive.
 ROCKET_PURE_FUNCTION
 bool
-ascii_ci_has_token(const cow_string& str, char delim, const char* tok, size_t len);
+ascii_ci_has_token(const cow_string& text, char delim, const char* tok, size_t len);
 
 template<typename OtherT>
 inline
 bool
-ascii_ci_has_token(const cow_string& str, char delim, const OtherT& oth)
+ascii_ci_has_token(const cow_string& text, char delim, const OtherT& oth)
   {
-    return noadl::ascii_ci_has_token(str, delim, oth.c_str(), oth.length());
+    return noadl::ascii_ci_has_token(text, delim, oth.c_str(), oth.length());
   }
 
 ROCKET_PURE_FUNCTION inline
 bool
-ascii_ci_has_token(const cow_string& str, const char* tok, size_t len)
+ascii_ci_has_token(const cow_string& text, const char* tok, size_t len)
   {
-    return noadl::ascii_ci_has_token(str, ',', tok, len);
+    return noadl::ascii_ci_has_token(text, ',', tok, len);
   }
 
 template<typename OtherT>
 inline
 bool
-ascii_ci_has_token(const cow_string& str, const OtherT& oth)
+ascii_ci_has_token(const cow_string& text, const OtherT& oth)
   {
-    return noadl::ascii_ci_has_token(str, oth.c_str(), oth.length());
+    return noadl::ascii_ci_has_token(text, oth.c_str(), oth.length());
   }
 
 // Split a string into a vector of tokens, and vice versa.

@@ -7,81 +7,81 @@
 namespace poseidon {
 
 cow_string
-ascii_uppercase(cow_string str)
+ascii_uppercase(cow_string text)
   {
     // Only modify the string when it really has to modified.
-    for(size_t k = 0;  k != str.size();  ++k) {
-      char32_t ch = static_cast<uint8_t>(str[k]);
+    for(size_t k = 0;  k != text.size();  ++k) {
+      char32_t ch = static_cast<uint8_t>(text[k]);
       if(('a' <= ch) && (ch <= 'z'))
-        str.mut(k) = static_cast<char>(ch - 0x20);
+        text.mut(k) = static_cast<char>(ch - 0x20);
     }
-    return ::std::move(str);
+    return ::std::move(text);
   }
 
 cow_string
-ascii_lowercase(cow_string str)
+ascii_lowercase(cow_string text)
   {
     // Only modify the string when it really has to modified.
-    for(size_t k = 0;  k != str.size();  ++k) {
-      char32_t ch = static_cast<uint8_t>(str[k]);
+    for(size_t k = 0;  k != text.size();  ++k) {
+      char32_t ch = static_cast<uint8_t>(text[k]);
       if(('A' <= ch) && (ch <= 'Z'))
-        str.mut(k) = static_cast<char>(ch + 0x20);
+        text.mut(k) = static_cast<char>(ch + 0x20);
     }
-    return ::std::move(str);
+    return ::std::move(text);
   }
 
 cow_string
-ascii_trim(cow_string str)
+ascii_trim(cow_string text)
   {
     // Remove leading blank characters.
     // Return an empty string if all characters are blank.
     size_t k = cow_string::npos;
     for(;;) {
-      if(++k == str.size())
+      if(++k == text.size())
         return { };
 
-      char32_t ch = static_cast<uint8_t>(str[k]);
+      char32_t ch = static_cast<uint8_t>(text[k]);
       if((ch != ' ') && (ch != '\t'))
         break;
     }
     if(k != 0)
-      str.erase(0, k);
+      text.erase(0, k);
 
     // Remove trailing blank characters.
-    k = str.size();
+    k = text.size();
     for(;;) {
       if(--k == 0)
         break;
 
-      char32_t ch = static_cast<uint8_t>(str[k]);
+      char32_t ch = static_cast<uint8_t>(text[k]);
       if((ch != ' ') && (ch != '\t'))
         break;
     }
-    if(++k != str.size())
-      str.erase(k);
+    if(++k != text.size())
+      text.erase(k);
 
-    return ::std::move(str);
+    return ::std::move(text);
   }
 
 bool
-ascii_ci_has_token(const cow_string& str, char delim, const char* tok, size_t len)
+ascii_ci_has_token(const cow_string& text, char delim, const char* tok, size_t len)
   {
     size_t epos = 0;
-    while(epos < str.size()) {
+    while(epos < text.size()) {
       // Get a token.
       size_t bpos = epos;
-      epos = ::std::min(str.find(bpos, delim), str.size()) + 1;
+      epos = ::std::min(text.find(bpos, delim), text.size()) + 1;
       size_t mpos = epos - 1;
 
       // Skip leading and trailing blank characters, if any.
-      while((bpos != mpos) && ::rocket::is_any_of(str[bpos], {' ', '\t'}))
+      while((bpos != mpos) && ::rocket::is_any_of(text[bpos], {' ', '\t'}))
         bpos++;
 
-      while((bpos != mpos) && ::rocket::is_any_of(str[mpos-1], {' ', '\t'}))
+      while((bpos != mpos) && ::rocket::is_any_of(text[mpos-1], {' ', '\t'}))
         mpos--;
 
       // If the token matches `close`, the connection shall be closed.
-      if(::rocket::ascii_ci_equal(str.data() + bpos, mpos - bpos, tok, len))
+      if(::rocket::ascii_ci_equal(text.data() + bpos, mpos - bpos, tok, len))
         return true;
     }
     return false;
