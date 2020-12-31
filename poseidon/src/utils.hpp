@@ -75,13 +75,14 @@ ascii_ci_has_token(const cow_string& text, const OtherT& oth)
   }
 
 // Split a string into a vector of tokens, and vice versa.
-size_t
-ascii_explode(::rocket::cow_vector<cow_string>& segments, const cow_string& text,
-              char delim = ',', size_t limit = SIZE_MAX);
+using cow_vstrings = ::rocket::cow_vector<cow_string>;
 
 size_t
-ascii_implode(cow_string& text, const ::rocket::cow_vector<cow_string>& segments,
-              char delim = ',');
+explode(cow_vstrings& segments, const cow_string& text, char delim = ',',
+        size_t limit = SIZE_MAX);
+
+size_t
+implode(cow_string& text, const cow_vstrings& segments, char delim = ',');
 
 // Cast a value using saturation arithmetic.
 template<typename ResultT, typename ValueT>

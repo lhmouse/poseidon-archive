@@ -88,8 +88,7 @@ ascii_ci_has_token(const cow_string& text, char delim, const char* tok, size_t l
   }
 
 size_t
-ascii_explode(::rocket::cow_vector<cow_string>& segments, const cow_string& text,
-              char delim, size_t limit)
+explode(cow_vstrings& segments, const cow_string& text, char delim, size_t limit)
   {
     segments.clear();
     size_t epos = 0;
@@ -114,8 +113,7 @@ ascii_explode(::rocket::cow_vector<cow_string>& segments, const cow_string& text
   }
 
 size_t
-ascii_implode(cow_string& text, const ::rocket::cow_vector<cow_string>& segments,
-              char delim)
+implode(cow_string& text, const cow_vstrings& segments, char delim)
   {
     text.clear();
     if(segments.size()) {
@@ -124,7 +122,7 @@ ascii_implode(cow_string& text, const ::rocket::cow_vector<cow_string>& segments
 
       // Write the other tokens, each of which is preceded by a delimiter.
       for(size_t k = 1;  k < segments.size();  ++k)
-        text << delim << segments[k];
+        text << delim << ' ' << segments[k];
     }
     return segments.size();
   }
