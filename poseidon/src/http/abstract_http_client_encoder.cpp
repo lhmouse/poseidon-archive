@@ -192,7 +192,7 @@ http_encode_headers(HTTP_Method meth, const cow_string& target, HTTP_Version ver
     else {
       // Note if `Content-Length` is not specified, it is considered to have a value
       // of zero, which means there is no content.
-      uint64_t length = 0;
+      uint64_t content_length = 0;
       auto qstr = headers.find_opt(sref("Content-Length"));
       if(qstr) {
         // Parse the value as a signed 64-bit integer.
@@ -201,10 +201,10 @@ http_encode_headers(HTTP_Method meth, const cow_string& target, HTTP_Version ver
         if(!numg.parse_U(sp, sp + qstr->size(), 10))
           POSEIDON_THROW("Invalid `Content-Length` value: $1", *qstr);
 
-        if(!numg.cast_U(length, 0, INT64_MAX))
+        if(!numg.cast_U(content_length, 0, INT64_MAX))
           POSEIDON_THROW("`Content-Length` value out of range: $1", *qstr);
       }
-      no_content = !length;
+      no_content = content_length == 0;
     }
 
     if(no_content) {
