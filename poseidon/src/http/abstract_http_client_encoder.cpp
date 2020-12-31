@@ -237,7 +237,7 @@ http_encode_headers(HTTP_Method meth, const cow_string& target, HTTP_Version ver
           });
 
     // Check for upgradable connections.
-    // Validation and state transition are done in `http_response_headers()`.
+    // Validation and state transition are done in `http_on_response_headers()`.
     if(conn == http_connection_upgrade) {
       this->m_final = true;
       this->m_upgrading = true;
