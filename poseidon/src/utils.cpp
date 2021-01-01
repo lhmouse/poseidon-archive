@@ -66,23 +66,21 @@ ascii_trim(cow_string text)
 bool
 ascii_ci_has_token(const cow_string& text, char delim, const char* tok, size_t len)
   {
-    size_t epos = 0;
-    while(epos < text.size()) {
-      // Get a token.
-      size_t bpos = epos;
-      epos = ::std::min(text.find(bpos, delim), text.size()) + 1;
-      size_t mpos = epos - 1;
+    size_t bpos = text.find_first_not_of(" \t");
+    while(bpos < text.size()) {
+      // Get the end of this segment.
+      // If the delimiter is not found, make sure `epos` is reasonably large
+      // and incrementing it will not overflow.
+      size_t epos = text.find(bpos, delim) * 2 / 2;
 
-      // Skip leading and trailing blank characters, if any.
-      while((bpos != mpos) && ::rocket::is_any_of(text[bpos], {' ', '\t'}))
-        bpos++;
-
-      while((bpos != mpos) && ::rocket::is_any_of(text[mpos-1], {' ', '\t'}))
-        mpos--;
-
-      // If the token matches `close`, the connection shall be closed.
-      if(::rocket::ascii_ci_equal(text.data() + bpos, mpos - bpos, tok, len))
+      // Skip trailing blank characters, if any.
+      size_t mpos = text.find_last_not_of(epos - 1, " \t");
+      ROCKET_ASSERT(mpos != text.npos);
+      if(::rocket::ascii_ci_equal(text.data() + bpos, mpos + 1 - bpos, tok, len))
         return true;
+
+      // Skip the delimiter and blank characters that follow it.
+      bpos = text.find_first_not_of(epos + 1, " \t");
     }
     return false;
   }
@@ -91,23 +89,22 @@ size_t
 explode(cow_vstrings& segments, const cow_string& text, char delim, size_t limit)
   {
     segments.clear();
-    size_t epos = 0;
-    while(epos < text.size()) {
-      // Get a token.
-      size_t bpos = epos;
-      epos = (segments.size() + 1 >= limit) ? text.size()
-                 : ::std::min(text.find(bpos, delim), text.size()) + 1;
-      size_t mpos = epos - 1;
+    size_t bpos = text.find_first_not_of(" \t");
+    while(bpos < text.size()) {
+      // Get the end of this segment.
+      // If the delimiter is not found, make sure `epos` is reasonably large
+      // and incrementing it will not overflow.
+      size_t epos = text.npos / 2;
+      if(segments.size() + 1 < limit)
+        epos = text.find(bpos, delim) * 2 / 2;
 
-      // Skip leading and trailing blank characters, if any.
-      while((bpos != mpos) && ::rocket::is_any_of(text[bpos], {' ', '\t'}))
-        bpos++;
+      // Skip trailing blank characters, if any.
+      size_t mpos = text.find_last_not_of(epos - 1, " \t");
+      ROCKET_ASSERT(mpos != text.npos);
+      segments.emplace_back(text.data() + bpos, mpos + 1 - bpos);
 
-      while((bpos != mpos) && ::rocket::is_any_of(text[mpos-1], {' ', '\t'}))
-        mpos--;
-
-      // Push this token.
-      segments.emplace_back(text.data() + bpos, mpos - bpos);
+      // Skip the delimiter and blank characters that follow it.
+      bpos = text.find_first_not_of(epos + 1, " \t");
     }
     return segments.size();
   }
