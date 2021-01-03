@@ -228,15 +228,15 @@ http_encode_headers(HTTP_Method meth, const cow_string& target, HTTP_Version ver
 
     if(conn == http_connection_keep_alive)
       headers.for_each(connection_header_name,
-          [&](const cow_string& resph) {
+          [&](const cow_string& str) {
             // XXX: Options may overwrite each other.
-            if(ascii_ci_has_token(resph, sref("upgrade")))
+            if(ascii_ci_has_token(str, sref("upgrade")))
               conn = http_connection_upgrade;
 
-            if(ascii_ci_has_token(resph, sref("keep-alive")))
+            if(ascii_ci_has_token(str, sref("keep-alive")))
               conn = http_connection_keep_alive;
 
-            if(ascii_ci_has_token(resph, sref("close")))
+            if(ascii_ci_has_token(str, sref("close")))
               conn = http_connection_close;
           });
 
@@ -373,10 +373,10 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
         this->m_ws_nctxto = false;
 
         headers.for_each(sref("Sec-WebSocket-Extensions"),
-            [&](const cow_string& resph) {
+            [&](const cow_string& str) {
               size_t comma = 0;
-              while(comma != resph.size()) {
-                opts.parse_http_header(&comma, resph, 1);
+              while(comma != str.size()) {
+                opts.parse_http_header(&comma, str, 1);
                 auto qstr = opts.find_opt(sref(""));  // extension name
                 if(!qstr)
                   continue;
@@ -446,15 +446,15 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
         connection_header_name = sref("Proxy-Connection");
 
       headers.for_each(connection_header_name,
-          [&](const cow_string& resph) {
+          [&](const cow_string& str) {
             // XXX: Options may overwrite each other.
-            if(ascii_ci_has_token(resph, sref("upgrade")))
+            if(ascii_ci_has_token(str, sref("upgrade")))
               conn = http_connection_close;  // not upgradable here
 
-            if(ascii_ci_has_token(resph, sref("keep-alive")))
+            if(ascii_ci_has_token(str, sref("keep-alive")))
               conn = http_connection_keep_alive;
 
-            if(ascii_ci_has_token(resph, sref("close")))
+            if(ascii_ci_has_token(str, sref("close")))
               conn = http_connection_close;
           });
 
