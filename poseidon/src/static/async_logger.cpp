@@ -18,12 +18,12 @@ struct Level_Name
   }
 constexpr s_level_names[] =
   {
-    { "fatal",  " FATAL "  },
-    { "error",  " ERROR "  },
-    { "warn",   " WARN  "  },
-    { "info",   " INFO  "  },
-    { "debug",  " DEBUG "  },
-    { "trace",  " TRACE "  },
+    { "fatal",  "[FATAL]"  },
+    { "error",  "[ERROR]"  },
+    { "warn",   "[WARN ]"  },
+    { "info",   "[INFO ]"  },
+    { "debug",  "[DEBUG]"  },
+    { "trace",  "[TRACE]"  },
   };
 
 struct Level_Config
