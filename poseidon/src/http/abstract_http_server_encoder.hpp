@@ -13,6 +13,7 @@ class Abstract_HTTP_Server_Encoder
   {
   private:
     HTTP_Encoder_State m_state = { };
+    bool m_good = true;
 
     uint8_t m_final : 1;      // close connection after entity
     uint8_t m_chunked : 1;    // use HTTP/1.1 `chunked` transfer encoding
@@ -30,19 +31,19 @@ class Abstract_HTTP_Server_Encoder
 
   private:
     inline
-    bool
+    void
     do_encode_http_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers);
 
     inline
-    bool
+    void
     do_encode_http_entity(const char* data, size_t size);
 
     inline
-    bool
+    void
     do_finish_http_message(HTTP_Encoder_State next);
 
     inline
-    bool
+    void
     do_encode_websocket_frame(int flags, const char* data, size_t size);
 
   protected:

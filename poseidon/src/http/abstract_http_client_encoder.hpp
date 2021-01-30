@@ -14,6 +14,7 @@ class Abstract_HTTP_Client_Encoder
   {
   private:
     HTTP_Encoder_State m_state = { };
+    bool m_good = true;
 
     uint8_t m_final : 1;      // close/upgrade connection after entity
     uint8_t m_upgrading : 1;  // upgrade connection after entity
@@ -41,20 +42,20 @@ class Abstract_HTTP_Client_Encoder
 
   private:
     inline
-    bool
+    void
     do_encode_http_headers(HTTP_Method meth, const cow_string& target, HTTP_Version ver,
                            const Option_Map& headers, HTTP_Connection conn);
 
     inline
-    bool
+    void
     do_encode_http_entity(const char* data, size_t size);
 
     inline
-    bool
-    do_finish_http_message(HTTP_Encoder_State next);
+    void
+    do_finish_http_message();
 
     inline
-    bool
+    void
     do_encode_websocket_frame(int flags, char* data, size_t size);  // data clobbered
 
   protected:

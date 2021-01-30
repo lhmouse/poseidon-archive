@@ -15,7 +15,7 @@ Abstract_HTTP_Client_Encoder::
   {
   }
 
-bool
+void
 Abstract_HTTP_Client_Encoder::
 do_encode_http_headers(HTTP_Method meth, const cow_string& target, HTTP_Version ver,
                        const Option_Map& headers, HTTP_Connection conn)
@@ -34,64 +34,73 @@ do_encode_http_headers(HTTP_Method meth, const cow_string& target, HTTP_Version 
       fmt << pair.first << ": " << pair.second << "\r\n";
     fmt << "\r\n";
 
-    return this->do_http_client_send(fmt.c_str(), fmt.length());
+    // Send encoded data.
+    this->m_good &= this->do_http_client_send(fmt.c_str(), fmt.length());
   }
 
-bool
+void
 Abstract_HTTP_Client_Encoder::
 do_encode_http_entity(const char* data, size_t size)
   {
-    // Don't send empty chunks. Test the connection state only.
+    // Don't send empty chunks.
     if(size == 0)
-      return this->do_http_client_send("", 0);
+      return;
 
     // For HTTP/1.0, send outgoing data verbatim.
-    if(!this->m_chunked)
-      return this->do_http_client_send(data, size);
+    if(!this->m_chunked) {
+      this->m_good &= this->do_http_client_send(data, size);
+      return;
+    }
 
     // For HTTP/1.1, encode the data as a single chunk.
     ::rocket::ascii_numput nump;
     nump.put_XU(size);
 
-    return this->do_http_client_send(nump.data() + 2, nump.size()) &&
-           this->do_http_client_send("\r\n", 2) &&
-           this->do_http_client_send(data, size) &&
-           this->do_http_client_send("\r\n", 2);
+    this->m_good &= this->do_http_client_send(nump.data() + 2, nump.size());
+    this->m_good &= this->do_http_client_send("\r\n", 2);
+    this->m_good &= this->do_http_client_send(data, size);
+    this->m_good &= this->do_http_client_send("\r\n", 2);
   }
 
-bool
+void
 Abstract_HTTP_Client_Encoder::
-do_finish_http_message(HTTP_Encoder_State next)
+do_finish_http_message()
   {
-    bool sent = this->do_http_client_send("", 0);
-
     // Terminate the entity.
     if(this->m_gzip) {
       auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
       if(defl) {
         defl->finish();
         auto& obuf = defl->output_buffer();
-        sent = sent && this->do_encode_http_entity(obuf.data(), obuf.size());
+        this->do_encode_http_entity(obuf.data(), obuf.size());
         obuf.clear();
       }
     }
 
     if(this->m_chunked)
-      sent = sent && this->do_http_client_send("0\r\n\r\n", 5);
+      this->m_good &= this->do_http_client_send("0\r\n\r\n", 5);
+
+    // Update connection state.
+    if(!this->m_final) {
+      this->m_state = http_encoder_state_headers;
+      return;
+    }
+
+    // If an upgrade request has been sent, block further outgoing data,
+    // until its corresponding response is received.
+    if(this->m_upgrading) {
+      this->m_state = http_encoder_state_upgrading;
+      return;
+    }
 
     // If this is the final message, mark the connection for closure.
     // Don't call `do_http_client_close()` because clients should not close
     // connections prematurely. This connection will be closed after the its
     // response is acknowledged in `Abstract_HTTP_Client_Decoder`.
-    this->m_state = next;
-    if(this->m_final) {
-      this->m_state = this->m_upgrading ? http_encoder_state_upgrading
-                                        : http_encoder_state_closed;
-    }
-    return sent;
+    this->m_state = http_encoder_state_closed;
   }
 
-bool
+void
 Abstract_HTTP_Client_Encoder::
 do_encode_websocket_frame(int flags, char* data, size_t size)
   {
@@ -127,8 +136,8 @@ do_encode_websocket_frame(int flags, char* data, size_t size)
       mask = mask << 8 | mask >> 24,
         data[exlen++] ^= static_cast<char>(mask);
 
-    return this->do_http_client_send(head.data(), head.size()) &&
-           this->do_http_client_send(data, size);
+    this->m_good &= this->do_http_client_send(head.data(), head.size());
+    this->m_good &= this->do_http_client_send(data, size);
   }
 
 bool
@@ -167,8 +176,11 @@ http_encode_headers(HTTP_Method meth, const cow_string& target, HTTP_Version ver
       headers.erase(sref("Content-Length"));
       headers.erase(sref("Transfer-Encoding"));
 
-      return this->do_encode_http_headers(meth, target, ver, headers, conn) &&
-             this->do_finish_http_message(http_encoder_state_upgrading);
+      this->m_final = true;
+      this->m_upgrading = true;
+      this->do_encode_http_headers(meth, target, ver, headers, conn);
+      this->do_finish_http_message();
+      return this->m_good;
     }
 
     // Look for `Transfer-Encoding:` or `Content-Length:`.
@@ -255,14 +267,12 @@ http_encode_headers(HTTP_Method meth, const cow_string& target, HTTP_Version ver
       headers.set(connection_header_name, sref("close"));
     }
 
-    if(no_content)
-      return this->do_encode_http_headers(meth, target, ver, headers, conn) &&
-             this->do_finish_http_message(http_encoder_state_headers);
-
     // Expect the entity.
-    bool sent = this->do_encode_http_headers(meth, target, ver, headers, conn);
+    this->do_encode_http_headers(meth, target, ver, headers, conn);
     this->m_state = http_encoder_state_entity;
-    return sent;
+    if(no_content)
+      this->do_finish_http_message();
+    return this->m_good;
   }
 
 bool
@@ -275,23 +285,25 @@ http_encode_entity(const char* data, size_t size)
     if(this->m_state != http_encoder_state_entity)
       POSEIDON_THROW("HTTP client encoder state error (expecting 'entity')");
 
-    // If compression is not enabled, send outgoing data verbatim.
-    if(!this->m_gzip)
-      return this->do_encode_http_entity(data, size);
-
-    // Compress outgoing data using GZIP.
-    auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
-    if(!defl) {
-      defl = ::rocket::make_refcnt<zlib_Deflator>(zlib_Deflator::format_gzip);
-      this->m_deflator = defl;
+    if(!this->m_gzip) {
+      // If compression is not enabled, send outgoing data verbatim.
+      this->do_encode_http_entity(data, size);
     }
-    defl->write(data, size);
+    else {
+      // Compress outgoing data using GZIP.
+      auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
+      if(!defl) {
+        defl = ::rocket::make_refcnt<zlib_Deflator>(zlib_Deflator::format_gzip);
+        this->m_deflator = defl;
+      }
+      defl->write(data, size);
 
-    // Consume all compressed data.
-    auto& obuf = defl->output_buffer();
-    bool sent = this->do_encode_http_entity(obuf.data(), obuf.size());
-    obuf.clear();
-    return sent;
+      // Consume all compressed data.
+      auto& obuf = defl->output_buffer();
+      this->do_encode_http_entity(obuf.data(), obuf.size());
+      obuf.clear();
+    }
+    return this->m_good;
   }
 
 bool
@@ -305,7 +317,8 @@ http_encode_end_of_entity()
       POSEIDON_THROW("HTTP client encoder state error (expecting 'entity')");
 
     // Finish this response message and expect the next one.
-    return this->do_finish_http_message(http_encoder_state_headers);
+    this->do_finish_http_message();
+    return this->m_good;
   }
 
 bool
@@ -319,7 +332,8 @@ http_encode_tunnel_data(const char* data, size_t size)
       POSEIDON_THROW("HTTP client encoder state error (expecting 'tunnel')");
 
     // Forward outgoing data verbatim.
-    return this->do_http_client_send(data, size);
+    this->m_good &= this->do_http_client_send(data, size);
+    return this->m_good;
   }
 
 bool
@@ -334,7 +348,8 @@ http_encode_tunnel_closure()
 
     // Shut the tunnel down.
     this->m_state = http_encoder_state_closed;
-    return this->do_http_client_close();
+    this->m_good &= this->do_http_client_close();
+    return this->m_good;
   }
 
 bool
@@ -355,10 +370,6 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
 
     // Check for upgradable connections.
     if(stat == http_status_switching_protocol) {
-      auto upgrade_str = headers.find_opt(sref("Upgrade"));
-      if(!upgrade_str)
-        POSEIDON_THROW("HTTP status 101 received without an `Upgrade:` header");
-
       // Data that followed an upgrade request might have been sent to the target host,
       // so we abandon the connection in this case.
       if(this->m_pipeline.size() > 1)
@@ -366,6 +377,10 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
 
       if(this->m_state != http_encoder_state_upgrading)
         POSEIDON_THROW("No data shall follow an upgrade request");
+
+      auto upgrade_str = headers.find_opt(sref("Upgrade"));
+      if(!upgrade_str)
+        POSEIDON_THROW("HTTP status 101 received without an `Upgrade:` header");
 
       if(ascii_ci_equal(*upgrade_str, sref("websocket"))) {
         // Check whether compression can be enabled. Refer to RFC 7692 for details.
@@ -412,10 +427,6 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
     // The other status codes denote final responses so pop the first pipelined request.
     this->m_pipeline.erase(this->m_pipeline.begin());
 
-    // If the connection did not upgrade, restore the state so new headers may be sent.
-    if(this->m_state == http_encoder_state_upgrading)
-      this->m_state = http_encoder_state_headers;
-
     // Check for persistent connections.
     if(conn != http_connection_close) {
       // This is done only if no `Connection: close` was requested. This connection is
@@ -429,17 +440,19 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
         if(this->m_state != http_encoder_state_upgrading)
           POSEIDON_THROW("No data shall follow a CONNECT request");
 
-        // If a 2xx status code has been received, a tunnel will have been established.
-        if((200 <= stat) && (stat <= 299)) {
-          // Activate the tunnel.
-          this->m_state = http_encoder_state_tunnel;
-          this->m_pipeline.clear();
-          this->m_pipeline.shrink_to_fit();
-          return true;
-        }
-        else
+        if((stat < 200) || (299 < stat))
           POSEIDON_THROW("HTTP CONNECT failure (stat $1 received)", stat);
+
+        // If a 2xx status code has been received, a tunnel will have been established.
+        this->m_state = http_encoder_state_tunnel;
+        this->m_pipeline.clear();
+        this->m_pipeline.shrink_to_fit();
+        return true;
       }
+
+      // If the connection did not upgrade, restore state so new headers may be sent.
+      if(this->m_state == http_encoder_state_upgrading)
+        this->m_state = http_encoder_state_headers;
 
       auto connection_header_name = sref("Connection");
       if(proxy)
@@ -487,8 +500,8 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
       POSEIDON_LOG_ERROR("Use `http_encode_websocket_closure()` to shut down "
                          "WebSocket connections");
 
-      return this->http_encode_websocket_closure(
-                       websocket_status_normal_closure, data, size);
+      this->http_encode_websocket_closure(websocket_status_normal_closure, data, size);
+      return this->m_good;
     }
 
     if(opcode >= websocket_opcode_close) {
@@ -497,14 +510,17 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
       if(rlen != size)
         POSEIDON_LOG_WARN("Control frame truncated (size `$1`)", size);
 
-      return this->do_encode_websocket_frame(opcode,
-           ::rocket::static_vector<char, 125>(data, data + rlen).mut_data(), rlen);
+      ::rocket::static_vector<char, 125> temp(data, data + rlen);
+      this->do_encode_websocket_frame(opcode, temp.mut_data(), temp.size());
+      return this->m_good;
     }
 
-    // If compression is not enabled, send outgoing data verbatim.
-    if(!this->m_gzip)
-      return this->do_encode_websocket_frame(opcode,
-               ::rocket::cow_vector<char>(data, data + size).mut_data(), size);
+    if(!this->m_gzip) {
+      // If compression is not enabled, send outgoing data verbatim.
+      ::rocket::cow_string temp(data, data + size);
+      this->do_encode_websocket_frame(opcode, temp.mut_data(), temp.size());
+      return this->m_good;
+    }
 
     // Compress outgoing data using deflate.
     auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
@@ -527,9 +543,9 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
     size_t rlen = obuf.size() - 4;
     ROCKET_ASSERT(::memcmp(obuf.data() + rlen, "\x00\x00\xFF\xFF", 4) == 0);
 
-    bool sent = this->do_encode_websocket_frame(opcode | 2, obuf.mut_data(), rlen);
+    this->do_encode_websocket_frame(opcode | 2, obuf.mut_data(), rlen);
     obuf.clear();
-    return sent;
+    return this->m_good;
   }
 
 bool
@@ -553,10 +569,10 @@ http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t si
     pbuf.append(data, data + size);
 
     // Send the closure frame and shut the connection down.
-    bool sent = this->do_encode_websocket_frame(0x80, pbuf.mut_data(), pbuf.size());
+    this->do_encode_websocket_frame(0x80, pbuf.mut_data(), pbuf.size());
     this->m_state = http_encoder_state_closed;
-    sent = sent && this->do_http_client_close();
-    return sent;
+    this->m_good &= this->do_http_client_close();
+    return this->m_good;
   }
 
 }  // namespace poseidon

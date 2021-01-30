@@ -15,7 +15,7 @@ Abstract_HTTP_Server_Encoder::
   {
   }
 
-bool
+void
 Abstract_HTTP_Server_Encoder::
 do_encode_http_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers)
   {
@@ -33,61 +33,63 @@ do_encode_http_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& hea
       fmt << pair.first << ": " << pair.second << "\r\n";
     fmt << "\r\n";
 
-    return this->do_http_server_send(fmt.c_str(), fmt.length());
+    // Send encoded data.
+    this->m_good &= this->do_http_server_send(fmt.c_str(), fmt.length());
   }
 
-bool
+void
 Abstract_HTTP_Server_Encoder::
 do_encode_http_entity(const char* data, size_t size)
   {
-    // Don't send empty chunks. Test the connection state only.
+    // Don't send empty chunks.
     if(size == 0)
-      return this->do_http_server_send("", 0);
+      return;
 
     // For HTTP/1.0, send outgoing data verbatim.
-    if(!this->m_chunked)
-      return this->do_http_server_send(data, size);
+    if(!this->m_chunked) {
+      this->m_good &= this->do_http_server_send(data, size);
+      return;
+    }
 
     // For HTTP/1.1, encode the data as a single chunk.
     ::rocket::ascii_numput nump;
     nump.put_XU(size);
 
-    return this->do_http_server_send(nump.data() + 2, nump.size()) &&
-           this->do_http_server_send("\r\n", 2) &&
-           this->do_http_server_send(data, size) &&
-           this->do_http_server_send("\r\n", 2);
+    this->m_good &= this->do_http_server_send(nump.data() + 2, nump.size());
+    this->m_good &= this->do_http_server_send("\r\n", 2);
+    this->m_good &= this->do_http_server_send(data, size);
+    this->m_good &= this->do_http_server_send("\r\n", 2);
   }
 
-bool
+void
 Abstract_HTTP_Server_Encoder::
 do_finish_http_message(HTTP_Encoder_State next)
   {
-    bool sent = this->do_http_server_send("", 0);
-
     // Terminate the entity.
     if(this->m_gzip) {
       auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
       if(defl) {
         defl->finish();
         auto& obuf = defl->output_buffer();
-        sent = sent && this->do_encode_http_entity(obuf.data(), obuf.size());
+        this->do_encode_http_entity(obuf.data(), obuf.size());
         obuf.clear();
       }
     }
 
     if(this->m_chunked)
-      sent = sent && this->do_http_server_send("0\r\n\r\n", 5);
+      this->m_good &= this->do_http_server_send("0\r\n\r\n", 5);
+
+    // Update connection state.
+    this->m_state = next;
+    if(!this->m_final)
+      return;
 
     // If this is the final message, shut the connection down.
-    this->m_state = next;
-    if(this->m_final) {
-      this->m_state = http_encoder_state_closed;
-      sent = sent && this->do_http_server_close();
-    }
-    return sent;
+    this->m_state = http_encoder_state_closed;
+    this->m_good &= this->do_http_server_close();
   }
 
-bool
+void
 Abstract_HTTP_Server_Encoder::
 do_encode_websocket_frame(int flags, const char* data, size_t size)
   {
@@ -111,8 +113,8 @@ do_encode_websocket_frame(int flags, const char* data, size_t size)
     while(exlen != 0)
       head.emplace_back(static_cast<uint64_t>(size) >> --exlen * 8);
 
-    return this->do_http_server_send(head.data(), head.size()) &&
-           this->do_http_server_send(data, size);
+    this->m_good &= this->do_http_server_send(head.data(), head.size());
+    this->m_good &= this->do_http_server_send(data, size);
   }
 
 bool
@@ -186,8 +188,9 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
         headers.erase(sref("Content-Length"));
         headers.erase(sref("Transfer-Encoding"));
 
-        return this->do_encode_http_headers(ver, stat, headers) &&
-               this->do_finish_http_message(http_encoder_state_tunnel);
+        this->do_encode_http_headers(ver, stat, headers);
+        this->do_finish_http_message(http_encoder_state_tunnel);
+        return this->m_good;
       }
 
       // Otherwise, the connection shall be closed immediately.
@@ -268,8 +271,9 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
         this->m_deflator = nullptr;
 
         // Switch to WebSocket after the response headers.
-        return this->do_encode_http_headers(ver, stat, headers) &&
-               this->do_finish_http_message(http_encoder_state_websocket);
+        this->do_encode_http_headers(ver, stat, headers);
+        this->do_finish_http_message(http_encoder_state_websocket);
+        return this->m_good;
       }
       else
         POSEIDON_THROW("Protocol `$1` not upgradable", *upgrade_str);
@@ -283,14 +287,12 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
       headers.set(connection_header_name, sref("close"));
     }
 
-    if(no_content || (meth == http_method_head))
-      return this->do_encode_http_headers(ver, stat, headers) &&
-             this->do_finish_http_message(http_encoder_state_headers);
-
     // Expect the entity.
-    bool sent = this->do_encode_http_headers(ver, stat, headers);
+    this->do_encode_http_headers(ver, stat, headers);
     this->m_state = http_encoder_state_entity;
-    return sent;
+    if(no_content || (meth == http_method_head))
+      this->do_finish_http_message(http_encoder_state_headers);
+    return this->m_good;
   }
 
 bool
@@ -303,23 +305,25 @@ http_encode_entity(const char* data, size_t size)
     if(this->m_state != http_encoder_state_entity)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'entity')");
 
-    // If compression is not enabled, send outgoing data verbatim.
-    if(!this->m_gzip)
-      return this->do_encode_http_entity(data, size);
-
-    // Compress outgoing data using GZIP.
-    auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
-    if(!defl) {
-      defl = ::rocket::make_refcnt<zlib_Deflator>(zlib_Deflator::format_gzip);
-      this->m_deflator = defl;
+    if(!this->m_gzip) {
+      // If compression is not enabled, send outgoing data verbatim.
+      this->do_encode_http_entity(data, size);
     }
-    defl->write(data, size);
+    else {
+      // Compress outgoing data using GZIP.
+      auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
+      if(!defl) {
+        defl = ::rocket::make_refcnt<zlib_Deflator>(zlib_Deflator::format_gzip);
+        this->m_deflator = defl;
+      }
+      defl->write(data, size);
 
-    // Consume all compressed data.
-    auto& obuf = defl->output_buffer();
-    bool sent = this->do_encode_http_entity(obuf.data(), obuf.size());
-    obuf.clear();
-    return sent;
+      // Consume all compressed data.
+      auto& obuf = defl->output_buffer();
+      this->do_encode_http_entity(obuf.data(), obuf.size());
+      obuf.clear();
+    }
+    return this->m_good;
   }
 
 bool
@@ -333,7 +337,8 @@ http_encode_end_of_entity()
       POSEIDON_THROW("HTTP server encoder state error (expecting 'entity')");
 
     // Finish this response message and expect the next one.
-    return this->do_finish_http_message(http_encoder_state_headers);
+    this->do_finish_http_message(http_encoder_state_headers);
+    return this->m_good;
   }
 
 bool
@@ -347,7 +352,8 @@ http_encode_tunnel_data(const char* data, size_t size)
       POSEIDON_THROW("HTTP server encoder state error (expecting 'tunnel')");
 
     // Forward outgoing data verbatim.
-    return this->do_http_server_send(data, size);
+    this->m_good &= this->do_http_server_send(data, size);
+    return this->m_good;
   }
 
 bool
@@ -362,7 +368,8 @@ http_encode_tunnel_closure()
 
     // Shut the tunnel down.
     this->m_state = http_encoder_state_closed;
-    return this->do_http_server_close();
+    this->m_good &= this->do_http_server_close();
+    return this->m_good;
   }
 
 bool
@@ -384,8 +391,8 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
       POSEIDON_LOG_ERROR("Use `http_encode_websocket_closure()` to shut down "
                          "WebSocket connections");
 
-      return this->http_encode_websocket_closure(
-                       websocket_status_normal_closure, data, size);
+      this->http_encode_websocket_closure(websocket_status_normal_closure, data, size);
+      return this->m_good;
     }
 
     if(opcode >= websocket_opcode_close) {
@@ -395,12 +402,15 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
       if(rlen != size)
         POSEIDON_LOG_WARN("Control frame truncated (size `$1`)", size);
 
-      return this->do_encode_websocket_frame(opcode, data, rlen);
+      this->do_encode_websocket_frame(opcode, data, rlen);
+      return this->m_good;
     }
 
-    // If compression is not enabled, send outgoing data verbatim.
-    if(!this->m_gzip)
-      return this->do_encode_websocket_frame(opcode, data, size);
+    if(!this->m_gzip) {
+      // If compression is not enabled, send outgoing data verbatim.
+      this->do_encode_websocket_frame(opcode, data, size);
+      return this->m_good;
+    }
 
     // Compress outgoing data using deflate.
     auto defl = unerase_pointer_cast<zlib_Deflator>(this->m_deflator);
@@ -423,9 +433,9 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
     size_t rlen = obuf.size() - 4;
     ROCKET_ASSERT(::memcmp(obuf.data() + rlen, "\x00\x00\xFF\xFF", 4) == 0);
 
-    bool sent = this->do_encode_websocket_frame(opcode | 2, obuf.data(), rlen);
+    this->do_encode_websocket_frame(opcode | 2, obuf.data(), rlen);
     obuf.clear();
-    return sent;
+    return this->m_good;
   }
 
 bool
@@ -449,10 +459,10 @@ http_encode_websocket_closure(WebSocket_Status stat, const char* data, size_t si
     pbuf.append(data, data + size);
 
     // Send the closure frame and shut the connection down.
-    bool sent = this->do_encode_websocket_frame(0x80, pbuf.data(), pbuf.size());
+    this->do_encode_websocket_frame(0x80, pbuf.data(), pbuf.size());
     this->m_state = http_encoder_state_closed;
-    sent = sent && this->do_http_server_close();
-    return sent;
+    this->m_good &= this->do_http_server_close();
+    return this->m_good;
   }
 
 }  // namespace poseidon
