@@ -234,6 +234,12 @@ http_encode_headers(HTTP_Method meth, const cow_string& target, HTTP_Version ver
       if(headers.erase(sref("Content-Range")))
         POSEIDON_LOG_WARN("`Content-Range` not allowed without a content");
     }
+    else if(::rocket::is_none_of(meth, {http_method_post, http_method_put})) {
+      // Disallow message bodies in GET and HEAD requests.
+      POSEIDON_THROW(
+          "HTTP $1 requests cannot have message bodies",
+          format_http_method(meth));
+    }
 
     if(ver < http_version_1_1)
       conn = http_connection_close;
