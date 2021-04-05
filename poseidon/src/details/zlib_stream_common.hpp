@@ -22,39 +22,31 @@ class zlib_Stream_Common
     ::rocket::linear_buffer m_obuf;
 
   protected:
-    zlib_Stream_Common()
-      noexcept
+    zlib_Stream_Common() noexcept
       = default;
 
   private:
-    inline
-    void
+    inline void
     do_reserve_output_buffer();
 
-    inline
-    void
-    do_update_output_buffer()
-      noexcept;
+    inline void
+    do_update_output_buffer() noexcept;
 
   protected:
     [[noreturn]]
     void
-    do_zlib_throw_error(const char* func, int err)
-      const;
+    do_zlib_throw_error(const char* func, int err) const;
 
     // These are callback functions.
-    virtual
-    void
+    virtual void
     do_zlib_construct(::z_stream* strm, int level, int wbits)
       = 0;
 
-    virtual
-    void
+    virtual void
     do_zlib_reset(::z_stream* strm)
       = 0;
 
-    virtual
-    void
+    virtual void
     do_zlib_write_partial(int& res, ::z_stream* strm, int flush)
       = 0;
 
@@ -85,13 +77,11 @@ class zlib_Stream_Common
 
     // Gets the output buffer.
     const ::rocket::linear_buffer&
-    output_buffer()
-      const noexcept
+    output_buffer() const noexcept
       { return this->m_obuf;  }
 
     ::rocket::linear_buffer&
-    output_buffer()
-      noexcept
+    output_buffer() noexcept
       { return this->m_obuf;  }
   };
 

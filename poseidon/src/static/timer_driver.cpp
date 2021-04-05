@@ -45,18 +45,15 @@ struct PQ_Element
 struct PQ_Compare
   {
     bool
-    operator()(const PQ_Element& lhs, const PQ_Element& rhs)
-      const noexcept
+    operator()(const PQ_Element& lhs, const PQ_Element& rhs) const noexcept
       { return lhs.next > rhs.next;  }
 
     bool
-    operator()(const PQ_Element& lhs, int64_t rhs)
-      const noexcept
+    operator()(const PQ_Element& lhs, int64_t rhs) const noexcept
       { return lhs.next > rhs;  }
 
     bool
-    operator()(int64_t lhs, const PQ_Element& rhs)
-      const noexcept
+    operator()(int64_t lhs, const PQ_Element& rhs) const noexcept
       { return lhs > rhs.next;  }
   }
   constexpr pq_compare;
@@ -64,13 +61,11 @@ struct PQ_Compare
 struct Timer_Compare
   {
     bool
-    operator()(const PQ_Element& lhs, const Abstract_Timer* rhs)
-      const noexcept
+    operator()(const PQ_Element& lhs, const Abstract_Timer* rhs) const noexcept
       { return lhs.timer == rhs;  }
 
     bool
-    operator()(const Abstract_Timer* lhs, const PQ_Element& rhs)
-      const noexcept
+    operator()(const Abstract_Timer* lhs, const PQ_Element& rhs) const noexcept
       { return lhs == rhs.timer;  }
   }
   constexpr timer_compare;
@@ -88,8 +83,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
     condition_variable m_pq_avail;
     ::std::vector<PQ_Element> m_pq;
 
-    static
-    void
+    static void
     do_start()
       {
         self->m_init_once.call(
@@ -100,8 +94,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           });
       }
 
-    static
-    void
+    static void
     do_thread_loop(void* /*param*/)
       {
         rcptr<Abstract_Timer> timer;
@@ -216,8 +209,7 @@ insert(uptr<Abstract_Timer>&& utimer)
 
 bool
 Timer_Driver::
-invalidate_internal(const Abstract_Timer& timer, int64_t first, int64_t period)
-  noexcept
+invalidate_internal(const Abstract_Timer& timer, int64_t first, int64_t period) noexcept
   {
     // Don't do anything if the timer does not exist in the queue.
     simple_mutex::unique_lock lock(self->m_pq_mutex);

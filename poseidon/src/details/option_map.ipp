@@ -11,10 +11,8 @@ namespace details_option_map {
 struct ci_hash
   {
     template<typename StringT>
-    constexpr
-    size_t
-    operator()(const StringT& str)
-      const
+    constexpr size_t
+    operator()(const StringT& str) const
       noexcept(noexcept(::std::declval<const StringT&>().c_str()) &&
                noexcept(::std::declval<const StringT&>().length()))
       {
@@ -25,10 +23,8 @@ struct ci_hash
 struct ci_equal
   {
     template<typename StringT, typename OtherT>
-    constexpr
-    bool
-    operator()(const StringT& str, const OtherT& oth)
-      const
+    constexpr bool
+    operator()(const StringT& str, const OtherT& oth) const
       noexcept(noexcept(::std::declval<const StringT&>().c_str()) &&
                noexcept(::std::declval<const StringT&>().length()) &&
                noexcept(::std::declval<const OtherT&>().c_str()) &&
@@ -50,40 +46,33 @@ class Bucket
 
   public:
     explicit constexpr
-    Bucket()
-      noexcept
+    Bucket() noexcept
       = default;
 
   public:
     const cow_string&
-    key()
-      const noexcept
+    key() const noexcept
       { return this->m_key.rdstr();  }
 
     const cow_string&
-    set_key(const cow_string& str)
-      noexcept
+    set_key(const cow_string& str) noexcept
       { return this->m_key.assign(str).rdstr();  }
 
     template<typename OtherT>
     bool
-    key_equals(const OtherT& oth)
-      const
+    key_equals(const OtherT& oth) const
       { return this->m_key == oth;  }
 
     size_t
-    hash()
-      const noexcept
+    hash() const noexcept
       { return this->m_key.rdhash();  }
 
     operator
-    bool()
-      const noexcept
+    bool() const noexcept
       { return this->m_val.index() != 0;  }
 
     Bucket&
-    reset()
-      noexcept
+    reset() noexcept
       {
         this->m_key.clear();
         this->m_val = nullopt;
@@ -92,8 +81,7 @@ class Bucket
 
     ROCKET_PURE_FUNCTION
     pair<const cow_string*, const cow_string*>
-    range()
-      const noexcept
+    range() const noexcept
       {
         if(this->m_val.index() == 0)  // nothing
           return { nullptr, nullptr };
@@ -130,8 +118,7 @@ class Bucket
 
     ROCKET_PURE_FUNCTION
     size_t
-    count()
-      const noexcept
+    count() const noexcept
       {
         if(this->m_val.index() == 0)  // nothing
           return 0;
@@ -183,8 +170,7 @@ class Bucket
 
     // These two functions are used by iterators.
     pair<const cow_string*, const cow_string*>
-    xlocal_range()
-      const noexcept
+    xlocal_range() const noexcept
       { return this->range();  }
 
     pair<cow_string*, cow_string*>
@@ -217,8 +203,7 @@ class Iterator
   private:
     // This constructor is called by the container.
     explicit
-    Iterator(bucketT* begin, size_t ncur, size_t nend)
-      noexcept
+    Iterator(bucketT* begin, size_t ncur, size_t nend) noexcept
       : m_begin(begin), m_cur(begin + ncur), m_end(begin + nend)
       {
         // Go to the first following non-empty bucket if any.
@@ -228,8 +213,7 @@ class Iterator
       }
 
     void
-    do_clear_local_ptrs()
-      noexcept
+    do_clear_local_ptrs() noexcept
       {
         this->m_local_begin = nullptr;
         this->m_local_ptrs.first = nullptr;
@@ -238,8 +222,7 @@ class Iterator
       }
 
     bool
-    do_set_local_ptrs()
-      noexcept
+    do_set_local_ptrs() noexcept
       {
         auto r = this->m_cur->xlocal_range();
         if(r.first == r.second)
@@ -254,8 +237,7 @@ class Iterator
 
   public:
     explicit constexpr
-    Iterator()
-      noexcept
+    Iterator() noexcept
       : m_begin(), m_cur(), m_end(),
         m_local_begin(), m_local_ptrs(), m_local_end()
       { }
@@ -263,8 +245,7 @@ class Iterator
     template<typename yvalueT, typename ybucketT,
     ROCKET_ENABLE_IF(::std::is_convertible<ybucketT*, bucketT*>::value)>
     explicit constexpr
-    Iterator(const Iterator<yvalueT, ybucketT>& other)
-      noexcept
+    Iterator(const Iterator<yvalueT, ybucketT>& other) noexcept
       : m_begin(other.m_begin),
         m_cur(other.m_cur),
         m_end(other.m_end),
@@ -276,8 +257,7 @@ class Iterator
     template<typename yvalueT, typename ybucketT,
     ROCKET_ENABLE_IF(::std::is_convertible<ybucketT*, bucketT*>::value)>
     Iterator&
-    operator=(const Iterator<yvalueT, ybucketT>& other)
-      noexcept
+    operator=(const Iterator<yvalueT, ybucketT>& other) noexcept
       {
         this->m_begin = other.m_begin;
         this->m_cur = other.m_cur;
@@ -290,8 +270,7 @@ class Iterator
 
   private:
     const pair<const cow_string&, valueT&>*
-    do_validate(bool deref)
-      const noexcept
+    do_validate(bool deref) const noexcept
       {
         ROCKET_ASSERT_MSG(this->m_begin, "Iterator not initialized");
         ROCKET_ASSERT_MSG((this->m_begin <= this->m_cur) && (this->m_cur <= this->m_end),
@@ -310,8 +289,7 @@ class Iterator
       }
 
     Iterator
-    do_next()
-      const noexcept
+    do_next() const noexcept
       {
         ROCKET_ASSERT_MSG(this->m_begin, "Iterator not initialized");
 
@@ -331,8 +309,7 @@ class Iterator
       }
 
     Iterator
-    do_prev()
-      const noexcept
+    do_prev() const noexcept
       {
         ROCKET_ASSERT_MSG(this->m_begin, "Iterator not initialized");
 
@@ -353,62 +330,50 @@ class Iterator
 
   public:
     reference
-    operator*()
-      const noexcept
+    operator*() const noexcept
       { return *(this->do_validate(true));  }
 
     pointer
-    operator->()
-      const noexcept
+    operator->() const noexcept
       { return this->do_validate(true);  }
 
     Iterator&
-    operator++()
-      noexcept
+    operator++() noexcept
       { return *this = this->do_next();  }
 
     Iterator&
-    operator--()
-      noexcept
+    operator--() noexcept
       { return *this = this->do_prev();  }
 
     Iterator
-    operator++(int)
-      noexcept
+    operator++(int) noexcept
       { return ::std::exchange(*this, this->do_next());  }
 
     Iterator
-    operator--(int)
-      noexcept
+    operator--(int) noexcept
       { return ::std::exchange(*this, this->do_prev());  }
 
     template<typename ybucketT>
-    constexpr
-    bool
-    operator==(const Iterator<ybucketT>& other)
-      const noexcept
+    constexpr bool
+    operator==(const Iterator<ybucketT>& other) const noexcept
       { return this->m_local_ptrs.second == other.m_local_ptrs.second;  }
 
     template<typename ybucketT>
-    constexpr
-    bool
-    operator!=(const Iterator<ybucketT>& other)
-      const noexcept
+    constexpr bool
+    operator!=(const Iterator<ybucketT>& other) const noexcept
       { return this->m_local_ptrs.second != other.m_local_ptrs.second;  }
   };
 
 template<typename valueT>
 constexpr
 valueT*
-range_back(const pair<valueT*, valueT*>& pair)
-  noexcept
+range_back(const pair<valueT*, valueT*>& pair) noexcept
   { return (pair.first == pair.second) ? nullptr : (pair.second - 1);  }
 
 template<typename valueT>
 constexpr
 size_t
-range_size(const pair<valueT*, valueT*>& pair)
-  noexcept
+range_size(const pair<valueT*, valueT*>& pair) noexcept
   { return static_cast<size_t>(pair.second - pair.first);  }
 
 }  // namespace details_option_map

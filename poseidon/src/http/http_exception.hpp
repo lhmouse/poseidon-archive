@@ -18,8 +18,7 @@ class HTTP_Exception
 
   public:
     explicit
-    HTTP_Exception(HTTP_Status status, cow_string&& desc)
-      noexcept
+    HTTP_Exception(HTTP_Status status, cow_string&& desc) noexcept
       : m_status(status), m_desc(::std::move(desc))
       { }
 
@@ -27,13 +26,11 @@ class HTTP_Exception
     ASTERIA_COPYABLE_DESTRUCTOR(HTTP_Exception);
 
     HTTP_Status
-    status()
-      const noexcept
+    status() const noexcept
       { return this->m_status;  }
 
     const char*
-    what()
-      const noexcept override
+    what() const noexcept override
       { return this->m_desc.c_str();  }
   };
 

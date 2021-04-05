@@ -36,38 +36,31 @@ class Abstract_HTTP_Client_Encoder
 
   public:
     explicit
-    Abstract_HTTP_Client_Encoder()
-      noexcept
+    Abstract_HTTP_Client_Encoder() noexcept
       = default;
 
   private:
-    inline
-    void
+    inline void
     do_encode_http_headers(HTTP_Method meth, const cow_string& target, HTTP_Version ver,
                            const Option_Map& headers, HTTP_Connection conn);
 
-    inline
-    void
+    inline void
     do_encode_http_entity(const char* data, size_t size);
 
-    inline
-    void
+    inline void
     do_finish_http_message();
 
-    inline
-    void
+    inline void
     do_encode_websocket_frame(int flags, char* data, size_t size);  // data clobbered
 
   protected:
     // This function shall deliver all bytes to the other endpoint.
-    virtual
-    bool
+    virtual bool
     do_http_client_send(const char* data, size_t size)
       = 0;
 
     // This function shall close the connection.
-    virtual
-    bool
+    virtual bool
     do_http_client_close()
       = 0;
 
@@ -76,8 +69,7 @@ class Abstract_HTTP_Client_Encoder
 
     // Gets the state.
     HTTP_Encoder_State
-    http_encoder_state()
-      const noexcept
+    http_encoder_state() const noexcept
       { return this->m_state;  }
 
     // Puts the HTTP request line and headers.

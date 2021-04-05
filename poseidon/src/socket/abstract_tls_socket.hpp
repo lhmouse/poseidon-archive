@@ -26,40 +26,34 @@ class Abstract_TLS_Socket
   private:
     // Calls `::SSL_read()`.
     IO_Result
-    do_socket_stream_read_unlocked(char*& data, size_t size)
-      final;
+    do_socket_stream_read_unlocked(char*& data, size_t size) final;
 
     // Calls `::SSL_write()`.
     IO_Result
-    do_socket_stream_write_unlocked(const char*& data, size_t size)
-      final;
+    do_socket_stream_write_unlocked(const char*& data, size_t size) final;
 
     // Calls `::SSL_shutdown()`.
     void
-    do_socket_stream_preclose_unclocked()
-      noexcept final;
+    do_socket_stream_preclose_unclocked() noexcept final;
 
   protected:
     // Notifies a full-duplex channel has been established.
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_socket_on_establish()
-      override;
+    do_socket_on_establish() override;
 
     // Consumes incoming data.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_socket_on_receive(char* data, size_t size)
-      override
+    do_socket_on_receive(char* data, size_t size) override
       = 0;
 
     // Notifies a full-duplex channel has been closed.
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_socket_on_close(int err)
-      override;
+    do_socket_on_close(int err) override;
 
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Socket);

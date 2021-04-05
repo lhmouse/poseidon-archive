@@ -24,36 +24,30 @@ class Abstract_UDP_Socket
     Abstract_UDP_Socket(::sa_family_t family);
 
   private:
-    inline
-    IO_Result
-    do_socket_close_unlocked()
-      noexcept;
+    inline IO_Result
+    do_socket_close_unlocked() noexcept;
 
     // Reads some data.
     // `lock` will lock `*this` after the call.
     // `hint` is used as the I/O buffer. `size` specifies the maximum number of
     // bytes to read.
     IO_Result
-    do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
-      final;
+    do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size) final;
 
     // Returns `0` due to lack of congestion control.
     // `lock` will lock `*this` after the call, nevertheless.
     size_t
-    do_write_queue_size(simple_mutex::unique_lock& lock)
-      const final;
+    do_write_queue_size(simple_mutex::unique_lock& lock) const final;
 
     // Writes some data.
     // `lock` will lock `*this` after the call.
     // `hint` and `size` are ignored.
     IO_Result
-    do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size)
-      final;
+    do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size) final;
 
     // Notifies that this socket has been closed.
     void
-    do_socket_on_poll_close(int err)
-      final;
+    do_socket_on_poll_close(int err) final;
 
   protected:
     // Binds this socket to the specified address.
@@ -63,22 +57,19 @@ class Abstract_UDP_Socket
     // Notifies that this socket has been open for incoming data.
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual
-    void
+    virtual void
     do_socket_on_establish();
 
     // Consumes an incoming packet.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual
-    void
+    virtual void
     do_socket_on_receive(const Socket_Address& addr, char* data, size_t size)
       = 0;
 
     // Notifies that this socket has been fully closed.
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual
-    void
+    virtual void
     do_socket_on_close(int err);
 
     // Enqueues a packet for writing.
@@ -130,8 +121,7 @@ class Abstract_UDP_Socket
     // Marks this socket as closed immediately. No further data may be read from or
     // written through it.
     bool
-    close()
-      noexcept;
+    close() noexcept;
   };
 
 }  // namespace poseidon

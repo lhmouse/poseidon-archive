@@ -10,8 +10,7 @@ namespace poseidon {
 namespace details_openssl_common {
 
 void
-log_openssl_errors()
-  noexcept
+log_openssl_errors() noexcept
   {
     unsigned long err;
     long index = -1;

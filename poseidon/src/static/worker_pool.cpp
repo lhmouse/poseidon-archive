@@ -41,8 +41,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
     // dynamic data
     ::std::vector<Worker> m_workers;
 
-    static
-    void
+    static void
     do_worker_init_once(Worker* qworker)
       {
         size_t index = static_cast<size_t>(qworker - self->m_workers.data());
@@ -54,8 +53,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
                                                    name.c_str(), qworker);
       }
 
-    static
-    void
+    static void
     do_worker_thread_loop(void* param)
       {
         auto qworker = static_cast<Worker*>(param);
@@ -132,8 +130,7 @@ reload()
 
 size_t
 Worker_Pool::
-thread_count()
-  noexcept
+thread_count() noexcept
   {
     return self->m_workers.size();
   }

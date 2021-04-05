@@ -290,8 +290,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     condition_variable m_queue_empty;
     ::std::deque<Log_Entry> m_queue;
 
-    static
-    void
+    static void
     do_start()
       {
         self->m_init_once.call(
@@ -302,8 +301,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
           });
       }
 
-    static
-    void
+    static void
     do_thread_loop(void* /*param*/)
       {
         Log_Entry entry;
@@ -371,8 +369,7 @@ reload()
 
 bool
 Async_Logger::
-enabled(Log_Level level)
-  noexcept
+enabled(Log_Level level) noexcept
   {
     // Validate arguments.
     simple_mutex::unique_lock lock(self->m_conf_mutex);
@@ -415,8 +412,7 @@ enqueue(Log_Level level, const char* file, long line, const char* func,
 
 void
 Async_Logger::
-synchronize(long msecs)
-  noexcept
+synchronize(long msecs) noexcept
   {
     // Wait until the log queue becomes empty.
     simple_mutex::unique_lock lock(self->m_queue_mutex);

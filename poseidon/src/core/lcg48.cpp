@@ -9,8 +9,7 @@ namespace poseidon {
 
 uint64_t
 LCG48::
-create_seed()
-  noexcept
+create_seed() noexcept
   {
     // Use the number of nanoseconds as the seed.
     ::timespec ts = { };
@@ -20,8 +19,7 @@ create_seed()
 
 uint32_t
 LCG48::
-bump()
-  noexcept
+bump() noexcept
   {
     // These arguments are the same as glibc's `drand48()` function.
     uint64_t seed = this->m_seed * 0x5DEECE66D + 0xB;

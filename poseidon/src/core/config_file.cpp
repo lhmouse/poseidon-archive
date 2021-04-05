@@ -15,8 +15,7 @@ struct Implode
     size_t nsegs;
 
     constexpr
-    Implode(const char* const* p, size_t n)
-      noexcept
+    Implode(const char* const* p, size_t n) noexcept
       : psegs(p), nsegs(n)
       { }
   };
@@ -50,8 +49,7 @@ reload(const cow_string& path)
 
 const ::asteria::Value&
 Config_File::
-get_value(const char* const* psegs, size_t nsegs)
-  const
+get_value(const char* const* psegs, size_t nsegs) const
   {
     auto qobj = &(this->m_root);
     size_t icur = 0;
@@ -93,8 +91,7 @@ get_value(const char* const* psegs, size_t nsegs)
 
 opt<bool>
 Config_File::
-get_bool_opt(const char* const* psegs, size_t nsegs)
-  const
+get_bool_opt(const char* const* psegs, size_t nsegs) const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())
@@ -112,8 +109,7 @@ get_bool_opt(const char* const* psegs, size_t nsegs)
 
 opt<int64_t>
 Config_File::
-get_int64_opt(const char* const* psegs, size_t nsegs)
-  const
+get_int64_opt(const char* const* psegs, size_t nsegs) const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())
@@ -131,8 +127,7 @@ get_int64_opt(const char* const* psegs, size_t nsegs)
 
 opt<double>
 Config_File::
-get_double_opt(const char* const* psegs, size_t nsegs)
-  const
+get_double_opt(const char* const* psegs, size_t nsegs) const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())
@@ -150,8 +145,7 @@ get_double_opt(const char* const* psegs, size_t nsegs)
 
 opt<cow_string>
 Config_File::
-get_string_opt(const char* const* psegs, size_t nsegs)
-  const
+get_string_opt(const char* const* psegs, size_t nsegs) const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())
@@ -169,8 +163,7 @@ get_string_opt(const char* const* psegs, size_t nsegs)
 
 opt<::asteria::V_array>
 Config_File::
-get_array_opt(const char* const* psegs, size_t nsegs)
-  const
+get_array_opt(const char* const* psegs, size_t nsegs) const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())
@@ -188,8 +181,7 @@ get_array_opt(const char* const* psegs, size_t nsegs)
 
 opt<::asteria::V_object>
 Config_File::
-get_object_opt(const char* const* psegs, size_t nsegs)
-  const
+get_object_opt(const char* const* psegs, size_t nsegs) const
   {
     const auto& value = this->get_value(psegs, nsegs);
     if(value.is_null())

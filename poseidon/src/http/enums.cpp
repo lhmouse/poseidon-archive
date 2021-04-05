@@ -10,8 +10,7 @@ namespace {
 
 constexpr
 bool
-do_str_eq(const char* bptr, const char* eptr, const char* comp)
-  noexcept
+do_str_eq(const char* bptr, const char* eptr, const char* comp) noexcept
   {
     size_t clen = ::std::strlen(comp);
     return (static_cast<size_t>(eptr - bptr) == clen) &&
@@ -21,8 +20,7 @@ do_str_eq(const char* bptr, const char* eptr, const char* comp)
 }  // namespace
 
 const char*
-format_http_version(HTTP_Version ver)
-  noexcept
+format_http_version(HTTP_Version ver) noexcept
   {
     switch(ver) {
       case http_version_0_0:
@@ -40,8 +38,7 @@ format_http_version(HTTP_Version ver)
   }
 
 HTTP_Version
-parse_http_version(const char* bptr, const char* eptr)
-  noexcept
+parse_http_version(const char* bptr, const char* eptr) noexcept
   {
     // Check for hard-coded characters.
     if(eptr - bptr != 8)
@@ -68,8 +65,7 @@ parse_http_version(const char* bptr, const char* eptr)
   }
 
 const char*
-format_http_method(HTTP_Method method)
-  noexcept
+format_http_method(HTTP_Method method) noexcept
   {
     switch(method) {
       case http_method_null:
@@ -105,8 +101,7 @@ format_http_method(HTTP_Method method)
   }
 
 HTTP_Method
-parse_http_method(const char* bptr, const char* eptr)
-  noexcept
+parse_http_method(const char* bptr, const char* eptr) noexcept
   {
     if(do_str_eq(bptr, eptr, "GET"))
       return http_method_get;
@@ -136,8 +131,7 @@ parse_http_method(const char* bptr, const char* eptr)
   }
 
 const char*
-describe_http_status(HTTP_Status stat)
-  noexcept
+describe_http_status(HTTP_Status stat) noexcept
   {
     switch(stat) {
       case http_status_null:

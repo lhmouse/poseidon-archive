@@ -25,13 +25,11 @@ class OpenSSL_Stream
 
     // Get the SSL structure for other OpenSSL APIs.
     const ::SSL*
-    get_ssl()
-      const noexcept
+    get_ssl() const noexcept
       { return this->m_ssl;  }
 
     ::SSL*
-    open_ssl()
-      noexcept
+    open_ssl() noexcept
       { return this->m_ssl;  }
   };
 

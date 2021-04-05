@@ -17,24 +17,20 @@ class Fiber_Scheduler
     // This function is typically called by the main thread. Multiple worker
     // threads are allowed.
     // This function is thread-safe.
-    [[noreturn]] static
-    void
+    [[noreturn]] static void
     modal_loop(const atomic_signal& exit_sig);
 
     // Reloads settings from main config.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
-    static
-    void
+    static void
     reload();
 
     // Gets a pointer to the current fiber on the current thread.
     // Its fiber state is `fiber_state_running`.
     // This function is thread-safe.
-    ROCKET_PURE_FUNCTION static
-    Abstract_Fiber*
-    current_opt()
-      noexcept;
+    ROCKET_PURE_FUNCTION static Abstract_Fiber*
+    current_opt() noexcept;
 
     // Suspends the current fiber until a future becomes satisfied.
     // `current_opt()` must not return null when this function is called.
@@ -43,8 +39,7 @@ class Fiber_Scheduler
     // is relinquished, similar to `sched_yield()`. Suspension may not exceed `msecs`
     // milliseconds, which is capped to `fail_timeout` in 'main.conf'.
     // This function is thread-safe.
-    static
-    void
+    static void
     yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs = INT64_MAX);
 
     // Inserts a fiber.
@@ -53,16 +48,13 @@ class Fiber_Scheduler
     // without being executed at all.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
-    static
-    rcptr<Abstract_Fiber>
+    static rcptr<Abstract_Fiber>
     insert(uptr<Abstract_Fiber>&& ufiber);
 
     // Wakes up fibers that are suspended on `futr`.
     // This function is thread-safe.
-    static
-    bool
-    signal(const Abstract_Future& futr)
-      noexcept;
+    static bool
+    signal(const Abstract_Future& futr) noexcept;
   };
 
 }  // namespace poseidon

@@ -39,19 +39,16 @@ class Abstract_TLS_Server_Socket
 
   private:
     uptr<Abstract_Socket>
-    do_socket_on_accept(unique_FD&& fd, const Socket_Address& addr)
-      final;
+    do_socket_on_accept(unique_FD&& fd, const Socket_Address& addr) final;
 
     void
-    do_socket_on_register(rcptr<Abstract_Socket>&& sock)
-      final;
+    do_socket_on_register(rcptr<Abstract_Socket>&& sock) final;
 
   protected:
     // Consumes an accepted socket.
     // This function shall allocate and return a new socket object.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual
-    uptr<Abstract_TLS_Socket>
+    virtual uptr<Abstract_TLS_Socket>
     do_socket_on_accept_tls(unique_FD&& fd, const Socket_Address& addr)
       = 0;
 
@@ -59,8 +56,7 @@ class Abstract_TLS_Server_Socket
     // This function shall ensure `sock` is not orphaned by storing the pointer
     // somewhere (for example into a user-defined client map).
     // Please mind thread safety, as this function is called by the network thread.
-    virtual
-    void
+    virtual void
     do_socket_on_register_tls(rcptr<Abstract_TLS_Socket>&& sock)
       = 0;
 

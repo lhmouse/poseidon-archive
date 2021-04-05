@@ -14,15 +14,13 @@ class Network_Driver
 
   public:
     // Creates the network thread if one hasn't been created.
-    static
-    void
+    static void
     start();
 
     // Reloads settings from main config.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
-    static
-    void
+    static void
     reload();
 
     // Adds a socket for polling.
@@ -30,17 +28,14 @@ class Network_Driver
     // reference, the socket is closed and deleted.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
-    static
-    rcptr<Abstract_Socket>
+    static rcptr<Abstract_Socket>
     insert(uptr<Abstract_Socket>&& usock);
 
     // Notifies the network thread about existence of writable data on a socket.
     // This is an internal function. You will not want to call it.
     // This function is thread-safe.
-    static
-    bool
-    notify_writable_internal(const Abstract_Socket& sock)
-      noexcept;
+    static bool
+    notify_writable_internal(const Abstract_Socket& sock) noexcept;
   };
 
 }  // namespace poseidon

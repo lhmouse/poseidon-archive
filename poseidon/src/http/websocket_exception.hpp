@@ -18,8 +18,7 @@ class WebSocket_Exception
 
   public:
     explicit
-    WebSocket_Exception(WebSocket_Status status, cow_string&& desc)
-      noexcept
+    WebSocket_Exception(WebSocket_Status status, cow_string&& desc) noexcept
       : m_status(status), m_desc(::std::move(desc))
       { }
 
@@ -27,13 +26,11 @@ class WebSocket_Exception
     ASTERIA_COPYABLE_DESTRUCTOR(WebSocket_Exception);
 
     WebSocket_Status
-    status()
-      const noexcept
+    status() const noexcept
       { return this->m_status;  }
 
     const char*
-    what()
-      const noexcept override
+    what() const noexcept override
       { return this->m_desc.c_str();  }
   };
 

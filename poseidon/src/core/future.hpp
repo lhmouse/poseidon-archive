@@ -26,8 +26,7 @@ class Future
 
   public:
     explicit
-    Future()
-      noexcept
+    Future() noexcept
       = default;
 
   public:
@@ -45,8 +44,7 @@ class Future
     //   Any retrieval operation shall unblock and throw an exception.
     ROCKET_PURE_FUNCTION
     Future_State
-    state()
-      const noexcept final
+    state() const noexcept final
       {
         simple_mutex::unique_lock lock(this->m_mutex);
         return static_cast<Future_State>(this->m_stor.index());
@@ -55,8 +53,7 @@ class Future
     // Retrieves the value, if one has been set.
     // If no value has been set, an exception is thrown, and there is no effect.
     typename ::std::add_lvalue_reference<const ValueT>::type
-    value()
-      const
+    value() const
       {
         simple_mutex::unique_lock lock(this->m_mutex);
         switch(this->m_stor.index()) {

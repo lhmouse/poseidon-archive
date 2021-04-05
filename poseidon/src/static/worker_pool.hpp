@@ -18,16 +18,13 @@ class Worker_Pool
     // Note that the number of threads is set upon the first call and cannot be
     // changed thereafter.
     // This function is thread-safe.
-    static
-    void
+    static void
     reload();
 
     // Retrieves the maximum number of worker threads.
     // This function is thread-safe.
-    ROCKET_PURE_FUNCTION static
-    size_t
-    thread_count()
-      noexcept;
+    ROCKET_PURE_FUNCTION static size_t
+    thread_count() noexcept;
 
     // Inserts an asynchronous job.
     // Functions with the same key will be delivered to the same worker thread.
@@ -36,8 +33,7 @@ class Worker_Pool
     // being executed at all.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
-    static
-    rcptr<Abstract_Async_Job>
+    static rcptr<Abstract_Async_Job>
     insert(uptr<Abstract_Async_Job>&& ujob);
   };
 

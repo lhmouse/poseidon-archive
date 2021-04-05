@@ -18,8 +18,7 @@ struct Example_Session : Abstract_TLS_Socket
       { }
 
     void
-    do_socket_on_receive(char* data, size_t size)
-      override
+    do_socket_on_receive(char* data, size_t size) override
       {
         POSEIDON_LOG_WARN("example TLS session received: $1", cow_string(data, size));
         this->do_socket_send(data, size);
@@ -42,8 +41,7 @@ struct Example_Server : Abstract_TLS_Server_Socket
       }
 
     uptr<Abstract_TLS_Socket>
-    do_socket_on_accept_tls(unique_FD&& fd, const Socket_Address& addr)
-      override
+    do_socket_on_accept_tls(unique_FD&& fd, const Socket_Address& addr) override
       {
         POSEIDON_LOG_WARN("example TLS server accepted client: $1", addr);
 
@@ -51,8 +49,7 @@ struct Example_Server : Abstract_TLS_Server_Socket
       }
 
     void
-    do_socket_on_register_tls(rcptr<Abstract_TLS_Socket>&& sock)
-      override
+    do_socket_on_register_tls(rcptr<Abstract_TLS_Socket>&& sock) override
       {
         s_client = ::std::move(sock);
       }

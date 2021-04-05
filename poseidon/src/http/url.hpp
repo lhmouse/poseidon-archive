@@ -32,8 +32,7 @@ class URL
 
   public:
     constexpr
-    URL()
-      noexcept
+    URL() noexcept
       = default;
 
     explicit
@@ -49,8 +48,7 @@ class URL
 
     // Gets the scheme.
     const cow_string&
-    scheme()
-      noexcept
+    scheme() noexcept
       { return this->m_scheme;  }
 
     // Sets the scheme.
@@ -58,8 +56,7 @@ class URL
     // conforms to RFC 3986 and converts letters into lowercase.
     // An exception is thrown if the scheme is invalid.
     URL&
-    clear_scheme()
-      noexcept
+    clear_scheme() noexcept
       { return this->m_scheme.clear(), *this;  }
 
     URL&
@@ -67,14 +64,12 @@ class URL
 
     // Gets the user information.
     const cow_string&
-    userinfo()
-      noexcept
+    userinfo() noexcept
       { return this->m_userinfo;  }
 
     // Sets the user information, which may comprise arbitrary characters.
     URL&
-    clear_userinfo()
-      noexcept
+    clear_userinfo() noexcept
       { return this->m_userinfo.clear(), *this;  }
 
     URL&
@@ -82,8 +77,7 @@ class URL
 
     // Gets the host name.
     const cow_string&
-    host()
-      noexcept
+    host() noexcept
       { return this->m_host;  }
 
     // Sets the host name.
@@ -91,8 +85,7 @@ class URL
     // But it may comprise arbitrary characters otherwise.
     // An exception is thrown if the host name is not a valid IP address.
     URL&
-    clear_host()
-      noexcept
+    clear_host() noexcept
       { return this->m_host.clear(), *this;  }
 
     URL&
@@ -103,18 +96,15 @@ class URL
     // the scheme. If no default port is available, zero is returned.
     ROCKET_PURE_FUNCTION
     uint16_t
-    default_port()
-      const noexcept;
+    default_port() const noexcept;
 
     uint16_t
-    port()
-      const noexcept
+    port() const noexcept
       { return this->m_port ? *(this->m_port) : this->default_port();  }
 
     // Sets the port.
     URL&
-    clear_port()
-      noexcept
+    clear_port() noexcept
       { return this->m_port.reset(), *this;  }
 
     URL&
@@ -123,15 +113,13 @@ class URL
     // Gets the path.
     // The slash initiator is not included.
     const cow_string&
-    path()
-      const noexcept
+    path() const noexcept
       { return this->m_path;  }
 
     // Sets the path.
     // A path may comprise arbitrary characters.
     URL&
-    clear_path()
-      noexcept
+    clear_path() noexcept
       { return this->m_path.clear(), *this;  }
 
     URL&
@@ -139,8 +127,7 @@ class URL
 
     // Gets the percent-encoded query string.
     const cow_string&
-    raw_query()
-      const noexcept
+    raw_query() const noexcept
       { return this->m_raw_query;  }
 
     // Sets the query string.
@@ -148,8 +135,7 @@ class URL
     // characters. It must really conform to RFC 3986. An exception is thrown if
     // the query string is invalid.
     URL&
-    clear_raw_query()
-      noexcept
+    clear_raw_query() noexcept
       { return this->m_raw_query.clear(), *this;  }
 
     URL&
@@ -157,8 +143,7 @@ class URL
 
     // Gets the percent-encoded fragment.
     const cow_string&
-    raw_fragment()
-      const noexcept
+    raw_fragment() const noexcept
       { return this->m_raw_fragment;  }
 
     // Sets the fragment stirng.
@@ -166,8 +151,7 @@ class URL
     // unsafe characters. It must really conform to RFC 3986. An exception is
     // thrown if the fragment string is invalid.
     URL&
-    clear_raw_fragment()
-      noexcept
+    clear_raw_fragment() noexcept
       { return this->m_raw_fragment.clear(), *this;  }
 
     URL&
@@ -175,8 +159,7 @@ class URL
 
     // These are general modifiers.
     URL&
-    clear()
-      noexcept
+    clear() noexcept
       {
         this->m_scheme.clear();
         this->m_userinfo.clear();
@@ -189,8 +172,7 @@ class URL
       }
 
     URL&
-    swap(URL& other)
-      noexcept
+    swap(URL& other) noexcept
       {
         this->m_scheme.swap(other.m_scheme);
         this->m_userinfo.swap(other.m_userinfo);
@@ -205,8 +187,7 @@ class URL
     // Converts this URL to a string.
     // This is the inverse function of `parse()`.
     tinyfmt&
-    print(tinyfmt& fmt)
-      const;
+    print(tinyfmt& fmt) const;
 
     // Parses a URL string.
     // An exception is thrown if the URL is invalid.
@@ -216,8 +197,7 @@ class URL
 
 inline
 void
-swap(URL& lhs, URL& rhs)
-  noexcept
+swap(URL& lhs, URL& rhs) noexcept
   { lhs.swap(rhs);  }
 
 inline

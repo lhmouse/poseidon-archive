@@ -28,16 +28,13 @@ class zlib_Deflator
   private:
     // These are overridden callbacks.
     void
-    do_zlib_construct(::z_stream* strm, int level, int wbits)
-      final;
+    do_zlib_construct(::z_stream* strm, int level, int wbits) final;
 
     void
-    do_zlib_reset(::z_stream* strm)
-      final;
+    do_zlib_reset(::z_stream* strm) final;
 
     void
-    do_zlib_write_partial(int& res, ::z_stream* strm, int flush)
-      final;
+    do_zlib_write_partial(int& res, ::z_stream* strm, int flush) final;
 
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(zlib_Deflator);

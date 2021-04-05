@@ -27,14 +27,12 @@ class Socket_Address
   public:
     // Note this is a trivially copyable and destructible class.
     explicit constexpr
-    Socket_Address()
-      noexcept
+    Socket_Address() noexcept
       : m_stor(), m_size(0)
       { }
 
     explicit
-    Socket_Address(const storage& stor, size_t size)
-      noexcept
+    Socket_Address(const storage& stor, size_t size) noexcept
       { this->assign(stor, size);  }
 
     explicit
@@ -44,45 +42,38 @@ class Socket_Address
   public:
     // Gets the `AF_` or `PF_` field.
     ::sa_family_t
-    family()
-      const noexcept
+    family() const noexcept
       { return this->m_stor.addr.sa_family;  }
 
     // Checks whether this is an IPv4 address.
     // An IPv4-mapped IPv6 address is not an IPv4 one.
     bool
-    is_ipv4()
-      const noexcept
+    is_ipv4() const noexcept
       { return this->m_stor.addr.sa_family == AF_INET;  }
 
     // Checks whether this is an IPv6 address.
     // An IPv4-mapped IPv6 address is an IPv6 one.
     bool
-    is_ipv6()
-      const noexcept
+    is_ipv6() const noexcept
       { return this->m_stor.addr.sa_family == AF_INET6;  }
 
     // Gets internal data.
     // The pointer and size can be passed to `bind()` or `connect()`
     const storage&
-    data()
-      const noexcept
+    data() const noexcept
       { return this->m_stor;  }
 
     size_t
-    size()
-      const noexcept
+    size() const noexcept
       { return this->m_size;  }
 
     ::socklen_t
-    ssize()
-      const noexcept
+    ssize() const noexcept
       { return static_cast<::socklen_t>(this->m_size);  }
 
     // Resets to the default-constructed one (all zeroes).
     Socket_Address&
-    clear()
-      noexcept
+    clear() noexcept
       {
         this->m_stor.addr.sa_family = 0;
         this->m_size = 0;
@@ -90,8 +81,7 @@ class Socket_Address
       }
 
     Socket_Address&
-    swap(Socket_Address& other)
-      noexcept
+    swap(Socket_Address& other) noexcept
       {
         ::std::swap(this->m_stor, other.m_stor);
         ::std::swap(this->m_size, other.m_size);
@@ -101,27 +91,22 @@ class Socket_Address
     // Classifies this address.
     ROCKET_PURE_FUNCTION
     Socket_Address_Class
-    classify()
-      const noexcept;
+    classify() const noexcept;
 
     bool
-    is_loopback()
-      const noexcept
+    is_loopback() const noexcept
       { return this->classify() == socket_address_class_loopback;  }
 
     bool
-    is_private()
-      const noexcept
+    is_private() const noexcept
       { return this->classify() == socket_address_class_private;  }
 
     bool
-    is_multicast()
-      const noexcept
+    is_multicast() const noexcept
       { return this->classify() == socket_address_class_multicast;  }
 
     bool
-    is_public()
-      const noexcept
+    is_public() const noexcept
       { return this->classify() == socket_address_class_public;  }
 
     // Sets contents from the result of a call to `recvfrom()`.
@@ -130,8 +115,7 @@ class Socket_Address
     // This function throws an exception upon failure, and the contents of `*this`
     // is undefined.
     Socket_Address&
-    assign(const storage& stor, size_t size)
-      noexcept
+    assign(const storage& stor, size_t size) noexcept
       {
         ROCKET_ASSERT_MSG(size <= sizeof(stor), "Invalid socket address size");
 
@@ -152,14 +136,12 @@ class Socket_Address
     // This is the inverse function of `assign()` except that the port is appended
     // to the host as a string, separated by a colon.
     tinyfmt&
-    print(tinyfmt& fmt)
-      const;
+    print(tinyfmt& fmt) const;
   };
 
 inline
 void
-swap(Socket_Address& lhs, Socket_Address& rhs)
-  noexcept
+swap(Socket_Address& lhs, Socket_Address& rhs) noexcept
   { lhs.swap(rhs);  }
 
 inline

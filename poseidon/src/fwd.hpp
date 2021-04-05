@@ -111,16 +111,12 @@ using ::rocket::once_flag;
 
 struct FD_Closer
   {
-    constexpr
-    int
-    null()
-      const noexcept
+    constexpr int
+    null() const noexcept
       { return -1;  }
 
-    constexpr
-    bool
-    is_null(int fd)
-      const noexcept
+    constexpr bool
+    is_null(int fd) const noexcept
       { return fd == -1;  }
 
     void

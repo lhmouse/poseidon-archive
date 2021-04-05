@@ -29,8 +29,7 @@ do_reserve_output_buffer()
 
 void
 zlib_Stream_Common::
-do_update_output_buffer()
-  noexcept
+do_update_output_buffer() noexcept
   {
     // Consume output bytes, if any.
     auto pbase = reinterpret_cast<const uint8_t*>(this->m_obuf.end());
@@ -39,8 +38,7 @@ do_update_output_buffer()
 
 void
 zlib_Stream_Common::
-do_zlib_throw_error(const char* func, int err)
-  const
+do_zlib_throw_error(const char* func, int err) const
   {
     // Note this field is always initialized.
     const char* msg = this->m_strm.msg;

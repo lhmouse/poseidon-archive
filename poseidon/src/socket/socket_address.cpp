@@ -11,8 +11,7 @@ namespace {
 
 inline
 ::std::bitset<32>
-do_cast_ipv4(const ::in_addr& in4)
-  noexcept
+do_cast_ipv4(const ::in_addr& in4) noexcept
   {
     ::std::bitset<32> bits;
     bits = be32toh(in4.s_addr);
@@ -21,8 +20,7 @@ do_cast_ipv4(const ::in_addr& in4)
 
 inline
 ::std::bitset<32>
-do_make_ipv4(const array<uint8_t, 4>& segs)
-  noexcept
+do_make_ipv4(const array<uint8_t, 4>& segs) noexcept
   {
     ::std::bitset<32> bits;
     for(size_t k = 0;  k != 4;  ++k)
@@ -32,8 +30,7 @@ do_make_ipv4(const array<uint8_t, 4>& segs)
 
 inline
 ::std::bitset<128>
-do_cast_ipv6(const ::in6_addr& in6)
-  noexcept
+do_cast_ipv6(const ::in6_addr& in6) noexcept
   {
     ::std::bitset<128> bits;
     for(size_t k = 0;  k != 16;  ++k)
@@ -43,8 +40,7 @@ do_cast_ipv6(const ::in6_addr& in6)
 
 inline
 ::std::bitset<128>
-do_make_ipv6(const array<uint16_t, 8>& segs)
-  noexcept
+do_make_ipv6(const array<uint16_t, 8>& segs) noexcept
   {
     ::std::bitset<128> bits;
     for(size_t k = 0;  k != 8;  ++k)
@@ -55,8 +51,7 @@ do_make_ipv6(const array<uint16_t, 8>& segs)
 template<size_t N>
 constexpr
 bool
-do_match(const ::std::bitset<N>& addr, const ::std::bitset<N>& comp, size_t bits)
-  noexcept
+do_match(const ::std::bitset<N>& addr, const ::std::bitset<N>& comp, size_t bits) noexcept
   {
     ::std::bitset<N> mask;
     if(bits < mask.size())
@@ -68,8 +63,7 @@ do_match(const ::std::bitset<N>& addr, const ::std::bitset<N>& comp, size_t bits
   }
 
 Socket_Address_Class
-do_classify_ipv4(const ::std::bitset<32>& addr)
-  noexcept
+do_classify_ipv4(const ::std::bitset<32>& addr) noexcept
   {
     // 0.0.0.0/8: Local Identification
     if(do_match(addr, do_make_ipv4({0,0,0,0}), 8))
@@ -107,8 +101,7 @@ do_classify_ipv4(const ::std::bitset<32>& addr)
   }
 
 Socket_Address_Class
-do_classify_ipv6(const ::std::bitset<128>& addr)
-  noexcept
+do_classify_ipv6(const ::std::bitset<128>& addr) noexcept
   {
     // ::/128: Unspecified
     if(do_match(addr, do_make_ipv6({0,0,0,0,0,0,0,0}), 128))
@@ -172,8 +165,7 @@ static_assert(::std::is_trivially_copyable<Socket_Address>::value &&
 
 Socket_Address_Class
 Socket_Address::
-classify()
-  const noexcept
+classify() const noexcept
   {
     if(this->family() == AF_INET) {
       // Try IPv4.
@@ -213,8 +205,7 @@ parse(const char* host, uint16_t port)
 
 tinyfmt&
 Socket_Address::
-print(tinyfmt& fmt)
-  const
+print(tinyfmt& fmt) const
   {
     if(this->family() == AF_INET) {
       // Try IPv4.

@@ -53,8 +53,7 @@ do_socket_stream_write_unlocked(const char*& data, size_t size)
 
 void
 Abstract_TCP_Socket::
-do_socket_stream_preclose_unclocked()
-  noexcept
+do_socket_stream_preclose_unclocked() noexcept
   {
   }
 

@@ -47,14 +47,12 @@ constexpr uint8_t s_url_ctype_table[128] =
 
 constexpr
 uint8_t
-do_get_url_ctype(char c)
-  noexcept
+do_get_url_ctype(char c) noexcept
   { return (uint8_t(c) < 128) ? s_url_ctype_table[uint8_t(c)] : 0;  }
 
 constexpr
 bool
-do_is_url_ctype(char c, uint8_t mask)
-  noexcept
+do_is_url_ctype(char c, uint8_t mask) noexcept
   { return do_get_url_ctype(c) & mask;  }
 
 tinyfmt&
@@ -185,8 +183,7 @@ set_host(const cow_string& val)
 
 uint16_t
 URL::
-default_port()
-  const noexcept
+default_port() const noexcept
   {
     // Look up the well-known port for the current scheme.
     // Note the scheme string is always in lowercase.
@@ -271,8 +268,7 @@ set_raw_fragment(const cow_string& val)
 
 tinyfmt&
 URL::
-print(tinyfmt& fmt)
-  const
+print(tinyfmt& fmt) const
   {
     // If a scheme field is present, write it.
     if(this->m_scheme.size())

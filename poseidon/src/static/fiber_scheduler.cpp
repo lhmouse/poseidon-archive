@@ -16,12 +16,10 @@
 extern "C" {
 
 void
-__sanitizer_start_switch_fiber(void** save, const void* sp_base, size_t st_size)
-  noexcept;
+__sanitizer_start_switch_fiber(void** save, const void* sp_base, size_t st_size) noexcept;
 
 void
-__sanitizer_finish_switch_fiber(void* save, const void** sp_base, size_t* st_size)
-  noexcept;
+__sanitizer_finish_switch_fiber(void* save, const void** sp_base, size_t* st_size) noexcept;
 
 #define POSEIDON_ASAN_START_SWITCH_FIBER(myctx, uctx)  \
     (::__sanitizer_start_switch_fiber(&((myctx)->asan_fiber_save),  \
@@ -43,8 +41,7 @@ namespace poseidon {
 namespace {
 
 int64_t
-do_get_monotonic_seconds()
-  noexcept
+do_get_monotonic_seconds() noexcept
   {
     ::timespec ts;
     ::clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -57,8 +54,7 @@ struct Stack_pointer
     size_t size;
 
     constexpr
-    Stack_pointer(nullptr_t = nullptr)
-      noexcept
+    Stack_pointer(nullptr_t = nullptr) noexcept
       : base(nullptr), size(0)
       { }
 
@@ -68,19 +64,16 @@ struct Stack_pointer
       { }
 
     constexpr
-    Stack_pointer(void* xbase, size_t xsize)
-      noexcept
+    Stack_pointer(void* xbase, size_t xsize) noexcept
       : base(xbase), size(xsize)
       { }
 
     explicit constexpr operator
-    bool()
-      const noexcept
+    bool() const noexcept
       { return bool(this->base);  }
 
     operator
-    ::stack_t()
-      const noexcept
+    ::stack_t() const noexcept
       {
         ::stack_t st;
         st.ss_sp = this->base;
@@ -110,8 +103,7 @@ do_validate_stack_vm_size(size_t stack_vm_size)
   }
 
 void
-do_unmap_stack_aux(Stack_pointer sp)
-  noexcept
+do_unmap_stack_aux(Stack_pointer sp) noexcept
   {
     char* vm_base = static_cast<char*>(sp.base) - s_page_size;
     size_t vm_size = sp.size + s_page_size * 2;
@@ -126,21 +118,16 @@ do_unmap_stack_aux(Stack_pointer sp)
 
 struct Stack_delete
   {
-    constexpr
-    Stack_pointer
-    null()
-      const noexcept
+    constexpr Stack_pointer
+    null() const noexcept
       { return nullptr;  }
 
-    constexpr
-    bool
-    is_null(Stack_pointer sp)
-      const noexcept
+    constexpr bool
+    is_null(Stack_pointer sp) const noexcept
       { return sp.base == nullptr;  }
 
     void
-    close(Stack_pointer sp)
-      noexcept
+    close(Stack_pointer sp) noexcept
       {
         simple_mutex::unique_lock lock(s_stack_pool_mutex);
 
@@ -220,22 +207,16 @@ struct PQ_Element
 
 struct PQ_Compare
   {
-    constexpr
-    bool
-    operator()(const PQ_Element& lhs, const PQ_Element& rhs)
-      const noexcept
+    constexpr bool
+    operator()(const PQ_Element& lhs, const PQ_Element& rhs) const noexcept
       { return lhs.time > rhs.time;  }
 
-    constexpr
-    bool
-    operator()(const PQ_Element& lhs, int64_t rhs)
-      const noexcept
+    constexpr bool
+    operator()(const PQ_Element& lhs, int64_t rhs) const noexcept
       { return lhs.time > rhs;  }
 
-    constexpr
-    bool
-    operator()(int64_t lhs, const PQ_Element& rhs)
-      const noexcept
+    constexpr bool
+    operator()(int64_t lhs, const PQ_Element& rhs) const noexcept
       { return lhs > rhs.time;  }
   }
   constexpr pq_compare;
@@ -253,20 +234,17 @@ union Fancy_Fiber_Pointer
     int words[2];
 
     explicit constexpr
-    Fancy_Fiber_Pointer(Abstract_Fiber* xfiber)
-      noexcept
+    Fancy_Fiber_Pointer(Abstract_Fiber* xfiber) noexcept
       : fiber(xfiber)
       { }
 
     explicit constexpr
-    Fancy_Fiber_Pointer(int word_0, int word_1)
-      noexcept
+    Fancy_Fiber_Pointer(int word_0, int word_1) noexcept
       : words{ word_0, word_1 }
       { }
 
     constexpr operator
-    Abstract_Fiber*()
-      const noexcept
+    Abstract_Fiber*() const noexcept
       { return this->fiber;  }
   };
 
@@ -294,8 +272,7 @@ class Queue_Semaphore
 
   public:
     bool
-    wait_for(long secs)
-      noexcept
+    wait_for(long secs) noexcept
       {
         int r;
         if(secs <= 0) {
@@ -321,8 +298,7 @@ class Queue_Semaphore
       }
 
     bool
-    wait()
-      noexcept
+    wait() noexcept
       {
         // Note `semwait()` may fail with `EINTR`.
         int r = ::sem_wait(this->m_sem);
@@ -331,8 +307,7 @@ class Queue_Semaphore
       }
 
     bool
-    signal()
-      noexcept
+    signal() noexcept
       {
         // Note `sem_post()` may fail with `EOVERFLOW`.
         // The semaphore only indicates whether the queue is non-empty,
@@ -362,8 +337,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     Abstract_Fiber* m_sched_sleep_head = nullptr;
     Abstract_Fiber* m_sched_ready_head = nullptr;
 
-    static
-    void
+    static void
     do_start()
       {
         self->m_init_once.call(
@@ -385,8 +359,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           });
       }
 
-    static
-    Thread_Context*
+    static Thread_Context*
     get_thread_context()
       {
         auto ptr = ::pthread_getspecific(self->m_sched_key);
@@ -397,8 +370,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         return nullptr;
       }
 
-    static
-    Thread_Context*
+    static Thread_Context*
     open_thread_context()
       {
         auto ptr = ::pthread_getspecific(self->m_sched_key);
@@ -418,10 +390,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         return qctx.release();
       }
 
-    [[noreturn]] static
-    void
-    do_execute_fiber(int word_0, int word_1)
-      noexcept
+    [[noreturn]] static void
+    do_execute_fiber(int word_0, int word_1) noexcept
       {
         auto myctx = self->open_thread_context();
         POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
@@ -455,10 +425,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         ::std::terminate();
       }
 
-    static
-    void
-    do_initialize_context(Abstract_Fiber* fiber, unique_stack&& stack)
-      noexcept
+    static void
+    do_initialize_context(Abstract_Fiber* fiber, unique_stack&& stack) noexcept
       {
         // Initialize the user-context.
         int r = ::getcontext(fiber->m_sched_uctx);
@@ -473,8 +441,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
                                            2, fcptr.words[0], fcptr.words[1]);
       }
 
-    static
-    void
+    static void
     do_thread_loop(void* param)
       {
         const auto& exit_sig = *(const atomic_signal*)param;
@@ -689,10 +656,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         stack.reset(fiber->m_sched_uctx->uc_stack);
       }
 
-    static
-    void
-    do_signal_if_queues_empty()
-      noexcept
+    static void
+    do_signal_if_queues_empty() noexcept
       {
         if(ROCKET_EXPECT(self->m_sched_sleep_head))
           return;
@@ -767,8 +732,7 @@ reload()
 
 Abstract_Fiber*
 Fiber_Scheduler::
-current_opt()
-  noexcept
+current_opt() noexcept
   {
     auto myctx = self->get_thread_context();
     if(!myctx)
@@ -887,8 +851,7 @@ insert(uptr<Abstract_Fiber>&& ufiber)
 
 bool
 Fiber_Scheduler::
-signal(const Abstract_Future& futr)
-  noexcept
+signal(const Abstract_Future& futr) noexcept
   {
     // Detach all fibers from the future, if any.
     simple_mutex::unique_lock lock(self->m_sched_mutex);

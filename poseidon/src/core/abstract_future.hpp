@@ -24,8 +24,7 @@ class Abstract_Future
 
   protected:
     explicit
-    Abstract_Future()
-      noexcept
+    Abstract_Future() noexcept
       = default;
 
   private:
@@ -33,8 +32,7 @@ class Abstract_Future
     // This functions is called by the fiber scheduler with the global mutex locked.
     ROCKET_PURE_FUNCTION
     bool
-    do_is_empty()
-      const noexcept
+    do_is_empty() const noexcept
       { return this->state() == future_state_empty;  }
 
   public:
@@ -42,10 +40,8 @@ class Abstract_Future
 
     // Gets the state, which is any of `future_state_empty`, `future_state_value`
     // or `future_state_except`.
-    ROCKET_PURE_FUNCTION virtual
-    Future_State
-    state()
-      const noexcept
+    ROCKET_PURE_FUNCTION virtual Future_State
+    state() const noexcept
       = 0;
   };
 

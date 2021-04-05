@@ -27,15 +27,13 @@ struct Promise_Timer : Abstract_Timer
         this->prom.future();
       }
 
-    ~Promise_Timer()
-      override
+    ~Promise_Timer() override
       {
         POSEIDON_LOG_FATAL("delete timer `$1`", this);
       }
 
     void
-    do_on_async_timer(int64_t /*now*/)
-      override
+    do_on_async_timer(int64_t /*now*/) override
       {
         POSEIDON_LOG_FATAL("set promise: $1", this->value);
         this->prom.set_value(this->value);
@@ -53,8 +51,7 @@ struct Example_Fiber : Abstract_Fiber
         POSEIDON_LOG_ERROR("new fiber `$1`: $2", this, this->value);
       }
 
-    ~Example_Fiber()
-      override
+    ~Example_Fiber() override
       {
         POSEIDON_LOG_ERROR("delete fiber `$1`: $2", this, this->value);
       }

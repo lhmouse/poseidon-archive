@@ -23,8 +23,7 @@ struct Example_Timer : Abstract_Timer
       }
 
     void
-    do_on_async_timer(int64_t now)
-      override
+    do_on_async_timer(int64_t now) override
       {
         POSEIDON_LOG_ERROR("example timer running: now = $1", now);
       }

@@ -42,17 +42,14 @@ class Abstract_Socket
     // `hint` points to a temporary buffer of `size` bytes that may be used by this
     // function for any purpose.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual
-    IO_Result
+    virtual IO_Result
     do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
       = 0;
 
     // This function shall return the number of bytes that are pending for writing.
     // `lock` shall lock `*this` after the call if locking is supported.
-    virtual
-    size_t
-    do_write_queue_size(simple_mutex::unique_lock& lock)
-      const
+    virtual size_t
+    do_write_queue_size(simple_mutex::unique_lock& lock) const
       = 0;
 
     // The network driver notifies possibility of outgoing data via this callback.
@@ -60,16 +57,14 @@ class Abstract_Socket
     // `hint` points to a temporary buffer of `size` bytes that may be used by this
     // function for any purpose.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual
-    IO_Result
+    virtual IO_Result
     do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size)
       = 0;
 
     // The network driver notifies closure via this callback.
     // `err` is zero for graceful shutdown.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual
-    void
+    virtual void
     do_socket_on_poll_close(int err)
       = 0;
 
@@ -78,8 +73,7 @@ class Abstract_Socket
 
     // Marks this socket to be deleted if network driver holds its last reference.
     bool
-    set_resident(bool value = true)
-      noexcept
+    set_resident(bool value = true) noexcept
       { return this->m_resident.exchange(value);  }
 
     // Returns the stream descriptor.
@@ -87,21 +81,18 @@ class Abstract_Socket
     // operations on it.
     ROCKET_PURE_FUNCTION
     int
-    get_fd()
-      const noexcept
+    get_fd() const noexcept
       { return this->m_fd;  }
 
     // Causes abnormal termination of this stream.
     // Any data that have not been delivered to the other peer are discarded.
     // The other peer is likely to see a 'connection reset by peer' error.
     void
-    kill()
-      noexcept;
+    kill() noexcept;
 
     // Gets the (bound) address of the local peer.
     const Socket_Address&
-    get_local_address()
-      const;
+    get_local_address() const;
   };
 
 }  // namespace poseidon

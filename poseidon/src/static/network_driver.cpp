@@ -44,8 +44,7 @@ struct Poll_Socket
   };
 
 void
-do_event_wait(int fd)
-  noexcept
+do_event_wait(int fd) noexcept
   {
     int err;
 
@@ -65,8 +64,7 @@ do_event_wait(int fd)
   }
 
 void
-do_event_signal(int fd)
-  noexcept
+do_event_signal(int fd) noexcept
   {
     int err;
 
@@ -118,8 +116,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     Poll_List_root<&Poll_Socket::node_rd> m_poll_root_rd;
     Poll_List_root<&Poll_Socket::node_wr> m_poll_root_wr;
 
-    static
-    void
+    static void
     do_start()
       {
         self->m_init_once.call(
@@ -156,18 +153,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
     // The index takes up 24 bits. That's 16M simultaneous connections.
     // The serial number takes up 40 bits. That's ~1.1T historical connections.
-    static constexpr
-    uint64_t
-    make_epoll_data(uint64_t index, uint64_t serial)
-      noexcept
+    static constexpr uint64_t
+    make_epoll_data(uint64_t index, uint64_t serial) noexcept
       {
         return (index << 40) | ((serial << 24) >> 24);
       }
 
-    static constexpr
-    uint32_t
-    index_from_epoll_data(uint64_t epoll_data)
-      noexcept
+    static constexpr uint32_t
+    index_from_epoll_data(uint64_t epoll_data) noexcept
       {
         return static_cast<uint32_t>(epoll_data >> 40);
       }
@@ -175,10 +168,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     // Note epoll events are bound to kernel files, not individual file descriptors.
     // If we were passing pointers in `event.data` and FDs got `dup()`'d, we could get
     // dangling pointers here, which is rather dangerous.
-    static
-    uint32_t
-    find_poll_socket(uint64_t epoll_data)
-      noexcept
+    static uint32_t
+    find_poll_socket(uint64_t epoll_data) noexcept
       {
         // Perform fast lookup using the hint value.
         uint32_t index = self->index_from_epoll_data(epoll_data);
@@ -215,10 +206,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         return poll_index_nil;
       }
 
-    ROCKET_PURE_FUNCTION static
-    bool
-    poll_lists_empty()
-      noexcept
+    ROCKET_PURE_FUNCTION static bool
+    poll_lists_empty() noexcept
       {
         return (self->m_poll_root_cl.head == poll_index_end) &&  // close list empty
                (self->m_poll_root_rd.head == poll_index_end) &&  // read list empty
@@ -226,8 +215,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       }
 
     template<Poll_List_mixin Poll_Socket::* mptrT>
-    static
-    size_t
+    static size_t
     poll_list_collect(const Poll_List_root<mptrT>& root)
       {
         self->m_ready_socks.clear();
@@ -244,10 +232,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       }
 
     template<Poll_List_mixin Poll_Socket::* mptrT>
-    static
-    bool
-    poll_list_attach(Poll_List_root<mptrT>& root, uint32_t index)
-      noexcept
+    static bool
+    poll_list_attach(Poll_List_root<mptrT>& root, uint32_t index) noexcept
       {
         // Don't perform any operation if the element has already been attached.
         auto& elem = self->m_poll_elems[index];
@@ -264,10 +250,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       }
 
     template<Poll_List_mixin Poll_Socket::* mptrT>
-    static
-    bool
-    poll_list_detach(Poll_List_root<mptrT>& root, uint32_t index)
-      noexcept
+    static bool
+    poll_list_detach(Poll_List_root<mptrT>& root, uint32_t index) noexcept
       {
         // Don't perform any operation if the element has not been attached.
         auto& elem = self->m_poll_elems[index];
@@ -284,8 +268,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         return true;
       }
 
-    static
-    void
+    static void
     do_thread_loop(void* /*param*/)
       {
         // Reload configuration.
@@ -522,10 +505,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         }
       }
 
-    static
-    void
-    do_signal_if_poll_lists_empty()
-      noexcept
+    static void
+    do_signal_if_poll_lists_empty() noexcept
       {
         if(ROCKET_EXPECT(!self->poll_lists_empty()))
           return;
@@ -615,8 +596,7 @@ insert(uptr<Abstract_Socket>&& usock)
 
 bool
 Network_Driver::
-notify_writable_internal(const Abstract_Socket& sock)
-  noexcept
+notify_writable_internal(const Abstract_Socket& sock) noexcept
   {
     // If the socket has been removed or is not writable , don't do anything.
     simple_mutex::unique_lock lock(self->m_poll_mutex);

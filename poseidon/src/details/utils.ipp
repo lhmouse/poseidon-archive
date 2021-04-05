@@ -12,8 +12,7 @@ template<typename... ParamsT>
 ROCKET_NOINLINE inline
 void
 format_log(Log_Level level, const char* file, long line, const char* func,
-           const char* templ, const ParamsT&... params)
-  noexcept
+           const char* templ, const ParamsT&... params) noexcept
   try {
     // Compose the message.
     ::rocket::tinyfmt_str fmt;
@@ -100,13 +99,11 @@ class Timer
 
   private:
     void
-    do_on_async_timer(int64_t now)
-      override
+    do_on_async_timer(int64_t now) override
       { this->m_func(now);  }
 
   public:
-    ~Timer()
-      override;
+    ~Timer() override;
   };
 
 template<typename FuncT>
@@ -147,8 +144,7 @@ class Async
 
   private:
     void
-    do_execute()
-      override
+    do_execute() override
       try {
         this->m_prom.set_value(this->m_func());
       }
@@ -157,12 +153,10 @@ class Async
       }
 
   public:
-    ~Async()
-      override;
+    ~Async() override;
 
     futp<result_type>
-    future()
-      const
+    future() const
       { return this->m_prom.future();  }
   };
 

@@ -64,8 +64,7 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /
 
 size_t
 Abstract_Accept_Socket::
-do_write_queue_size(simple_mutex::unique_lock& /*lock*/)
-  const
+do_write_queue_size(simple_mutex::unique_lock& /*lock*/) const
   {
     return 0;
   }
@@ -128,8 +127,7 @@ do_socket_on_close(int err)
 
 bool
 Abstract_Accept_Socket::
-close()
-  noexcept
+close() noexcept
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate > connection_state_established)

@@ -61,14 +61,12 @@ constexpr uint8_t s_opt_ctype_table[128] =
 
 constexpr
 uint8_t
-do_get_opt_ctype(char c)
-  noexcept
+do_get_opt_ctype(char c) noexcept
   { return (uint8_t(c) < 128) ? s_opt_ctype_table[uint8_t(c)] : 0;  }
 
 constexpr
 bool
-do_is_opt_ctype(char c, uint8_t mask)
-  noexcept
+do_is_opt_ctype(char c, uint8_t mask) noexcept
   { return do_get_opt_ctype(c) & mask;  }
 
 constexpr char s_xdigits[] = "00112233445566778899AaBbCcDdEeFf";
@@ -146,8 +144,7 @@ Option_Map::
 
 pair<const cow_string*, const cow_string*>
 Option_Map::
-do_range_hint(cow_string::shallow_type key, size_t hval)
-  const noexcept
+do_range_hint(cow_string::shallow_type key, size_t hval) const noexcept
   {
     if(this->m_stor.empty())
       return { };
@@ -289,8 +286,7 @@ do_append_hint(const cow_string& key, size_t hval)
 
 tinyfmt&
 Option_Map::
-print(tinyfmt& fmt)
-  const
+print(tinyfmt& fmt) const
   {
     fmt << "{";
     for(const auto& bkt : this->m_stor) {
@@ -310,8 +306,7 @@ print(tinyfmt& fmt)
 
 tinyfmt&
 Option_Map::
-print_url_query(tinyfmt& fmt)
-  const
+print_url_query(tinyfmt& fmt) const
   {
     size_t count = SIZE_MAX;
     for(const auto& bkt : this->m_stor) {
@@ -382,8 +377,7 @@ parse_url_query(const cow_string& str)
 
 tinyfmt&
 Option_Map::
-print_http_header(tinyfmt& fmt)
-  const
+print_http_header(tinyfmt& fmt) const
   {
     // Write non-options first.
     size_t count = SIZE_MAX;

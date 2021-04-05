@@ -23,15 +23,13 @@ class Option_Map
 
   public:
     explicit constexpr
-    Option_Map()
-      noexcept
+    Option_Map() noexcept
       = default;
 
   private:
     ROCKET_PURE_FUNCTION
     pair<const cow_string*, const cow_string*>
-    do_range_hint(cow_string::shallow_type key, size_t hval)
-      const noexcept;
+    do_range_hint(cow_string::shallow_type key, size_t hval) const noexcept;
 
     pair<cow_string*, cow_string*>
     do_mut_range_hint(cow_string::shallow_type key, size_t hval);
@@ -39,8 +37,7 @@ class Option_Map
     size_t
     do_erase_hint(cow_string::shallow_type key, size_t hval);
 
-    inline
-    details_option_map::Bucket&
+    inline details_option_map::Bucket&
     do_reserve(const cow_string& key, size_t hval);
 
     cow_string&
@@ -54,24 +51,20 @@ class Option_Map
 
     // iterators
     const_iterator
-    begin()
-      const noexcept
+    begin() const noexcept
       { return const_iterator(this->m_stor.data(), 0, this->m_stor.size());  }
 
     const_iterator
-    end()
-      const noexcept
+    end() const noexcept
       { return const_iterator(this->m_stor.data(),
                               this->m_stor.size(), this->m_stor.size());  }
 
     const_reverse_iterator
-    rbegin()
-      const noexcept
+    rbegin() const noexcept
       { return const_reverse_iterator(this->end());  }
 
     const_reverse_iterator
-    rend()
-      const noexcept
+    rend() const noexcept
       { return const_reverse_iterator(this->begin());  }
 
     iterator
@@ -93,8 +86,7 @@ class Option_Map
 
     // modifiers
     Option_Map&
-    clear()
-      noexcept
+    clear() noexcept
       {
         this->m_stor.clear();
         this->m_nbkt = 0;
@@ -102,8 +94,7 @@ class Option_Map
       }
 
     Option_Map&
-    swap(Option_Map& other)
-      noexcept
+    swap(Option_Map& other) noexcept
       {
         this->m_stor.swap(other.m_stor);
         ::std::swap(this->m_nbkt, other.m_nbkt);
@@ -115,19 +106,16 @@ class Option_Map
     // the value array. A scalar value is considered to be an array of only one
     // value.
     pair<const cow_string*, const cow_string*>
-    range(cow_string::shallow_type key)
-      const noexcept
+    range(cow_string::shallow_type key) const noexcept
       { return this->do_range_hint(key, details_option_map::ci_hash()(key));  }
 
     pair<const cow_string*, const cow_string*>
-    range(const cow_string& key)
-      const noexcept
+    range(const cow_string& key) const noexcept
       { return this->range(sref(key));  }
 
     template<typename FuncT>
     void
-    for_each(cow_string::shallow_type key, FuncT&& func)
-      const
+    for_each(cow_string::shallow_type key, FuncT&& func) const
       {
         auto r = this->range(key);
         while(r.first != r.second)
@@ -136,8 +124,7 @@ class Option_Map
 
     template<typename FuncT>
     void
-    for_each(const cow_string& key, FuncT&& func)
-      const
+    for_each(const cow_string& key, FuncT&& func) const
       { return this->for_each(sref(key), ::std::forward<FuncT>(func));  }
 
     pair<cow_string*, cow_string*>
@@ -162,19 +149,16 @@ class Option_Map
     // Get a scalar value.
     // If multiple values exist, the last one is returned.
     const cow_string*
-    find_opt(cow_string::shallow_type key)
-      const noexcept
+    find_opt(cow_string::shallow_type key) const noexcept
       { return details_option_map::range_back(this->range(key));  }
 
     const cow_string*
-    find_opt(const cow_string& key)
-      const noexcept
+    find_opt(const cow_string& key) const noexcept
       { return this->find_opt(sref(key));  }
 
     template<typename PredT>
     const cow_string*
-    find_if_opt(cow_string::shallow_type key, PredT&& pred)
-      const
+    find_if_opt(cow_string::shallow_type key, PredT&& pred) const
       {
         auto r = this->range(key);
         while(r.first != r.second)
@@ -185,8 +169,7 @@ class Option_Map
 
     template<typename PredT>
     const cow_string*
-    find_if_opt(const cow_string& key, PredT&& pred)
-      const
+    find_if_opt(const cow_string& key, PredT&& pred) const
       { return this->find_if_opt(sref(key), ::std::forward<PredT>(pred));  }
 
     cow_string*
@@ -209,13 +192,11 @@ class Option_Map
 
     // Get the number of values with the given key.
     size_t
-    count(cow_string::shallow_type key)
-      const noexcept
+    count(cow_string::shallow_type key) const noexcept
       { return details_option_map::range_size(this->range(key));  }
 
     size_t
-    count(const cow_string& key)
-      const noexcept
+    count(const cow_string& key) const noexcept
       { return this->count(sref(key));  }
 
     // Append a value to an array.
@@ -230,14 +211,12 @@ class Option_Map
 
     // Converts this map to a human-readable string.
     tinyfmt&
-    print(tinyfmt& fmt)
-      const;
+    print(tinyfmt& fmt) const;
 
     // Converts this map to an URL query string.
     // This is the inverse function of `parse_url_query()`.
     tinyfmt&
-    print_url_query(tinyfmt& fmt)
-      const;
+    print_url_query(tinyfmt& fmt) const;
 
     // Parses a URL query string.
     // If an element contains no equals sign (such as the `foo` in `foo&bar=42`),
@@ -251,8 +230,7 @@ class Option_Map
     // All non-empty keys must be valid tokens according to RFC 7230.
     // This is the inverse function of `parse_http_header()`.
     tinyfmt&
-    print_http_header(tinyfmt& fmt)
-      const;
+    print_http_header(tinyfmt& fmt) const;
 
     // Parses an HTTP header value.
     // A header value is a series of fields delimited by semicolons. A field may
@@ -274,8 +252,7 @@ class Option_Map
 
 inline
 void
-swap(Option_Map& lhs, Option_Map& rhs)
-  noexcept
+swap(Option_Map& lhs, Option_Map& rhs) noexcept
   { lhs.swap(rhs);  }
 
 inline

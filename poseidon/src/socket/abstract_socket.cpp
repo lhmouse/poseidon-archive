@@ -38,8 +38,7 @@ Abstract_Socket::
 
 void
 Abstract_Socket::
-kill()
-  noexcept
+kill() noexcept
   {
     // Enable linger to discard all pending data.
     // Failure to set this option is ignored.
@@ -54,8 +53,7 @@ kill()
 
 const Socket_Address&
 Abstract_Socket::
-get_local_address()
-  const
+get_local_address() const
   {
     this->m_local_addr_once.call(
       [this] {

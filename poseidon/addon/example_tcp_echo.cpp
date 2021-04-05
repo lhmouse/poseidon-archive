@@ -18,8 +18,7 @@ struct Example_Session : Abstract_TCP_Socket
       { }
 
     void
-    do_socket_on_receive(char* data, size_t size)
-      override
+    do_socket_on_receive(char* data, size_t size) override
       {
         POSEIDON_LOG_WARN("example TCP session received: $1", cow_string(data, size));
         this->do_socket_send(data, size);
@@ -42,8 +41,7 @@ struct Example_Server : Abstract_TCP_Server_Socket
       }
 
     uptr<Abstract_TCP_Socket>
-    do_socket_on_accept_tcp(unique_FD&& fd, const Socket_Address& addr)
-      override
+    do_socket_on_accept_tcp(unique_FD&& fd, const Socket_Address& addr) override
       {
         POSEIDON_LOG_WARN("example TCP server accepted client: $1", addr);
 
@@ -51,8 +49,7 @@ struct Example_Server : Abstract_TCP_Server_Socket
       }
 
     void
-    do_socket_on_register_tcp(rcptr<Abstract_TCP_Socket>&& sock)
-      override
+    do_socket_on_register_tcp(rcptr<Abstract_TCP_Socket>&& sock) override
       {
         s_client = ::std::move(sock);
       }

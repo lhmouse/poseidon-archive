@@ -22,8 +22,7 @@ class Abstract_Async_Job
 
   protected:
     explicit
-    Abstract_Async_Job(uintptr_t key)
-      noexcept
+    Abstract_Async_Job(uintptr_t key) noexcept
       : m_key(key)
       { }
 
@@ -31,8 +30,7 @@ class Abstract_Async_Job
     // Executes this job and satisfies some promise of the derived class.
     // This function is called only once. No matter whether it returns or
     // throws an exception, this job is deleted from the worker queue.
-    virtual
-    void
+    virtual void
     do_execute()
       = 0;
 
@@ -41,21 +39,18 @@ class Abstract_Async_Job
 
     // Marks this job to be deleted immediately.
     bool
-    shut_down()
-      noexcept
+    shut_down() noexcept
       { return this->m_zombie.exchange(true);  }
 
     // Marks this job to be deleted if worker pool holds its last reference.
     bool
-    set_resident(bool value = true)
-      noexcept
+    set_resident(bool value = true) noexcept
       { return this->m_resident.exchange(value);  }
 
     // Gets the asynchrnous state, which is set by worker threads.
     ROCKET_PURE_FUNCTION
     Async_State
-    state()
-      const noexcept
+    state() const noexcept
       { return this->m_state.load();  }
   };
 

@@ -19,18 +19,15 @@ class Promise
 
   public:
     explicit constexpr
-    Promise()
-      noexcept
+    Promise() noexcept
       { }
 
-    Promise(Promise&& other)
-      noexcept
+    Promise(Promise&& other) noexcept
       : m_futp(::std::move(other.m_futp))
       { }
 
     Promise&
-    operator=(Promise&& other)
-      noexcept
+    operator=(Promise&& other) noexcept
       {
         if(this->m_futp == other.m_futp)
           return *this;
@@ -42,8 +39,7 @@ class Promise
 
   private:
     bool
-    do_dispose()
-      noexcept
+    do_dispose() noexcept
       {
         auto futp = this->m_futp.get();
         if(!futp)
@@ -63,8 +59,7 @@ class Promise
 
     [[noreturn]]
     void
-    do_throw_no_future()
-      const
+    do_throw_no_future() const
       {
         ::rocket::sprintf_and_throw<::std::invalid_argument>(
               "Promise: No future associated (value type `%s`)",

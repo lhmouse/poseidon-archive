@@ -25,37 +25,30 @@ class Abstract_HTTP_Server_Encoder
 
   protected:
     explicit
-    Abstract_HTTP_Server_Encoder()
-      noexcept
+    Abstract_HTTP_Server_Encoder() noexcept
       = default;
 
   private:
-    inline
-    void
+    inline void
     do_encode_http_headers(HTTP_Version ver, HTTP_Status stat, const Option_Map& headers);
 
-    inline
-    void
+    inline void
     do_encode_http_entity(const char* data, size_t size);
 
-    inline
-    void
+    inline void
     do_finish_http_message(HTTP_Encoder_State next);
 
-    inline
-    void
+    inline void
     do_encode_websocket_frame(int flags, const char* data, size_t size);
 
   protected:
     // This function shall deliver all bytes to the other endpoint.
-    virtual
-    bool
+    virtual bool
     do_http_server_send(const char* data, size_t size)
       = 0;
 
     // This function shall close the connection.
-    virtual
-    bool
+    virtual bool
     do_http_server_close()
       = 0;
 
@@ -64,8 +57,7 @@ class Abstract_HTTP_Server_Encoder
 
     // Gets the state.
     HTTP_Encoder_State
-    http_encoder_state()
-      const noexcept
+    http_encoder_state() const noexcept
       { return this->m_state;  }
 
     // Puts the HTTP status line and headers.

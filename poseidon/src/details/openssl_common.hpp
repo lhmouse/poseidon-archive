@@ -13,16 +13,14 @@ namespace details_openssl_common {
 struct CTX_deleter
   {
     void
-    operator()(::SSL_CTX* ctx)
-      noexcept
+    operator()(::SSL_CTX* ctx) noexcept
       { ::SSL_CTX_free(ctx);  }
   };
 
 struct SSL_deleter
   {
     void
-    operator()(::SSL* ssl)
-      noexcept
+    operator()(::SSL* ssl) noexcept
       { ::SSL_free(ssl);  }
   };
 
@@ -31,8 +29,7 @@ using unique_SSL = uptr<::SSL, SSL_deleter>;
 
 // Prints all OpenSSL errors and clears the error queue.
 void
-log_openssl_errors()
-  noexcept;
+log_openssl_errors() noexcept;
 
 #define POSEIDON_SSL_THROW(...)   \
     (::poseidon::details_openssl_common::log_openssl_errors(),  \
