@@ -13,22 +13,20 @@ struct Implode
   {
     const char* const* psegs;
     size_t nsegs;
-
-    constexpr
-    Implode(const char* const* p, size_t n) noexcept
-      : psegs(p), nsegs(n)
-      { }
   };
+
+constexpr Implode
+do_implode(const char* const* p, size_t n) noexcept
+  { return { p, n };  }
 
 tinyfmt&
 operator<<(tinyfmt& fmt, const Implode& imp)
   {
-    if(imp.nsegs == 0)
-      return fmt;
-
-    fmt << imp.psegs[0];
-    for(size_t k = 1;  k < imp.nsegs;  ++k)
-      fmt << '.' << imp.psegs[k];
+    if(imp.nsegs != 0) {
+      fmt << imp.psegs[0];
+      for(size_t k = 1;  k < imp.nsegs;  ++k)
+        fmt << '.' << imp.psegs[k];
+    }
     return fmt;
   }
 
@@ -65,7 +63,7 @@ get_value(const char* const* psegs, size_t nsegs) const
         POSEIDON_LOG_DEBUG(
             "Undefined value `$2`\n"
             "[in configuration file '$1']",
-            this->m_abspath, Implode(psegs, nsegs));
+            this->m_abspath, do_implode(psegs, nsegs));
 
         return ::asteria::null_value;
       }
@@ -82,7 +80,7 @@ get_value(const char* const* psegs, size_t nsegs) const
         POSEIDON_THROW(
             "Unexpected type of `$2` (expecting `object`, got `$3`)\n"
             "[in configuration file '$1']",
-            this->m_abspath, Implode(psegs, nsegs),
+            this->m_abspath, do_implode(psegs, nsegs),
             ::asteria::describe_type(qchild->type()));
 
       qobj = &(qchild->as_object());
@@ -101,7 +99,7 @@ get_bool_opt(const char* const* psegs, size_t nsegs) const
       POSEIDON_THROW(
           "Unexpected type of `$2` (expecting `boolean`, got `$3`)\n"
           "[in configuration file '$1']",
-          this->m_abspath, Implode(psegs, nsegs),
+          this->m_abspath, do_implode(psegs, nsegs),
           ::asteria::describe_type(value.type()));
 
     return value.as_boolean();
@@ -119,7 +117,7 @@ get_int64_opt(const char* const* psegs, size_t nsegs) const
       POSEIDON_THROW(
           "Unexpected type of `$2` (expecting `integer`, got `$3`)\n"
           "[in configuration file '$1']",
-          this->m_abspath, Implode(psegs, nsegs),
+          this->m_abspath, do_implode(psegs, nsegs),
           ::asteria::describe_type(value.type()));
 
     return value.as_integer();
@@ -133,14 +131,14 @@ get_double_opt(const char* const* psegs, size_t nsegs) const
     if(value.is_null())
       return nullopt;
 
-    if(!value.is_convertible_to_real())
+    if(!value.is_real())
       POSEIDON_THROW(
           "Unexpected type of `$2` (expecting `number`, got `$3`)\n"
           "[in configuration file '$1']",
-          this->m_abspath, Implode(psegs, nsegs),
+          this->m_abspath, do_implode(psegs, nsegs),
           ::asteria::describe_type(value.type()));
 
-    return value.convert_to_real();
+    return value.as_real();
   }
 
 opt<cow_string>
@@ -155,7 +153,7 @@ get_string_opt(const char* const* psegs, size_t nsegs) const
       POSEIDON_THROW(
           "Unexpected type of `$2` (expecting `string`, got `$3`)\n"
           "[in configuration file '$1']",
-          this->m_abspath, Implode(psegs, nsegs),
+          this->m_abspath, do_implode(psegs, nsegs),
           ::asteria::describe_type(value.type()));
 
     return value.as_string();
@@ -173,7 +171,7 @@ get_array_opt(const char* const* psegs, size_t nsegs) const
       POSEIDON_THROW(
           "Unexpected type of `$2` (expecting `array`, got `$3`)\n"
           "[in configuration file '$1']",
-          this->m_abspath, Implode(psegs, nsegs),
+          this->m_abspath, do_implode(psegs, nsegs),
           ::asteria::describe_type(value.type()));
 
     return value.as_array();
@@ -191,7 +189,7 @@ get_object_opt(const char* const* psegs, size_t nsegs) const
       POSEIDON_THROW(
           "Unexpected type of `$2` (expecting `object`, got `$3`)\n"
           "[in configuration file '$1']",
-          this->m_abspath, Implode(psegs, nsegs),
+          this->m_abspath, do_implode(psegs, nsegs),
           ::asteria::describe_type(value.type()));
 
     return value.as_object();
