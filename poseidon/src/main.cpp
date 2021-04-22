@@ -18,6 +18,7 @@
 #include <dlfcn.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
+#include <sys/file.h>
 
 namespace {
 using namespace poseidon;
@@ -102,7 +103,8 @@ struct Command_Line_Options
 
 // They are declared here for convenience.
 Command_Line_Options cmdline;
-::rocket::unique_posix_fd daemon_wfd(::close);
+::rocket::unique_posix_fd daemon_pipe(::close);
+::rocket::unique_posix_fd pid_file(::close);
 
 // These are process exit status codes.
 enum Exit_Code : uint8_t
@@ -170,7 +172,8 @@ do_parse_command_line(int argc, char** argv)
 
         default:
           // `getopt()` will have written a message to standard error.
-          do_exit_printf(exit_invalid_argument, "Try `%s -h` for help.\n", argv[0]);
+          do_exit_printf(exit_invalid_argument,
+                 "Try `%s -h` for help.\n", argv[0]);
       }
     }
 
@@ -228,9 +231,10 @@ do_check_euid()
     if(::geteuid() == 0)
       POSEIDON_LOG_ERROR(
           "Please do not start this program as root.\n"
-          "If you insist, you may set `general.permit_root_startup` in `main.conf` "
-          "to `true` to bypass this check. Note that starting as root is considered "
-          "insecure. An unprivileged user should have been created for this service.\n"
+          "If you insist, you may set `general.permit_root_startup` in "
+          "`main.conf` to `true` to bypass this check. Note that starting "
+          "as root is considered insecure. An unprivileged user should have "
+          "been created for this service.\n"
           "You have been warned.");
   }
 
@@ -240,79 +244,99 @@ do_daemonize_fork()
     if(!cmdline.daemonize)
       return;
 
-    // If the child process has started up successfully, it should write a message
-    // through this pipe. If it is closed without any data received, the parent
-    // process shall assume there is an error and wait.
+    // If the child process has started up successfully, it should write a
+    // message through this pipe. If it is closed without any data received,
+    // the parent process shall assume there is an error and wait.
     int pipefds[2];
     if(::pipe(pipefds) != 0)
-      POSEIDON_THROW("Could not create pipe for child process\n"
+      POSEIDON_THROW("could not create pipe for child process\n"
                      "[`pipe()` failed: $1]",
                      format_errno(errno));
 
-    const ::rocket::unique_posix_fd rfd(pipefds[0], ::close);
-    daemon_wfd.reset(pipefds[1]);
+    ::rocket::unique_posix_fd rfd(pipefds[0], ::close);
+    daemon_pipe.reset(pipefds[1]);
 
+    // Create the child process now.
+    ::fflush(nullptr);
     ::pid_t child = ::fork();
     if(child < 0)
-      POSEIDON_THROW("Could not create child process\n"
+      POSEIDON_THROW("could not create child process\n"
                      "[`fork()` failed: $1]",
                      format_errno(errno));
 
-    // Return in the child process.
+    // If this is the child process, continue execution.
     if(child == 0)
       return;
 
-    // This is the parent process.
-    daemon_wfd.reset();
-    ::fflush(nullptr);
+    // Wait for the notification from the child process. Should one be
+    // received, the parent process shall exit. This may be interrupted
+    // so we need a loop.
+    char dummy[16];
+    int wstat;
 
-    // Wait for the notification from the child process.
-    ::ssize_t nread;
-    do {
-      char msg[64];
-      nread = ::read(rfd, msg, sizeof(msg));
-    }
-    while((nread < 0) && (errno == EINTR));
-
-    // If a response has been received, exit normally.
-    if(nread > 0)
-      ::_Exit(0);
+    for(;;)
+      if(::read(rfd, dummy, sizeof(dummy)) >= 0)
+        ::_Exit(0);
+      else if(errno != EINTR)
+        break;
 
     // Otherwise, wait for the child and forward its exit status.
-    // Note: `waitpid()` may return if the child has been stopped or continued.
-    do {
-      int wstat;
+    // Note `waitpid()` may also return if the child has been stopped
+    // or continued.
+    for(;;)
       if(::waitpid(child, &wstat, 0) == -1)
         ::_Exit(255);
-
-      if(WIFEXITED(wstat))
+      else if(WIFEXITED(wstat))
         ::_Exit(WEXITSTATUS(wstat));
-
-      if(WIFSIGNALED(wstat))
+      else if(WIFSIGNALED(wstat))
         ::_Exit(128 + WTERMSIG(wstat));
-    }
-    while(true);
   }
 
 ROCKET_NOINLINE void
 do_daemonize_finish()
   {
-    if(!daemon_wfd)
+    if(!daemon_pipe)
       return;
 
     // Notify my parent process. Errors are ignored.
-    ::ssize_t nwritten;
-    do {
-      static const char msg[] = "OK";
-      nwritten = ::write(daemon_wfd, msg, sizeof(msg));
-    }
-    while((nwritten < 0) && (errno == EINTR));
+    for(;;)
+      if(::write(daemon_pipe, "OK", 2) >= 0)
+        break;
+      else if(errno != EINTR)
+        break;
 
-    if(nwritten < 0)
-      POSEIDON_LOG_DEBUG("Failed to notify parent process: $1",
-                         format_errno(errno));
+    // The pipe can be closed now.
+    daemon_pipe.reset();
+  }
 
-    daemon_wfd.reset();
+ROCKET_NOINLINE void
+do_write_pid_file()
+  {
+    const auto file = Main_Config::copy();
+    const auto kpath = file.get_string_opt({"general","pid_file_path"});
+    if(!kpath || kpath->empty())
+      return;
+
+    // Create the lock file.
+    pid_file.reset(::creat(kpath->safe_c_str(), 0644));
+    if(!pid_file)
+      POSEIDON_THROW("could not create PID file '$2'\n"
+                     "[`open()` failed: $1]",
+                     format_errno(errno), kpath->c_str());
+
+    // Lock it in exclusive mode before overwriting.
+    if(::flock(pid_file, LOCK_EX | LOCK_NB) != 0)
+      POSEIDON_THROW("could not lock PID file '$2'\n"
+                     "(is another instance running?)\n"
+                     "[`flock()` failed: $1]",
+                     format_errno(errno), kpath->c_str());
+
+    // Write the PID of myself.
+    POSEIDON_LOG_DEBUG("Writing current process ID to '$1'", kpath->c_str());
+    ::dprintf(pid_file, "%d\n", static_cast<int>(::getpid()));
+
+    // Downgrade the lock so the PID may be read by other processes.
+    ::flock(pid_file, LOCK_SH);
   }
 
 ROCKET_NOINLINE void
@@ -321,27 +345,27 @@ do_check_ulimits()
     ::rlimit rlim;
     if((::getrlimit(RLIMIT_CORE, &rlim) == 0) && (rlim.rlim_cur <= 0))
       POSEIDON_LOG_WARN(
-          "Core dumps are disabled. We suggest you enable them in case of crashes.\n"
+          "Core dumps are disabled. We highly suggest you enable them in "
+          "case of crashes.\n"
           "See `/etc/security/limits.conf` for details.");
 
     if((::getrlimit(RLIMIT_NOFILE, &rlim) == 0) && (rlim.rlim_cur <= 10'000))
       POSEIDON_LOG_WARN(
-          "The limit of number of open files (which is `$1`) is too low. This might "
-          "result in denial of service when there are too many simultaneous network "
-          "connections. We suggest you set it to least 10,000 for production use.\n"
+          "The limit of number of open files (which is `$1`) is too low. "
+          "This might result in denial of service when there are too many "
+          "simultaneous network connections. We suggest you set it to least "
+          "10,000 for production use.\n"
           "See `/etc/security/limits.conf` for details.",
           rlim.rlim_cur);
   }
 
-ROCKET_NOINLINE void
+ROCKET_NOINLINE size_t
 do_load_addons()
   {
     const auto file = Main_Config::copy();
     const auto qaddons = file.get_array_opt({"general","addons"});
-    if(!qaddons || qaddons->empty()) {
-      POSEIDON_LOG_FATAL("There is no add-on to load. What's the job now?");
-      return;
-    }
+    if(!qaddons || qaddons->empty())
+      return 0;
 
     for(const auto& addon : *qaddons) {
       // Each add-on shall be a path to a shared library to load.
@@ -358,6 +382,7 @@ do_load_addons()
 
       POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
     }
+    return qaddons->size();
   }
 
 }  // namespace
@@ -389,7 +414,7 @@ main(int argc, char** argv)
     // Set name of the main thread. Failure to set the name is ignored.
     ::pthread_setname_np(::pthread_self(), "poseidon");
 
-    // Disable cancellation for safety. Failure to set the cancel state is ignored.
+    // Disable cancellation for safety. Failure to set the state is ignored.
     ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
 
     // Trap exit signals. Failure to set signal handlers is ignored.
@@ -409,11 +434,13 @@ main(int argc, char** argv)
     Timer_Driver::start();
     Network_Driver::start();
 
-    do_write_pid();
+    do_write_pid_file();
     do_check_ulimits();
-    do_load_addons();
 
     POSEIDON_LOG_INFO("Startup complete: $1 (PID $2)", PACKAGE_STRING, ::getpid());
+
+    if(do_load_addons() == 0)
+      POSEIDON_LOG_FATAL("No add-ons have been loaded. What's the job now?");
 
     // Schedule fibers until a termination signal is caught.
     do_daemonize_finish();
@@ -422,5 +449,5 @@ main(int argc, char** argv)
   catch(exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.
     do_exit_printf(exit_system_error,
-        "%s\n[exception class `%s`]\n", stdex.what(), typeid(stdex).name());
+          "%s\n[exception class `%s`]\n", stdex.what(), typeid(stdex).name());
   }
