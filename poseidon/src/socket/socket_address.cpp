@@ -195,7 +195,7 @@ parse(const char* host, uint16_t port)
       return *this;
     }
     else
-      POSEIDON_THROW("Unrecognized host format '$1'", host);
+      POSEIDON_THROW("unrecognized host format '$1'", host);
   }
 
 tinyfmt&

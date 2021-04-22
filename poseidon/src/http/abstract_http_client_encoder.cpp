@@ -215,7 +215,7 @@ http_encode_headers(HTTP_Method meth, const cow_string& target, HTTP_Version ver
         ::rocket::ascii_numget numg;
         const char* sp = qstr->data();
         if(!numg.parse_U(sp, sp + qstr->size(), 10))
-          POSEIDON_THROW("Invalid `Content-Length` value: $1", *qstr);
+          POSEIDON_THROW("invalid `Content-Length` value: $1", *qstr);
 
         if(!numg.cast_U(content_length, 0, INT64_MAX))
           POSEIDON_THROW("`Content-Length` value out of range: $1", *qstr);
@@ -373,10 +373,10 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
       // Data that followed an upgrade request might have been sent to the target host,
       // so we abandon the connection in this case.
       if(this->m_pipeline.size() > 1)
-        POSEIDON_THROW("No data shall follow an upgrade request");
+        POSEIDON_THROW("no data shall follow an upgrade request");
 
       if(this->m_state != http_encoder_state_upgrading)
-        POSEIDON_THROW("No data shall follow an upgrade request");
+        POSEIDON_THROW("no data shall follow an upgrade request");
 
       auto upgrade_str = headers.find_opt(sref("Upgrade"));
       if(!upgrade_str)
@@ -417,7 +417,7 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
         return true;
       }
       else
-        POSEIDON_THROW("Protocol `$1` not upgradable", *upgrade_str);
+        POSEIDON_THROW("protocol `$1` not upgradable", *upgrade_str);
     }
 
     // Other 1xx status codes are accepted and ignored.
@@ -435,10 +435,10 @@ http_on_response_headers(HTTP_Status stat, const Option_Map& headers)
         // Data that followed a CONNECT request might have been sent to the target host,
         // so we abandon the connection in this case.
         if(this->m_pipeline.size() > 0)
-          POSEIDON_THROW("No data shall follow a CONNECT request");
+          POSEIDON_THROW("no data shall follow a CONNECT request");
 
         if(this->m_state != http_encoder_state_upgrading)
-          POSEIDON_THROW("No data shall follow a CONNECT request");
+          POSEIDON_THROW("no data shall follow a CONNECT request");
 
         if((stat < 200) || (299 < stat))
           POSEIDON_THROW("HTTP CONNECT failure (stat $1 received)", stat);
@@ -492,7 +492,7 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
       POSEIDON_THROW("HTTP client encoder state error (expecting 'websocket')");
 
     if(opcode == websocket_opcode_continuation)
-      POSEIDON_THROW("WebSocket continuation frames cannot be sent explicitly");
+      POSEIDON_THROW("webSocket continuation frames cannot be sent explicitly");
 
     if(opcode == websocket_opcode_close) {
       // Send a default status code of 1000 and shut down the connection.

@@ -276,7 +276,7 @@ http_encode_headers(HTTP_Version ver, HTTP_Status stat, Option_Map&& headers,
         return this->m_good;
       }
       else
-        POSEIDON_THROW("Protocol `$1` not upgradable", *upgrade_str);
+        POSEIDON_THROW("protocol `$1` not upgradable", *upgrade_str);
     }
 
     // Rewrite default headers when the connection should be closed.
@@ -383,7 +383,7 @@ http_encode_websocket_frame(WebSocket_Opcode opcode, const char* data, size_t si
       POSEIDON_THROW("HTTP server encoder state error (expecting 'websocket')");
 
     if(opcode == websocket_opcode_continuation)
-      POSEIDON_THROW("WebSocket continuation frames cannot be sent explicitly");
+      POSEIDON_THROW("webSocket continuation frames cannot be sent explicitly");
 
     if(opcode == websocket_opcode_close) {
       // Send a default status code of 1000 and shut down the connection.

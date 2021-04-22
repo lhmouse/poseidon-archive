@@ -76,7 +76,7 @@ do_xdigit_value(char ch)
     if(('a' <= uch) && (uch <= 'f'))
       return uch - 'a' + 10;
 
-    POSEIDON_THROW("Invalid hexadecimal digit after `%`: $1", ch);
+    POSEIDON_THROW("invalid hexadecimal digit after `%`: $1", ch);
   }
 
 cow_string&
@@ -111,7 +111,7 @@ set_scheme(const cow_string& val)
       // The first character must be an alphabetic character.
       //   scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
       if(!do_is_url_ctype(val[0], url_ctype_alpha))
-        POSEIDON_THROW("Invalid URL scheme: $1", val);
+        POSEIDON_THROW("invalid URL scheme: $1", val);
 
       for(size_t k = 0;  k < val.size();  ++k) {
         // Convert alphabetic characters into lowercase.
@@ -128,7 +128,7 @@ set_scheme(const cow_string& val)
           continue;
 
         // Reject invalid characters.
-        POSEIDON_THROW("Invalid URL scheme: $1", val);
+        POSEIDON_THROW("invalid URL scheme: $1", val);
       }
     }
 
@@ -154,10 +154,10 @@ set_host(const cow_string& val)
     if(val[0] == '[') {
       // Validate the IP address.
       if(val.back() != ']')
-        POSEIDON_THROW("Missing ']' after IP address: $1", val);
+        POSEIDON_THROW("missing ']' after IP address: $1", val);
 
       if(val.size() == 2)
-        POSEIDON_THROW("Empty IP address: $1", val);
+        POSEIDON_THROW("empty IP address: $1", val);
 
       for(size_t k = 1;  k < val.size() - 1;  ++k) {
         // Hexadecimal characters are copied verbatim.
@@ -169,7 +169,7 @@ set_host(const cow_string& val)
           continue;
 
         // Reject invalid characters.
-        POSEIDON_THROW("Invalid character in IP address: $1", val);
+        POSEIDON_THROW("invalid character in IP address: $1", val);
       }
     }
 
@@ -233,7 +233,7 @@ set_raw_query(const cow_string& val)
         continue;
 
       // Reject invalid characters.
-      POSEIDON_THROW("Invalid character in query string: $1", val);
+      POSEIDON_THROW("invalid character in query string: $1", val);
     }
 
     // Set the new query string.
@@ -255,7 +255,7 @@ set_raw_fragment(const cow_string& val)
         continue;
 
       // Reject invalid characters.
-      POSEIDON_THROW("Invalid character in fragment string: $1", val);
+      POSEIDON_THROW("invalid character in fragment string: $1", val);
     }
 
     // Set the new fragment string.
@@ -395,10 +395,10 @@ parse(const cow_string& str)
                                 (ch != ':');  });
 
       if(*mptr != ']')
-        POSEIDON_THROW("Missing ']' after IP address: $1", str);
+        POSEIDON_THROW("missing ']' after IP address: $1", str);
 
       if(mptr - bptr == 1)
-        POSEIDON_THROW("Empty IP address: $1", str);
+        POSEIDON_THROW("empty IP address: $1", str);
 
       mptr += 1;
     }
@@ -419,18 +419,18 @@ parse(const cow_string& str)
             [&](char ch) { return !do_is_url_ctype(ch, url_ctype_digit);  });
 
         if(mptr - bptr == 1)
-          POSEIDON_THROW("Missing port number after `:`: $1", str);
+          POSEIDON_THROW("missing port number after `:`: $1", str);
 
         ::rocket::ascii_numget numg;
         if(!numg.parse_U(++bptr, mptr, 10))
-          POSEIDON_THROW("Invalid port number: $1", str);
+          POSEIDON_THROW("invalid port number: $1", str);
 
         if(bptr != mptr)
-          POSEIDON_THROW("Port number out of range: $1", str);
+          POSEIDON_THROW("port number out of range: $1", str);
 
         uint64_t val;
         if(!numg.cast_U(val, 0, 65535))
-          POSEIDON_THROW("Port number out of range: $1", str);
+          POSEIDON_THROW("port number out of range: $1", str);
 
         this->m_port = static_cast<uint16_t>(val);
       }
@@ -472,7 +472,7 @@ parse(const cow_string& str)
 
     // All characters shall have been consumed so far.
     if(bptr != eptr)
-      POSEIDON_THROW("Invalid URL string: $1", str);
+      POSEIDON_THROW("invalid URL string: $1", str);
 
     return *this;
   }

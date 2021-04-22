@@ -61,7 +61,7 @@ get_local_address() const
         Socket_Address::storage addrst;
         ::socklen_t addrlen = sizeof(addrst);
         if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
-          POSEIDON_THROW("Could not get local socket address\n"
+          POSEIDON_THROW("could not get local socket address\n"
                          "[`getsockname()` failed: $1]",
                          format_errno(errno));
 

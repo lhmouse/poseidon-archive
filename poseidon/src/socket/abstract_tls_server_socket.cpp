@@ -16,18 +16,18 @@ do_load_cert_and_pkey(::SSL_CTX* ctx, const char* cert, const char* pkey)
   {
     POSEIDON_LOG_INFO("Loading SSL certificate '$1'...", cert);
     if(::SSL_CTX_use_certificate_chain_file(ctx, cert) != 1)
-      POSEIDON_SSL_THROW("Could not load certificate '$1'\n"
+      POSEIDON_SSL_THROW("could not load certificate '$1'\n"
                          "[`SSL_CTX_use_certificate_chain_file()` failed]",
                          cert);
 
     POSEIDON_LOG_INFO("Loading SSL private key '$1'...", pkey);
     if(::SSL_CTX_use_PrivateKey_file(ctx, pkey, SSL_FILETYPE_PEM) != 1)
-      POSEIDON_SSL_THROW("Could not load private key '$1'\n"
+      POSEIDON_SSL_THROW("could not load private key '$1'\n"
                          "[`SSL_CTX_use_PrivateKey_file()` failed]",
                          pkey);
 
     if(::SSL_CTX_check_private_key(ctx) != 1)
-      POSEIDON_SSL_THROW("SSL key/certificate pair check failure\n"
+      POSEIDON_SSL_THROW("sSL key/certificate pair check failure\n"
                          "[`SSL_CTX_check_private_key()` failed]",
                          cert, pkey);
 
@@ -63,10 +63,10 @@ Abstract_TLS_Server_Socket(const Socket_Address& addr,
   {
     // Load the user-specified key/certificate pair.
     if(!cert)
-      POSEIDON_THROW("TLS server requires a certificate");
+      POSEIDON_THROW("tLS server requires a certificate");
 
     if(!pkey)
-      POSEIDON_THROW("TLS server requires a private key");
+      POSEIDON_THROW("tLS server requires a private key");
 
     do_load_cert_and_pkey(this->open_ssl_ctx(), cert, pkey);
     this->do_socket_listen(addr);

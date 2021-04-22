@@ -166,14 +166,14 @@ do_socket_connect(const Socket_Address& addr)
     // Lock the stream and examine connection state.
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate != connection_state_empty)
-      POSEIDON_THROW("Another connection already in progress or established");
+      POSEIDON_THROW("another connection already in progress or established");
 
     // No matter whether `::connect()` succeeds or fails with `EINPROGRESS`,
     // the current socket is set to the CONNECTING state.
     if(::connect(this->get_fd(), addr.data(), addr.ssize()) != 0) {
       int err = errno;
       if(err != EINPROGRESS)
-        POSEIDON_THROW("Failed to initiate connection to '$2'\n"
+        POSEIDON_THROW("failed to initiate connection to '$2'\n"
                        "[`connect()` failed: $1]",
                        format_errno(err), addr);
     }
@@ -207,7 +207,7 @@ get_remote_address() const
         Socket_Address::storage addrst;
         ::socklen_t addrlen = sizeof(addrst);
         if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
-          POSEIDON_THROW("Could not get remote socket address\n"
+          POSEIDON_THROW("could not get remote socket address\n"
                          "[`getsockname()` failed: $1]",
                          format_errno(errno));
 

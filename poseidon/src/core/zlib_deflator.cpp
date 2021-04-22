@@ -39,7 +39,7 @@ zlib_Deflator(Format fmt, int level)
         break;
 
       default:
-        POSEIDON_THROW("Invalid zlib deflator format: $1", fmt);
+        POSEIDON_THROW("invalid zlib deflator format: $1", fmt);
     }
 
     // Construct the stream now.

@@ -38,7 +38,7 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /
       Socket_Address addr(addrst, addrlen);
       auto sock = this->do_socket_on_accept(::std::move(fd), addr);
       if(!sock)
-        POSEIDON_THROW("Null pointer returned from `do_socket_on_accept()`\n"
+        POSEIDON_THROW("null pointer returned from `do_socket_on_accept()`\n"
                        "[listen socket class `$1`]",
                        typeid(*this));
 
@@ -94,19 +94,19 @@ do_socket_listen(const Socket_Address& addr, uint32_t backlog)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
     if(this->m_cstate != connection_state_empty)
-      POSEIDON_THROW("Socket state error (fresh socket expected)");
+      POSEIDON_THROW("socket state error (fresh socket expected)");
 
     static constexpr int yes[] = { -1 };
     int res = ::setsockopt(this->get_fd(), SOL_SOCKET, SO_REUSEADDR, yes, sizeof(yes));
     ROCKET_ASSERT(res == 0);
 
     if(::bind(this->get_fd(), addr.data(), addr.ssize()) != 0)
-      POSEIDON_THROW("Failed to bind accept socket onto '$2'\n"
+      POSEIDON_THROW("failed to bind accept socket onto '$2'\n"
                      "[`bind()` failed: $1]",
                      format_errno(errno), addr);
 
     if(::listen(this->get_fd(), clamp_cast<int>(backlog, 1, SOMAXCONN)) != 0)
-      POSEIDON_THROW("Failed to set up listen socket on '$2'\n"
+      POSEIDON_THROW("failed to set up listen socket on '$2'\n"
                      "[`listen()` failed: $1]",
                      format_errno(errno), this->get_local_address());
 

@@ -170,8 +170,7 @@ do_parse_command_line(int argc, char** argv)
 
         default:
           // `getopt()` will have written a message to standard error.
-          do_exit_printf(exit_invalid_argument,
-              "Try `%s -h` for help.\n", argv[0]);
+          do_exit_printf(exit_invalid_argument, "Try `%s -h` for help.\n", argv[0]);
       }
     }
 
@@ -213,7 +212,7 @@ do_set_working_directory()
       return;
 
     if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
-      POSEIDON_THROW("Could not set working directory to '$2'\n"
+      POSEIDON_THROW("could not set working directory to '$2'\n"
                      "[`chdir()` failed: $1]",
                      format_errno(errno), cmdline.cd_here);
   }
@@ -353,7 +352,7 @@ do_load_addons()
       POSEIDON_LOG_INFO("Loading add-on: $1", path);
 
       if(!::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE))
-        POSEIDON_THROW("Error loading add-on '$1'\n"
+        POSEIDON_THROW("error loading add-on '$1'\n"
                        "[`dlopen()` failed: $2]",
                        path, ::dlerror());
 

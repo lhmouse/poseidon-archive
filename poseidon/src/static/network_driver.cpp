@@ -124,14 +124,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             // Create an epoll object.
             unique_FD epoll_fd(::epoll_create(100));
             if(!epoll_fd)
-              POSEIDON_THROW("Could not create epoll object\n"
+              POSEIDON_THROW("could not create epoll object\n"
                              "[`epoll_create()` failed: $1]",
                              format_errno(errno));
 
             // Create the notification eventfd and add it into epoll.
             unique_FD event_fd(::eventfd(0, EFD_NONBLOCK));
             if(!event_fd)
-              POSEIDON_THROW("Could not create eventfd object\n"
+              POSEIDON_THROW("could not create eventfd object\n"
                              "[`eventfd()` failed: $1]",
                              format_errno(errno));
 
@@ -139,7 +139,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             event.data.u64 = self->make_epoll_data(poll_index_event, 0);
             event.events = EPOLLIN | EPOLLET;
             if(::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &event) != 0)
-              POSEIDON_THROW("Failed to add socket into epoll\n"
+              POSEIDON_THROW("failed to add socket into epoll\n"
                              "[`epoll_ctl()` failed: $1]",
                              format_errno(errno));
 
@@ -556,10 +556,10 @@ insert(uptr<Abstract_Socket>&& usock)
     // Take ownership of `usock`.
     rcptr<Abstract_Socket> sock(usock.release());
     if(!sock)
-      POSEIDON_THROW("Null socket pointer not valid");
+      POSEIDON_THROW("null socket pointer not valid");
 
     if(!sock.unique())
-      POSEIDON_THROW("Socket pointer must be unique");
+      POSEIDON_THROW("socket pointer must be unique");
 
     // Lock epoll for modification.
     simple_mutex::unique_lock lock(self->m_poll_mutex);
@@ -567,7 +567,7 @@ insert(uptr<Abstract_Socket>&& usock)
     // Initialize the hint value for lookups.
     size_t index = self->m_poll_elems.size();
     if(index > poll_index_max)
-      POSEIDON_THROW("Too many simultaneous connections");
+      POSEIDON_THROW("too many simultaneous connections");
 
     // Make sure later `emplace_back()` will not throw an exception.
     self->m_poll_elems.reserve(index + 1);
@@ -577,7 +577,7 @@ insert(uptr<Abstract_Socket>&& usock)
     event.data.u64 = self->make_epoll_data(index, self->m_poll_serial++);
     event.events = EPOLLIN | EPOLLOUT | EPOLLET;
     if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_ADD, sock->get_fd(), &event) != 0)
-      POSEIDON_THROW("Failed to add socket into epoll\n"
+      POSEIDON_THROW("failed to add socket into epoll\n"
                      "[`epoll_ctl()` failed: $1]",
                      format_errno(errno));
 

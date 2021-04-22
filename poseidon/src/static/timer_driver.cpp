@@ -183,10 +183,10 @@ insert(uptr<Abstract_Timer>&& utimer)
     // Take ownership of `utimer`.
     rcptr<Abstract_Timer> timer(utimer.release());
     if(!timer)
-      POSEIDON_THROW("Null timer pointer not valid");
+      POSEIDON_THROW("null timer pointer not valid");
 
     if(!timer.unique())
-      POSEIDON_THROW("Timer pointer must be unique");
+      POSEIDON_THROW("timer pointer must be unique");
 
     // Perform some initialization. No locking is needed here.
     timer->m_count.store(0);

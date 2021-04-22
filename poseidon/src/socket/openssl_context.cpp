@@ -48,7 +48,7 @@ OpenSSL_Context()
   {
     this->m_ctx.reset(::SSL_CTX_new(::TLS_method()));
     if(!this->m_ctx)
-      POSEIDON_SSL_THROW("Could not create SSL context\n"
+      POSEIDON_SSL_THROW("could not create SSL context\n"
                          "[`SSL_CTX_new()` failed]");
 
     // Set CA path.
@@ -59,7 +59,7 @@ OpenSSL_Context()
     if(qstr) {
       POSEIDON_LOG_INFO("Setting SSL CA certificate path to '$1'...", *qstr);
       if(::SSL_CTX_load_verify_locations(this->m_ctx, nullptr, qstr->safe_c_str()) != 1)
-        POSEIDON_SSL_THROW("Could not set CA certificate path to '$1'\n"
+        POSEIDON_SSL_THROW("could not set CA certificate path to '$1'\n"
                            "[`SSL_CTX_set_default_verify_paths()` failed]",
                            *qstr);
     }
@@ -75,7 +75,7 @@ OpenSSL_Context()
     static constexpr uint8_t s_sid_ctx[s_sid_len] = { PACKAGE_NAME __DATE__ __TIME__ };
 
     if(::SSL_CTX_set_session_id_context(this->m_ctx, s_sid_ctx, s_sid_len) != 1)
-      POSEIDON_SSL_THROW("Could not set SSL session id context\n"
+      POSEIDON_SSL_THROW("could not set SSL session id context\n"
                          "[`SSL_CTX_set_session_id_context()` failed]");
   }
 

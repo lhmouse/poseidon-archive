@@ -30,7 +30,7 @@ zlib_Inflator(Format fmt)
         break;
 
       default:
-        POSEIDON_THROW("Invalid zlib inflator format: $1", fmt);
+        POSEIDON_THROW("invalid zlib inflator format: $1", fmt);
     }
 
     // Construct the stream now.

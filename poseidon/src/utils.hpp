@@ -120,7 +120,7 @@ create_daemon_thread(const char* name, void* param = nullptr)
     int err = ::pthread_create(&thr, nullptr,
                        details_utils::daemon_thread_proc<loopfnT>, param);
     if(err != 0)
-      POSEIDON_THROW("Could not create thread '$2'\n"
+      POSEIDON_THROW("could not create thread '$2'\n"
                     "[`pthread_create()` failed: $1]",
                     format_errno(err), name);
 

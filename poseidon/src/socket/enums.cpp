@@ -22,7 +22,7 @@ get_io_result_from_errno(const char* func, int syserr)
         return io_result_partial_work;
 
       default:
-        POSEIDON_THROW("I/O syscall error\n[`$1()` failed: $2]",
+        POSEIDON_THROW("i/O syscall error\n[`$1()` failed: $2]",
                        func, format_errno(syserr));
     }
   }

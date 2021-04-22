@@ -142,15 +142,15 @@ insert(uptr<Abstract_Async_Job>&& ujob)
     // Take ownership of `ujob`.
     rcptr<Abstract_Async_Job> job(ujob.release());
     if(!job)
-      POSEIDON_THROW("Null job pointer not valid");
+      POSEIDON_THROW("null job pointer not valid");
 
     if(!job.unique())
-      POSEIDON_THROW("Job pointer must be unique");
+      POSEIDON_THROW("job pointer must be unique");
 
     // Assign the job to a worker.
     size_t nworkers = self->m_workers.size();
     if(nworkers == 0)
-      POSEIDON_THROW("No worker available");
+      POSEIDON_THROW("no worker available");
 
     auto qworker = ::rocket::get_probing_origin(self->m_workers.data(),
                            self->m_workers.data() + nworkers, job->m_key);

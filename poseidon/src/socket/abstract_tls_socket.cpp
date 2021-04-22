@@ -29,7 +29,7 @@ do_translate_ssl_error(const char* func, const ::SSL* ssl, int ret)
         return get_io_result_from_errno(func, err);
 
       default:
-        POSEIDON_SSL_THROW("OpenSSL I/O error\n[`$1()` returned `$2`]",
+        POSEIDON_SSL_THROW("openSSL I/O error\n[`$1()` returned `$2`]",
                            func, ret);
     }
   }

@@ -52,7 +52,7 @@ get_value(const char* const* psegs, size_t nsegs) const
     auto qobj = &(this->m_root);
     size_t icur = 0;
     if(icur == nsegs)
-      POSEIDON_THROW("Empty path not valid");
+      POSEIDON_THROW("empty path not valid");
 
     for(;;) {
       // Find the child denoted by `*sptr`.

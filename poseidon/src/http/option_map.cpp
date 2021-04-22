@@ -124,7 +124,7 @@ do_decode_query(cow_string& str, const char* bptr, const char* eptr)
       for(uint32_t k = 0;  k != 2;  ++k) {
         auto dp = static_cast<const char*>(::std::memchr(s_xdigits, *(bp++), 32));
         if(!dp)
-          POSEIDON_THROW("Invalid hexadecimal digit: $1", bp[-1]);
+          POSEIDON_THROW("invalid hexadecimal digit: $1", bp[-1]);
 
         val = val << 4 | static_cast<uint32_t>(dp - s_xdigits) >> 1;
       }
@@ -334,7 +334,7 @@ parse_url_query(const cow_string& str)
     if(::rocket::any_of(str,
              [&](char ch) { return ::rocket::is_any_of(ch, {' ', '\t'}) ||
                                    do_is_opt_ctype(ch, opt_ctype_control);  }))
-      POSEIDON_THROW("Invalid character in URL query string: $1", str);
+      POSEIDON_THROW("invalid character in URL query string: $1", str);
 
     // Why pointers? Why not iterators?
     // We assume that the string is terminated by a null character, which
@@ -387,7 +387,7 @@ print_http_header(tinyfmt& fmt) const
       // All non-options must not contain control characters.
       if(::rocket::any_of(*(r.first),
                  [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  }))
-        POSEIDON_THROW("Invalid character in HTTP header: $1", *(r.first));
+        POSEIDON_THROW("invalid character in HTTP header: $1", *(r.first));
 
       // Write the non-option string unquoted.
       fmt << *(r.first);
@@ -401,13 +401,13 @@ print_http_header(tinyfmt& fmt) const
       // The key must be a valid token.
       if(::rocket::any_of(bkt.key(),
                  [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_http_tchar);  }))
-        POSEIDON_THROW("Invalid HTTP header token: $1", bkt.key());
+        POSEIDON_THROW("invalid HTTP header token: $1", bkt.key());
 
       for(auto r = bkt.range();  r.first != r.second;  r.first++) {
         // The value must contain no control characters other than TAB.
         if(::rocket::any_of(*(r.first),
                  [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  }))
-          POSEIDON_THROW("Invalid HTTP header value: $1", *(r.first));
+          POSEIDON_THROW("invalid HTTP header value: $1", *(r.first));
 
         // Separate fields with semicolons.
         if(++count)
@@ -467,7 +467,7 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
     // Ensure the string doesn't contain control characters.
     if(::rocket::any_of(str,
               [&](char ch) { return do_is_opt_ctype(ch, opt_ctype_control);  }))
-      POSEIDON_THROW("Invalid character in HTTP header: $1", str);
+      POSEIDON_THROW("invalid character in HTTP header: $1", str);
 
     // Why pointers? Why not iterators?
     // We assume that the string is terminated by a null character, which simplifies
@@ -518,7 +518,7 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
         mp = ::std::find_if(bp, ep,
               [&](char ch) { return !do_is_opt_ctype(ch, opt_ctype_http_tchar);  });
         if(mp == bp)
-          POSEIDON_THROW("Invalid HTTP header (token expected): $1", str);
+          POSEIDON_THROW("invalid HTTP header (token expected): $1", str);
 
         key.append(bp, mp);
         bp = mp;
@@ -536,7 +536,7 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
 
         // Otherwise, an equals sign shall follow.
         if(*bp != '=')
-          POSEIDON_THROW("Invalid HTTP header (`=` expected): $1", str);
+          POSEIDON_THROW("invalid HTTP header (`=` expected): $1", str);
 
         // Skip trailing blank characters.
         bp = ::std::find_if(++bp, ep,
@@ -556,14 +556,14 @@ parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts)
           bp = mp;
 
           if(bp == ep)
-            POSEIDON_THROW("Invalid HTTP header (missing `\"`): $1", str);
+            POSEIDON_THROW("invalid HTTP header (missing `\"`): $1", str);
 
           if(*bp == '\"')
             break;
 
           // Unescape this character.
           if(++bp == ep)
-            POSEIDON_THROW("Invalid HTTP header (dangling `\\` at the end): $1", str);
+            POSEIDON_THROW("invalid HTTP header (dangling `\\` at the end): $1", str);
           val.push_back(*(bp++));
         }
         ++bp;
