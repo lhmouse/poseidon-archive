@@ -409,6 +409,7 @@ main(int argc, char** argv)
     Timer_Driver::start();
     Network_Driver::start();
 
+    do_write_pid();
     do_check_ulimits();
     do_load_addons();
 
