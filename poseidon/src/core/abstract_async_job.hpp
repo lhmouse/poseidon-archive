@@ -48,8 +48,7 @@ class Abstract_Async_Job
       { return this->m_resident.exchange(value);  }
 
     // Gets the asynchrnous state, which is set by worker threads.
-    ROCKET_PURE_FUNCTION
-    Async_State
+    ROCKET_PURE_FUNCTION Async_State
     state() const noexcept
       { return this->m_state.load();  }
   };

@@ -89,8 +89,7 @@ class Socket_Address
       }
 
     // Classifies this address.
-    ROCKET_PURE_FUNCTION
-    Socket_Address_Class
+    ROCKET_PURE_FUNCTION Socket_Address_Class
     classify() const noexcept;
 
     bool

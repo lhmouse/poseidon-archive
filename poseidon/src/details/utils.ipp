@@ -166,8 +166,7 @@ Async<FuncT>::
   = default;
 
 template<typename AsyncT>
-inline
-futp<typename AsyncT::result_type>
+inline futp<typename AsyncT::result_type>
 promise(uptr<AsyncT>&& async)
   {
     auto futr = async->future();

@@ -57,8 +57,7 @@ class Promise
         return true;
       }
 
-    [[noreturn]]
-    void
+    [[noreturn]] void
     do_throw_no_future() const
       {
         ::rocket::sprintf_and_throw<::std::invalid_argument>(

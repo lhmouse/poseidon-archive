@@ -33,8 +33,7 @@ class zlib_Stream_Common
     do_update_output_buffer() noexcept;
 
   protected:
-    [[noreturn]]
-    void
+    [[noreturn]] void
     do_zlib_throw_error(const char* func, int err) const;
 
     // These are callback functions.

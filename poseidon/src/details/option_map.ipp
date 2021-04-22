@@ -116,8 +116,7 @@ class Bucket
         return { ptr, ptr + arr.size() };
       }
 
-    ROCKET_PURE_FUNCTION
-    size_t
+    ROCKET_PURE_FUNCTION size_t
     count() const noexcept
       {
         if(this->m_val.index() == 0)  // nothing

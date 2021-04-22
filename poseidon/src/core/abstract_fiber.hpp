@@ -71,8 +71,7 @@ class Abstract_Fiber
       { return this->m_resident.exchange(value);  }
 
     // Gets the fiber state, which is set by the scheduler.
-    ROCKET_PURE_FUNCTION
-    Async_State
+    ROCKET_PURE_FUNCTION Async_State
     state() const noexcept
       { return this->m_state.load();  }
   };

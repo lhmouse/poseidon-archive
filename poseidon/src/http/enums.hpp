@@ -18,8 +18,7 @@ enum HTTP_Version : uint16_t
   };
 
 // Converts an HTTP version to a string such as `HTTP/1.1`.
-ROCKET_CONST_FUNCTION
-const char*
+ROCKET_CONST_FUNCTION const char*
 format_http_version(HTTP_Version ver) noexcept;
 
 // Parses a version number from plain text.
@@ -44,8 +43,7 @@ enum HTTP_Method : uint8_t
 
 // Converts an HTTP method to a string such as `GET`.
 // If the method is invalid, the invalid string `NULL` is returned.
-ROCKET_CONST_FUNCTION
-const char*
+ROCKET_CONST_FUNCTION const char*
 format_http_method(HTTP_Method method) noexcept;
 
 // Parses a method from plain text.
@@ -122,8 +120,7 @@ enum HTTP_Status : uint16_t
 
 // Converts an HTTP status code to a string such as `Bad Request`.
 // If the status code is unknown, `Unknown Status` is returned.
-ROCKET_CONST_FUNCTION
-const char*
+ROCKET_CONST_FUNCTION const char*
 describe_http_status(HTTP_Status stat) noexcept;
 
 // These are internal states of HTTP and WebSocket encoders.
