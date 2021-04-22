@@ -124,8 +124,7 @@ class Config_File
       { return this->get_object_opt(path.begin(), path.size());  }
   };
 
-inline
-void
+inline void
 swap(Config_File& lhs, Config_File& rhs) noexcept
   { lhs.swap(rhs);  }
 

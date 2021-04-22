@@ -27,8 +27,7 @@ class Option_Map
       = default;
 
   private:
-    ROCKET_PURE_FUNCTION
-    pair<const cow_string*, const cow_string*>
+    ROCKET_PURE_FUNCTION pair<const cow_string*, const cow_string*>
     do_range_hint(cow_string::shallow_type key, size_t hval) const noexcept;
 
     pair<cow_string*, cow_string*>
@@ -250,13 +249,11 @@ class Option_Map
     parse_http_header(size_t* comma_opt, const cow_string& str, size_t nonopts);
   };
 
-inline
-void
+inline void
 swap(Option_Map& lhs, Option_Map& rhs) noexcept
   { lhs.swap(rhs);  }
 
-inline
-tinyfmt&
+inline tinyfmt&
 operator<<(tinyfmt& fmt, const Option_Map& map)
   { return map.print(fmt);  }
 

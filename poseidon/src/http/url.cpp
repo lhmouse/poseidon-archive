@@ -45,13 +45,11 @@ constexpr uint8_t s_url_ctype_table[128] =
     0x39, 0x39, 0x39, 0x00, 0x00, 0x00, 0x38, 0x00,
   };
 
-constexpr
-uint8_t
+constexpr uint8_t
 do_get_url_ctype(char c) noexcept
   { return (uint8_t(c) < 128) ? s_url_ctype_table[uint8_t(c)] : 0;  }
 
-constexpr
-bool
+constexpr bool
 do_is_url_ctype(char c, uint8_t mask) noexcept
   { return do_get_url_ctype(c) & mask;  }
 
@@ -67,8 +65,7 @@ do_percent_encode(tinyfmt& fmt, char ch)
     return fmt.putn(str, 3);
   }
 
-inline
-uint32_t
+inline uint32_t
 do_xdigit_value(char ch)
   {
     uint32_t uch = static_cast<uint8_t>(ch);

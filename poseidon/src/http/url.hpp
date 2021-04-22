@@ -194,13 +194,11 @@ class URL
     parse(const cow_string& str);
   };
 
-inline
-void
+inline void
 swap(URL& lhs, URL& rhs) noexcept
   { lhs.swap(rhs);  }
 
-inline
-tinyfmt&
+inline tinyfmt&
 operator<<(tinyfmt& fmt, const URL& url)
   { return url.print(fmt);  }
 

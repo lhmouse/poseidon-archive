@@ -8,8 +8,7 @@
 namespace poseidon {
 namespace {
 
-constexpr
-bool
+constexpr bool
 do_str_eq(const char* bptr, const char* eptr, const char* comp) noexcept
   {
     size_t clen = ::std::strlen(comp);

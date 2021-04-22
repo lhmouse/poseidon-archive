@@ -9,8 +9,7 @@ namespace poseidon {
 namespace details_utils {
 
 template<typename... ParamsT>
-ROCKET_NOINLINE inline
-void
+ROCKET_NOINLINE static void
 format_log(Log_Level level, const char* file, long line, const char* func,
            const char* templ, const ParamsT&... params) noexcept
   try {
@@ -32,8 +31,7 @@ format_log(Log_Level level, const char* file, long line, const char* func,
   }
 
 template<typename... ParamsT>
-[[noreturn]] ROCKET_NOINLINE inline
-void
+[[noreturn]] ROCKET_NOINLINE static void
 format_throw(const char* file, long line, const char* func,
              const char* templ, const ParamsT&... params)
   {
@@ -56,8 +54,7 @@ format_throw(const char* file, long line, const char* func,
   }
 
 template<void loopfnT(void*)>
-[[noreturn]] ROCKET_NOINLINE inline
-void*
+[[noreturn]] ROCKET_NOINLINE static void*
 daemon_thread_proc(void* param)
   {
     // Disable cancellation for safety.

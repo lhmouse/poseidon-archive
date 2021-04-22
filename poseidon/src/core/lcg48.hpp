@@ -60,8 +60,7 @@ class LCG48
       }
   };
 
-inline
-void
+inline void
 swap(LCG48& lhs, LCG48& rhs) noexcept
   { lhs.swap(rhs);  }
 

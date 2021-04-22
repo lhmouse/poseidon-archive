@@ -9,8 +9,7 @@
 namespace poseidon {
 namespace {
 
-inline
-int64_t&
+inline int64_t&
 do_shift_time(int64_t& value, int64_t shift)
   {
     // `value` must be non-negative. `shift` may be any value.

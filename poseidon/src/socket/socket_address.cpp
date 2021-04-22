@@ -9,8 +9,7 @@
 namespace poseidon {
 namespace {
 
-inline
-::std::bitset<32>
+inline ::std::bitset<32>
 do_cast_ipv4(const ::in_addr& in4) noexcept
   {
     ::std::bitset<32> bits;
@@ -18,8 +17,7 @@ do_cast_ipv4(const ::in_addr& in4) noexcept
     return bits;
   }
 
-inline
-::std::bitset<32>
+inline ::std::bitset<32>
 do_make_ipv4(const array<uint8_t, 4>& segs) noexcept
   {
     ::std::bitset<32> bits;
@@ -28,8 +26,7 @@ do_make_ipv4(const array<uint8_t, 4>& segs) noexcept
     return bits;
   }
 
-inline
-::std::bitset<128>
+inline ::std::bitset<128>
 do_cast_ipv6(const ::in6_addr& in6) noexcept
   {
     ::std::bitset<128> bits;
@@ -38,8 +35,7 @@ do_cast_ipv6(const ::in6_addr& in6) noexcept
     return bits;
   }
 
-inline
-::std::bitset<128>
+inline ::std::bitset<128>
 do_make_ipv6(const array<uint16_t, 8>& segs) noexcept
   {
     ::std::bitset<128> bits;
@@ -49,8 +45,7 @@ do_make_ipv6(const array<uint16_t, 8>& segs) noexcept
   }
 
 template<size_t N>
-constexpr
-bool
+constexpr bool
 do_match(const ::std::bitset<N>& addr, const ::std::bitset<N>& comp, size_t bits) noexcept
   {
     ::std::bitset<N> mask;

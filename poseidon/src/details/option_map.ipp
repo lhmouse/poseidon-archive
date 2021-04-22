@@ -79,8 +79,7 @@ class Bucket
         return *this;
       }
 
-    ROCKET_PURE_FUNCTION
-    pair<const cow_string*, const cow_string*>
+    ROCKET_PURE_FUNCTION pair<const cow_string*, const cow_string*>
     range() const noexcept
       {
         if(this->m_val.index() == 0)  // nothing
@@ -364,14 +363,12 @@ class Iterator
   };
 
 template<typename valueT>
-constexpr
-valueT*
+constexpr valueT*
 range_back(const pair<valueT*, valueT*>& pair) noexcept
   { return (pair.first == pair.second) ? nullptr : (pair.second - 1);  }
 
 template<typename valueT>
-constexpr
-size_t
+constexpr size_t
 range_size(const pair<valueT*, valueT*>& pair) noexcept
   { return static_cast<size_t>(pair.second - pair.first);  }
 

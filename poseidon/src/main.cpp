@@ -22,8 +22,7 @@
 namespace {
 using namespace poseidon;
 
-[[noreturn]]
-int
+[[noreturn]] int
 do_print_help_and_exit(const char* self)
   {
     ::printf(
@@ -56,8 +55,7 @@ Report bugs to <%s>.
     ::quick_exit(0);
   }
 
-[[noreturn]]
-int
+[[noreturn]] int
 do_print_version_and_exit()
   {
     ::printf(
@@ -114,8 +112,7 @@ enum Exit_Code : uint8_t
     exit_invalid_argument   = 2,
   };
 
-[[noreturn]] ROCKET_NOINLINE
-int
+[[noreturn]] ROCKET_NOINLINE int
 do_exit_printf(Exit_Code code, const char* fmt, ...) noexcept
   {
     // Sleep for a few moments so pending logs are flushed.
@@ -132,8 +129,7 @@ do_exit_printf(Exit_Code code, const char* fmt, ...) noexcept
     ::quick_exit(static_cast<int>(code));
   }
 
-ROCKET_NOINLINE
-void
+ROCKET_NOINLINE void
 do_parse_command_line(int argc, char** argv)
   {
     bool help = false;
@@ -210,8 +206,7 @@ do_parse_command_line(int argc, char** argv)
       cmdline.cd_here = ::std::move(*cd_here);
   }
 
-ROCKET_NOINLINE
-void
+ROCKET_NOINLINE void
 do_set_working_directory()
   {
     if(cmdline.cd_here.empty())
@@ -223,8 +218,7 @@ do_set_working_directory()
                      format_errno(errno), cmdline.cd_here);
   }
 
-ROCKET_NOINLINE
-void
+ROCKET_NOINLINE void
 do_check_euid()
   {
     const auto file = Main_Config::copy();
@@ -241,8 +235,7 @@ do_check_euid()
           "You have been warned.");
   }
 
-ROCKET_NOINLINE
-void
+ROCKET_NOINLINE void
 do_daemonize_fork()
   {
     if(!cmdline.daemonize)
@@ -302,8 +295,7 @@ do_daemonize_fork()
     while(true);
   }
 
-ROCKET_NOINLINE
-void
+ROCKET_NOINLINE void
 do_daemonize_finish()
   {
     if(!daemon_wfd)
@@ -324,8 +316,7 @@ do_daemonize_finish()
     daemon_wfd.reset();
   }
 
-ROCKET_NOINLINE
-void
+ROCKET_NOINLINE void
 do_check_ulimits()
   {
     ::rlimit rlim;
@@ -343,8 +334,7 @@ do_check_ulimits()
           rlim.rlim_cur);
   }
 
-ROCKET_NOINLINE
-void
+ROCKET_NOINLINE void
 do_load_addons()
   {
     const auto file = Main_Config::copy();

@@ -59,13 +59,11 @@ constexpr uint8_t s_opt_ctype_table[128] =
     0x06, 0x06, 0x06, 0x00, 0x04, 0x00, 0x06, 0x01,
   };
 
-constexpr
-uint8_t
+constexpr uint8_t
 do_get_opt_ctype(char c) noexcept
   { return (uint8_t(c) < 128) ? s_opt_ctype_table[uint8_t(c)] : 0;  }
 
-constexpr
-bool
+constexpr bool
 do_is_opt_ctype(char c, uint8_t mask) noexcept
   { return do_get_opt_ctype(c) & mask;  }
 
