@@ -88,3 +88,7 @@ poseidon /usr/local/etc/poseidon
 # License
 
 BSD 3-Clause License
+
+# IRC channel:
+
+<ircs://irc.libera.chat:6697/#mcfproj>
