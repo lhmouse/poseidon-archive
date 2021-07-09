@@ -94,7 +94,7 @@ class URL
     // Gets the port.
     // If the port field is absent, a default one is chosen according to
     // the scheme. If no default port is available, zero is returned.
-    ROCKET_PURE_FUNCTION uint16_t
+    ROCKET_PURE uint16_t
     default_port() const noexcept;
 
     uint16_t

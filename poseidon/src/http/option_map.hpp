@@ -27,7 +27,7 @@ class Option_Map
       = default;
 
   private:
-    ROCKET_PURE_FUNCTION pair<const cow_string*, const cow_string*>
+    ROCKET_PURE pair<const cow_string*, const cow_string*>
     do_range_hint(cow_string::shallow_type key, size_t hval) const noexcept;
 
     pair<cow_string*, cow_string*>

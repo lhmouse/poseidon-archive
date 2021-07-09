@@ -79,7 +79,7 @@ class Bucket
         return *this;
       }
 
-    ROCKET_PURE_FUNCTION pair<const cow_string*, const cow_string*>
+    ROCKET_PURE pair<const cow_string*, const cow_string*>
     range() const noexcept
       {
         if(this->m_val.index() == 0)  // nothing
@@ -115,7 +115,7 @@ class Bucket
         return { ptr, ptr + arr.size() };
       }
 
-    ROCKET_PURE_FUNCTION size_t
+    ROCKET_PURE size_t
     count() const noexcept
       {
         if(this->m_val.index() == 0)  // nothing

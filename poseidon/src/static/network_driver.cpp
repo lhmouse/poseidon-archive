@@ -206,7 +206,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         return poll_index_nil;
       }
 
-    ROCKET_PURE_FUNCTION static bool
+    ROCKET_PURE static bool
     poll_lists_empty() noexcept
       {
         return (self->m_poll_root_cl.head == poll_index_end) &&  // close list empty

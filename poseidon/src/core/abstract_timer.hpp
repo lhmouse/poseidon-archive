@@ -50,7 +50,7 @@ class Abstract_Timer
       { return this->m_resident.exchange(value);  }
 
     // Gets the counter.
-    ROCKET_PURE_FUNCTION uint64_t
+    ROCKET_PURE uint64_t
     count() const noexcept
       { return this->m_count.load();  }
 

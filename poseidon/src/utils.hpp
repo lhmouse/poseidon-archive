@@ -46,7 +46,7 @@ ascii_ci_equal(const StringT& text, const OtherT& oth)
 
 // Checks whether this list contains the specified token.
 // Tokens are case-insensitive.
-ROCKET_PURE_FUNCTION bool
+ROCKET_PURE bool
 ascii_ci_has_token(const cow_string& text, char delim, const char* tok, size_t len);
 
 template<typename OtherT>
@@ -56,7 +56,7 @@ ascii_ci_has_token(const cow_string& text, char delim, const OtherT& oth)
     return noadl::ascii_ci_has_token(text, delim, oth.c_str(), oth.length());
   }
 
-ROCKET_PURE_FUNCTION inline bool
+ROCKET_PURE inline bool
 ascii_ci_has_token(const cow_string& text, const char* tok, size_t len)
   {
     return noadl::ascii_ci_has_token(text, ',', tok, len);
