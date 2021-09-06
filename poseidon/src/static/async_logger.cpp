@@ -246,7 +246,7 @@ do_write_log_entry(const Level_Config& conf, Log_Entry&& entry)
       }
     }
     do_end_color(log_text, conf);
-    log_text += "\n\n";
+    log_text += "\n\v";
 
     // Write data to all streams.
     for(const auto& fd : strms) {
