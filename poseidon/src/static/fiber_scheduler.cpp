@@ -691,9 +691,9 @@ reload()
     auto qint = file.get_int64_opt({"fiber","stack_vm_size"});
     if(qint) {
       // Clamp the stack size between 256KiB and 256MiB for safety.
-      // The upper bound (256MiB) is a hard limit, because we encode the number of
-      // 64KiB chunks inside the pointer itself, so we can have at most 4096 64KiB
-      // pages, which makes up 256MiB in total.
+      // The upper bound (256MiB) is a hard limit because we encode the number of
+      // 64KiB chunks inside the pointer itself. Therefore, we can have at most 4096
+      // chunks of 64KiB, which makes up 256MiB in total.
       int64_t rint = ::rocket::clamp(*qint, 0x4'0000, 0x1000'0000);
       if(rint != *qint)
         POSEIDON_LOG_WARN("Config value `fiber.stack_vm_size` truncated to `$1`\n"
@@ -717,11 +717,11 @@ reload()
     // Note a negative value indicates an infinite timeout.
     qint = file.get_int64_opt({"fiber","warn_timeout"});
     if(qint)
-      conf.warn_timeout = (*qint | *qint >> 63) & INT64_MAX;
+      conf.warn_timeout = *qint & INT64_MAX;
 
     qint = file.get_int64_opt({"fiber","fail_timeout"});
     if(qint)
-      conf.fail_timeout = (*qint | *qint >> 63) & INT64_MAX;
+      conf.fail_timeout = *qint & INT64_MAX;
 
     // During destruction of temporary objects the mutex should have been unlocked.
     // The swap operation is presumed to be fast, so we don't hold the mutex
