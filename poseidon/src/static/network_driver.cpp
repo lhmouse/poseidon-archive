@@ -43,46 +43,6 @@ struct Poll_Socket
     Poll_List_mixin node_wr;  // writable
   };
 
-void
-do_event_wait(int fd) noexcept
-  {
-    int err;
-
-    // Repeat reading until the operation fails with something other than EINTR.
-    for(;;) {
-      ::eventfd_t ignored;
-      if(::eventfd_read(fd, &ignored) == 0)
-        continue;
-
-      err = errno;
-      if(err != EINTR)
-        break;
-    }
-
-    if(::rocket::is_none_of(err, { EAGAIN, EWOULDBLOCK }))
-      POSEIDON_LOG_FATAL("`eventfd_read()` failed: $1", format_errno(err));
-  }
-
-void
-do_event_signal(int fd) noexcept
-  {
-    int err;
-
-    // Repeat writing until the operation succeeds or fails with something other than EINTR.
-    for(;;) {
-      err = 0;
-      if(::eventfd_write(fd, 1) == 0)
-        break;
-
-      err = errno;
-      if(err != EINTR)
-        break;
-    }
-
-    if(err != 0)
-      POSEIDON_LOG_FATAL("`eventfd_write()` failed: $1", format_errno(err));
-  }
-
 }  // namespace
 
 POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
@@ -312,7 +272,16 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           for(const auto& event : self->m_event_buffer) {
             // Check for special indexes.
             if(self->index_from_epoll_data(event.data.u64) == poll_index_event) {
-              do_event_wait(self->m_event_fd);
+              // There was an explicit wakeup so make the event non-signaled.
+              ::eventfd_t ignored;
+              while(::eventfd_read(self->m_event_fd, &ignored) != 0) {
+                if(::rocket::is_none_of(errno, { EINTR, EAGAIN, EWOULDBLOCK })) {
+                  POSEIDON_LOG_FATAL("`eventfd_read()` failed: $1", format_errno(errno));
+                  break;
+                }
+                else if(errno != EINTR)
+                  break;
+              }
               continue;
             }
 
@@ -511,7 +480,15 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         if(ROCKET_EXPECT(!self->poll_lists_empty()))
           return;
 
-        do_event_signal(self->m_event_fd);
+        // Make the event signaled.
+        while(::eventfd_write(self->m_event_fd, 1) != 0) {
+          if(::rocket::is_none_of(errno, { EINTR, EAGAIN, EWOULDBLOCK })) {
+            POSEIDON_LOG_FATAL("`eventfd_write()` failed: $1", format_errno(errno));
+            break;
+          }
+          else if(errno != EINTR)
+            break;
+        }
       }
   };
 
