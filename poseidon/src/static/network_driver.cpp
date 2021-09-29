@@ -474,11 +474,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         }
       }
 
-    static void
+    static bool
     do_signal_if_poll_lists_empty() noexcept
       {
         if(ROCKET_EXPECT(!self->poll_lists_empty()))
-          return;
+          return false;
 
         // Make the event signaled.
         while(::eventfd_write(self->m_event_fd, 1) != 0) {
@@ -489,6 +489,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           else if(errno != EINTR)
             break;
         }
+        return true;
       }
   };
 
