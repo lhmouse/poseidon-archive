@@ -654,6 +654,13 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         ROCKET_ASSERT(fiber->state() == async_state_finished);
         stack.reset(fiber->m_sched_uctx->uc_stack);
       }
+
+    static void
+    do_signal_before_sched_ready_nolock()
+      {
+        if(ROCKET_UNEXPECT(self->m_sched_sleep_q.empty()))
+          self->m_sched_avail.signal();
+      }
   };
 
 void
@@ -770,10 +777,8 @@ yield(rcptr<Abstract_Future> futp_opt, int64_t msecs)
     else {
       // Attach the fiber to the ready queue of the current thread otherwise.
       fiber->m_sched_futp = nullptr;
-      bool need_signal = self->m_sched_ready_q.empty();
+      self->do_signal_before_sched_ready_nolock();
       self->m_sched_ready_q.emplace_back(fiber);
-      if(need_signal)
-        self->m_sched_avail.signal();
     }
     lock.unlock();
 
@@ -833,10 +838,8 @@ insert(uptr<Abstract_Fiber>&& ufiber)
 
     // Attach this fiber to the ready queue.
     simple_mutex::unique_lock lock(self->m_sched_mutex);
-    bool need_signal = self->m_sched_ready_q.empty();
+    self->do_signal_before_sched_ready_nolock();
     self->m_sched_ready_q.emplace_back(fiber);
-    if(need_signal)
-      self->m_sched_avail.signal();
     return fiber;
   }
 
@@ -849,9 +852,9 @@ signal(Abstract_Future& futr) noexcept
     if(futr.m_sched_sleep_q.empty())
       return false;
 
-    bool need_signal = self->m_sched_ready_q.empty();
     try {
       // Move all fibers from the sleep queue to the ready queue.
+      self->do_signal_before_sched_ready_nolock();
       self->m_sched_ready_q.insert(self->m_sched_ready_q.end(),
               futr.m_sched_sleep_q.move_begin(), futr.m_sched_sleep_q.move_end());
     }
@@ -860,8 +863,6 @@ signal(Abstract_Future& futr) noexcept
       POSEIDON_LOG_WARN("Failed to reschedule fibers: $1", stdex);
     }
     futr.m_sched_sleep_q.clear();
-    if(need_signal)
-      self->m_sched_avail.signal();
     return true;
   }
 
