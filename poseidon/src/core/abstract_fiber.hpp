@@ -23,11 +23,8 @@ class Abstract_Fiber
     uint32_t m_sched_version;
     int64_t m_sched_yield_since;
     int64_t m_sched_yield_timeout;
-    const Abstract_Future* m_sched_futp;
 
-    Abstract_Fiber* m_sched_ready_next;
-    Abstract_Fiber* m_sched_sleep_next;
-
+    rcptr<Abstract_Future> m_sched_futp;
     ::ucontext_t m_sched_uctx[1];
 
   protected:

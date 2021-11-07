@@ -218,7 +218,7 @@ enum Async_State : uint8_t
 
 // Aliases
 template<typename V> using prom = Promise<V>;
-template<typename V> using futp = rcptr<const Future<V>>;
+template<typename V> using futp = rcptr<Future<V>>;
 
 }  // namespace poseidon
 

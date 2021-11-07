@@ -20,7 +20,7 @@ class Abstract_Future
 
     // This is a list of fibers that are awaiting this future.
     // It can only be accessed when the scheduler mutex is locked.
-    mutable Abstract_Fiber* m_sched_waiting_head = nullptr;
+    ::rocket::cow_vector<rcptr<Abstract_Fiber>> m_sched_sleep_q;
 
   protected:
     explicit

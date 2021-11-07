@@ -40,7 +40,7 @@ class Fiber_Scheduler
     // milliseconds, which is capped to `fail_timeout` in 'main.conf'.
     // This function is thread-safe.
     static void
-    yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs = INT64_MAX);
+    yield(rcptr<Abstract_Future> futp_opt, int64_t msecs = INT64_MAX);
 
     // Inserts a fiber.
     // The scheduler holds a reference-counted pointer to the fiber. If the fiber has
@@ -54,7 +54,7 @@ class Fiber_Scheduler
     // Wakes up fibers that are suspended on `futr`.
     // This function is thread-safe.
     static bool
-    signal(const Abstract_Future& futr) noexcept;
+    signal(Abstract_Future& futr) noexcept;
   };
 
 }  // namespace poseidon
