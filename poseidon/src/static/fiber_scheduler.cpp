@@ -778,15 +778,16 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
       // attach the fiber to the future's wait queue, which may be moved into the
       // ready queue once the other thread locks the scheduler mutex successfully.
       fiber->m_sched_futp = futp_opt.get();
+      fiber->add_reference();
       fiber->m_sched_ready_next = ::std::exchange(futp_opt->m_sched_waiting_head, fiber);
     }
     else {
       // Attach the fiber to the ready queue of the current thread otherwise.
       fiber->m_sched_futp = nullptr;
-      self->do_signal_if_queues_empty();
+      fiber->add_reference();
       fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
+      self->do_signal_if_queues_empty();
     }
-    fiber->add_reference();
     lock.unlock();
 
     // Suspend this fiber...
@@ -794,6 +795,7 @@ yield(rcptr<const Abstract_Future> futp_opt, int64_t msecs)
     int r = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
     ROCKET_ASSERT(r == 0);
     myctx = self->open_thread_context();  // (scheduler thread may have changed)
+    ROCKET_ASSERT(fiber == myctx->current);
     POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
 
     if(fiber->m_sched_futp) {
@@ -843,9 +845,9 @@ insert(uptr<Abstract_Fiber>&& ufiber)
 
     // Attach this fiber to the ready queue.
     simple_mutex::unique_lock lock(self->m_sched_mutex);
-    self->do_signal_if_queues_empty();
-    fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
     fiber->add_reference();
+    fiber->m_sched_ready_next = ::std::exchange(self->m_sched_ready_head, fiber);
+    self->do_signal_if_queues_empty();
     return fiber;
   }
 
@@ -865,8 +867,8 @@ signal(const Abstract_Future& futr) noexcept
     while(mref)
       mref = ::std::ref(mref.get()->m_sched_ready_next);
 
-    self->do_signal_if_queues_empty();
     mref.get() = ::std::exchange(futr.m_sched_waiting_head, nullptr);
+    self->do_signal_if_queues_empty();
     return true;
   }
 
