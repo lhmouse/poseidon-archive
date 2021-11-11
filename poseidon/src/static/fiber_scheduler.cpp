@@ -202,6 +202,9 @@ struct PQ_Element
   {
     int64_t time;
     uint32_t version;
+#if __SIZEOF_POINTER__ == 8
+    uint32_t padding[3];
+#endif
     rcptr<Abstract_Fiber> fiber;
   };
 
