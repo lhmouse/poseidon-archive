@@ -457,8 +457,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         lock.unlock();
 
         // Await a fiber and pop it.
+        lock.lock(self->m_sched_mutex);
         self->m_sched_sleep_q.reserve(self->m_sched_sleep_q.size() + 1);
         self->m_sched_ready_q.reserve(self->m_sched_ready_q.size() + 1);
+
         for(;;) {
           fiber.reset();
           now = do_get_monotonic_seconds();
