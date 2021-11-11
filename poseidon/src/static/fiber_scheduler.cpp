@@ -574,7 +574,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             if(delta < timeout) {
               // Print a warning message if the fiber has been suspended for too long.
               if(delta >= conf.warn_timeout)
-                POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds.\n",
+                POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds.\n"
                                   "[fiber class `$3`]",
                                   fiber, delta, typeid(*fiber));
 
