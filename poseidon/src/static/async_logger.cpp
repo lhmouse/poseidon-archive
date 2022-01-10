@@ -155,9 +155,10 @@ do_end_color(cow_string& log_text, const Level_Config& conf)
   }
 
 bool
-do_write_log_entry(const Level_Config& conf, Log_Entry&& entry)
+do_write_log_entry(const Level_Config_Array& conf_levels, Log_Entry&& entry)
   {
     // Get list of streams to write.
+    const auto& conf = conf_levels.at(entry.level);
     ::rocket::static_vector<::rocket::unique_posix_fd, 4> strms;
     const auto& names = s_level_names[entry.level];
 
@@ -327,17 +328,18 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
 
         // Get configuration for this level.
         lock.lock(self->m_conf_mutex);
-        const auto conf = self->m_conf_levels.at(entry.level);
+        const auto conf_levels = self->m_conf_levels;
         lock.unlock();
 
         // If there is congestion, discard trivial ones.
-        if(conf.trivial && (queue_size >= 1024))
+        if(conf_levels.at(entry.level).trivial && (queue_size >= 1024))
           return;
 
         // Write this entry.
-        do_write_log_entry(conf, ::std::move(entry));
+        do_write_log_entry(conf_levels, ::std::move(entry));
 
-        if((queue_size == 0) || (entry.level <= log_level_error))
+        // Force a flush after the last entry.
+        if(queue_size == 0)
           ::sync();
       }
   };
@@ -383,9 +385,13 @@ enabled(Log_Level level) noexcept
 
 bool
 Async_Logger::
-enqueue(Log_Level level, const char* file, long line, const char* func,
-        cow_string&& text)
+enqueue(Log_Level level, const char* file, long line, const char* func, cow_string&& text)
   {
+    // Get configuration for this level.
+    simple_mutex::unique_lock lock(self->m_conf_mutex);
+    const auto conf_levels = self->m_conf_levels;
+    lock.unlock();
+
     // Compose the entry.
     Log_Entry entry;
     entry.level = level;
@@ -400,13 +406,28 @@ enqueue(Log_Level level, const char* file, long line, const char* func,
 
     // If the logger thread has not been created, write it immediately.
     if(ROCKET_UNEXPECT(self->m_thread == 0))
-      return do_write_log_entry(
-               self->m_conf_levels.at(entry.level), ::std::move(entry));
+      return do_write_log_entry(conf_levels, ::std::move(entry));
 
     // Push the entry.
-    simple_mutex::unique_lock lock(self->m_queue_mutex);
+    lock.lock(self->m_queue_mutex);
     self->m_queue.emplace_back(::std::move(entry));
-    self->m_queue_avail.notify_one();
+    if(level <= log_level_error) {
+      // Error messages should be written immediately.
+      // We still have to maintain the order of all messages, so write them all.
+      do {
+        entry = ::std::move(self->m_queue.front());
+        self->m_queue.pop_front();
+        do_write_log_entry(conf_levels,::std::move(entry));
+      }
+      while(!self->m_queue.empty());
+
+      // Force a flush after the last entry.
+      ::sync();
+    }
+    else {
+      // Push and forget.
+      self->m_queue_avail.notify_one();
+    }
     return true;
   }
 

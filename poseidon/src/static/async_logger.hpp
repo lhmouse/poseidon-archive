@@ -32,8 +32,7 @@ class Async_Logger
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static bool
-    enqueue(Log_Level level, const char* file, long line, const char* func,
-            cow_string&& text);
+    enqueue(Log_Level level, const char* file, long line, const char* func, cow_string&& text);
 
     // Waits until all pending log entries are delivered to output devices.
     // The argument specifies the maximum number of milliseconds to wait.
