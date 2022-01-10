@@ -253,22 +253,16 @@ do_write_log_entry(const Level_Config_Array& conf_levels, Log_Entry&& entry)
     for(const auto& fd : strms) {
       // Note we only retry writing in case of EINTR.
       // `::write()` shall block, so partial writes are ignored.
-      int err;
+  r:
+      if(::write(fd, log_text.data(), log_text.size()) >= 0)
+        continue;
 
-      for(;;) {
-        err = 0;
-        if(::write(fd, log_text.data(), log_text.size()) >= 0)
-          break;
+      if(errno == EINTR)
+        goto r;
 
-        err = errno;
-        if(err != EINTR)
-          break;
-      }
-
-      if(err != 0)
-        ::std::fprintf(stderr,
-            "WARNING: Could not write log data: error %d: %m\n",
-            errno);
+      ::std::fprintf(stderr,
+          "WARNING: Could not write log data: error %d: %m\n",
+          errno);
     }
     return true;
   }
