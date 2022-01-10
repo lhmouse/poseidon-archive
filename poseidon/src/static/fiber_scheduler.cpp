@@ -133,7 +133,7 @@ struct Stack_delete
 
         // Insert the region at the beginning.
         auto qnext = static_cast<Stack_pointer*>(sp.base);
-        qnext = ::rocket::construct_at(qnext, s_stack_pool_head);
+        qnext = ::rocket::construct(qnext, s_stack_pool_head);
         s_stack_pool_head = sp;
       }
   };
@@ -157,7 +157,7 @@ do_allocate_stack(size_t stack_vm_size)
       // Remove this region from the pool.
       auto qnext = static_cast<Stack_pointer*>(sp.base);
       s_stack_pool_head = *qnext;
-      ::rocket::destroy_at(qnext);
+      ::rocket::destroy(qnext);
       lock.unlock();
 
       // Use this region if it is large enough.
