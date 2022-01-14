@@ -321,8 +321,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           POSEIDON_LOG_TRACE("Socket closed: $1 ($2)", sock, format_errno(err));
 
           // Remove the socket from epoll. Errors are ignored.
-          if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_DEL, sock->get_fd(),
-                         (::epoll_event*)1) != 0)
+          if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_DEL, sock->get_fd(), nullptr) != 0)
             POSEIDON_LOG_FATAL("failed to remove socket from epoll\n"
                                "[`epoll_ctl()` failed: $1]",
                                format_errno(errno));
