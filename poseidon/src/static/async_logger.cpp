@@ -262,7 +262,7 @@ do_write_log_entry(const Level_Config_Array& conf_levels, Log_Entry&& entry)
     log_text += "\n\v";
 
     // Write data to all streams.
-    for(const auto& fd : strms)
+    for(int fd : strms)
       if(!do_write_log_text(fd, log_text))
         ::std::fprintf(stderr, "WARNING: Could not write log data: %m\n");
 
