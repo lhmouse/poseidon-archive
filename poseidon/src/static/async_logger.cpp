@@ -155,6 +155,18 @@ do_end_color(cow_string& log_text, const Level_Config& conf)
   }
 
 bool
+do_write_log_text(int fd, const cow_string& log_text)
+  {
+     // Note we only retry writing in case of EINTR.
+     // `::write()` shall block, so partial writes are ignored.
+     for(;;)
+       if(::write(fd, log_text.c_str(), log_text.size()) >= 0)
+         return true;
+       else if(errno != EINTR)
+         return false;
+  }
+
+bool
 do_write_log_entry(const Level_Config_Array& conf_levels, Log_Entry&& entry)
   {
     // Get list of streams to write.
@@ -250,20 +262,10 @@ do_write_log_entry(const Level_Config_Array& conf_levels, Log_Entry&& entry)
     log_text += "\n\v";
 
     // Write data to all streams.
-    for(const auto& fd : strms) {
-      // Note we only retry writing in case of EINTR.
-      // `::write()` shall block, so partial writes are ignored.
-  r:
-      if(::write(fd, log_text.data(), log_text.size()) >= 0)
-        continue;
+    for(const auto& fd : strms)
+      if(!do_write_log_text(fd, log_text))
+        ::std::fprintf(stderr, "WARNING: Could not write log data: %m\n");
 
-      if(errno == EINTR)
-        goto r;
-
-      ::std::fprintf(stderr,
-          "WARNING: Could not write log data: error %d: %m\n",
-          errno);
-    }
     return true;
   }
 
