@@ -349,14 +349,14 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           uint32_t ilast = static_cast<uint32_t>(self->m_poll_elems.size() - 1);
           if(index != ilast) {
             swap(self->m_poll_elems[ilast].sock,
-                 self->m_poll_elems[index].sock);
+              self->m_poll_elems[index].sock);
 
             if(self->poll_list_detach(self->m_poll_root_cl, ilast))
-               self->poll_list_attach(self->m_poll_root_cl, index);
+              self->poll_list_attach(self->m_poll_root_cl, index);
             if(self->poll_list_detach(self->m_poll_root_rd, ilast))
-               self->poll_list_attach(self->m_poll_root_rd, index);
+              self->poll_list_attach(self->m_poll_root_rd, index);
             if(self->poll_list_detach(self->m_poll_root_wr, ilast))
-               self->poll_list_attach(self->m_poll_root_wr, index);
+              self->poll_list_attach(self->m_poll_root_wr, index);
           }
           self->m_poll_elems.pop_back();
           POSEIDON_LOG_TRACE("Removed closed socket: $1", sock);
