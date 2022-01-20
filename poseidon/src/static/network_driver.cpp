@@ -275,11 +275,12 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
               // There was an explicit wakeup so make the event non-signaled.
               ::eventfd_t ignored;
               while(::eventfd_read(self->m_event_fd, &ignored) != 0) {
-                if(::rocket::is_none_of(errno, { EINTR, EAGAIN, EWOULDBLOCK })) {
-                  POSEIDON_LOG_FATAL("`eventfd_read()` failed: $1", format_errno(errno));
+                int err = errno;
+                if(::rocket::is_none_of(err, { EINTR, EAGAIN, EWOULDBLOCK })) {
+                  POSEIDON_LOG_FATAL("`eventfd_read()` failed: $1", format_errno(err));
                   break;
                 }
-                else if(errno != EINTR)
+                else if(err != EINTR)
                   break;
               }
               continue;
@@ -477,11 +478,12 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
         // Make the event signaled.
         while(::eventfd_write(self->m_event_fd, 1) != 0) {
-          if(::rocket::is_none_of(errno, { EINTR, EAGAIN, EWOULDBLOCK })) {
-            POSEIDON_LOG_FATAL("`eventfd_write()` failed: $1", format_errno(errno));
+          int err = errno;
+          if(::rocket::is_none_of(err, { EINTR, EAGAIN, EWOULDBLOCK })) {
+            POSEIDON_LOG_FATAL("`eventfd_write()` failed: $1", format_errno(err));
             break;
           }
-          else if(errno != EINTR)
+          else if(err != EINTR)
             break;
         }
         return true;
