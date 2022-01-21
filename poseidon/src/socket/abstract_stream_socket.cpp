@@ -209,7 +209,7 @@ get_remote_address() const
         if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
           POSEIDON_THROW("could not get remote socket address\n"
                          "[`getsockname()` failed: $1]",
-                         format_errno(errno));
+                         format_errno());
 
         // The result is cached once it becomes available.
         this->m_remote_addr.assign(addrst, addrlen);

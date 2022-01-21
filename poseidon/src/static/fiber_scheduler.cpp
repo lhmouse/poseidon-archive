@@ -113,7 +113,7 @@ do_unmap_stack_aux(Stack_pointer sp) noexcept
     if(::munmap(vm_base, vm_size) != 0)
       POSEIDON_LOG_FATAL("Could not deallocate virtual memory (base `$2`, size `$3`)\n"
                          "[`munmap()` failed: $1]",
-                         format_errno(errno), vm_base, vm_size);
+                         format_errno(), vm_base, vm_size);
   }
 
 struct Stack_delete
@@ -175,7 +175,7 @@ do_allocate_stack(size_t stack_vm_size)
     if(vm_base == MAP_FAILED)
       POSEIDON_THROW("could not allocate virtual memory (size `$2`)\n"
                      "[`mmap()` failed: $1]",
-                     format_errno(errno), vm_size);
+                     format_errno(), vm_size);
 
     sp.base = vm_base + s_page_size;
     sp.size = vm_size - s_page_size * 2;
@@ -185,7 +185,7 @@ do_allocate_stack(size_t stack_vm_size)
     if(::mprotect(sp.base, sp.size, PROT_READ | PROT_WRITE) != 0)
       POSEIDON_THROW("could not set stack memory permission (base `$2`, size `$3`)\n"
                      "[`mprotect()` failed: $1]",
-                     format_errno(errno), sp.base, sp.size);
+                     format_errno(), sp.base, sp.size);
 
     // The stack need not be unmapped once all permissions have been set.
     return unique_stack(sp_guard.release());
@@ -264,7 +264,7 @@ class Semaphore
         if(r != 0)
           POSEIDON_THROW("failed to initialize semaphore\n"
                          "[`sem_init()` failed: $1]",
-                         format_errno(errno));
+                         format_errno());
       }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Semaphore)
@@ -707,7 +707,7 @@ reload()
       if(::getrlimit(RLIMIT_STACK, &rlim) != 0)
         POSEIDON_THROW("could not get thread stack size\n"
                        "[`getrlimit()` failed: $1]",
-                       format_errno(errno));
+                       format_errno());
 
       conf.stack_vm_size = static_cast<size_t>(rlim.rlim_cur);
     }

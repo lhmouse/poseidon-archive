@@ -28,7 +28,7 @@ Abstract_Socket(::sa_family_t family, int type, int protocol)
       POSEIDON_THROW(
         "Could not create socket (family `$2`, type `$3`, protocol `$4`)\n"
         "[`socket()` failed: $1]",
-        format_errno(errno), family, type, protocol);
+        format_errno(), family, type, protocol);
   }
 
 Abstract_Socket::
@@ -63,7 +63,7 @@ get_local_address() const
         if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
           POSEIDON_THROW("could not get local socket address\n"
                          "[`getsockname()` failed: $1]",
-                         format_errno(errno));
+                         format_errno());
 
         // The result is cached once it becomes available.
         this->m_local_addr.assign(addrst, addrlen);

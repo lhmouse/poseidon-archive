@@ -217,7 +217,7 @@ do_set_working_directory()
     if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
       POSEIDON_THROW("could not set working directory to '$2'\n"
                      "[`chdir()` failed: $1]",
-                     format_errno(errno), cmdline.cd_here);
+                     format_errno(), cmdline.cd_here);
   }
 
 ROCKET_NOINLINE void
@@ -251,7 +251,7 @@ do_daemonize_fork()
     if(::pipe(pipefds) != 0)
       POSEIDON_THROW("could not create pipe for child process\n"
                      "[`pipe()` failed: $1]",
-                     format_errno(errno));
+                     format_errno());
 
     ::rocket::unique_posix_fd rfd(pipefds[0], ::close);
     daemon_pipe.reset(pipefds[1]);
@@ -262,7 +262,7 @@ do_daemonize_fork()
     if(child < 0)
       POSEIDON_THROW("could not create child process\n"
                      "[`fork()` failed: $1]",
-                     format_errno(errno));
+                     format_errno());
 
     // If this is the child process, continue execution.
     if(child == 0)
@@ -322,14 +322,14 @@ do_write_pid_file()
     if(!pid_file)
       POSEIDON_THROW("could not create PID file '$2'\n"
                      "[`open()` failed: $1]",
-                     format_errno(errno), kpath->c_str());
+                     format_errno(), kpath->c_str());
 
     // Lock it in exclusive mode before overwriting.
     if(::flock(pid_file, LOCK_EX | LOCK_NB) != 0)
       POSEIDON_THROW("could not lock PID file '$2'\n"
                      "(is another instance running?)\n"
                      "[`flock()` failed: $1]",
-                     format_errno(errno), kpath->c_str());
+                     format_errno(), kpath->c_str());
 
     // Write the PID of myself.
     POSEIDON_LOG_DEBUG("Writing current process ID to '$1'", kpath->c_str());

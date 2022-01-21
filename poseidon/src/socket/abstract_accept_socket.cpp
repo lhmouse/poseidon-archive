@@ -103,12 +103,12 @@ do_socket_listen(const Socket_Address& addr, uint32_t backlog)
     if(::bind(this->get_fd(), addr.data(), addr.ssize()) != 0)
       POSEIDON_THROW("failed to bind accept socket onto '$2'\n"
                      "[`bind()` failed: $1]",
-                     format_errno(errno), addr);
+                     format_errno(), addr);
 
     if(::listen(this->get_fd(), clamp_cast<int>(backlog, 1, SOMAXCONN)) != 0)
       POSEIDON_THROW("failed to set up listen socket on '$2'\n"
                      "[`listen()` failed: $1]",
-                     format_errno(errno), this->get_local_address());
+                     format_errno(), this->get_local_address());
 
     // Mark this socket listening.
     this->m_cstate = connection_state_established;
