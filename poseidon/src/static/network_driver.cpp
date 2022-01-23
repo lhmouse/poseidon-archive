@@ -409,7 +409,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
           if(detach)
             self->poll_list_detach(self->m_poll_root_rd, index);
-
           if(clear_status)
             sock->m_epoll_events &= ~EPOLLIN;
         }
@@ -461,10 +460,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
           if(unthrottle)
             self->poll_list_attach(self->m_poll_root_rd, index);
-
           if(detach)
             self->poll_list_detach(self->m_poll_root_wr, index);
-
           if(clear_status)
             sock->m_epoll_events &= ~EPOLLOUT;
         }
