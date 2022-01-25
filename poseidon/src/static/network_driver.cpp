@@ -43,6 +43,13 @@ struct Poll_Socket
     Poll_List_mixin node_wr;  // writable
   };
 
+template<Poll_List_mixin Poll_Socket::* mptrT>
+struct Poll_List_root
+  {
+    uint32_t head = poll_index_end;
+    uint32_t tail = poll_index_end;
+  };
+
 }  // namespace
 
 POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
@@ -61,13 +68,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     ::std::vector<::epoll_event> m_event_buffer;
     ::std::vector<rcptr<Abstract_Socket>> m_ready_socks;
     ::std::vector<char> m_io_buffer;
-
-    template<Poll_List_mixin Poll_Socket::* mptrT>
-    struct Poll_List_root
-      {
-        uint32_t head = poll_index_end;
-        uint32_t tail = poll_index_end;
-      };
 
     mutable simple_mutex m_poll_mutex;
     ::std::vector<Poll_Socket> m_poll_elems;
