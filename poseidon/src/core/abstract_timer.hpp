@@ -44,7 +44,8 @@ class Abstract_Timer
     shut_down() noexcept
       { return this->m_zombie.exchange(true);  }
 
-    // Marks this this timer to be deleted if timer driver holds its last reference.
+    // Prevents this this timer from being deleted if timer driver holds its
+    // last reference.
     bool
     set_resident(bool value = true) noexcept
       { return this->m_resident.exchange(value);  }

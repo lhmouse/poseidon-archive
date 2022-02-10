@@ -62,7 +62,8 @@ class Abstract_Fiber
     shut_down() noexcept
       { return this->m_zombie.exchange(true);  }
 
-    // Marks this fiber to be deleted if fiber scheduler holds its last reference.
+    // Prevents this fiber from being deleted if fiber scheduler holds its
+    // last reference.
     bool
     set_resident(bool value = true) noexcept
       { return this->m_resident.exchange(value);  }

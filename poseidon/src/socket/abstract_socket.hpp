@@ -71,7 +71,8 @@ class Abstract_Socket
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Socket);
 
-    // Marks this socket to be deleted if network driver holds its last reference.
+    // Prevents this socket from being deleted if network driver holds its last
+    // reference.
     bool
     set_resident(bool value = true) noexcept
       { return this->m_resident.exchange(value);  }

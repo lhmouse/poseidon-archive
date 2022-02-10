@@ -42,7 +42,8 @@ class Abstract_Async_Job
     shut_down() noexcept
       { return this->m_zombie.exchange(true);  }
 
-    // Marks this job to be deleted if worker pool holds its last reference.
+    // Prevents this job from being deleted if worker pool holds its last
+    // reference.
     bool
     set_resident(bool value = true) noexcept
       { return this->m_resident.exchange(value);  }
