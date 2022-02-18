@@ -114,7 +114,7 @@ enum Exit_Code : uint8_t
     exit_invalid_argument   = 2,
   };
 
-[[noreturn]] ROCKET_NOINLINE int
+[[noreturn]] ROCKET_NEVER_INLINE int
 do_exit_printf(Exit_Code code, const char* fmt, ...) noexcept
   {
     // Sleep for a few moments so pending logs are flushed.
@@ -131,7 +131,7 @@ do_exit_printf(Exit_Code code, const char* fmt, ...) noexcept
     ::quick_exit(static_cast<int>(code));
   }
 
-ROCKET_NOINLINE void
+ROCKET_NEVER_INLINE void
 do_parse_command_line(int argc, char** argv)
   {
     bool help = false;
@@ -208,7 +208,7 @@ do_parse_command_line(int argc, char** argv)
       cmdline.cd_here = ::std::move(*cd_here);
   }
 
-ROCKET_NOINLINE void
+ROCKET_NEVER_INLINE void
 do_set_working_directory()
   {
     if(cmdline.cd_here.empty())
@@ -220,7 +220,7 @@ do_set_working_directory()
                      format_errno(), cmdline.cd_here);
   }
 
-ROCKET_NOINLINE void
+ROCKET_NEVER_INLINE void
 do_check_euid()
   {
     const auto file = Main_Config::copy();
@@ -238,7 +238,7 @@ do_check_euid()
           "You have been warned.");
   }
 
-ROCKET_NOINLINE void
+ROCKET_NEVER_INLINE void
 do_daemonize_fork()
   {
     if(!cmdline.daemonize)
@@ -292,7 +292,7 @@ do_daemonize_fork()
         ::_Exit(128 + WTERMSIG(wstat));
   }
 
-ROCKET_NOINLINE void
+ROCKET_NEVER_INLINE void
 do_daemonize_finish()
   {
     if(!daemon_pipe)
@@ -309,7 +309,7 @@ do_daemonize_finish()
     daemon_pipe.reset();
   }
 
-ROCKET_NOINLINE void
+ROCKET_NEVER_INLINE void
 do_write_pid_file()
   {
     const auto file = Main_Config::copy();
@@ -339,7 +339,7 @@ do_write_pid_file()
     ::flock(pid_file, LOCK_SH);
   }
 
-ROCKET_NOINLINE void
+ROCKET_NEVER_INLINE void
 do_check_ulimits()
   {
     ::rlimit rlim;
@@ -359,7 +359,7 @@ do_check_ulimits()
           rlim.rlim_cur);
   }
 
-ROCKET_NOINLINE size_t
+ROCKET_NEVER_INLINE size_t
 do_load_addons()
   {
     const auto file = Main_Config::copy();
