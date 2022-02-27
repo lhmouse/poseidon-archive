@@ -131,9 +131,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     static uint32_t
     find_poll_socket(uint64_t epoll_data) noexcept
       {
-        // Perform fast lookup using the hint value.
         uint32_t index = self->index_from_epoll_data(epoll_data);
         if(ROCKET_EXPECT(index < self->m_poll_elems.size())) {
+          // Check whether the hint has been invalidated.
           const auto& elem = self->m_poll_elems[index];
           if(ROCKET_EXPECT(elem.sock->m_epoll_data == epoll_data))
             return index;
