@@ -15,20 +15,9 @@
 
 #### Prerequisite
 
-1. **GCC** (>= **6**)
-2. **autoconf**
-3. **automake**
-4. **libtool**
-5. **OpenSSL** (>= **1.1**)
-6. **cmake** (only for building **MySQL** and **MongoDB** libraries)
-
-#### Build and install MySQL and MongoDB client libraries
-
 ```sh
-cd third/
-./build_libmysqlclient_deb.sh
-./build_libmongoc_deb.sh
-cd ..
+# For Debian Buster
+sudo aptitude install zlib1g-dev libmariadb-dev-compat lib{edit,pcre2,ssl,magic,mongoc,http-parser}-dev
 ```
 
 #### Build and install Asteria

@@ -25,7 +25,7 @@ AM_COND_IF([enable_tcmalloc], [
 ## Check for required libraries
 AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR(dl library not found)])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR(pthread library not found)])
-AC_CHECK_LIB([asteria], [_ZN7asteria14Global_ContextD2Ev], [], [AC_MSG_ERROR(Asteria not found)])
+AC_CHECK_LIB([asteria], [_ZN7asteria18null_value_storageE], [], [AC_MSG_ERROR(Asteria not found)])
 AC_CHECK_LIB([ssl], [TLS_method], [], [AC_MSG_ERROR(OpenSSL 1.1 not found)])
 AC_CHECK_LIB([crypto], [ERR_error_string], [], [AC_MSG_ERROR(OpenSSL not found)])
 AC_CHECK_LIB([z], [deflate], [], [AC_MSG_ERROR(zlib not found)])

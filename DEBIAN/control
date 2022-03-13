@@ -1,0 +1,11 @@
+Package: {_pkgname}
+Version: {_pkgversion}
+Multi-Arch: foreign
+Architecture: all
+Priority: optional
+Section: misc
+Maintainer: LIU Hao <lh_mouse@126.com>
+Provides: poseidon, libposeidon, libposeidon-dev
+Description: The Poseidon Server Framework
+Depends: libasteria, libasteria-dev
+Homepage: https://github.com/lhmouse/poseidon

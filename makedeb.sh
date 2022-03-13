@@ -1,26 +1,17 @@
 #!/bin/bash -e
 
-_pkgname="poseidon"
-_pkggroup="poseidon"
-_pkgsource="https://github.com/lhmouse/poseidon"
-_pkglicense="BSD 3-Clause License"
+_pkgname=poseidon
+_pkgversion=$(git describe 2>/dev/null || printf "0.%u.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)")
+_tempdir=$(readlink -f "./.makedeb")
+_debiandir=${_tempdir}/DEBIAN
 
-_pkgversion=$(git describe 2>/dev/null ||
-              printf "0.%u.%s" "$(git rev-list --count HEAD)"  \
-                               "$(git rev-parse --short HEAD)")
+rm -rf ${_tempdir}
+mkdir -p ${_tempdir}/etc/poseidon
+cp -pr DEBIAN -T ${_tempdir}/DEBIAN
+cp -pr poseidon/etc -T ${_tempdir}/etc/poseidon
 
-_maintainer=$(printf "%s <%s>" "$(git config --get user.name)"  \
-                               "$(git config --get user.email)")
+make install DESTDIR=${_tempdir}
+sed -i "s/{_pkgname}/${_pkgname}/" ${_debiandir}/control
+sed -i "s/{_pkgversion}/${_pkgversion}/" ${_debiandir}/control
 
-sudo ./ci/checkinstall  \
-  --backup=no --nodoc --default --strip=no --stripso=no --addso=yes  \
-  --pkgname="${_pkgname}"  \
-  --pkggroup="${_pkggroup}"  \
-  --pkgsource="${_pkgsource}"  \
-  --pkglicense="${_pkglicense}"  \
-  --pkgversion="${_pkgversion}"  \
-  --pkgrelease=1  \
-  --maintainer="${_maintainer}"  \
-  --exclude="${_tmpdir}"
-
-sudo ldconfig
+dpkg-deb --root-owner-group --build .makedeb "${_pkgname}_${_pkgversion}.deb"
