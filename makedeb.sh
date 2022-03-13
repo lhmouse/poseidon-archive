@@ -9,6 +9,7 @@ rm -rf ${_tempdir}
 mkdir -p ${_tempdir}/etc/poseidon
 cp -pr DEBIAN -T ${_tempdir}/DEBIAN
 cp -pr poseidon/etc -T ${_tempdir}/etc/poseidon
+cp -p poseidon/etc/main.default.conf ${_tempdir}/etc/poseidon/main.conf
 
 make install DESTDIR=${_tempdir}
 sed -i "s/{_pkgname}/${_pkgname}/" ${_debiandir}/control
