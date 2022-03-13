@@ -229,7 +229,7 @@ do_check_euid()
       return;
 
     if(::geteuid() == 0)
-      POSEIDON_LOG_ERROR(
+      POSEIDON_THROW(
           "Please do not start this program as root.\n"
           "If you insist, you may set `general.permit_root_startup` in "
           "`main.conf` to `true` to bypass this check. Note that starting "
