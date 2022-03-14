@@ -16,6 +16,8 @@
 #### Prerequisite
 
 ```sh
+# For Ubuntu Focal
+sudo aptitude install zlib1g-dev lib{edit,pcre2,ssl,magic,mysqlclient,mongoc,http-parser}-dev
 # For Debian Buster
 sudo aptitude install zlib1g-dev libmariadb-dev-compat lib{edit,pcre2,ssl,magic,mongoc,http-parser}-dev
 ```
