@@ -93,7 +93,7 @@ lib_libposeidon_la_SOURCES =  \
   ${NOTHING}
 
 lib_libposeidon_la_LDFLAGS =  \
-  -Wl,--no-undefined -no-undefined -version-info 0:0:0
+  -Wl,--no-undefined -no-undefined -version-info 0:0
 
 if enable_address_sanitizer
 lib_libposeidon_la_LDFLAGS += -fsanitize=address
