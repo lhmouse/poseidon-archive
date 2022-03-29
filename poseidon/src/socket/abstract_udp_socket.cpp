@@ -243,7 +243,8 @@ do_socket_send(const Socket_Address& addr, const char* data, size_t size)
     // Write the header.
     Queued_Packet_Header head;
     head.addrlen = static_cast<uint16_t>(addr.size());
-    head.datalen = static_cast<uint16_t>(::std::min<size_t>(size, UINT16_MAX));
+    head.datalen = static_cast<uint16_t>(size);
+
     if(size != head.datalen)
       POSEIDON_LOG_WARN("UDP packet truncated (size `$1` too large)", size);
 
