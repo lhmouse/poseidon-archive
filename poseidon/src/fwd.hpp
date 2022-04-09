@@ -4,10 +4,6 @@
 #ifndef POSEIDON_FWD_HPP_
 #define POSEIDON_FWD_HPP_
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
 #include <asteria/fwd.hpp>
 #include <rocket/ascii_case.hpp>
 #include <rocket/linear_buffer.hpp>
