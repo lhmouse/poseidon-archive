@@ -18,7 +18,8 @@ class Worker_Pool
     // Note that the number of threads is set upon the first call and cannot be
     // changed thereafter.
     // This function is thread-safe.
-    static void
+    static
+    void
     reload();
 
     // Retrieves the maximum number of worker threads.
@@ -33,7 +34,8 @@ class Worker_Pool
     // being executed at all.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
-    static rcptr<Abstract_Async_Job>
+    static
+    rcptr<Abstract_Async_Job>
     insert(uptr<Abstract_Async_Job>&& ujob);
   };
 

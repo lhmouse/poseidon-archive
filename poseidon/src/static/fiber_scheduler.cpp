@@ -118,11 +118,13 @@ do_unmap_stack_aux(Stack_pointer sp) noexcept
 
 struct Stack_delete
   {
-    constexpr Stack_pointer
+    constexpr
+    Stack_pointer
     null() const noexcept
       { return nullptr;  }
 
-    constexpr bool
+    constexpr
+    bool
     is_null(Stack_pointer sp) const noexcept
       { return sp.base == nullptr;  }
 
@@ -210,15 +212,18 @@ struct PQ_Element
 
 struct PQ_Compare
   {
-    constexpr bool
+    constexpr
+    bool
     operator()(const PQ_Element& lhs, const PQ_Element& rhs) const noexcept
       { return lhs.time > rhs.time;  }
 
-    constexpr bool
+    constexpr
+    bool
     operator()(const PQ_Element& lhs, int64_t rhs) const noexcept
       { return lhs.time > rhs;  }
 
-    constexpr bool
+    constexpr
+    bool
     operator()(int64_t lhs, const PQ_Element& rhs) const noexcept
       { return lhs > rhs.time;  }
   }
@@ -340,7 +345,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     ::std::vector<rcptr<Abstract_Fiber>> m_sched_sleep_q;
     ::std::vector<rcptr<Abstract_Fiber>> m_sched_ready_q;
 
-    static void
+    static
+    void
     do_start()
       {
         self->m_init_once.call(
@@ -362,7 +368,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           });
       }
 
-    static Thread_Context*
+    static
+    Thread_Context*
     get_thread_context()
       {
         auto ptr = ::pthread_getspecific(self->m_sched_key);
@@ -373,7 +380,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         return nullptr;
       }
 
-    static Thread_Context*
+    static
+    Thread_Context*
     open_thread_context()
       {
         auto ptr = ::pthread_getspecific(self->m_sched_key);
@@ -428,7 +436,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         ::std::terminate();
       }
 
-    static void
+    static
+    void
     do_initialize_context(Abstract_Fiber* fiber, unique_stack&& stack) noexcept
       {
         // Initialize the user-context.
@@ -444,7 +453,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
                                            2, fcptr.words[0], fcptr.words[1]);
       }
 
-    static void
+    static
+    void
     do_thread_loop(void* param)
       {
         const auto& exit_sig = *(const atomic_signal*)param;
@@ -660,7 +670,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         stack.reset(fiber->m_sched_uctx->uc_stack);
       }
 
-    static void
+    static
+    void
     do_signal_before_sched_ready_nolock()
       {
         if(ROCKET_UNEXPECT(self->m_sched_sleep_q.empty()))

@@ -138,11 +138,13 @@ class Socket_Address
     print(tinyfmt& fmt) const;
   };
 
-inline void
+inline
+void
 swap(Socket_Address& lhs, Socket_Address& rhs) noexcept
   { lhs.swap(rhs);  }
 
-inline tinyfmt&
+inline
+tinyfmt&
 operator<<(tinyfmt& fmt, const Socket_Address& addr)
   { return addr.print(fmt);  }
 

@@ -36,22 +36,27 @@ class Abstract_Fiber
     // Executes this fiber.
     // This function is called only once. No matter whether it returns or
     // throws an exception, this fiber is deleted from the scheduler.
-    virtual void
+    virtual
+    void
     do_execute()
       = 0;
 
     // These are callbacks for profiling.
     // The default implementations do nothing.
-    virtual void
+    virtual
+    void
     do_on_start() noexcept;
 
-    virtual void
+    virtual
+    void
     do_on_suspend() noexcept;
 
-    virtual void
+    virtual
+    void
     do_on_resume() noexcept;
 
-    virtual void
+    virtual
+    void
     do_on_finish() noexcept;
 
   public:

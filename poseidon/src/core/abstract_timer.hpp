@@ -32,7 +32,8 @@ class Abstract_Timer
     // `now` is the time of `CLOCK_MONOTONIC`.
     // Please mind thread safety, as this function is called by the timer thread.
     // The default implementation prints a line of error.
-    virtual void
+    virtual
+    void
     do_on_async_timer(int64_t now)
       = 0;
 

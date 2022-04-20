@@ -9,7 +9,8 @@
 namespace poseidon {
 namespace {
 
-inline int64_t&
+inline
+int64_t&
 do_shift_time(int64_t& value, int64_t shift)
   {
     // `value` must be non-negative. `shift` may be any value.
@@ -82,7 +83,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
     condition_variable m_pq_avail;
     ::std::vector<PQ_Element> m_pq;
 
-    static void
+    static
+    void
     do_start()
       {
         self->m_init_once.call(
@@ -93,7 +95,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           });
       }
 
-    static void
+    static
+    void
     do_thread_loop(void* /*param*/)
       {
         rcptr<Abstract_Timer> timer;

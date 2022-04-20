@@ -54,7 +54,8 @@ class Abstract_Accept_Socket
     // Consumes an accepted socket descriptor.
     // This function shall allocate and return a new socket object.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual uptr<Abstract_Socket>
+    virtual
+    uptr<Abstract_Socket>
     do_socket_on_accept(unique_FD&& fd, const Socket_Address& addr)
       = 0;
 
@@ -62,14 +63,16 @@ class Abstract_Accept_Socket
     // This function shall ensure `sock` is not orphaned by storing the pointer
     // somewhere (for example into a user-defined client map).
     // Please mind thread safety, as this function is called by the network thread.
-    virtual void
+    virtual
+    void
     do_socket_on_register(rcptr<Abstract_Socket>&& sock)
       = 0;
 
     // Notifies that this socket has been fully closed.
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual void
+    virtual
+    void
     do_socket_on_close(int err);
 
   public:

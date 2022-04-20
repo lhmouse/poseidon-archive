@@ -16,13 +16,15 @@ class Main_Config
     // Reloads `main.conf`.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
-    static void
+    static
+    void
     reload();
 
     // Obtains a copy of the global config file.
     // Because config files are copy-on-write, this function never fails.
     // This function is thread-safe.
-    static Config_File
+    static
+    Config_File
     copy() noexcept;
   };
 

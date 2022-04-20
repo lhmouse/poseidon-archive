@@ -22,7 +22,8 @@ class LCG48
     max() noexcept
       { return UINT32_MAX;  }
 
-    static uint64_t
+    static
+    uint64_t
     create_seed() noexcept;
 
   private:
@@ -36,7 +37,8 @@ class LCG48
 
   public:
     // These functions can be used to save and restore states.
-    constexpr uint64_t
+    constexpr
+    uint64_t
     get_seed() const noexcept
       { return this->m_seed;  }
 
@@ -60,7 +62,8 @@ class LCG48
       }
   };
 
-inline void
+inline
+void
 swap(LCG48& lhs, LCG48& rhs) noexcept
   { lhs.swap(rhs);  }
 

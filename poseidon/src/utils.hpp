@@ -37,7 +37,8 @@ ascii_trim(cow_string text);
 
 // Checks whether two strings equal.
 template<typename StringT, typename OtherT>
-constexpr bool
+constexpr
+bool
 ascii_ci_equal(const StringT& text, const OtherT& oth)
   {
     return ::rocket::ascii_ci_equal(
@@ -50,7 +51,8 @@ ROCKET_PURE bool
 ascii_ci_has_token(const cow_string& text, char delim, const char* tok, size_t len);
 
 template<typename OtherT>
-inline bool
+inline
+bool
 ascii_ci_has_token(const cow_string& text, char delim, const OtherT& oth)
   {
     return noadl::ascii_ci_has_token(text, delim, oth.c_str(), oth.length());
@@ -63,7 +65,8 @@ ascii_ci_has_token(const cow_string& text, const char* tok, size_t len)
   }
 
 template<typename OtherT>
-inline bool
+inline
+bool
 ascii_ci_has_token(const cow_string& text, const OtherT& oth)
   {
     return noadl::ascii_ci_has_token(text, oth.c_str(), oth.length());
@@ -81,7 +84,8 @@ implode(cow_string& text, const cow_vstrings& segments, char delim = ',');
 
 // Cast a value using saturation arithmetic.
 template<typename ResultT, typename ValueT>
-constexpr ResultT
+constexpr
+ResultT
 clamp_cast(const ValueT& value,
            const typename ::std::enable_if<true, ValueT>::type& lower,
            const typename ::std::enable_if<true, ValueT>::type& upper)

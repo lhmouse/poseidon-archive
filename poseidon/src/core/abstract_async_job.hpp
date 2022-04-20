@@ -30,7 +30,8 @@ class Abstract_Async_Job
     // Executes this job and satisfies some promise of the derived class.
     // This function is called only once. No matter whether it returns or
     // throws an exception, this job is deleted from the worker queue.
-    virtual void
+    virtual
+    void
     do_execute()
       = 0;
 

@@ -23,7 +23,8 @@ class Fiber_Scheduler
     // Reloads settings from main config.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
-    static void
+    static
+    void
     reload();
 
     // Gets a pointer to the current fiber on the current thread.
@@ -39,7 +40,8 @@ class Fiber_Scheduler
     // is relinquished, similar to `sched_yield()`. Suspension may not exceed `msecs`
     // milliseconds, which is capped to `fail_timeout` in 'main.conf'.
     // This function is thread-safe.
-    static void
+    static
+    void
     yield(rcptr<Abstract_Future> futp_opt, int64_t msecs = INT64_MAX);
 
     // Inserts a fiber.
@@ -48,12 +50,14 @@ class Fiber_Scheduler
     // without being executed at all.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
-    static rcptr<Abstract_Fiber>
+    static
+    rcptr<Abstract_Fiber>
     insert(uptr<Abstract_Fiber>&& ufiber);
 
     // Wakes up fibers that are suspended on `futr`.
     // This function is thread-safe.
-    static bool
+    static
+    bool
     signal(Abstract_Future& futr) noexcept;
   };
 

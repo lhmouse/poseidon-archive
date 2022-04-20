@@ -76,7 +76,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     Poll_List_root<&Poll_Socket::node_rd> m_poll_root_rd;
     Poll_List_root<&Poll_Socket::node_wr> m_poll_root_wr;
 
-    static void
+    static
+    void
     do_start()
       {
         self->m_init_once.call(
@@ -128,7 +129,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     // Note epoll events are bound to kernel files, not individual file descriptors.
     // If we were passing pointers in `event.data` and FDs got `dup()`'d, we could get
     // dangling pointers here, which is rather dangerous.
-    static uint32_t
+    static
+    uint32_t
     find_poll_socket(uint64_t epoll_data) noexcept
       {
         uint32_t index = self->index_from_epoll_data(epoll_data);
@@ -175,7 +177,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       }
 
     template<Poll_List_mixin Poll_Socket::* mptrT>
-    static size_t
+    static
+    size_t
     poll_list_collect(const Poll_List_root<mptrT>& root)
       {
         self->m_ready_socks.clear();
@@ -192,7 +195,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       }
 
     template<Poll_List_mixin Poll_Socket::* mptrT>
-    static bool
+    static
+    bool
     poll_list_attach(Poll_List_root<mptrT>& root, uint32_t index) noexcept
       {
         // Don't perform any operation if the element has already been attached.
@@ -210,7 +214,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
       }
 
     template<Poll_List_mixin Poll_Socket::* mptrT>
-    static bool
+    static
+    bool
     poll_list_detach(Poll_List_root<mptrT>& root, uint32_t index) noexcept
       {
         // Don't perform any operation if the element has not been attached.
@@ -228,7 +233,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         return true;
       }
 
-    static void
+    static
+    void
     do_thread_loop(void* /*param*/)
       {
         // Reload configuration.
@@ -467,7 +473,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         }
       }
 
-    static bool
+    static
+    bool
     do_signal_if_poll_lists_empty() noexcept
       {
         if(ROCKET_EXPECT(!self->poll_lists_empty()))

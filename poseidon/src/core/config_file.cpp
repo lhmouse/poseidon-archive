@@ -15,7 +15,8 @@ struct Implode
     size_t nsegs;
   };
 
-constexpr Implode
+constexpr
+Implode
 do_implode(const char* const* p, size_t n) noexcept
   { return { p, n };  }
 

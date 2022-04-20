@@ -25,7 +25,8 @@ class Abstract_UDP_Server_Socket
   protected:
     // Consumes an incoming packet.
     // Please mind thread safety, as this function is called by the network thread.
-    virtual void
+    virtual
+    void
     do_socket_on_receive(const Socket_Address& addr, char* data, size_t size)
       = 0;
 
