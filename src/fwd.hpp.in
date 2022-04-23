@@ -17,10 +17,11 @@
 #include <deque>
 #include <unistd.h>
 
-namespace poseidon {
-namespace noadl = poseidon;
-
 // Macros
+#define ASTERIA_ABI_VERSION_MAJOR    @ABI_MAJOR@U
+#define ASTERIA_ABI_VERSION_MINOR    @ABI_MINOR@U
+#define ASTERIA_ABI_VERSION_STRING   "@ABI_MAJOR@.@ABI_MINOR@-@ABI_SUFFIX@"
+
 #define POSEIDON_STATIC_CLASS_DECLARE(C)  \
     private:  \
       /* Data members are not visible in headers. */  \
@@ -40,6 +41,9 @@ namespace noadl = poseidon;
     \
     struct C::C##_self : C  \
       // add members here
+
+namespace poseidon {
+namespace noadl = poseidon;
 
 // Aliases
 using ::std::initializer_list;

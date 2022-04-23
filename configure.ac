@@ -13,6 +13,11 @@ LT_LANG([C++])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
 
+## Define ABI information
+AS_VAR_SET([ABI_MAJOR], [1])
+AS_VAR_SET([ABI_MINOR], [0])
+AS_VAR_SET([ABI_SUFFIX], [beta.0])
+
 ## Check for tcmalloc
 ## This has to come first as others may depend on it.
 AC_ARG_ENABLE([tcmalloc], AS_HELP_STRING([--disable-tcmalloc],
@@ -75,5 +80,10 @@ AM_COND_IF([enable_magic], [
   AC_DEFINE([POSEIDON_ENABLE_MAGIC], [1], [Define to 1 to build the Magic daemon.])
 ])
 
-AC_CONFIG_FILES([Makefile])
+## Finish
+AC_SUBST([ABI_MAJOR])
+AC_SUBST([ABI_MINOR])
+AC_SUBST([ABI_SUFFIX])
+
+AC_CONFIG_FILES([Makefile] [src/fwd.hpp])
 AC_OUTPUT

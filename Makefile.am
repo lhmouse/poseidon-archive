@@ -3,7 +3,8 @@ NOTHING =
 
 ## Compiler options
 AM_CPPFLAGS = -pipe -pthread -Wall -Wextra -fPIC -DPIC -DDLL_EXPORT  \
-  -D_FILE_OFFSET_BITS=64 -D_POSIX_C_SOURCE=200809 -D_GNU_SOURCE -D_WIN32_WINNT=0x0600  \
+  -Isrc -Isrc/core -I${srcdir}/src  \
+  -U_FORTIFY_SOURCE -D_FILE_OFFSET_BITS=64 -D_POSIX_C_SOURCE=200809 -D_GNU_SOURCE  \
   -f{strict-{aliasing,overflow},merge-all-constants}  \
   -fno-{math-errno,trapping-math,devirtualize-speculatively}  \
   -Werror={conversion,sign-{compare,conversion},write-strings,return-type}  \
@@ -39,9 +40,9 @@ CLEANFILES =  \
   precompiled.w.hpp.gch.lo  \
   ${NOTHING}
 
-precompiled.w.hpp: ${srcdir}/poseidon/src/precompiled.hpp
+precompiled.w.hpp: ${srcdir}/src/precompiled.hpp
 	## Build the wrapper header, which contains the absolute path to the plain header.
-	${AM_V_GEN}echo "#include \"$$(cygpath -m $< 2>/dev/null || readlink -f $<)\"" >$@
+	${AM_V_GEN}echo "#include \"$$(readlink -f $<)\"" >$@
 
 precompiled.w.hpp.gch: precompiled.w.hpp config.h
 	## Compile the header. This must use LTCXXCOMPILE due to some nasty PIC flags...
@@ -54,8 +55,8 @@ precompiled.w.hpp.gch: precompiled.w.hpp config.h
 
 ## Initialization
 EXTRA_DIST =  \
-  poseidon/etc/main.template.conf  \
-  poseidon/etc/main.conf  \
+  etc/main.template.conf  \
+  etc/main.conf  \
   ${NOTHING}
 
 noinst_LIBRARIES =
@@ -74,21 +75,21 @@ check_LTLIBRARIES =
 check_PROGRAMS =
 
 ## Programs and libraries
-include poseidon/src/Makefile.inc.am
+include src/Makefile.inc.am
 
 if enable_mysql
-include poseidon/src/mysql/Makefile.inc.am
+include src/mysql/Makefile.inc.am
 endif
 
 if enable_mongodb
-include poseidon/src/mongodb/Makefile.inc.am
+include src/mongodb/Makefile.inc.am
 endif
 
 ## Sample add-ons
-include poseidon/addon/Makefile.inc.am
+include addon/Makefile.inc.am
 
 ## Configuration files
-include poseidon/etc/Makefile.inc.am
+include etc/Makefile.inc.am
 
 ## Tests
-#include poseidon/test/Makefile.inc.am
+#include test/Makefile.inc.am
