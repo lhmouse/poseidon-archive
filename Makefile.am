@@ -89,7 +89,7 @@ endif
 include addon/Makefile.inc.am
 
 ## Configuration files
-include etc/Makefile.inc.am
+include etc/poseidon/Makefile.inc.am
 
 ## Tests
 #include test/Makefile.inc.am
