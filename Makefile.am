@@ -28,7 +28,7 @@ endif
 AM_DEFAULT_SOURCE_EXT = .cpp
 LDADD = lib/libposeidon.la
 
-## Pre-compiled header
+## Custom rules
 BUILT_SOURCES =  \
   precompiled.w.hpp  \
   precompiled.w.hpp.gch  \
