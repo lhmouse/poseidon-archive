@@ -1,5 +1,8 @@
-## Set up project
-AC_INIT([Poseidon], [0.1], [lh_mouse@126.com], [poseidon], [https://github.com/lhmouse/poseidon])
+## AC_INIT(package, version, [bug-report], [tarname], [url])
+AC_INIT([poseidon], [master], [lh_mouse@126.com], [poseidon], [https://github.com/lhmouse/poseidon])
+LT_INIT([disable-static])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
+
 AC_CONFIG_SRCDIR([poseidon/src])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -7,10 +10,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AC_PROG_CXX
 AC_LANG([C++])
-
-AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
-LT_INIT([disable-static])
 
 ## Check for tcmalloc
 ## This has to come first as others may depend on it.
