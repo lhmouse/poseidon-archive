@@ -4,6 +4,7 @@
 #ifndef POSEIDON_FWD_HPP_
 #define POSEIDON_FWD_HPP_
 
+#include "version.h"
 #include <asteria/fwd.hpp>
 #include <rocket/ascii_case.hpp>
 #include <rocket/linear_buffer.hpp>
@@ -18,10 +19,6 @@
 #include <unistd.h>
 
 // Macros
-#define ASTERIA_ABI_VERSION_MAJOR    @ABI_MAJOR@U
-#define ASTERIA_ABI_VERSION_MINOR    @ABI_MINOR@U
-#define ASTERIA_ABI_VERSION_STRING   "@ABI_MAJOR@.@ABI_MINOR@-@ABI_SUFFIX@"
-
 #define POSEIDON_STATIC_CLASS_DECLARE(C)  \
     private:  \
       /* Data members are not visible in headers. */  \

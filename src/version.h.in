@@ -1,0 +1,11 @@
+// This file is part of Poseidon.
+// Copyleft 2020, LH_Mouse. All wrongs reserved.
+
+#ifndef POSEIDON_VERSION_H_
+#define POSEIDON_VERSION_H_
+
+#define POSEIDON_ABI_VERSION_MAJOR    @ABI_MAJOR@U
+#define POSEIDON_ABI_VERSION_MINOR    @ABI_MINOR@U
+#define POSEIDON_ABI_VERSION_STRING   "@ABI_MAJOR@.@ABI_MINOR@-@ABI_SUFFIX@"
+
+#endif

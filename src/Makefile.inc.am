@@ -1,7 +1,8 @@
 include_poseidondir = ${includedir}/poseidon
 include_poseidon_HEADERS =  \
-  %reldir%/precompiled.hpp  \
+  src/version.h  \
   %reldir%/fwd.hpp  \
+  %reldir%/precompiled.hpp  \
   %reldir%/utils.hpp  \
   ${NOTHING}
 
