@@ -29,11 +29,14 @@ LDADD = lib/libposeidon.la
 
 ## Custom rules
 BUILT_SOURCES =  \
+  src/version.h  \
   precompiled.w.hpp  \
   precompiled.w.hpp.gch  \
   ${NOTHING}
 
 CLEANFILES =  \
+  src/version.h  \
+  src/version.lo  \
   precompiled.w.hpp  \
   precompiled.w.hpp.gch  \
   precompiled.w.hpp.gch.lo  \
