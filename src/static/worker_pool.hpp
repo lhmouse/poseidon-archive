@@ -24,7 +24,8 @@ class Worker_Pool
 
     // Retrieves the maximum number of worker threads.
     // This function is thread-safe.
-    ROCKET_PURE static size_t
+    ROCKET_PURE static
+    size_t
     thread_count() noexcept;
 
     // Inserts an asynchronous job.

@@ -114,13 +114,15 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
     // The index takes up 24 bits. That's 16M simultaneous connections.
     // The serial number takes up 40 bits. That's ~1.1T historical connections.
-    static constexpr uint64_t
+    static constexpr
+    uint64_t
     make_epoll_data(uint64_t index, uint64_t serial) noexcept
       {
         return (index << 40) | ((serial << 24) >> 24);
       }
 
-    static constexpr uint32_t
+    static constexpr
+    uint32_t
     index_from_epoll_data(uint64_t epoll_data) noexcept
       {
         return static_cast<uint32_t>(epoll_data >> 40);
@@ -168,7 +170,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         return poll_index_nil;
       }
 
-    ROCKET_PURE static bool
+    ROCKET_PURE static
+    bool
     poll_lists_empty() noexcept
       {
         return (self->m_poll_root_cl.head == poll_index_end) &&  // close list empty

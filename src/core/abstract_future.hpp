@@ -30,7 +30,8 @@ class Abstract_Future
   private:
     // Checks whether a value or exception has been set.
     // This functions is called by the fiber scheduler with the global mutex locked.
-    ROCKET_PURE bool
+    ROCKET_PURE
+    bool
     do_is_empty() const noexcept
       { return this->state() == future_state_empty;  }
 
@@ -39,7 +40,8 @@ class Abstract_Future
 
     // Gets the state, which is any of `future_state_empty`, `future_state_value`
     // or `future_state_except`.
-    ROCKET_PURE virtual Future_State
+    ROCKET_PURE virtual
+    Future_State
     state() const noexcept
       = 0;
   };

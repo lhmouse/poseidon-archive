@@ -9,9 +9,9 @@ namespace poseidon {
 namespace details_utils {
 
 template<typename... ParamsT>
-ROCKET_NEVER_INLINE static void
-format_log(Log_Level level, const char* file, long line, const char* func,
-           const char* templ, const ParamsT&... params) noexcept
+ROCKET_NEVER_INLINE static
+void
+format_log(Log_Level level, const char* file, long line, const char* func, const char* templ, const ParamsT&... params) noexcept
   try {
     // Compose the message.
     ::rocket::tinyfmt_str fmt;
@@ -31,9 +31,9 @@ format_log(Log_Level level, const char* file, long line, const char* func,
   }
 
 template<typename... ParamsT>
-[[noreturn]] ROCKET_NEVER_INLINE static void
-format_throw(const char* file, long line, const char* func,
-             const char* templ, const ParamsT&... params)
+[[noreturn]] ROCKET_NEVER_INLINE static
+void
+format_throw(const char* file, long line, const char* func, const char* templ, const ParamsT&... params)
   {
     // Compose the message.
     ::rocket::tinyfmt_str fmt;
@@ -54,7 +54,8 @@ format_throw(const char* file, long line, const char* func,
   }
 
 template<void loopfnT(void*)>
-[[noreturn]] ROCKET_NEVER_INLINE static void*
+[[noreturn]] ROCKET_NEVER_INLINE static
+void*
 daemon_thread_proc(void* param)
   {
     // Disable cancellation for safety.
@@ -163,7 +164,8 @@ Async<FuncT>::
   = default;
 
 template<typename AsyncT>
-inline futp<typename AsyncT::result_type>
+inline
+futp<typename AsyncT::result_type>
 promise(uptr<AsyncT>&& async)
   {
     auto futr = async->future();

@@ -15,14 +15,16 @@ class OpenSSL_Context
   public:
     // Returns a static context that has been created with `SSL_VERIFY_PEER`.
     // This is the precommended context for servers and clients.
-    ROCKET_CONST static const OpenSSL_Context&
+    ROCKET_CONST static
+    const OpenSSL_Context&
     static_verify_peer();
 
     // Returns a static context that has been created with `SSL_VERIFY_NONE`.
     // This is the precommended context for servers without certificates, and
     // for clients that don't have to validate server certificates. This may
     // be useful for private communication.
-    ROCKET_CONST static const OpenSSL_Context&
+    ROCKET_CONST static
+    const OpenSSL_Context&
     static_verify_none();
 
   private:

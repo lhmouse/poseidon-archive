@@ -84,7 +84,8 @@ class Abstract_Socket
     // Returns the stream descriptor.
     // This is used to query and adjust stream flags. You shall not perform I/O
     // operations on it.
-    ROCKET_PURE int
+    ROCKET_PURE
+    int
     get_fd() const noexcept
       { return this->m_fd;  }
 

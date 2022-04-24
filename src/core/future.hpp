@@ -42,7 +42,8 @@ class Future
     // * `future_state_except` indicates either an exception has been set or the
     //   associated promise went out of scope without setting a value.
     //   Any retrieval operation shall unblock and throw an exception.
-    ROCKET_PURE Future_State
+    ROCKET_PURE
+    Future_State
     state() const noexcept final
       {
         simple_mutex::unique_lock lock(this->m_mutex);

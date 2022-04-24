@@ -14,11 +14,13 @@ class LCG48
     // This class is a UniformRandomBitGenerator.
     using result_type  = uint32_t;
 
-    static constexpr result_type
+    static constexpr
+    result_type
     min() noexcept
       { return 0; }
 
-    static constexpr result_type
+    static constexpr
+    result_type
     max() noexcept
       { return UINT32_MAX;  }
 

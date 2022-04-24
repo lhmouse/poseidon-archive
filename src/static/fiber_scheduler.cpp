@@ -401,7 +401,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         return qctx.release();
       }
 
-    [[noreturn]] static void
+    [[noreturn]] static
+    void
     do_execute_fiber(int word_0, int word_1) noexcept
       {
         auto myctx = self->open_thread_context();

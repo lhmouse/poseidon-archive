@@ -17,7 +17,8 @@ class Fiber_Scheduler
     // This function is typically called by the main thread. Multiple worker
     // threads are allowed.
     // This function is thread-safe.
-    [[noreturn]] static void
+    [[noreturn]] static
+    void
     modal_loop(const atomic_signal& exit_sig);
 
     // Reloads settings from main config.
@@ -30,7 +31,8 @@ class Fiber_Scheduler
     // Gets a pointer to the current fiber on the current thread.
     // Its fiber state is `fiber_state_running`.
     // This function is thread-safe.
-    ROCKET_PURE static Abstract_Fiber*
+    ROCKET_PURE static
+    Abstract_Fiber*
     current_opt() noexcept;
 
     // Suspends the current fiber until a future becomes satisfied.
