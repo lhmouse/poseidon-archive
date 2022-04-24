@@ -59,6 +59,7 @@ include_poseidon_static_HEADERS =  \
 
 lib_LTLIBRARIES += lib/libposeidon.la
 lib_libposeidon_la_SOURCES =  \
+  %reldir%/version.h.in  \
   %reldir%/exit_stubs.c  \
   %reldir%/fwd.cpp  \
   %reldir%/utils.cpp  \
