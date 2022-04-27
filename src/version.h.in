@@ -4,8 +4,8 @@
 #ifndef POSEIDON_VERSION_H_
 #define POSEIDON_VERSION_H_
 
-#define POSEIDON_ABI_VERSION_MAJOR    @ABI_MAJOR@
-#define POSEIDON_ABI_VERSION_MINOR    @ABI_MINOR@
-#define POSEIDON_ABI_VERSION_STRING   "@ABI_MAJOR@.@ABI_MINOR@-@ABI_SUFFIX@"
+#define POSEIDON_ABI_VERSION_MAJOR    @abi_major@
+#define POSEIDON_ABI_VERSION_MINOR    @abi_minor@
+#define POSEIDON_ABI_VERSION_STRING   "@abi_major@.@abi_minor@-@abi_suffix@"
 
 #endif
