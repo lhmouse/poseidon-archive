@@ -498,8 +498,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
             auto& elem = self->m_sched_pq.back();
             int64_t timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
-            elem.time = ::rocket::min(now + conf.warn_timeout,
-                                      fiber->m_sched_yield_since + timeout);
+            elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_since + timeout);
             elem.version = fiber->m_sched_version;
             elem.fiber = ::std::move(fiber);
             ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
@@ -561,11 +560,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             continue;
           }
 
-          bool should_cancel = sig ||   // termination pending
-                               fiber->m_zombie.load() ||  // shut down explicitly
-                               (fiber.unique() && !fiber->m_resident.load());  // orphan
+          bool cancel = sig ||   // termination pending
+                        fiber->m_zombie.load() ||  // shut down explicitly
+                        (fiber.unique() && !fiber->m_resident.load());  // orphan
 
-          if(should_cancel && (fiber->state() == async_state_pending)) {
+          if(cancel && (fiber->state() == async_state_pending)) {
             // Note cancellation is only possible before initialization.
             // If the fiber stack is in use, it cannot be deallocated without possibility
             // of resource leaks.
@@ -578,7 +577,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           // Note that `Promise::set_value()` first attempts to lock the future, then
           // constructs the value. Only after the construction succeeds, does it call
           // `Fiber_Scheduler::signal()`.
-          if(!should_cancel && fiber->m_sched_futp && fiber->m_sched_futp->do_is_empty()) {
+          if(!cancel && fiber->m_sched_futp && fiber->m_sched_futp->do_is_empty()) {
             // Check wait duration.
             int64_t delta = now - fiber->m_sched_yield_since;
             int64_t timeout = ::rocket::min(fiber->m_sched_yield_timeout, conf.fail_timeout);
@@ -590,8 +589,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
                                   fiber, delta, typeid(*fiber));
 
               // Put the fiber back into the queue.
-              elem.time = ::rocket::min(now + conf.warn_timeout,
-                                        fiber->m_sched_yield_since + timeout);
+              elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_since + timeout);
               elem.fiber = ::std::move(fiber);
               ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
               continue;
