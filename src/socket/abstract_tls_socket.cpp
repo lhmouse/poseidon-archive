@@ -41,7 +41,7 @@ Abstract_TLS_Socket(unique_FD&& fd, const OpenSSL_Context& ctx)
   : Abstract_Stream_Socket(::std::move(fd)),
     OpenSSL_Stream(ctx, *this)
   {
-    ::SSL_set_accept_state(this->open_ssl());
+    ::SSL_set_accept_state(this->mut_ssl());
   }
 
 Abstract_TLS_Socket::
@@ -49,7 +49,7 @@ Abstract_TLS_Socket(::sa_family_t family, const OpenSSL_Context& ctx)
   : Abstract_Stream_Socket(family),
     OpenSSL_Stream(ctx, *this)
   {
-    ::SSL_set_connect_state(this->open_ssl());
+    ::SSL_set_connect_state(this->mut_ssl());
   }
 
 Abstract_TLS_Socket::
@@ -61,10 +61,10 @@ IO_Result
 Abstract_TLS_Socket::
 do_socket_stream_read_unlocked(char*& data, size_t size)
   {
-    int nread = ::SSL_read(this->open_ssl(), data,
+    int nread = ::SSL_read(this->mut_ssl(), data,
                      ::rocket::clamp_cast<int>(size, 0, INT_MAX));
     if(nread < 0)
-      return do_translate_ssl_error("SSL_read", this->open_ssl(), nread);
+      return do_translate_ssl_error("SSL_read", this->mut_ssl(), nread);
 
     if(nread == 0)
       return io_result_end_of_stream;
@@ -77,10 +77,10 @@ IO_Result
 Abstract_TLS_Socket::
 do_socket_stream_write_unlocked(const char*& data, size_t size)
   {
-    int nwritten = ::SSL_write(this->open_ssl(), data,
+    int nwritten = ::SSL_write(this->mut_ssl(), data,
                         ::rocket::clamp_cast<int>(size, 0, INT_MAX));
     if(nwritten < 0)
-      return do_translate_ssl_error("SSL_write", this->open_ssl(), nwritten);
+      return do_translate_ssl_error("SSL_write", this->mut_ssl(), nwritten);
 
     data += static_cast<unsigned>(nwritten);
     return io_result_partial_work;
@@ -90,7 +90,7 @@ void
 Abstract_TLS_Socket::
 do_socket_stream_preclose_unclocked() noexcept
   {
-    ::SSL_shutdown(this->open_ssl());
+    ::SSL_shutdown(this->mut_ssl());
   }
 
 void

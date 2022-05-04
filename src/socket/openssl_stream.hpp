@@ -29,7 +29,7 @@ class OpenSSL_Stream
       { return this->m_ssl;  }
 
     ::SSL*
-    open_ssl() noexcept
+    mut_ssl() noexcept
       { return this->m_ssl;  }
   };
 

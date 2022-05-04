@@ -44,7 +44,7 @@ class OpenSSL_Context
       { return this->m_ctx;  }
 
     ::SSL_CTX*
-    open_ssl_ctx() noexcept
+    mut_ssl_ctx() noexcept
       { return this->m_ctx;  }
   };
 

@@ -51,7 +51,7 @@ Abstract_TLS_Server_Socket(const Socket_Address& addr)
     if(!pkey)
       POSEIDON_THROW("`network.tls.default_private_key` not configured");
 
-    do_load_cert_and_pkey(this->open_ssl_ctx(),
+    do_load_cert_and_pkey(this->mut_ssl_ctx(),
                           cert->safe_c_str(), pkey->safe_c_str());
     this->do_socket_listen(addr);
   }
@@ -68,7 +68,7 @@ Abstract_TLS_Server_Socket(const Socket_Address& addr,
     if(!pkey)
       POSEIDON_THROW("tLS server requires a private key");
 
-    do_load_cert_and_pkey(this->open_ssl_ctx(), cert, pkey);
+    do_load_cert_and_pkey(this->mut_ssl_ctx(), cert, pkey);
     this->do_socket_listen(addr);
   }
 

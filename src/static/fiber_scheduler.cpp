@@ -382,7 +382,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
     static
     Thread_Context*
-    open_thread_context()
+    mut_thread_context()
       {
         auto ptr = ::pthread_getspecific(self->m_sched_key);
         if(ROCKET_EXPECT(ptr))
@@ -405,7 +405,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     void
     do_execute_fiber(int word_0, int word_1) noexcept
       {
-        auto myctx = self->open_thread_context();
+        auto myctx = self->mut_thread_context();
         POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
 
         // Get the fiber pointer back.
@@ -431,7 +431,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         POSEIDON_LOG_TRACE("Finished execution of fiber `$1`", fiber);
 
         // Note the scheduler thread may have changed.
-        myctx = self->open_thread_context();
+        myctx = self->mut_thread_context();
         POSEIDON_ASAN_START_SWITCH_FIBER(myctx, myctx->return_uctx);
         ::setcontext(myctx->return_uctx);
         ::std::terminate();
@@ -459,7 +459,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     do_thread_loop(void* param)
       {
         const auto& exit_sig = *(const atomic_signal*)param;
-        const auto myctx = self->open_thread_context();
+        const auto myctx = self->mut_thread_context();
 
         rcptr<Abstract_Fiber> fiber;
         int64_t now;
@@ -801,7 +801,7 @@ yield(rcptr<Abstract_Future> futp_opt, int64_t msecs)
     POSEIDON_ASAN_START_SWITCH_FIBER(myctx, myctx->return_uctx);
     int r = ::swapcontext(fiber->m_sched_uctx, myctx->return_uctx);
     ROCKET_ASSERT(r == 0);
-    myctx = self->open_thread_context();  // (scheduler thread may have changed)
+    myctx = self->mut_thread_context();  // (scheduler thread may have changed)
     ROCKET_ASSERT(fiber == myctx->current);
     POSEIDON_ASAN_FINISH_SWITCH_FIBER(myctx);
 
