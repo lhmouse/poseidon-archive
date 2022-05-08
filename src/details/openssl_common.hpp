@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_DETAILS_OPENSSL_COMMON_HPP_
-#define POSEIDON_DETAILS_OPENSSL_COMMON_HPP_
+#ifndef POSEIDON_DETAILS_OPENSSL_COMMON_
+#define POSEIDON_DETAILS_OPENSSL_COMMON_
 
 #include "../fwd.hpp"
 #include <openssl/ssl.h>

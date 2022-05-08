@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_STATIC_WORKER_POOL_HPP_
-#define POSEIDON_STATIC_WORKER_POOL_HPP_
+#ifndef POSEIDON_STATIC_WORKER_POOL_
+#define POSEIDON_STATIC_WORKER_POOL_
 
 #include "../fwd.hpp"
 

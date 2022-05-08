@@ -1,7 +1,7 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_SOCKET_SOCKET_ADDRESS_HPP_
+#ifndef POSEIDON_SOCKET_SOCKET_ADDRESS_
 #  error Please include <poseidon/socket/socket_address.hpp> instead.
 #endif
 

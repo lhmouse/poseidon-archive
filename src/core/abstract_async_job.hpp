@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_CORE_ABSTRACT_ASYNC_JOB_HPP_
-#define POSEIDON_CORE_ABSTRACT_ASYNC_JOB_HPP_
+#ifndef POSEIDON_CORE_ABSTRACT_ASYNC_JOB_
+#define POSEIDON_CORE_ABSTRACT_ASYNC_JOB_
 
 #include "../fwd.hpp"
 

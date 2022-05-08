@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_STATIC_MAIN_CONFIG_HPP_
-#define POSEIDON_STATIC_MAIN_CONFIG_HPP_
+#ifndef POSEIDON_STATIC_MAIN_CONFIG_
+#define POSEIDON_STATIC_MAIN_CONFIG_
 
 #include "../fwd.hpp"
 

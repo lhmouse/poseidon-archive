@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_CORE_FUTURE_HPP_
-#define POSEIDON_CORE_FUTURE_HPP_
+#ifndef POSEIDON_CORE_FUTURE_
+#define POSEIDON_CORE_FUTURE_
 
 #include "abstract_future.hpp"
 

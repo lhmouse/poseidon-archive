@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_STATIC_FIBER_SCHEDULER_HPP_
-#define POSEIDON_STATIC_FIBER_SCHEDULER_HPP_
+#ifndef POSEIDON_STATIC_FIBER_SCHEDULER_
+#define POSEIDON_STATIC_FIBER_SCHEDULER_
 
 #include "../fwd.hpp"
 

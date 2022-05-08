@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_FWD_HPP_
-#define POSEIDON_FWD_HPP_
+#ifndef POSEIDON_FWD_
+#define POSEIDON_FWD_
 
 #include "version.h"
 #include <asteria/fwd.hpp>

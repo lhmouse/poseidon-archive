@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_CORE_PROMISE_HPP_
-#define POSEIDON_CORE_PROMISE_HPP_
+#ifndef POSEIDON_CORE_PROMISE_
+#define POSEIDON_CORE_PROMISE_
 
 #include "future.hpp"
 #include "../static/fiber_scheduler.hpp"

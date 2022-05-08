@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_SOCKET_OPENSSL_STREAM_HPP_
-#define POSEIDON_SOCKET_OPENSSL_STREAM_HPP_
+#ifndef POSEIDON_SOCKET_OPENSSL_STREAM_
+#define POSEIDON_SOCKET_OPENSSL_STREAM_
 
 #include "../fwd.hpp"
 #include "../details/openssl_common.hpp"

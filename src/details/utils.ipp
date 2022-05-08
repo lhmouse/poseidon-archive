@@ -1,7 +1,7 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_UTILS_HPP_
+#ifndef POSEIDON_UTILS_
 #  error Please include <poseidon/utils.hpp> instead.
 #endif
 

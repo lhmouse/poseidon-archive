@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_UTILS_HPP_
-#define POSEIDON_UTILS_HPP_
+#ifndef POSEIDON_UTILS_
+#define POSEIDON_UTILS_
 
 #include "fwd.hpp"
 #include "static/async_logger.hpp"

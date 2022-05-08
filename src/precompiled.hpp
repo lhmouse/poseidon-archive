@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_PRECOMPILED_HPP_
-#define POSEIDON_PRECOMPILED_HPP_
+#ifndef POSEIDON_PRECOMPILED_
+#define POSEIDON_PRECOMPILED_
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>

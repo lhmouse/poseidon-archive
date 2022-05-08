@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_CORE_CONFIG_FILE_HPP_
-#define POSEIDON_CORE_CONFIG_FILE_HPP_
+#ifndef POSEIDON_CORE_CONFIG_FILE_
+#define POSEIDON_CORE_CONFIG_FILE_
 
 #include "../fwd.hpp"
 #include <asteria/value.hpp>
