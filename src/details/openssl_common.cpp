@@ -1,7 +1,7 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#include "../precompiled.hpp"
+#include "../precompiled.ipp"
 #include "openssl_common.hpp"
 #include "../utils.hpp"
 #include <openssl/err.h>

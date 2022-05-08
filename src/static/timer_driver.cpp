@@ -1,7 +1,7 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#include "../precompiled.hpp"
+#include "../precompiled.ipp"
 #include "timer_driver.hpp"
 #include "../core/abstract_timer.hpp"
 #include "../utils.hpp"

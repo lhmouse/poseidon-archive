@@ -11,7 +11,7 @@ AM_CPPFLAGS = -pipe -pthread -Wall -Wextra -fPIC -DPIC -Isrc -U_FORTIFY_SOURCE  
   -W{invalid-pch,switch-enum,suggest-attribute=noreturn,shadow,missing-field-initializers}  \
   -Wunused-{function,label,local-typedefs,{,but-set-}{variable,parameter}}
 
-AM_CXXFLAGS = -include precompiled.xhpp -std=gnu++14 -Wp,-std=c++11  \
+AM_CXXFLAGS = -include precompiled.xipp -std=gnu++14 -Wp,-std=c++11  \
   -fno-gnu-keywords -fvisibility-inlines-hidden  \
   -Wno-redundant-move  \
   -Werror={non-virtual-dtor,missing-declarations}
@@ -25,26 +25,26 @@ AM_CXXFLAGS += -fsanitize=thread
 endif
 
 AM_DEFAULT_SOURCE_EXT = .cpp
-SUFFIXES = .xhpp .xhpp.gch
+SUFFIXES = .xipp .xipp.gch
 LDADD = lib/libposeidon.la
 
-## Custom rules
 BUILT_SOURCES =  \
-  precompiled.xhpp  \
-  precompiled.xhpp.gch  \
+  precompiled.xipp  \
+  precompiled.xipp.gch  \
   ${NOTHING}
 
 CLEANFILES =  \
-  precompiled.xhpp  \
-  precompiled.xhpp.gch  \
-  precompiled.xhpp.gch.lo  \
+  precompiled.xipp  \
+  precompiled.xipp.gch  \
+  precompiled.xipp.gch.lo  \
   ${NOTHING}
 
-%.xhpp: ${srcdir}/src/%.hpp
+## Custom rules
+%.xipp: ${srcdir}/src/%.ipp
 	## Build the wrapper header, which contains the absolute path to the plain header.
 	${AM_V_GEN}echo "#include \"$$(readlink -f $<)\"" >$@
 
-%.xhpp.gch: %.xhpp src/version.h config.h
+%.xipp.gch: %.xipp src/version.h config.h
 	## Compile the header. This must use LTCXXCOMPILE due to some nasty PIC flags...
 	${AM_V_CXX}${LTCXXCOMPILE} -x c++-header -Wno-error $< -o $@.o
 	## ..., but it causes the 'real' output to go into './libs/' and leaves a text file
@@ -54,11 +54,7 @@ CLEANFILES =  \
 	@test -z "${EXEEXT}" || rm -f $@${EXEEXT}
 
 ## Initialization
-EXTRA_DIST =  \
-  etc/main.template.conf  \
-  etc/main.conf  \
-  ${NOTHING}
-
+EXTRA_DIST =
 noinst_LIBRARIES =
 noinst_LTLIBRARIES =
 TESTS = ${check_PROGRAMS}
@@ -73,6 +69,9 @@ check_HEADERS =
 check_LIBRARIES =
 check_LTLIBRARIES =
 check_PROGRAMS =
+
+## Documentation
+#include doc/Makefile.inc.am
 
 ## Programs and libraries
 include src/Makefile.inc.am

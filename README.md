@@ -60,7 +60,7 @@ make -j$(nproc)
 
 ```sh
 ./makedeb.sh
-sudo cp /usr/local/etc/poseidon/main.template.conf  \
+sudo cp /usr/local/etc/poseidon/main.default.conf  \
         /usr/local/etc/poseidon/main.conf
 ```
 

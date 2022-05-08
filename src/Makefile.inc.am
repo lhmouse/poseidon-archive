@@ -2,7 +2,6 @@ include_poseidondir = ${includedir}/poseidon
 include_poseidon_HEADERS =  \
   %D%/version.h  \
   %D%/fwd.hpp  \
-  %D%/precompiled.hpp  \
   %D%/utils.hpp  \
   ${NOTHING}
 
@@ -60,6 +59,7 @@ include_poseidon_static_HEADERS =  \
 lib_LTLIBRARIES += lib/libposeidon.la
 lib_libposeidon_la_SOURCES =  \
   %D%/version.h.in  \
+  %D%/precompiled.ipp  \
   %D%/exit_stubs.c  \
   %D%/fwd.cpp  \
   %D%/utils.cpp  \

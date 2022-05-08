@@ -1,3 +1,8 @@
+EXTRA_DIST +=  \
+  %D%/main.conf  \
+  %D%/main.default.conf  \
+  ${NOTHING}
+
 sysconf_poseidondir = ${sysconfdir}/poseidon
 sysconf_poseidon_DATA =  \
   %D%/main.conf  \

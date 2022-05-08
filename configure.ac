@@ -1,7 +1,7 @@
 ## AC_INIT(package, version, [bug-report], [tarname], [url])
 AC_INIT([poseidon], [master], [lh_mouse@126.com], [poseidon], [https://github.com/lhmouse/poseidon])
 AC_LANG([C++])
-AC_CONFIG_SRCDIR([asteria/src/simple_script.cpp])
+AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])

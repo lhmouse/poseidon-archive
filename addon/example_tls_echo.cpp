@@ -1,7 +1,7 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#include "../src/precompiled.hpp"
+#include "../src/precompiled.ipp"
 #include "../src/socket/abstract_tls_server_socket.hpp"
 #include "../src/socket/abstract_tls_socket.hpp"
 #include "../src/static/network_driver.hpp"
