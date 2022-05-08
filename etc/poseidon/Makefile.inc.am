@@ -1,5 +1,5 @@
 sysconf_poseidondir = ${sysconfdir}/poseidon
 sysconf_poseidon_DATA =  \
-  %reldir%/main.conf  \
-  %reldir%/main.default.conf  \
+  %D%/main.conf  \
+  %D%/main.default.conf  \
   ${NOTHING}
