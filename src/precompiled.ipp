@@ -4,6 +4,8 @@
 #ifndef POSEIDON_PRECOMPILED_
 #define POSEIDON_PRECOMPILED_
 
+#include "version.h"
+
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
