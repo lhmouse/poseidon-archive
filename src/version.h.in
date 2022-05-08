@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_VERSION_H_
-#define POSEIDON_VERSION_H_
+#ifndef POSEIDON_VERSION_
+#define POSEIDON_VERSION_
 
 #define POSEIDON_ABI_VERSION_MAJOR    @abi_major@
 #define POSEIDON_ABI_VERSION_MINOR    @abi_minor@
