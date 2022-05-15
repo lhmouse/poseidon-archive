@@ -1,98 +1,98 @@
 include_poseidondir = ${includedir}/poseidon
 include_poseidon_HEADERS =  \
-  %D%/version.h  \
-  %D%/fwd.hpp  \
-  %D%/utils.hpp  \
-  ${NOTHING}
+  %reldir%/version.h  \
+  %reldir%/fwd.hpp  \
+  %reldir%/utils.hpp  \
+  ${END}
 
 include_poseidon_detailsdir = ${includedir}/poseidon/details
 include_poseidon_details_HEADERS =  \
-  %D%/details/utils.ipp  \
-  %D%/details/socket_address.ipp  \
-  %D%/details/openssl_common.hpp  \
-  ${NOTHING}
+  %reldir%/details/utils.ipp  \
+  %reldir%/details/socket_address.ipp  \
+  %reldir%/details/openssl_common.hpp  \
+  ${END}
 
 include_poseidon_coredir = ${includedir}/poseidon/core
 include_poseidon_core_HEADERS =  \
-  %D%/core/config_file.hpp  \
-  %D%/core/abstract_timer.hpp  \
-  %D%/core/promise.hpp  \
-  %D%/core/abstract_future.hpp  \
-  %D%/core/future.hpp  \
-  %D%/core/abstract_async_job.hpp  \
-  %D%/core/abstract_fiber.hpp  \
-  %D%/core/lcg48.hpp  \
-  ${NOTHING}
+  %reldir%/core/config_file.hpp  \
+  %reldir%/core/abstract_timer.hpp  \
+  %reldir%/core/promise.hpp  \
+  %reldir%/core/abstract_future.hpp  \
+  %reldir%/core/future.hpp  \
+  %reldir%/core/abstract_async_job.hpp  \
+  %reldir%/core/abstract_fiber.hpp  \
+  %reldir%/core/lcg48.hpp  \
+  ${END}
 
 include_poseidon_socketdir = ${includedir}/poseidon/socket
 include_poseidon_socket_HEADERS =  \
-  %D%/socket/enums.hpp  \
-  %D%/socket/socket_address.hpp  \
-  %D%/socket/openssl_context.hpp  \
-  %D%/socket/openssl_stream.hpp  \
-  %D%/socket/abstract_socket.hpp  \
-  %D%/socket/abstract_accept_socket.hpp  \
-  %D%/socket/abstract_stream_socket.hpp  \
-  %D%/socket/abstract_tcp_socket.hpp  \
-  %D%/socket/abstract_tcp_server_socket.hpp  \
-  %D%/socket/abstract_tcp_client_socket.hpp  \
-  %D%/socket/abstract_tls_socket.hpp  \
-  %D%/socket/abstract_tls_server_socket.hpp  \
-  %D%/socket/abstract_tls_client_socket.hpp  \
-  %D%/socket/abstract_udp_socket.hpp  \
-  %D%/socket/abstract_udp_server_socket.hpp  \
-  %D%/socket/abstract_udp_client_socket.hpp  \
-  ${NOTHING}
+  %reldir%/socket/enums.hpp  \
+  %reldir%/socket/socket_address.hpp  \
+  %reldir%/socket/openssl_context.hpp  \
+  %reldir%/socket/openssl_stream.hpp  \
+  %reldir%/socket/abstract_socket.hpp  \
+  %reldir%/socket/abstract_accept_socket.hpp  \
+  %reldir%/socket/abstract_stream_socket.hpp  \
+  %reldir%/socket/abstract_tcp_socket.hpp  \
+  %reldir%/socket/abstract_tcp_server_socket.hpp  \
+  %reldir%/socket/abstract_tcp_client_socket.hpp  \
+  %reldir%/socket/abstract_tls_socket.hpp  \
+  %reldir%/socket/abstract_tls_server_socket.hpp  \
+  %reldir%/socket/abstract_tls_client_socket.hpp  \
+  %reldir%/socket/abstract_udp_socket.hpp  \
+  %reldir%/socket/abstract_udp_server_socket.hpp  \
+  %reldir%/socket/abstract_udp_client_socket.hpp  \
+  ${END}
 
-  ${NOTHING}
+  ${END}
 
 include_poseidon_staticdir = ${includedir}/poseidon/static
 include_poseidon_static_HEADERS =  \
-  %D%/static/main_config.hpp  \
-  %D%/static/async_logger.hpp  \
-  %D%/static/timer_driver.hpp  \
-  %D%/static/network_driver.hpp  \
-  %D%/static/worker_pool.hpp  \
-  %D%/static/fiber_scheduler.hpp  \
-  ${NOTHING}
+  %reldir%/static/main_config.hpp  \
+  %reldir%/static/async_logger.hpp  \
+  %reldir%/static/timer_driver.hpp  \
+  %reldir%/static/network_driver.hpp  \
+  %reldir%/static/worker_pool.hpp  \
+  %reldir%/static/fiber_scheduler.hpp  \
+  ${END}
 
 lib_LTLIBRARIES += lib/libposeidon.la
 lib_libposeidon_la_SOURCES =  \
-  %D%/version.h.in  \
-  %D%/precompiled.ipp  \
-  %D%/exit_stubs.c  \
-  %D%/fwd.cpp  \
-  %D%/utils.cpp  \
-  %D%/details/openssl_common.cpp  \
-  %D%/core/config_file.cpp  \
-  %D%/core/abstract_timer.cpp  \
-  %D%/core/abstract_future.cpp  \
-  %D%/core/abstract_async_job.cpp  \
-  %D%/core/abstract_fiber.cpp  \
-  %D%/core/lcg48.cpp  \
-  %D%/socket/enums.cpp  \
-  %D%/socket/socket_address.cpp  \
-  %D%/socket/openssl_context.cpp  \
-  %D%/socket/openssl_stream.cpp  \
-  %D%/socket/abstract_socket.cpp  \
-  %D%/socket/abstract_accept_socket.cpp  \
-  %D%/socket/abstract_stream_socket.cpp  \
-  %D%/socket/abstract_tcp_socket.cpp  \
-  %D%/socket/abstract_tcp_server_socket.cpp  \
-  %D%/socket/abstract_tcp_client_socket.cpp  \
-  %D%/socket/abstract_tls_socket.cpp  \
-  %D%/socket/abstract_tls_server_socket.cpp  \
-  %D%/socket/abstract_tls_client_socket.cpp  \
-  %D%/socket/abstract_udp_socket.cpp  \
-  %D%/socket/abstract_udp_server_socket.cpp  \
-  %D%/socket/abstract_udp_client_socket.cpp  \
-  %D%/static/main_config.cpp  \
-  %D%/static/async_logger.cpp  \
-  %D%/static/timer_driver.cpp  \
-  %D%/static/network_driver.cpp  \
-  %D%/static/worker_pool.cpp  \
-  %D%/static/fiber_scheduler.cpp  \
-  ${NOTHING}
+  %reldir%/version.h.in  \
+  %reldir%/precompiled.ipp  \
+  %reldir%/exit_stubs.c  \
+  %reldir%/fwd.cpp  \
+  %reldir%/utils.cpp  \
+  %reldir%/details/openssl_common.cpp  \
+  %reldir%/core/config_file.cpp  \
+  %reldir%/core/abstract_timer.cpp  \
+  %reldir%/core/abstract_future.cpp  \
+  %reldir%/core/abstract_async_job.cpp  \
+  %reldir%/core/abstract_fiber.cpp  \
+  %reldir%/core/lcg48.cpp  \
+  %reldir%/socket/enums.cpp  \
+  %reldir%/socket/socket_address.cpp  \
+  %reldir%/socket/openssl_context.cpp  \
+  %reldir%/socket/openssl_stream.cpp  \
+  %reldir%/socket/abstract_socket.cpp  \
+  %reldir%/socket/abstract_accept_socket.cpp  \
+  %reldir%/socket/abstract_stream_socket.cpp  \
+  %reldir%/socket/abstract_tcp_socket.cpp  \
+  %reldir%/socket/abstract_tcp_server_socket.cpp  \
+  %reldir%/socket/abstract_tcp_client_socket.cpp  \
+  %reldir%/socket/abstract_tls_socket.cpp  \
+  %reldir%/socket/abstract_tls_server_socket.cpp  \
+  %reldir%/socket/abstract_tls_client_socket.cpp  \
+  %reldir%/socket/abstract_udp_socket.cpp  \
+  %reldir%/socket/abstract_udp_server_socket.cpp  \
+  %reldir%/socket/abstract_udp_client_socket.cpp  \
+  %reldir%/static/main_config.cpp  \
+  %reldir%/static/async_logger.cpp  \
+  %reldir%/static/timer_driver.cpp  \
+  %reldir%/static/network_driver.cpp  \
+  %reldir%/static/worker_pool.cpp  \
+  %reldir%/static/fiber_scheduler.cpp  \
+  ${END}
 
 lib_libposeidon_la_LDFLAGS =  \
   -Wl,--no-undefined -no-undefined -version-info 0:0
@@ -107,13 +107,13 @@ endif
 
 bin_PROGRAMS += bin/poseidon
 bin_poseidon_SOURCES =  \
-  %D%/main.cpp
+  %reldir%/main.cpp
 
-AM_CXXFLAGS += -include %D%/precompiled.xipp
-BUILT_SOURCES += %D%/precompiled.xipp
-CLEANFILES += %D%/precompiled.xipp %D%/precompiled.xipp.gch
+AM_CXXFLAGS += -include %reldir%/precompiled.xipp
+BUILT_SOURCES += %reldir%/precompiled.xipp
+CLEANFILES += %reldir%/precompiled.xipp %D%/precompiled.xipp.gch
 
-%.xipp: %.ipp %D%/version.h config.h
+%.xipp: %.ipp %reldir%/version.h config.h
 	## Build the wrapper header, which contains the absolute path to the plain header.
 	${AM_V_GEN}printf '#include "%s"\n' $(abspath $<) > $@
 	## Compile the header. This must use LTCXXCOMPILE due to some nasty PIC flags...
