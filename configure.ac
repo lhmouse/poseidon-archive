@@ -37,7 +37,7 @@ AC_CHECK_LIB([crypto], [ERR_error_string], [], [AC_MSG_ERROR(OpenSSL not found)]
 AC_CHECK_LIB([z], [deflate], [], [AC_MSG_ERROR(zlib not found)])
 AC_CHECK_LIB([http_parser], [http_parser_execute], [], [AC_MSG_ERROR(http-parser library not found)])
 
-## Set up optional features
+## Check for assertions
 AC_ARG_ENABLE([debug-checks], AS_HELP_STRING([--enable-debug-checks], [enable assertions]))
 AM_CONDITIONAL([enable_debug_checks], [test "${enable_debug_checks}" == "yes"])
 AM_COND_IF([enable_debug_checks], [
@@ -46,6 +46,11 @@ AM_COND_IF([enable_debug_checks], [
   AC_DEFINE([_DEBUG], [1], [Define to 1 to enable debug checks of MSVC standard library.])
 ])
 
+## Check for pre-compiled headers
+AC_ARG_ENABLE([pch], AS_HELP_STRING([--disable-pch], [do not use pre-compiled headers]))
+AM_CONDITIONAL([enable_pch], [test "${enable_pch}" != "no"])
+
+## Set up optional features
 AC_ARG_ENABLE([sanitizer], AS_HELP_STRING([--enable-sanitizer=address|thread], [enable sanitizer (address sanitizer and thread sanitizer cannot be enabled at the same time)]))
 AM_CONDITIONAL([enable_address_sanitizer], [test "${enable_sanitizer}" == "address"])
 AM_COND_IF([enable_address_sanitizer], [
