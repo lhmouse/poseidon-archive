@@ -3,7 +3,7 @@ END =
 
 ## Compiler options
 AM_CPPFLAGS = -pipe -pthread -Wall -Wextra -Isrc -U_FORTIFY_SOURCE  \
-  -D_FILE_OFFSET_BITS=64 -D_POSIX_C_SOURCE=200809 -D_GNU_SOURCE -{f,D}PIC  \
+  -D_FILE_OFFSET_BITS=64 -D_POSIX_C_SOURCE=200809 -D_GNU_SOURCE  \
   -f{strict-{aliasing,overflow},merge-all-constants,fast-math}  \
   -fno-{devirtualize-speculatively,semantic-interposition,ident}  \
   -Werror={conversion,sign-{compare,conversion},write-strings,return-type}  \
