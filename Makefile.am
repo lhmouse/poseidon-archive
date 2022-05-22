@@ -5,13 +5,13 @@ END =
 AM_CPPFLAGS = -pipe -pthread -Wall -Wextra -Isrc -U_FORTIFY_SOURCE  \
   -D_FILE_OFFSET_BITS=64 -D_POSIX_C_SOURCE=200809 -D_GNU_SOURCE  \
   -f{strict-{aliasing,overflow},merge-all-constants,fast-math}  \
-  -fno-{devirtualize-speculatively,semantic-interposition,ident}  \
-  -Werror={conversion,sign-{compare,conversion},write-strings,return-type}  \
-  -Werror={double-promotion,aggressive-loop-optimizations}  \
-  -W{switch-enum,suggest-attribute=noreturn,shadow,missing-field-initializers}  \
-  -Wunused-{function,label,local-typedefs,{,but-set-}{variable,parameter}}
+  -Werror={conversion,sign-{compare,conversion},write-strings}  \
+  -Werror={return-type,double-promotion,missing-declarations}  \
+  -W{missing-field-initializers,suggest-attribute=noreturn,shadow}  \
+  -W{switch-enum,unused-{function,label,local-typedefs}}  \
+  -Wunused-but-set-{variable,parameter}
 
-AM_CXXFLAGS = -std=c++17 -fno-gnu-keywords -fvisibility-inlines-hidden  \
+AM_CXXFLAGS = -std=c++17 -fvisibility-inlines-hidden  \
   -Wno-redundant-move -Werror={non-virtual-dtor,missing-declarations}
 
 if enable_address_sanitizer
