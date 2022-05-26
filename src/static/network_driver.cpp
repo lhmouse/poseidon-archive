@@ -209,8 +209,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
         // Insert this node at the end of the doubly linked list.
         uint32_t prev = ::std::exchange(root.tail, index);
-        ((prev != poll_index_end) ?
-            (self->m_poll_elems[prev].*mptrT).next : root.head) = index;
+        ((prev != poll_index_end) ? (self->m_poll_elems[prev].*mptrT).next : root.head) = index;
         (elem.*mptrT).next = poll_index_end;
         (elem.*mptrT).prev = prev;
         return true;
@@ -229,10 +228,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
         // Remove this node from the doubly linked list.
         uint32_t next = ::std::exchange((elem.*mptrT).next, poll_index_nil);
         uint32_t prev = ::std::exchange((elem.*mptrT).prev, poll_index_nil);
-        ((next != poll_index_end) ?
-            (self->m_poll_elems[next].*mptrT).prev : root.tail) = prev;
-        ((prev != poll_index_end) ?
-            (self->m_poll_elems[prev].*mptrT).next : root.head) = next;
+        ((next != poll_index_end) ? (self->m_poll_elems[next].*mptrT).prev : root.tail) = prev;
+        ((prev != poll_index_end) ? (self->m_poll_elems[prev].*mptrT).next : root.head) = next;
         return true;
       }
 
