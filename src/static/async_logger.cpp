@@ -182,8 +182,8 @@ do_write_log_entry(const Level_Config_Array& conf_levels, Log_Entry&& entry)
       fd.reset(::open(conf.out_path.c_str(),  O_WRONLY | O_APPEND | O_CREAT, 0666));
       if(fd == -1)
         ::std::fprintf(stderr,
-            "WARNING: Could not open log file '%s': error %d: %m\n",
-            conf.out_path.c_str(), errno);
+             "WARNING: Could not open log file '%s': error %d: %m\n",
+             conf.out_path.c_str(), errno);
       else
         strms.emplace_back(::std::move(fd));
     }
@@ -414,8 +414,7 @@ synchronize() noexcept
     // Write all entries.
     const simple_mutex::unique_lock io_lock(self->m_io_mutex);
     lock.lock(self->m_queue_mutex);
-    if(self->m_queue.empty())
-      return;
+    bool needs_flush = false;
 
     while(!self->m_queue.empty()) {
       // Pop an entry and write it.
@@ -423,8 +422,11 @@ synchronize() noexcept
       self->m_queue.pop_front();
 
       do_write_log_entry(conf_levels, ::std::move(entry));
+      needs_flush = true;
     }
-    ::sync();
+
+    if(needs_flush)
+      ::sync();
   }
 
 }  // namespace poseidon
