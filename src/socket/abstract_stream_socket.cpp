@@ -72,16 +72,18 @@ do_socket_close_unlocked() noexcept
 
 IO_Result
 Abstract_Stream_Socket::
-do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
+do_socket_on_poll_read(simple_mutex::unique_lock& lock)
   {
-    ROCKET_ASSERT(size != 0);
     lock.lock(this->m_io_mutex);
     if(this->m_connection_state == connection_state_closed)
       return io_result_end_of_stream;
 
     // Try reading some bytes.
-    char* eptr = hint;
-    auto io_res = this->do_socket_stream_read_unlocked(eptr, size);
+    this->m_rqueue.reserve(0xFFFF);
+    char* eptr = this->m_rqueue.mut_end();
+    size_t navail = this->m_rqueue.capacity() - this->m_rqueue.size();
+
+    auto io_res = this->do_socket_stream_read_unlocked(eptr, navail);
     if(io_res == io_result_end_of_stream) {
       POSEIDON_LOG_TRACE("End of stream encountered: $1", this);
       this->do_socket_close_unlocked();
@@ -89,10 +91,11 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
     if(io_res != io_result_partial_work)
       return io_res;
 
-    // Process the data that have been read.
+    this->m_rqueue.accept(static_cast<size_t>(eptr - this->m_rqueue.end()));
     lock.unlock();
-    this->do_socket_on_receive(hint, static_cast<size_t>(eptr - hint));
 
+    // Process the data that have been read.
+    this->do_socket_on_receive(this->m_rqueue);
     lock.lock(this->m_io_mutex);
     return io_res;
   }
@@ -114,9 +117,8 @@ do_write_queue_size(simple_mutex::unique_lock& lock) const
 
 IO_Result
 Abstract_Stream_Socket::
-do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t size)
+do_socket_on_poll_write(simple_mutex::unique_lock& lock)
   {
-    ROCKET_ASSERT(size != 0);
     lock.lock(this->m_io_mutex);
     if(this->m_connection_state == connection_state_closed)
       return io_result_end_of_stream;
@@ -135,7 +137,7 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
     lock.lock(this->m_io_mutex);
 
     // Try writing some bytes.
-    size_t navail = ::std::min(this->m_wqueue.size(), size);
+    size_t navail = this->m_wqueue.size();
     if((navail == 0) && (this->m_connection_state > connection_state_established))
       return this->do_socket_close_unlocked();
 

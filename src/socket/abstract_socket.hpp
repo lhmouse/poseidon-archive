@@ -39,12 +39,10 @@ class Abstract_Socket
   protected:
     // The network driver notifies incoming data via this callback.
     // `lock` shall lock `*this` after the call if locking is supported.
-    // `hint` points to a temporary buffer of `size` bytes that may be used by this
-    // function for any purpose.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     IO_Result
-    do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
+    do_socket_on_poll_read(simple_mutex::unique_lock& lock)
       = 0;
 
     // This function shall return the number of bytes that are pending for writing.
@@ -56,12 +54,10 @@ class Abstract_Socket
 
     // The network driver notifies possibility of outgoing data via this callback.
     // `lock` shall lock `*this` after the call if locking is supported.
-    // `hint` points to a temporary buffer of `size` bytes that may be used by this
-    // function for any purpose.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     IO_Result
-    do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size)
+    do_socket_on_poll_write(simple_mutex::unique_lock& lock)
       = 0;
 
     // The network driver notifies closure via this callback.

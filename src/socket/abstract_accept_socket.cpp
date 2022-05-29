@@ -21,7 +21,7 @@ Abstract_Accept_Socket::
 
 IO_Result
 Abstract_Accept_Socket::
-do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /*size*/)
+do_socket_on_poll_read(simple_mutex::unique_lock& lock)
   {
     lock.lock(this->m_io_mutex);
 
@@ -64,14 +64,15 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /
 
 size_t
 Abstract_Accept_Socket::
-do_write_queue_size(simple_mutex::unique_lock& /*lock*/) const
+do_write_queue_size(simple_mutex::unique_lock& lock) const
   {
+    (void) lock;
     return 0;
   }
 
 IO_Result
 Abstract_Accept_Socket::
-do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /*size*/)
+do_socket_on_poll_write(simple_mutex::unique_lock& lock)
   {
     lock.lock(this->m_io_mutex);
     return io_result_end_of_stream;

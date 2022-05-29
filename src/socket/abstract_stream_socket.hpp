@@ -16,7 +16,7 @@ class Abstract_Stream_Socket
     // These are I/O components.
     mutable simple_mutex m_io_mutex;
     Connection_State m_connection_state = connection_state_empty;
-    linear_buffer m_wqueue;  // write queue
+    linear_buffer m_rqueue, m_wqueue;  // read and write queues
 
     // This the remote address. It is initialized upon the first request.
     mutable once_flag m_remote_addr_once;
@@ -38,10 +38,8 @@ class Abstract_Stream_Socket
 
     // Reads some data.
     // `lock` will lock `*this` after the call.
-    // `hint` is used as the I/O buffer. `size` specifies the maximum number of
-    // bytes to read.
     IO_Result
-    do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size) final;
+    do_socket_on_poll_read(simple_mutex::unique_lock& lock) final;
 
     // Returns the estimated size of data pending for writing.
     // `lock` will lock `*this` after the call.
@@ -50,9 +48,8 @@ class Abstract_Stream_Socket
 
     // Writes some data.
     // `lock` will lock `*this` after the call.
-    // `hint` is ignored. `size` specifies the maximum number of bytes to write.
     IO_Result
-    do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size) final;
+    do_socket_on_poll_write(simple_mutex::unique_lock& lock) final;
 
     // Notifies a full-duplex channel has been closed.
     void
@@ -93,11 +90,13 @@ class Abstract_Stream_Socket
     do_socket_on_establish()
       = 0;
 
-    // Consumes an incoming packet.
+    // Consumes incoming data, which are appended to `rqueue`.
+    // If this function does not exhaust `rqueue`, remaining data are kept for the
+    // next notification.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_socket_on_receive(char* data, size_t size)
+    do_socket_on_receive(linear_buffer& rqueue)
       = 0;
 
     // Notifies a socket has been closed.
@@ -117,6 +116,12 @@ class Abstract_Stream_Socket
     // This function is thread-safe.
     bool
     do_socket_send(const char* data, size_t size);
+
+    bool
+    do_socket_send(const cow_string& str)
+      {
+        return this->do_socket_send(str.data(), str.size());
+      }
 
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Stream_Socket);

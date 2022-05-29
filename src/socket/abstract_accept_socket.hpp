@@ -24,10 +24,9 @@ class Abstract_Accept_Socket
 
   private:
     // Accepts a socket in non-blocking mode.
-    // `hint` and `size` are ignored.
     // Please mind thread safety, as this function is called by the network thread.
     IO_Result
-    do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size) final;
+    do_socket_on_poll_read(simple_mutex::unique_lock& lock) final;
 
     // Does nothing.
     // This function always returns zero.
@@ -37,7 +36,7 @@ class Abstract_Accept_Socket
     // Does nothing.
     // This function always returns `io_result_eof`.
     IO_Result
-    do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size) final;
+    do_socket_on_poll_write(simple_mutex::unique_lock& lock) final;
 
     // Prints a line of text but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.

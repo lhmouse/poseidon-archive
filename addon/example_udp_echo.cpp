@@ -23,12 +23,13 @@ struct Example_Server : Abstract_UDP_Server_Socket
       }
 
     void
-    do_socket_on_receive(const Socket_Address& addr, char* data, size_t size) override
+    do_socket_on_receive(const Socket_Address& addr, linear_buffer&& rqueue) override
       {
-        POSEIDON_LOG_WARN("example UDP server received from '$1': $2",
-                          addr, cow_string(data, size));
+        cow_string str(rqueue.begin(), rqueue.end());
+        rqueue.clear();
 
-        this->do_socket_send(addr, data, size);
+        POSEIDON_LOG_WARN("example UDP session received: $1", str);
+        this->do_socket_send(addr, str);
       }
   };
 

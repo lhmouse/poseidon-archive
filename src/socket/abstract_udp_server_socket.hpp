@@ -27,8 +27,10 @@ class Abstract_UDP_Server_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_socket_on_receive(const Socket_Address& addr, char* data, size_t size)
+    do_socket_on_receive(const Socket_Address& addr, linear_buffer&& data)
       = 0;
+
+    using Abstract_UDP_Socket::do_socket_send;
 
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_UDP_Server_Socket);

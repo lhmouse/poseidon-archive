@@ -17,7 +17,6 @@ namespace {
 struct Config_Scalars
   {
     size_t event_buffer_size = 1024;
-    size_t io_buffer_size = 65536;
     size_t throttle_size = 1048576;
   };
 
@@ -67,7 +66,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     // dynamic data
     ::std::vector<::epoll_event> m_event_buffer;
     ::std::vector<rcptr<Abstract_Socket>> m_ready_socks;
-    ::std::vector<char> m_io_buffer;
 
     mutable simple_mutex m_poll_mutex;
     ::std::vector<Poll_Socket> m_poll_elems;
@@ -244,7 +242,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
         self->m_event_buffer.resize(conf.event_buffer_size);
         self->m_ready_socks.clear();
-        self->m_io_buffer.resize(conf.io_buffer_size);
 
         // Try polling if there is nothing to do.
         lock.lock(self->m_poll_mutex);
@@ -385,8 +382,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             }
             else {
               // Perform a single read operation (no retry upon EINTR).
-              auto io_res = sock->do_socket_on_poll_read(lock,
-                               self->m_io_buffer.data(), self->m_io_buffer.size());
+              auto io_res = sock->do_socket_on_poll_read(lock);
 
               // If the read operation didn't proceed, the socket shall be removed from
               // read queue and the `EPOLLIN` status shall be cleared.
@@ -431,8 +427,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
           try {
             // Perform a single write operation (no retry upon EINTR).
-            auto io_res = sock->do_socket_on_poll_write(lock,
-                             self->m_io_buffer.data(), self->m_io_buffer.size());
+            auto io_res = sock->do_socket_on_poll_write(lock);
 
             // Check whether the socket should be unthrottled.
             unthrottle = (sock->m_epoll_events & EPOLLIN) &&
@@ -512,10 +507,6 @@ reload()
     auto qint = file.get_int64_opt({"network","poll","event_buffer_size"});
     if(qint)
       conf.event_buffer_size = clamp_cast<size_t>(*qint, 1, 4096);
-
-    qint = file.get_int64_opt({"network","poll","io_buffer_size"});
-    if(qint)
-      conf.io_buffer_size = clamp_cast<size_t>(*qint, 1, 65536);
 
     qint = file.get_int64_opt({"network","poll","throttle_size"});
     if(qint)

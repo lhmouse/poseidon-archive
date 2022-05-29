@@ -16,7 +16,7 @@ class Abstract_UDP_Socket
     // These are I/O components.
     mutable simple_mutex m_io_mutex;
     Connection_State m_connection_state = connection_state_empty;
-    linear_buffer m_wqueue;  // write queue
+    linear_buffer m_rqueue, m_wqueue;  // read and write queues
 
   protected:
     // Creates a new non-blocking socket.
@@ -30,10 +30,8 @@ class Abstract_UDP_Socket
 
     // Reads some data.
     // `lock` will lock `*this` after the call.
-    // `hint` is used as the I/O buffer. `size` specifies the maximum number of
-    // bytes to read.
     IO_Result
-    do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size) final;
+    do_socket_on_poll_read(simple_mutex::unique_lock& lock) final;
 
     // Returns `0` due to lack of congestion control.
     // `lock` will lock `*this` after the call, nevertheless.
@@ -42,9 +40,8 @@ class Abstract_UDP_Socket
 
     // Writes some data.
     // `lock` will lock `*this` after the call.
-    // `hint` and `size` are ignored.
     IO_Result
-    do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* hint, size_t size) final;
+    do_socket_on_poll_write(simple_mutex::unique_lock& lock) final;
 
     // Notifies that this socket has been closed.
     void
@@ -66,7 +63,7 @@ class Abstract_UDP_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_socket_on_receive(const Socket_Address& addr, char* data, size_t size)
+    do_socket_on_receive(const Socket_Address& addr, linear_buffer&& data)
       = 0;
 
     // Notifies that this socket has been fully closed.
@@ -82,6 +79,12 @@ class Abstract_UDP_Socket
     // This function is thread-safe.
     bool
     do_socket_send(const Socket_Address& addr, const char* data, size_t size);
+
+    bool
+    do_socket_send(const Socket_Address& addr, const cow_string& str)
+      {
+        return this->do_socket_send(addr, str.data(), str.size());
+      }
 
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_UDP_Socket);

@@ -84,33 +84,30 @@ do_socket_close_unlocked() noexcept
 
 IO_Result
 Abstract_UDP_Socket::
-do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
+do_socket_on_poll_read(simple_mutex::unique_lock& lock)
   {
     lock.lock(this->m_io_mutex);
     if(this->m_connection_state == connection_state_closed)
       return io_result_end_of_stream;
 
-    try {
-      // Try reading a packet.
-      Socket_Address::storage addrst;
-      ::socklen_t addrlen = sizeof(addrst);
-      ::ssize_t nread = ::recvfrom(this->get_fd(), hint, size, 0, addrst, &addrlen);
-      if(nread < 0)
-        return get_io_result_from_errno("recvfrom", errno);
+    // Try reading a packet.
+    this->m_rqueue.clear();
+    this->m_rqueue.reserve(0xFFFF);
+    char* eptr = this->m_rqueue.mut_end();
+    size_t navail = this->m_rqueue.capacity() - this->m_rqueue.size();
 
-      // Process the packet that has been read.
-      lock.unlock();
-      Socket_Address addr(addrst, addrlen);
-      this->do_socket_on_receive(addr, hint, static_cast<size_t>(nread));
-    }
-    catch(exception& stdex) {
-      // It is probably bad to let the exception propagate to network driver and kill
-      // this server socket... so we catch and ignore this exception.
-      POSEIDON_LOG_ERROR("UDP socket read error: $1\n"
-                         "[socket class `$2`]",
-                         stdex, typeid(*this));
-    }
+    Socket_Address::storage addrst;
+    ::socklen_t addrlen = sizeof(addrst);
 
+    ::ssize_t nread = ::recvfrom(this->get_fd(), eptr, navail, 0, addrst, &addrlen);
+    if(nread < 0)
+      return get_io_result_from_errno("recvfrom", errno);
+
+    this->m_rqueue.accept(static_cast<size_t>(nread));
+    lock.unlock();
+
+    // Process the packet that has been read.
+    this->do_socket_on_receive(Socket_Address(addrst, addrlen), ::std::move(this->m_rqueue));
     lock.lock(this->m_io_mutex);
     return io_result_partial_work;
   }
@@ -133,7 +130,7 @@ do_write_queue_size(simple_mutex::unique_lock& lock) const
 
 IO_Result
 Abstract_UDP_Socket::
-do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /*size*/)
+do_socket_on_poll_write(simple_mutex::unique_lock& lock)
   {
     lock.lock(this->m_io_mutex);
     if(this->m_connection_state == connection_state_closed)
