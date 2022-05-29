@@ -37,14 +37,14 @@ class Abstract_TLS_Server_Socket
       : Abstract_TLS_Server_Socket(Socket_Address(bind, port), cert, pkey)
       { }
 
-  private:
+  protected:
+    // Implements `Abstract_Accept_Socket`.
     uptr<Abstract_Socket>
     do_socket_on_accept(unique_FD&& fd, const Socket_Address& addr) final;
 
     void
     do_socket_on_register(rcptr<Abstract_Socket>&& sock) final;
 
-  protected:
     // Consumes an accepted socket.
     // This function shall allocate and return a new socket object.
     // Please mind thread safety, as this function is called by the network thread.

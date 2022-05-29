@@ -12,12 +12,7 @@ class Abstract_Stream_Socket
   : public ::asteria::Rcfwd<Abstract_Stream_Socket>,
     public Abstract_Socket
   {
-  private:
-    // These are I/O components.
-    mutable simple_mutex m_io_mutex;
-    Connection_State m_connection_state = connection_state_empty;
-    linear_buffer m_rqueue, m_wqueue;  // read and write queues
-
+  protected:
     // This the remote address. It is initialized upon the first request.
     mutable once_flag m_remote_addr_once;
     mutable Socket_Address m_remote_addr;
@@ -31,7 +26,7 @@ class Abstract_Stream_Socket
     explicit
     Abstract_Stream_Socket(::sa_family_t family);
 
-  private:
+  protected:
     inline
     IO_Result
     do_socket_close_unlocked() noexcept;
@@ -55,7 +50,6 @@ class Abstract_Stream_Socket
     void
     do_socket_on_poll_close(int err) final;
 
-  protected:
     // Performs read operation. Overridden functions shall update `data` to denote
     // the end of bytes that have been read.
     // This function is called by the network thread. The current socket will have

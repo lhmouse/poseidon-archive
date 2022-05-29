@@ -60,8 +60,7 @@ IO_Result
 Abstract_TLS_Socket::
 do_socket_stream_read_unlocked(char*& data, size_t size)
   {
-    int nread = ::SSL_read(this->mut_ssl(), data,
-                     ::rocket::clamp_cast<int>(size, 0, INT_MAX));
+    int nread = ::SSL_read(this->mut_ssl(), data, ::rocket::clamp_cast<int>(size, 0, INT_MAX));
     if(nread < 0)
       return do_translate_ssl_error("SSL_read", this->mut_ssl(), nread);
 
@@ -76,8 +75,7 @@ IO_Result
 Abstract_TLS_Socket::
 do_socket_stream_write_unlocked(const char*& data, size_t size)
   {
-    int nwritten = ::SSL_write(this->mut_ssl(), data,
-                        ::rocket::clamp_cast<int>(size, 0, INT_MAX));
+    int nwritten = ::SSL_write(this->mut_ssl(), data, ::rocket::clamp_cast<int>(size, 0, INT_MAX));
     if(nwritten < 0)
       return do_translate_ssl_error("SSL_write", this->mut_ssl(), nwritten);
 

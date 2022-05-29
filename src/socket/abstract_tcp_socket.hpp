@@ -21,7 +21,7 @@ class Abstract_TCP_Socket
     explicit
     Abstract_TCP_Socket(::sa_family_t family);
 
-  private:
+  protected:
     // Calls `::read()`.
     IO_Result
     do_socket_stream_read_unlocked(char*& data, size_t size) final;
@@ -34,7 +34,6 @@ class Abstract_TCP_Socket
     void
     do_socket_stream_preclose_unclocked() noexcept final;
 
-  protected:
     // Notifies a full-duplex channel has been established.
     // The default implementation prints a message but does nothing otherwise.
     // Please mind thread safety, as this function is called by the network thread.

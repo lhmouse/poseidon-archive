@@ -12,17 +12,12 @@ class Abstract_Accept_Socket
   : public ::asteria::Rcfwd<Abstract_Accept_Socket>,
     public Abstract_Socket
   {
-  private:
-    // These are I/O components.
-    mutable simple_mutex m_io_mutex;
-    Connection_State m_connection_state = connection_state_empty;
-
   protected:
     // Creates a new non-blocking socket.
     explicit
     Abstract_Accept_Socket(::sa_family_t family);
 
-  private:
+  protected:
     // Accepts a socket in non-blocking mode.
     // Please mind thread safety, as this function is called by the network thread.
     IO_Result
@@ -43,7 +38,6 @@ class Abstract_Accept_Socket
     void
     do_socket_on_poll_close(int err) final;
 
-  protected:
     // Binds this socket to the specified address and starts listening.
     // `backlog` is clamped between `1` and `SOMAXCONN`. Out-of-bound values
     // are truncated silently.

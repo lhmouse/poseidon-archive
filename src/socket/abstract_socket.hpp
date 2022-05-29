@@ -15,7 +15,7 @@ class Abstract_Socket
   {
     friend Network_Driver;
 
-  private:
+  protected:
     unique_FD m_fd;
     atomic_relaxed<bool> m_resident = { false };  // don't delete if orphaned
 
@@ -26,6 +26,12 @@ class Abstract_Socket
     // This the local address. It is initialized upon the first request.
     mutable once_flag m_local_addr_once;
     mutable Socket_Address m_local_addr;
+
+    // These are I/O components.
+    mutable simple_mutex m_io_mutex;
+    Connection_State m_connection_state = connection_state_empty;
+    linear_buffer m_rqueue;
+    linear_buffer m_wqueue;
 
   protected:
     // Adopts a foreign or accepted socket.

@@ -12,18 +12,12 @@ class Abstract_UDP_Socket
   : public ::asteria::Rcfwd<Abstract_UDP_Socket>,
     public Abstract_Socket
   {
-  private:
-    // These are I/O components.
-    mutable simple_mutex m_io_mutex;
-    Connection_State m_connection_state = connection_state_empty;
-    linear_buffer m_rqueue, m_wqueue;  // read and write queues
-
   protected:
     // Creates a new non-blocking socket.
     explicit
     Abstract_UDP_Socket(::sa_family_t family);
 
-  private:
+  protected:
     inline
     IO_Result
     do_socket_close_unlocked() noexcept;
@@ -47,7 +41,6 @@ class Abstract_UDP_Socket
     void
     do_socket_on_poll_close(int err) final;
 
-  protected:
     // Binds this socket to the specified address.
     void
     do_socket_bind(const Socket_Address& addr);
