@@ -58,7 +58,7 @@ lib_LTLIBRARIES += lib/libposeidon.la
 lib_libposeidon_la_SOURCES =  \
   %reldir%/version.h.in  \
   %reldir%/precompiled.ipp  \
-  %reldir%/exit_stubs.c  \
+  %reldir%/exit_stubs.cpp  \
   %reldir%/fwd.cpp  \
   %reldir%/utils.cpp  \
   %reldir%/details/openssl_common.cpp  \
