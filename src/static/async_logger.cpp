@@ -285,7 +285,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     mutable simple_mutex m_queue_mutex;
     condition_variable m_queue_avail;
     ::std::deque<Log_Entry> m_queue;
-
     mutable simple_mutex m_io_mutex;
 
     static
