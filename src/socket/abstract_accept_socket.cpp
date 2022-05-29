@@ -33,8 +33,9 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock)
       if(!fd)
         return get_io_result_from_errno("accept4", errno);
 
-      // Create a new socket object.
       lock.unlock();
+
+      // Create a new socket object.
       Socket_Address addr(addrst, addrlen);
       auto sock = this->do_socket_on_accept(::std::move(fd), addr);
       if(!sock)
@@ -42,7 +43,6 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock)
                        "[listen socket class `$1`]",
                        typeid(*this));
 
-      // Register the socket.
       POSEIDON_LOG_INFO("Accepted incoming connection from '$1'\n"
                         "[server socket class `$2` listening on '$3']\n"
                         "[accepted socket class `$4`]",

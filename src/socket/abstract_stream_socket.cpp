@@ -96,6 +96,7 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock)
 
     // Process the data that have been read.
     this->do_socket_on_receive(this->m_rqueue);
+
     lock.lock(this->m_io_mutex);
     return io_res;
   }

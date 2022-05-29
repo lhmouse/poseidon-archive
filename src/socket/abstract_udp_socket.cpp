@@ -90,24 +90,33 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock)
     if(this->m_connection_state == connection_state_closed)
       return io_result_end_of_stream;
 
-    // Try reading a packet.
-    this->m_rqueue.clear();
-    this->m_rqueue.reserve(0xFFFF);
-    char* eptr = this->m_rqueue.mut_end();
-    size_t navail = this->m_rqueue.capacity() - this->m_rqueue.size();
+    try {
+      // Try reading a packet.
+      this->m_rqueue.clear();
+      this->m_rqueue.reserve(0xFFFF);
+      char* eptr = this->m_rqueue.mut_end();
+      size_t navail = this->m_rqueue.capacity() - this->m_rqueue.size();
 
-    Socket_Address::storage addrst;
-    ::socklen_t addrlen = sizeof(addrst);
+      Socket_Address::storage addrst;
+      ::socklen_t addrlen = sizeof(addrst);
 
-    ::ssize_t nread = ::recvfrom(this->get_fd(), eptr, navail, 0, addrst, &addrlen);
-    if(nread < 0)
-      return get_io_result_from_errno("recvfrom", errno);
+      ::ssize_t nread = ::recvfrom(this->get_fd(), eptr, navail, 0, addrst, &addrlen);
+      if(nread < 0)
+        return get_io_result_from_errno("recvfrom", errno);
 
-    this->m_rqueue.accept(static_cast<size_t>(nread));
-    lock.unlock();
+      this->m_rqueue.accept(static_cast<size_t>(nread));
+      lock.unlock();
 
-    // Process the packet that has been read.
-    this->do_socket_on_receive(Socket_Address(addrst, addrlen), ::std::move(this->m_rqueue));
+      // Process the packet that has been read.
+      this->do_socket_on_receive(Socket_Address(addrst, addrlen), ::std::move(this->m_rqueue));
+    }
+    catch(exception& stdex) {
+      // Errors on UDP sockets are conventionally ignored.
+      POSEIDON_LOG_ERROR("UDP socket read error: $1\n"
+                         "[socket class `$2`]",
+                         stdex, typeid(*this));
+    }
+
     lock.lock(this->m_io_mutex);
     return io_result_partial_work;
   }
