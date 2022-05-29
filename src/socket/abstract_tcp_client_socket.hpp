@@ -22,10 +22,6 @@ class Abstract_TCP_Client_Socket
       : Abstract_TCP_Client_Socket(Socket_Address(host, port))
       { }
 
-  private:
-    // This functions is forbidden for derived classes.
-    using Abstract_TCP_Socket::do_socket_connect;
-
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TCP_Client_Socket);
 

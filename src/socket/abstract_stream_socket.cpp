@@ -173,15 +173,16 @@ do_socket_connect(const Socket_Address& addr)
 
     // No matter whether `::connect()` succeeds or fails with `EINPROGRESS`,
     // the current socket is set to the CONNECTING state.
-    if(::connect(this->get_fd(), addr.data(), addr.ssize()) != 0) {
-      int err = errno;
-      if(err != EINPROGRESS)
-        POSEIDON_THROW(
-            "failed to initiate connection to '$2'\n"
-            "[`connect()` failed: $1]",
-            format_errno(err), addr);
-    }
     this->m_connection_state = connection_state_connecting;
+    int err = EINPROGRESS;
+    if(::connect(this->get_fd(), addr.data(), addr.ssize()) != 0)
+      err = errno;
+
+    if(err != EINPROGRESS)
+      POSEIDON_THROW(
+          "failed to initiate connection to '$2'\n"
+          "[`connect()` failed: $1]",
+          format_errno(err), addr);
   }
 
 bool

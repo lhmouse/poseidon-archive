@@ -34,10 +34,6 @@ class Abstract_TLS_Client_Socket
       : Abstract_TLS_Client_Socket(Socket_Address(host, port), ctx)
       { }
 
-  private:
-    // This functions is forbidden for derived classes.
-    using Abstract_TLS_Socket::do_socket_connect;
-
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_TLS_Client_Socket);
 
