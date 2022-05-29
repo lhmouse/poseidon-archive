@@ -22,7 +22,7 @@ struct Example_Server : Abstract_UDP_Server_Socket
       }
 
     void
-    do_socket_on_receive(const Socket_Address& addr, linear_buffer&& rqueue) override
+    do_socket_on_packet(const Socket_Address& addr, linear_buffer&& rqueue) override
       {
         cow_string str(rqueue.begin(), rqueue.end());
         rqueue.clear();

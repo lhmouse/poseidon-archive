@@ -44,7 +44,7 @@ class Abstract_TCP_Socket
     // Consumes incoming data.
     // Please mind thread safety, as this function is called by the network thread.
     void
-    do_socket_on_receive(linear_buffer& rqueue) override
+    do_socket_on_stream(linear_buffer& rqueue) override
       = 0;
 
     // Notifies a full-duplex channel has been closed.

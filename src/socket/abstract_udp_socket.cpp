@@ -109,7 +109,7 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock)
       lock.unlock();
 
       // Process the packet that has been read.
-      this->do_socket_on_receive(Socket_Address(addrst, addrlen), ::std::move(this->m_rqueue));
+      this->do_socket_on_packet(Socket_Address(addrst, addrlen), ::std::move(this->m_rqueue));
     }
     catch(exception& stdex) {
       // Errors on UDP sockets are conventionally ignored.

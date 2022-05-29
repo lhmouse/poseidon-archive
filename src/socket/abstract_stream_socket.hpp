@@ -96,7 +96,7 @@ class Abstract_Stream_Socket
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_socket_on_receive(linear_buffer& rqueue)
+    do_socket_on_stream(linear_buffer& rqueue)
       = 0;
 
     // Notifies a socket has been closed.

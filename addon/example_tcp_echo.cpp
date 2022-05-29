@@ -18,7 +18,7 @@ struct Example_Session : Abstract_TCP_Socket
       { }
 
     void
-    do_socket_on_receive(linear_buffer& rqueue) override
+    do_socket_on_stream(linear_buffer& rqueue) override
       {
         cow_string str(rqueue.begin(), rqueue.end());
         rqueue.clear();
