@@ -121,7 +121,7 @@ int
 do_exit_printf(Exit_Code code, const char* fmt, ...) noexcept
   {
     // Sleep for a few moments so pending logs are flushed.
-    Async_Logger::synchronize(1000);
+    Async_Logger::synchronize();
 
     // Output the string to standard error.
     ::va_list ap;

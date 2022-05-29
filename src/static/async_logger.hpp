@@ -39,11 +39,10 @@ class Async_Logger
     enqueue(Log_Level level, const char* file, long line, const char* func, cow_string&& text);
 
     // Waits until all pending log entries are delivered to output devices.
-    // The argument specifies the maximum number of milliseconds to wait.
     // This function is thread-safe.
     static
     void
-    synchronize(long msecs) noexcept;
+    synchronize() noexcept;
   };
 
 }  // namespace poseidon

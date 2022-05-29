@@ -284,7 +284,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     // dynamic data
     mutable simple_mutex m_queue_mutex;
     condition_variable m_queue_avail;
-    condition_variable m_queue_empty;
     ::std::deque<Log_Entry> m_queue;
 
     static
@@ -303,42 +302,30 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     void
     do_thread_loop(void* /*param*/)
       {
-        Log_Entry entry;
-        size_t queue_size;
-
-        // Await an entry and pop it.
-        simple_mutex::unique_lock lock(self->m_queue_mutex);
-        for(;;) {
-          if(self->m_queue.empty()) {
-            // Wait until an entry becomes available.
-            self->m_queue_empty.notify_all();
-            self->m_queue_avail.wait(lock);
-            continue;
-          }
-
-          // Pop it.
-          entry = ::std::move(self->m_queue.front());
-          self->m_queue.pop_front();
-          queue_size = self->m_queue.size();
-          break;
-        }
-        lock.unlock();
-
         // Get configuration for this level.
-        lock.lock(self->m_conf_mutex);
+        simple_mutex::unique_lock lock(self->m_conf_mutex);
         const auto conf_levels = self->m_conf_levels;
         lock.unlock();
 
-        // If there is congestion, discard trivial ones.
-        if(conf_levels.at(entry.level).trivial && (queue_size >= 1024))
-          return;
+        // Write all entries.
+        lock.lock(self->m_queue_mutex);
+        while(self->m_queue.empty())
+          self->m_queue_avail.wait(lock);
 
-        // Write this entry.
-        do_write_log_entry(conf_levels, ::std::move(entry));
+        size_t queue_size = self->m_queue.size();
 
-        // Force a flush after the last entry.
-        if(queue_size == 0)
-          ::sync();
+        while(!self->m_queue.empty()) {
+          Log_Entry entry = ::std::move(self->m_queue.front());
+          self->m_queue.pop_front();
+
+          // If there is congestion, discard trivial ones.
+          if(conf_levels.at(entry.level).trivial && (queue_size >= 1024))
+            continue;
+
+          do_write_log_entry(conf_levels, ::std::move(entry));
+        }
+
+        ::sync();
       }
   };
 
@@ -409,33 +396,32 @@ enqueue(Log_Level level, const char* file, long line, const char* func, cow_stri
     // Push the entry.
     lock.lock(self->m_queue_mutex);
     self->m_queue.emplace_back(::std::move(entry));
-    if(level <= log_level_error) {
-      // Error messages should be written immediately.
-      // We still have to maintain the order of all messages, so write them all.
-      do {
-        entry = ::std::move(self->m_queue.front());
-        self->m_queue.pop_front();
-        do_write_log_entry(conf_levels,::std::move(entry));
-      }
-      while(!self->m_queue.empty());
-
-      // Force a flush after the last entry.
-      ::sync();
-    }
-    else {
-      // Push and forget.
-      self->m_queue_avail.notify_one();
-    }
+    self->m_queue_avail.notify_one();
     return true;
   }
 
 void
 Async_Logger::
-synchronize(long msecs) noexcept
+synchronize() noexcept
   {
-    // Wait until the log queue becomes empty.
-    simple_mutex::unique_lock lock(self->m_queue_mutex);
-    self->m_queue_empty.wait_for(lock, msecs, [] { return self->m_queue.empty();  });
+    // Get configuration for this level.
+    simple_mutex::unique_lock lock(self->m_conf_mutex);
+    const auto conf_levels = self->m_conf_levels;
+    lock.unlock();
+
+    // Write all entries.
+    lock.lock(self->m_queue_mutex);
+    if(self->m_queue.empty())
+      return;
+
+    while(!self->m_queue.empty()) {
+      Log_Entry entry = ::std::move(self->m_queue.front());
+      self->m_queue.pop_front();
+
+      do_write_log_entry(conf_levels, ::std::move(entry));
+    }
+
+    ::sync();
   }
 
 }  // namespace poseidon

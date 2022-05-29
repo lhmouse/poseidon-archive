@@ -536,7 +536,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             // Exit if a signal has been received and there are no more fibers.
             // Note the scheduler mutex is locked so it is safe to call `strsignal()`.
             POSEIDON_LOG_INFO("Shutting down due to signal $1: $2", sig, ::strsignal(sig));
-            Async_Logger::synchronize(1000);
+            Async_Logger::synchronize();
             ::std::quick_exit(0);
           }
 
