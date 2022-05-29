@@ -178,14 +178,14 @@ do_write_log_entry(const Level_Config_Array& conf_levels, Log_Entry&& entry)
       strms.emplace_back(conf.out_fd, nullptr);  // don't close
 
     if(conf.out_path.size()) {
-      ::rocket::unique_posix_fd fd(::open(conf.out_path.c_str(),
-                         O_WRONLY | O_APPEND | O_CREAT, 0666), ::close);
-      if(fd != -1)
-        strms.emplace_back(::std::move(fd));
-      else
+      ::rocket::unique_posix_fd fd(::close);
+      fd.reset(::open(conf.out_path.c_str(),  O_WRONLY | O_APPEND | O_CREAT, 0666));
+      if(fd == -1)
         ::std::fprintf(stderr,
             "WARNING: Could not open log file '%s': error %d: %m\n",
             conf.out_path.c_str(), errno);
+      else
+        strms.emplace_back(::std::move(fd));
     }
 
     // If no stream is opened, return immediately.
@@ -312,20 +312,19 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         while(self->m_queue.empty())
           self->m_queue_avail.wait(lock);
 
+        // Pop an entry and write it.
+        Log_Entry entry = ::std::move(self->m_queue.front());
+        self->m_queue.pop_front();
         size_t queue_size = self->m_queue.size();
 
-        while(!self->m_queue.empty()) {
-          Log_Entry entry = ::std::move(self->m_queue.front());
-          self->m_queue.pop_front();
+        // If there is congestion, discard trivial ones.
+        if(conf_levels.at(entry.level).trivial && (queue_size >= 1024))
+          return;
 
-          // If there is congestion, discard trivial ones.
-          if(conf_levels.at(entry.level).trivial && (queue_size >= 1024))
-            continue;
+        do_write_log_entry(conf_levels, ::std::move(entry));
 
-          do_write_log_entry(conf_levels, ::std::move(entry));
-        }
-
-        ::sync();
+        if(queue_size == 0)
+          ::sync();
       }
   };
 
@@ -415,11 +414,13 @@ synchronize() noexcept
       return;
 
     while(!self->m_queue.empty()) {
+      // Pop an entry and write it.
       Log_Entry entry = ::std::move(self->m_queue.front());
       self->m_queue.pop_front();
 
       do_write_log_entry(conf_levels, ::std::move(entry));
     }
+    lock.unlock();
 
     ::sync();
   }
