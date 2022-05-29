@@ -17,12 +17,14 @@ OpenSSL_Stream(const OpenSSL_Context& ctx, const Abstract_Socket& sock)
     // because it needs to bump up the reference counter of the context.
     this->m_ssl.reset(::SSL_new(const_cast<::SSL_CTX*>(ctx.get_ssl_ctx())));
     if(!this->m_ssl)
-      POSEIDON_SSL_THROW("could not create SSL structure\n"
-                         "[`SSL_new()` failed]");
+      POSEIDON_SSL_THROW(
+          "could not create SSL structure\n"
+          "[`SSL_new()` failed]");
 
     if(::SSL_set_fd(this->m_ssl, sock.get_fd()) != 1)
-      POSEIDON_SSL_THROW("could not set file descriptor\n"
-                         "[`SSL_set_fd()` failed]");
+      POSEIDON_SSL_THROW(
+          "could not set file descriptor\n"
+          "[`SSL_set_fd()` failed]");
   }
 
 OpenSSL_Stream::

@@ -16,20 +16,23 @@ do_load_cert_and_pkey(::SSL_CTX* ctx, const char* cert, const char* pkey)
   {
     POSEIDON_LOG_INFO("Loading SSL certificate '$1'...", cert);
     if(::SSL_CTX_use_certificate_chain_file(ctx, cert) != 1)
-      POSEIDON_SSL_THROW("could not load certificate '$1'\n"
-                         "[`SSL_CTX_use_certificate_chain_file()` failed]",
-                         cert);
+      POSEIDON_SSL_THROW(
+          "could not load certificate '$1'\n"
+          "[`SSL_CTX_use_certificate_chain_file()` failed]",
+          cert);
 
     POSEIDON_LOG_INFO("Loading SSL private key '$1'...", pkey);
     if(::SSL_CTX_use_PrivateKey_file(ctx, pkey, SSL_FILETYPE_PEM) != 1)
-      POSEIDON_SSL_THROW("could not load private key '$1'\n"
-                         "[`SSL_CTX_use_PrivateKey_file()` failed]",
-                         pkey);
+      POSEIDON_SSL_THROW(
+          "could not load private key '$1'\n"
+          "[`SSL_CTX_use_PrivateKey_file()` failed]",
+          pkey);
 
     if(::SSL_CTX_check_private_key(ctx) != 1)
-      POSEIDON_SSL_THROW("sSL key/certificate pair check failure\n"
-                         "[`SSL_CTX_check_private_key()` failed]",
-                         cert, pkey);
+      POSEIDON_SSL_THROW(
+          "SSL key/certificate pair check failure\n"
+          "[`SSL_CTX_check_private_key()` failed]",
+          cert, pkey);
 
     ::SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, nullptr);
   }

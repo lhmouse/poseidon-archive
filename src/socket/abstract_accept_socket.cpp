@@ -39,23 +39,26 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock)
       Socket_Address addr(addrst, addrlen);
       auto sock = this->do_socket_on_accept(::std::move(fd), addr);
       if(!sock)
-        POSEIDON_THROW("null pointer returned from `do_socket_on_accept()`\n"
-                       "[listen socket class `$1`]",
-                       typeid(*this));
+        POSEIDON_THROW(
+            "null pointer returned from `do_socket_on_accept()`\n"
+            "[listen socket class `$1`]",
+            typeid(*this));
 
-      POSEIDON_LOG_INFO("Accepted incoming connection from '$1'\n"
-                        "[server socket class `$2` listening on '$3']\n"
-                        "[accepted socket class `$4`]",
-                        addr, typeid(*this), this->get_local_address(), typeid(*sock));
+      POSEIDON_LOG_INFO(
+          "Accepted incoming connection from '$1'\n"
+          "[server socket class `$2` listening on '$3']\n"
+          "[accepted socket class `$4`]",
+          addr, typeid(*this), this->get_local_address(), typeid(*sock));
 
       this->do_socket_on_register(Network_Driver::insert(::std::move(sock)));
     }
     catch(exception& stdex) {
       // It is probably bad to let the exception propagate to network driver and kill
       // this server socket... so we catch and ignore this exception.
-      POSEIDON_LOG_ERROR("Socket accept error: $1\n"
-                         "[socket class `$2`]",
-                         stdex, typeid(*this));
+      POSEIDON_LOG_ERROR(
+          "Socket accept error: $1\n"
+          "[socket class `$2`]",
+          stdex, typeid(*this));
     }
 
     lock.lock(this->m_io_mutex);
@@ -102,28 +105,32 @@ do_socket_listen(const Socket_Address& addr, uint32_t backlog)
     ROCKET_ASSERT(res == 0);
 
     if(::bind(this->get_fd(), addr.data(), addr.ssize()) != 0)
-      POSEIDON_THROW("failed to bind accept socket onto '$2'\n"
-                     "[`bind()` failed: $1]",
-                     format_errno(), addr);
+      POSEIDON_THROW(
+          "failed to bind accept socket onto '$2'\n"
+          "[`bind()` failed: $1]",
+          format_errno(), addr);
 
     if(::listen(this->get_fd(), clamp_cast<int>(backlog, 1, SOMAXCONN)) != 0)
-      POSEIDON_THROW("failed to set up listen socket on '$2'\n"
-                     "[`listen()` failed: $1]",
-                     format_errno(), this->get_local_address());
+      POSEIDON_THROW(
+          "failed to set up listen socket on '$2'\n"
+          "[`listen()` failed: $1]",
+          format_errno(), this->get_local_address());
 
     // Mark this socket listening.
     this->m_connection_state = connection_state_established;
 
-    POSEIDON_LOG_INFO("Accept socket listening: local '$1'",
-                      this->get_local_address());
+    POSEIDON_LOG_INFO(
+        "Socket listening: local '$1'",
+        this->get_local_address());
   }
 
 void
 Abstract_Accept_Socket::
 do_socket_on_close(int err)
   {
-    POSEIDON_LOG_INFO("Accept socket closed: local '$1', reason: $2",
-                      this->get_local_address(), format_errno(err));
+    POSEIDON_LOG_INFO(
+        "Stopped listening: local '$1', reason: $2",
+        this->get_local_address(), format_errno(err));
   }
 
 bool

@@ -83,24 +83,27 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             // Create an epoll object.
             unique_FD epoll_fd(::epoll_create(100));
             if(!epoll_fd)
-              POSEIDON_THROW("could not create epoll object\n"
-                             "[`epoll_create()` failed: $1]",
-                             format_errno());
+              POSEIDON_THROW(
+                  "could not create epoll object\n"
+                  "[`epoll_create()` failed: $1]",
+                  format_errno());
 
             // Create the notification eventfd and add it into epoll.
             unique_FD event_fd(::eventfd(0, EFD_NONBLOCK));
             if(!event_fd)
-              POSEIDON_THROW("could not create eventfd object\n"
-                             "[`eventfd()` failed: $1]",
-                             format_errno());
+              POSEIDON_THROW(
+                  "could not create eventfd object\n"
+                  "[`eventfd()` failed: $1]",
+                  format_errno());
 
             ::epoll_event event;
             event.data.u64 = self->make_epoll_data(poll_index_event, 0);
             event.events = EPOLLIN | EPOLLET;
             if(::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &event) != 0)
-              POSEIDON_THROW("failed to add socket into epoll\n"
-                             "[`epoll_ctl()` failed: $1]",
-                             format_errno());
+              POSEIDON_THROW(
+                  "failed to add socket into epoll\n"
+                  "[`epoll_ctl()` failed: $1]",
+                  format_errno());
 
             // Create the thread. Note it is never joined or detached.
             simple_mutex::unique_lock lock(self->m_conf_mutex);
@@ -150,9 +153,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             event.data.u64 = self->make_epoll_data(index, epoll_data);
             event.events = EPOLLIN | EPOLLOUT | EPOLLET;
             if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_MOD, elem.sock->get_fd(), &event) != 0)
-              POSEIDON_LOG_FATAL("Failed to modify socket in epoll\n"
-                                 "[`epoll_ctl()` failed: $1]",
-                                 format_errno());
+              POSEIDON_LOG_FATAL(
+                  "Failed to modify socket in epoll\n"
+                  "[`epoll_ctl()` failed: $1]",
+                  format_errno());
 
             elem.sock->m_epoll_data = event.data.u64;
             POSEIDON_LOG_DEBUG("Epoll lookup hint updated: value = $1", event.data.u64);
@@ -325,17 +329,19 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
           // Remove the socket from epoll. Errors are ignored.
           if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_DEL, sock->get_fd(), nullptr) != 0)
-            POSEIDON_LOG_FATAL("failed to remove socket from epoll\n"
-                               "[`epoll_ctl()` failed: $1]",
-                               format_errno());
+            POSEIDON_LOG_FATAL(
+                "failed to remove socket from epoll\n"
+                "[`epoll_ctl()` failed: $1]",
+                format_errno());
 
           try {
             sock->do_socket_on_poll_close(err);
           }
           catch(exception& stdex) {
-            POSEIDON_LOG_WARN("Socket close error: $1\n"
-                              "[socket class `$2`]",
-                              stdex.what(), typeid(*sock));
+            POSEIDON_LOG_WARN(
+                "Socket close error: $1\n"
+                "[socket class `$2`]",
+                stdex.what(), typeid(*sock));
           }
 
           // Remove the socket, no matter whether an exception was thrown or not.
@@ -391,8 +397,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             }
           }
           catch(exception& stdex) {
-            POSEIDON_LOG_WARN("Socket read error: $1\n"
-                              "[socket class `$2`]", stdex.what(), typeid(*sock));
+            POSEIDON_LOG_WARN(
+                "Socket read error: $1\n"
+                "[socket class `$2`]", stdex.what(), typeid(*sock));
 
             // Force closure of the connection.
             sock->kill();
@@ -440,8 +447,9 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
             clear_status = io_res == io_result_would_block;
           }
           catch(exception& stdex) {
-            POSEIDON_LOG_WARN("Socket write error: $1\n"
-                              "[socket class `$2`]", stdex.what(), typeid(*sock));
+            POSEIDON_LOG_WARN(
+                "Socket write error: $1\n"
+                "[socket class `$2`]", stdex.what(), typeid(*sock));
 
             // Force closure of the connection.
             sock->kill();
@@ -547,9 +555,10 @@ insert(uptr<Abstract_Socket>&& usock)
     event.data.u64 = self->make_epoll_data(index, self->m_poll_serial++);
     event.events = EPOLLIN | EPOLLOUT | EPOLLET;
     if(::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_ADD, sock->get_fd(), &event) != 0)
-      POSEIDON_THROW("failed to add socket into epoll\n"
-                     "[`epoll_ctl()` failed: $1]",
-                     format_errno());
+      POSEIDON_THROW(
+          "failed to add socket into epoll\n"
+          "[`epoll_ctl()` failed: $1]",
+          format_errno());
 
     // Initialize epoll data.
     sock->m_epoll_data = event.data.u64;

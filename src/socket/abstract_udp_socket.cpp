@@ -24,9 +24,10 @@ do_ifname_to_ifindex(const char* ifname)
       // Note that valid indices start from one.
       ifindex = static_cast<int>(::if_nametoindex(ifname));
       if(ifindex == 0)
-        POSEIDON_THROW("invalid network interface `$2`\n"
-                       "[`$1()` failed: $1]",
-                       format_errno(), ifname);
+        POSEIDON_THROW(
+            "invalid network interface `$2`\n"
+            "[`$1()` failed: $1]",
+            format_errno(), ifname);
     }
     return ifindex;
   }
@@ -112,9 +113,10 @@ do_socket_on_poll_read(simple_mutex::unique_lock& lock)
     }
     catch(exception& stdex) {
       // Errors on UDP sockets are conventionally ignored.
-      POSEIDON_LOG_ERROR("UDP socket read error: $1\n"
-                         "[socket class `$2`]",
-                         stdex, typeid(*this));
+      POSEIDON_LOG_ERROR(
+          "UDP socket read error: $1\n"
+          "[socket class `$2`]",
+          stdex, typeid(*this));
     }
 
     lock.lock(this->m_io_mutex);
@@ -184,9 +186,10 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock)
     catch(exception& stdex) {
       // It is probably bad to let the exception propagate to network driver and kill
       // this server socket... so we catch and ignore this exception.
-      POSEIDON_LOG_ERROR("UDP socket write error: $1\n"
-                         "[socket class `$2`]",
-                         stdex, typeid(*this));
+      POSEIDON_LOG_ERROR(
+          "UDP socket write error: $1\n"
+          "[socket class `$2`]",
+          stdex, typeid(*this));
     }
 
     lock.lock(this->m_io_mutex);
@@ -213,25 +216,28 @@ do_socket_bind(const Socket_Address& addr)
     ROCKET_ASSERT(res == 0);
 
     if(::bind(this->get_fd(), addr.data(), addr.ssize()) != 0)
-      POSEIDON_THROW("failed to bind UDP socket onto '$2'\n"
-                     "[`bind()` failed: $1]",
-                     format_errno(), addr);
+      POSEIDON_THROW(
+          "failed to bind UDP socket onto '$2'\n"
+          "[`bind()` failed: $1]",
+          format_errno(), addr);
   }
 
 void
 Abstract_UDP_Socket::
 do_socket_on_establish()
   {
-    POSEIDON_LOG_INFO("UDP socket listening: local '$1'",
-                      this->get_local_address());
+    POSEIDON_LOG_INFO(
+        "UDP socket listening: local '$1'",
+        this->get_local_address());
   }
 
 void
 Abstract_UDP_Socket::
 do_socket_on_close(int err)
   {
-    POSEIDON_LOG_INFO("UDP socket closed: local '$1', $2",
-                      this->get_local_address(), format_errno(err));
+    POSEIDON_LOG_INFO(
+        "UDP socket closed: local '$1', $2",
+        this->get_local_address(), format_errno(err));
   }
 
 bool
@@ -279,9 +285,10 @@ set_multicast(int ifindex, uint8_t ttl, bool loop)
     ::sa_family_t family;
     ::socklen_t addrlen = sizeof(family);
     if(::getsockname(this->get_fd(), reinterpret_cast<::sockaddr*>(&family), &addrlen) != 0)
-      POSEIDON_THROW("failed to get socket family\n"
-                     "[`getsockname()` failed: $1]",
-                     format_errno());
+      POSEIDON_THROW(
+          "failed to get socket family\n"
+          "[`getsockname()` failed: $1]",
+          format_errno());
 
     if(family == AF_INET) {
       // IPv4
@@ -289,47 +296,47 @@ set_multicast(int ifindex, uint8_t ttl, bool loop)
       mreq.imr_multiaddr.s_addr = INADDR_ANY;
       mreq.imr_address.s_addr = INADDR_ANY;
       mreq.imr_ifindex = ifindex;
-      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_IF,
-                      &mreq, sizeof(mreq)) != 0)
-        POSEIDON_THROW("failed to set IPv4 multicast interface to `$2`\n"
-                       "[`setsockopt()` failed: $1]",
-                       format_errno(), ifindex);
+      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_IF, &mreq, sizeof(mreq)) != 0)
+        POSEIDON_THROW(
+            "failed to set IPv4 multicast interface to `$2`\n"
+            "[`setsockopt()` failed: $1]",
+            format_errno(), ifindex);
 
       int value = ttl;
-      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_TTL,
-                      &value, sizeof(value)) != 0)
-        POSEIDON_THROW("failed to set IPv4 multicast TTL to `$2`\n"
-                       "[`setsockopt()` failed: $1]",
-                       format_errno(), value);
+      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_TTL, &value, sizeof(value)) != 0)
+        POSEIDON_THROW(
+            "failed to set IPv4 multicast TTL to `$2`\n"
+            "[`setsockopt()` failed: $1]",
+            format_errno(), value);
 
       value = -loop;
-      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_LOOP,
-                      &value, sizeof(value)) != 0)
-        POSEIDON_THROW("failed to set IPv4 multicast loopback to `$2`\n"
-                       "[`setsockopt()` failed: $1]",
-                       format_errno(), value);
+      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_MULTICAST_LOOP, &value, sizeof(value)) != 0)
+        POSEIDON_THROW(
+            "failed to set IPv4 multicast loopback to `$2`\n"
+            "[`setsockopt()` failed: $1]",
+            format_errno(), value);
     }
     else if(family == AF_INET6) {
       // IPv6
-      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_IF,
-                      &ifindex, sizeof(ifindex)) != 0)
-        POSEIDON_THROW("failed to set IPv6 multicast interface to `$2`\n"
-                       "[`setsockopt()` failed: $1]",
-                       format_errno(), ifindex);
+      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_IF, &ifindex, sizeof(ifindex)) != 0)
+        POSEIDON_THROW(
+            "failed to set IPv6 multicast interface to `$2`\n"
+            "[`setsockopt()` failed: $1]",
+            format_errno(), ifindex);
 
       int value = ttl;
-      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
-                      &value, sizeof(value)) != 0)
-        POSEIDON_THROW("failed to set IPv6 multicast TTL to `$2`\n"
-                       "[`setsockopt()` failed: $1]",
-                       format_errno(), value);
+      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &value, sizeof(value)) != 0)
+        POSEIDON_THROW(
+            "failed to set IPv6 multicast TTL to `$2`\n"
+            "[`setsockopt()` failed: $1]",
+            format_errno(), value);
 
       value = -loop;
-      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
-                      &value, sizeof(value)) != 0)
-        POSEIDON_THROW("failed to set IPv6 multicast loopback to `$2`\n"
-                       "[`setsockopt()` failed: $1]",
-                       format_errno(), value);
+      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &value, sizeof(value)) != 0)
+        POSEIDON_THROW(
+            "failed to set IPv6 multicast loopback to `$2`\n"
+            "[`setsockopt()` failed: $1]",
+            format_errno(), value);
     }
     else
       POSEIDON_THROW("unsupported address family `$1`", family);
@@ -355,22 +362,22 @@ join_multicast_group(const Socket_Address& maddr, int ifindex)
       mreq.imr_multiaddr = maddr.data().addr4.sin_addr;
       mreq.imr_address.s_addr = INADDR_ANY;
       mreq.imr_ifindex = ifindex;
-      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_ADD_MEMBERSHIP,
-                      &mreq, sizeof(mreq)) != 0)
-        POSEIDON_THROW("failed to join IPv4 multicast group '$2' via interface `$3`\n"
-                       "[`setsockopt()` failed: $1]",
-                       format_errno(), maddr, ifindex);
+      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+        POSEIDON_THROW(
+            "failed to join IPv4 multicast group '$2' via interface `$3`\n"
+            "[`setsockopt()` failed: $1]",
+            format_errno(), maddr, ifindex);
     }
     else if(maddr.family() == AF_INET6) {
       // IPv6
       ::ipv6_mreq mreq;
       mreq.ipv6mr_multiaddr = maddr.data().addr6.sin6_addr;
       mreq.ipv6mr_interface = static_cast<unsigned>(ifindex);
-      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
-                      &mreq, sizeof(mreq)) != 0)
-        POSEIDON_THROW("failed to join IPv6 multicast group '$2' via interface `$3`\n"
-                       "[`setsockopt()` failed: $1]",
-                       format_errno(), maddr, ifindex);
+      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+        POSEIDON_THROW(
+            "failed to join IPv6 multicast group '$2' via interface `$3`\n"
+            "[`setsockopt()` failed: $1]",
+            format_errno(), maddr, ifindex);
     }
     else
       POSEIDON_THROW("unsupported multicast address family `$1`", maddr.family());
@@ -396,22 +403,22 @@ leave_multicast_group(const Socket_Address& maddr, int ifindex)
       mreq.imr_multiaddr = maddr.data().addr4.sin_addr;
       mreq.imr_address.s_addr = INADDR_ANY;
       mreq.imr_ifindex = ifindex;
-      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP,
-                      &mreq, sizeof(mreq)) != 0)
-        POSEIDON_THROW("failed to leave IPv4 multicast group '$2' via interface `$3`\n"
-                       "[`setsockopt()` failed: $1]",
-                       format_errno(), maddr, ifindex);
+      if(::setsockopt(this->get_fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+        POSEIDON_THROW(
+            "failed to leave IPv4 multicast group '$2' via interface `$3`\n"
+            "[`setsockopt()` failed: $1]",
+            format_errno(), maddr, ifindex);
     }
     else if(maddr.family() == AF_INET6) {
       // IPv6
       ::ipv6_mreq mreq;
       mreq.ipv6mr_multiaddr = maddr.data().addr6.sin6_addr;
       mreq.ipv6mr_interface = static_cast<unsigned>(ifindex);
-      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP,
-                      &mreq, sizeof(mreq)) != 0)
-        POSEIDON_THROW("failed to leave IPv6 multicast group '$2' via interface `$3`\n"
-                       "[`setsockopt()` failed: $1]",
-                       format_errno(), maddr, ifindex);
+      if(::setsockopt(this->get_fd(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+        POSEIDON_THROW(
+            "failed to leave IPv6 multicast group '$2' via interface `$3`\n"
+            "[`setsockopt()` failed: $1]",
+            format_errno(), maddr, ifindex);
     }
     else
       POSEIDON_THROW("unsupported multicast address family `$1`", maddr.family());

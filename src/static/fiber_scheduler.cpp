@@ -111,9 +111,10 @@ do_unmap_stack_aux(Stack_pointer sp) noexcept
     // Note that on Linux `munmap()` may fail with `ENOMEM`.
     // There is little we can do so we ignore this error.
     if(::munmap(vm_base, vm_size) != 0)
-      POSEIDON_LOG_FATAL("Could not deallocate virtual memory (base `$2`, size `$3`)\n"
-                         "[`munmap()` failed: $1]",
-                         format_errno(), vm_base, vm_size);
+      POSEIDON_LOG_FATAL(
+          "Could not deallocate virtual memory (base `$2`, size `$3`)\n"
+          "[`munmap()` failed: $1]",
+          format_errno(), vm_base, vm_size);
   }
 
 struct Stack_delete
@@ -175,9 +176,10 @@ do_allocate_stack(size_t stack_vm_size)
     vm_base = static_cast<char*>(::mmap(nullptr, vm_size, PROT_NONE,
                                         MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0));
     if(vm_base == MAP_FAILED)
-      POSEIDON_THROW("could not allocate virtual memory (size `$2`)\n"
-                     "[`mmap()` failed: $1]",
-                     format_errno(), vm_size);
+      POSEIDON_THROW(
+          "could not allocate virtual memory (size `$2`)\n"
+          "[`mmap()` failed: $1]",
+          format_errno(), vm_size);
 
     sp.base = vm_base + s_page_size;
     sp.size = vm_size - s_page_size * 2;
@@ -185,9 +187,10 @@ do_allocate_stack(size_t stack_vm_size)
 
     // Mark stack area writable.
     if(::mprotect(sp.base, sp.size, PROT_READ | PROT_WRITE) != 0)
-      POSEIDON_THROW("could not set stack memory permission (base `$2`, size `$3`)\n"
-                     "[`mprotect()` failed: $1]",
-                     format_errno(), sp.base, sp.size);
+      POSEIDON_THROW(
+          "could not set stack memory permission (base `$2`, size `$3`)\n"
+          "[`mprotect()` failed: $1]",
+          format_errno(), sp.base, sp.size);
 
     // The stack need not be unmapped once all permissions have been set.
     return unique_stack(sp_guard.release());
@@ -267,9 +270,10 @@ class Semaphore
       {
         int r = ::sem_init(this->m_sem, 0, 0);
         if(r != 0)
-          POSEIDON_THROW("failed to initialize semaphore\n"
-                         "[`sem_init()` failed: $1]",
-                         format_errno());
+          POSEIDON_THROW(
+              "failed to initialize semaphore\n"
+              "[`sem_init()` failed: $1]",
+              format_errno());
       }
 
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Semaphore)
@@ -356,9 +360,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             ::pthread_key_t key;
             int err = ::pthread_key_create(&key, nullptr);
             if(err != 0)
-              POSEIDON_THROW("failed to allocate thread-specific key for fibers\n"
-                             "[`pthread_key_create()` failed: $1]",
-                             format_errno(err));
+              POSEIDON_THROW(
+                  "failed to allocate thread-specific key for fibers\n"
+                  "[`pthread_key_create()` failed: $1]",
+                  format_errno(err));
 
             auto key_guard = ::rocket::make_unique_handle(key, ::pthread_key_delete);
 
@@ -393,9 +398,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
         int err = ::pthread_setspecific(self->m_sched_key, qctx);
         if(err != 0)
-          POSEIDON_THROW("could not set fiber scheduler thread context\n"
-                         "[`pthread_setspecific()` failed: $1]",
-                         format_errno(err));
+          POSEIDON_THROW(
+              "could not set fiber scheduler thread context\n"
+              "[`pthread_setspecific()` failed: $1]",
+              format_errno(err));
 
         POSEIDON_LOG_TRACE("Created new fiber scheduler thread context `$1`", qctx);
         return qctx.release();
@@ -584,9 +590,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             if(delta < timeout) {
               // Print a warning message if the fiber has been suspended for too long.
               if(delta >= conf.warn_timeout)
-                POSEIDON_LOG_WARN("Fiber `$1` has been suspended for `$2` seconds.\n"
-                                  "[fiber class `$3`]",
-                                  fiber, delta, typeid(*fiber));
+                POSEIDON_LOG_WARN(
+                    "Fiber `$1` has been suspended for `$2` seconds.\n"
+                    "[fiber class `$3`]",
+                    fiber, delta, typeid(*fiber));
 
               // Put the fiber back into the queue.
               elem.time = ::rocket::min(now + conf.warn_timeout, fiber->m_sched_yield_since + timeout);
@@ -597,10 +604,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
             // Proceed anyway.
             if(delta >= conf.fail_timeout)
-              POSEIDON_LOG_ERROR("Suspension of fiber `$1` has exceeded `$2` seconds.\n"
-                        "This circumstance looks permanent. Please check for deadlocks.\n",
-                        "[fiber class `$3`]",
-                        fiber, conf.fail_timeout, typeid(*fiber));
+              POSEIDON_LOG_ERROR(
+                  "Suspension of fiber `$1` has exceeded `$2` seconds.\n"
+                  "This circumstance looks permanent. Please check for deadlocks.\n",
+                  "[fiber class `$3`]",
+                  fiber, conf.fail_timeout, typeid(*fiber));
           }
 
           // Process this fiber!
@@ -619,9 +627,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
             stack = do_allocate_stack(conf.stack_vm_size);
           }
           catch(exception& stdex) {
-            POSEIDON_LOG_ERROR("Failed to initialize fiber: $1\n"
-                               "[fiber class `$2`]",
-                               stdex, typeid(*fiber));
+            POSEIDON_LOG_ERROR(
+                "Failed to initialize fiber: $1\n"
+                "[fiber class `$2`]",
+                stdex, typeid(*fiber));
 
             // Put the fiber back into the sleep queue.
             lock.lock(self->m_sched_mutex);
@@ -705,9 +714,10 @@ reload()
       // chunks of 64KiB, which makes up 256MiB in total.
       int64_t rint = ::rocket::clamp(*qint, 0x4'0000, 0x1000'0000);
       if(rint != *qint)
-        POSEIDON_LOG_WARN("Config value `fiber.stack_vm_size` truncated to `$1`\n"
-                          "[value `$2` out of range]",
-                          rint, *qint);
+        POSEIDON_LOG_WARN(
+            "Config value `fiber.stack_vm_size` truncated to `$1`\n"
+            "[value `$2` out of range]",
+            rint, *qint);
 
       conf.stack_vm_size = static_cast<size_t>(rint);
     }
@@ -715,9 +725,10 @@ reload()
       // Get system thread stack size.
       ::rlimit rlim;
       if(::getrlimit(RLIMIT_STACK, &rlim) != 0)
-        POSEIDON_THROW("could not get thread stack size\n"
-                       "[`getrlimit()` failed: $1]",
-                       format_errno());
+        POSEIDON_THROW(
+            "could not get thread stack size\n"
+            "[`getrlimit()` failed: $1]",
+            format_errno());
 
       conf.stack_vm_size = static_cast<size_t>(rlim.rlim_cur);
     }

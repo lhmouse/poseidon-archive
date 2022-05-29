@@ -39,8 +39,7 @@ struct Example_Server : Abstract_TCP_Server_Socket
     Example_Server()
       : Abstract_TCP_Server_Socket(bind, port)
       {
-        POSEIDON_LOG_WARN("example TCP server listening: $1",
-                          this->get_local_address());
+        POSEIDON_LOG_WARN("example TCP server listening: $1", this->get_local_address());
       }
 
     uptr<Abstract_TCP_Socket>

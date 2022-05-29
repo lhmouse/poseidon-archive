@@ -29,8 +29,7 @@ do_translate_ssl_error(const char* func, const ::SSL* ssl, int ret)
         return get_io_result_from_errno(func, err);
 
       default:
-        POSEIDON_SSL_THROW("openSSL I/O error\n[`$1()` returned `$2`]",
-                           func, ret);
+        POSEIDON_SSL_THROW("openSSL I/O error\n[`$1()` returned `$2`]", func, ret);
     }
   }
 
@@ -97,16 +96,18 @@ void
 Abstract_TLS_Socket::
 do_socket_on_establish()
   {
-    POSEIDON_LOG_INFO("TLS/TCP connection established: local '$1', remote '$2'",
-                      this->get_local_address(), this->get_remote_address());
+    POSEIDON_LOG_INFO(
+        "TLS/TCP connection established: local '$1', remote '$2'",
+        this->get_local_address(), this->get_remote_address());
   }
 
 void
 Abstract_TLS_Socket::
 do_socket_on_close(int err)
   {
-    POSEIDON_LOG_INFO("TLS/TCP connection closed: local '$1', reason: $2",
-                      this->get_local_address(), format_errno(err));
+    POSEIDON_LOG_INFO(
+        "TLS/TCP connection closed: local '$1', reason: $2",
+        this->get_local_address(), format_errno(err));
   }
 
 }  // namespace poseidon

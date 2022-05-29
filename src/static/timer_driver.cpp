@@ -163,11 +163,13 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           timer->do_on_async_timer(now);
         }
         catch(exception& stdex) {
-          POSEIDON_LOG_WARN("Exception thrown from timer:\n"
-                            "$1\n"
-                            "[timer class `$2`]",
-                            stdex, typeid(*timer));
+          POSEIDON_LOG_WARN(
+              "Exception thrown from timer:\n"
+              "$1\n"
+              "[timer class `$2`]",
+              stdex, typeid(*timer));
         }
+
         timer->m_count.fetch_add(1);
       }
   };

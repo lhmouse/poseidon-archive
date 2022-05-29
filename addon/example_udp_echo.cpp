@@ -18,8 +18,7 @@ struct Example_Server : Abstract_UDP_Server_Socket
     Example_Server()
       : Abstract_UDP_Server_Socket(bind, port)
       {
-        POSEIDON_LOG_WARN("example UDP server listening: $1",
-                          this->get_local_address());
+        POSEIDON_LOG_WARN("example UDP server listening: $1", this->get_local_address());
       }
 
     void

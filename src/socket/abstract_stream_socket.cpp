@@ -176,9 +176,10 @@ do_socket_connect(const Socket_Address& addr)
     if(::connect(this->get_fd(), addr.data(), addr.ssize()) != 0) {
       int err = errno;
       if(err != EINPROGRESS)
-        POSEIDON_THROW("failed to initiate connection to '$2'\n"
-                       "[`connect()` failed: $1]",
-                       format_errno(err), addr);
+        POSEIDON_THROW(
+            "failed to initiate connection to '$2'\n"
+            "[`connect()` failed: $1]",
+            format_errno(err), addr);
     }
     this->m_connection_state = connection_state_connecting;
   }
@@ -210,9 +211,10 @@ get_remote_address() const
         Socket_Address::storage addrst;
         ::socklen_t addrlen = sizeof(addrst);
         if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
-          POSEIDON_THROW("could not get remote socket address\n"
-                         "[`getsockname()` failed: $1]",
-                         format_errno());
+          POSEIDON_THROW(
+              "could not get remote socket address\n"
+              "[`getsockname()` failed: $1]",
+              format_errno());
 
         // The result is cached once it becomes available.
         this->m_remote_addr.assign(addrst, addrlen);

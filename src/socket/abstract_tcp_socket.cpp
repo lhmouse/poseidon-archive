@@ -61,16 +61,18 @@ void
 Abstract_TCP_Socket::
 do_socket_on_establish()
   {
-    POSEIDON_LOG_INFO("TCP connection established: local '$1', remote '$2'",
-                      this->get_local_address(), this->get_remote_address());
+    POSEIDON_LOG_INFO(
+        "TCP connection established: local '$1', remote '$2'",
+        this->get_local_address(), this->get_remote_address());
   }
 
 void
 Abstract_TCP_Socket::
 do_socket_on_close(int err)
   {
-    POSEIDON_LOG_INFO("TCP connection closed: local '$1', reason: $2",
-                      this->get_local_address(), format_errno(err));
+    POSEIDON_LOG_INFO(
+        "TCP connection closed: local '$1', reason: $2",
+        this->get_local_address(), format_errno(err));
   }
 
 }  // namespace poseidon

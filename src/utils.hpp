@@ -98,8 +98,8 @@ clamp_cast(const ValueT& value,
 // Composes a string and submits it to the logger.
 #define POSEIDON_LOG_X_(level, ...)  \
     (::poseidon::Async_Logger::enabled(level) &&  \
-         (::poseidon::details_utils::format_log(level, __FILE__, __LINE__, __func__,  \
-                                                    "" __VA_ARGS__), 1))
+         (::poseidon::details_utils::format_log(level,  \
+                __FILE__, __LINE__, __func__, "" __VA_ARGS__), true))
 
 #define POSEIDON_LOG_FATAL(...)   POSEIDON_LOG_X_(::poseidon::log_level_fatal,  __VA_ARGS__)
 #define POSEIDON_LOG_ERROR(...)   POSEIDON_LOG_X_(::poseidon::log_level_error,  __VA_ARGS__)
@@ -123,19 +123,20 @@ create_daemon_thread(const char* name, void* param = nullptr)
 
     // Create the thread.
     ::pthread_t thr;
-    int err = ::pthread_create(&thr, nullptr,
-                       details_utils::daemon_thread_proc<loopfnT>, param);
+    int err = ::pthread_create(&thr, nullptr, details_utils::daemon_thread_proc<loopfnT>, param);
     if(err != 0)
-      POSEIDON_THROW("could not create thread '$2'\n"
-                    "[`pthread_create()` failed: $1]",
-                    format_errno(err), name);
+      POSEIDON_THROW(
+          "could not create thread '$2'\n"
+          "[`pthread_create()` failed: $1]",
+          format_errno(err), name);
 
     // Set the thread name. Failure to set the name is ignored.
     err = ::pthread_setname_np(thr, name);
     if(err != 0)
-      POSEIDON_LOG_ERROR("Could set thread name '$2'\n"
-                         "[`pthread_setname_np()` failed: $1]",
-                         format_errno(err), name);
+      POSEIDON_LOG_ERROR(
+          "Could set thread name '$2'\n"
+          "[`pthread_setname_np()` failed: $1]",
+          format_errno(err), name);
 
     // Detach the thread.
     // The thread can't actually exit, but let's be nitpicky.

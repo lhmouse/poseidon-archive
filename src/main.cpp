@@ -220,9 +220,10 @@ do_set_working_directory()
       return;
 
     if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
-      POSEIDON_THROW("could not set working directory to '$2'\n"
-                     "[`chdir()` failed: $1]",
-                     format_errno(), cmdline.cd_here);
+      POSEIDON_THROW(
+          "could not set working directory to '$2'\n"
+          "[`chdir()` failed: $1]",
+          format_errno(), cmdline.cd_here);
   }
 
 ROCKET_NEVER_INLINE
@@ -256,9 +257,10 @@ do_daemonize_fork()
     // the parent process shall assume there is an error and wait.
     int pipefds[2];
     if(::pipe(pipefds) != 0)
-      POSEIDON_THROW("could not create pipe for child process\n"
-                     "[`pipe()` failed: $1]",
-                     format_errno());
+      POSEIDON_THROW(
+          "could not create pipe for child process\n"
+          "[`pipe()` failed: $1]",
+          format_errno());
 
     ::rocket::unique_posix_fd rfd(pipefds[0], ::close);
     daemon_pipe.reset(pipefds[1]);
@@ -267,9 +269,10 @@ do_daemonize_fork()
     ::fflush(nullptr);
     ::pid_t child = ::fork();
     if(child < 0)
-      POSEIDON_THROW("could not create child process\n"
-                     "[`fork()` failed: $1]",
-                     format_errno());
+      POSEIDON_THROW(
+          "could not create child process\n"
+          "[`fork()` failed: $1]",
+          format_errno());
 
     // If this is the child process, continue execution.
     if(child == 0)
@@ -329,16 +332,18 @@ do_write_pid_file()
     // Create the lock file.
     pid_file.reset(::creat(kpath->safe_c_str(), 0644));
     if(!pid_file)
-      POSEIDON_THROW("could not create PID file '$2'\n"
-                     "[`open()` failed: $1]",
-                     format_errno(), kpath->c_str());
+      POSEIDON_THROW(
+          "could not create PID file '$2'\n"
+          "[`open()` failed: $1]",
+          format_errno(), kpath->c_str());
 
     // Lock it in exclusive mode before overwriting.
     if(::flock(pid_file, LOCK_EX | LOCK_NB) != 0)
-      POSEIDON_THROW("could not lock PID file '$2'\n"
-                     "(is another instance running?)\n"
-                     "[`flock()` failed: $1]",
-                     format_errno(), kpath->c_str());
+      POSEIDON_THROW(
+          "could not lock PID file '$2'\n"
+          "(is another instance running?)\n"
+          "[`flock()` failed: $1]",
+          format_errno(), kpath->c_str());
 
     // Write the PID of myself.
     POSEIDON_LOG_DEBUG("Writing current process ID to '$1'", kpath->c_str());
@@ -387,9 +392,10 @@ do_load_addons()
       POSEIDON_LOG_INFO("Loading add-on: $1", path);
 
       if(!::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE))
-        POSEIDON_THROW("error loading add-on '$1'\n"
-                       "[`dlopen()` failed: $2]",
-                       path, ::dlerror());
+        POSEIDON_THROW(
+            "error loading add-on '$1'\n"
+            "[`dlopen()` failed: $2]",
+            path, ::dlerror());
 
       POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
     }

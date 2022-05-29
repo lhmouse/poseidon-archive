@@ -39,8 +39,7 @@ struct Example_Server : Abstract_TLS_Server_Socket
     Example_Server()
       : Abstract_TLS_Server_Socket(bind, port)
       {
-        POSEIDON_LOG_WARN("example TLS server listening: $1",
-                          this->get_local_address());
+        POSEIDON_LOG_WARN("example TLS server listening: $1", this->get_local_address());
       }
 
     uptr<Abstract_TLS_Socket>

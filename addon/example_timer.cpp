@@ -18,8 +18,7 @@ struct Example_Timer : Abstract_Timer
     Example_Timer()
       : Abstract_Timer(first, period)
       {
-        POSEIDON_LOG_ERROR("example timer created: first = $1, period = $2",
-                           first, period);
+        POSEIDON_LOG_ERROR("example timer created: first = $1, period = $2", first, period);
       }
 
     void
