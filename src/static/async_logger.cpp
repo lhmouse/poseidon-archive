@@ -282,6 +282,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     Level_Config_Array m_conf_levels;
 
     // dynamic data
+    mutable simple_mutex m_io_mutex;
     mutable simple_mutex m_queue_mutex;
     condition_variable m_queue_avail;
     ::std::deque<Log_Entry> m_queue;
@@ -293,7 +294,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         self->m_init_once.call(
           [&] {
             // Create the thread. Note it is never joined or detached.
-            simple_mutex::unique_lock lock(self->m_queue_mutex);
+            simple_mutex::unique_lock io_lock(self->m_io_mutex);
             self->m_thread = create_daemon_thread<do_thread_loop>("logger");
           });
       }
@@ -308,6 +309,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         lock.unlock();
 
         // Write all entries.
+        const simple_mutex::unique_lock io_lock(self->m_io_mutex);
         lock.lock(self->m_queue_mutex);
         while(self->m_queue.empty())
           self->m_queue_avail.wait(lock);
@@ -316,6 +318,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         Log_Entry entry = ::std::move(self->m_queue.front());
         self->m_queue.pop_front();
         size_t queue_size = self->m_queue.size();
+        lock.unlock();
 
         // If there is congestion, discard trivial ones.
         if(conf_levels.at(entry.level).trivial && (queue_size >= 1024))
@@ -409,6 +412,7 @@ synchronize() noexcept
     lock.unlock();
 
     // Write all entries.
+    const simple_mutex::unique_lock io_lock(self->m_io_mutex);
     lock.lock(self->m_queue_mutex);
     if(self->m_queue.empty())
       return;
@@ -420,8 +424,6 @@ synchronize() noexcept
 
       do_write_log_entry(conf_levels, ::std::move(entry));
     }
-    lock.unlock();
-
     ::sync();
   }
 
