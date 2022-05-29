@@ -15,7 +15,7 @@ class Abstract_Stream_Socket
   private:
     // These are I/O components.
     mutable simple_mutex m_io_mutex;
-    Connection_State m_cstate = connection_state_empty;
+    Connection_State m_connection_state = connection_state_empty;
     linear_buffer m_wqueue;  // write queue
 
     // This the remote address. It is initialized upon the first request.

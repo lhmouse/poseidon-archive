@@ -15,7 +15,7 @@ class Abstract_Accept_Socket
   private:
     // These are I/O components.
     mutable simple_mutex m_io_mutex;
-    Connection_State m_cstate = connection_state_empty;
+    Connection_State m_connection_state = connection_state_empty;
 
   protected:
     // Creates a new non-blocking socket.

@@ -48,12 +48,12 @@ IO_Result
 Abstract_UDP_Socket::
 do_socket_close_unlocked() noexcept
   {
-    switch(this->m_cstate) {
+    switch(this->m_connection_state) {
       case connection_state_empty:
       case connection_state_connecting:
         // Shut down the connection. Discard pending data.
         ::shutdown(this->get_fd(), SHUT_RDWR);
-        this->m_cstate = connection_state_closed;
+        this->m_connection_state = connection_state_closed;
         POSEIDON_LOG_TRACE("Marked UDP socket as CLOSED (not open): $1", this);
         return io_result_end_of_stream;
 
@@ -61,14 +61,14 @@ do_socket_close_unlocked() noexcept
       case connection_state_closing: {
         // Ensure pending data are delivered.
         if(this->m_wqueue.size()) {
-          this->m_cstate = connection_state_closing;
+          this->m_connection_state = connection_state_closing;
           POSEIDON_LOG_TRACE("Marked UDP socket as CLOSING (data pending): $1", this);
           return io_result_partial_work;
         }
 
         // Pending data have been cleared. Shut it down.
         ::shutdown(this->get_fd(), SHUT_RDWR);
-        this->m_cstate = connection_state_closed;
+        this->m_connection_state = connection_state_closed;
         POSEIDON_LOG_TRACE("Marked UDP socket as CLOSED (pending data clear): $1", this);
         return io_result_end_of_stream;
       }
@@ -87,7 +87,7 @@ Abstract_UDP_Socket::
 do_socket_on_poll_read(simple_mutex::unique_lock& lock, char* hint, size_t size)
   {
     lock.lock(this->m_io_mutex);
-    if(this->m_cstate == connection_state_closed)
+    if(this->m_connection_state == connection_state_closed)
       return io_result_end_of_stream;
 
     try {
@@ -128,7 +128,7 @@ do_write_queue_size(simple_mutex::unique_lock& lock) const
       return size;
 
     // If a shutdown request is pending, report at least one byte.
-    return this->m_cstate == connection_state_closing;
+    return this->m_connection_state == connection_state_closing;
   }
 
 IO_Result
@@ -136,14 +136,14 @@ Abstract_UDP_Socket::
 do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t /*size*/)
   {
     lock.lock(this->m_io_mutex);
-    if(this->m_cstate == connection_state_closed)
+    if(this->m_connection_state == connection_state_closed)
       return io_result_end_of_stream;
 
     // If the socket is in CONNECTING state, mark it ESTABLISHED.
     // Note UDP is connectless, so the socket is always writable unless some earlier error
     // has occurred, such as failure to bind it to a specific address.
-    if(this->m_cstate < connection_state_established) {
-      this->m_cstate = connection_state_established;
+    if(this->m_connection_state < connection_state_established) {
+      this->m_connection_state = connection_state_established;
 
       lock.unlock();
       this->do_socket_on_establish();
@@ -154,7 +154,7 @@ do_socket_on_poll_write(simple_mutex::unique_lock& lock, char* /*hint*/, size_t 
       // Try extracting a packet. This function shall match `do_socket_send()`.
       Queued_Packet_Header head;
       size_t size = this->m_wqueue.getn(reinterpret_cast<char*>(&head), sizeof(head));
-      if((size == 0) && (this->m_cstate > connection_state_established))
+      if((size == 0) && (this->m_connection_state > connection_state_established))
         return this->do_socket_close_unlocked();
 
       if(size == 0)
@@ -192,7 +192,7 @@ Abstract_UDP_Socket::
 do_socket_on_poll_close(int err)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
-    this->m_cstate = connection_state_closed;
+    this->m_connection_state = connection_state_closed;
     lock.unlock();
 
     this->do_socket_on_close(err);
@@ -233,7 +233,7 @@ Abstract_UDP_Socket::
 do_socket_send(const Socket_Address& addr, const char* data, size_t size)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
-    if(this->m_cstate > connection_state_established)
+    if(this->m_connection_state > connection_state_established)
       return false;
 
     // Reserve an exaggerate amount of space for the header, the destination
@@ -423,7 +423,7 @@ Abstract_UDP_Socket::
 close() noexcept
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
-    if(this->m_cstate > connection_state_established)
+    if(this->m_connection_state > connection_state_established)
       return false;
 
     // Initiate asynchronous shutdown.

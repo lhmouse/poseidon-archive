@@ -82,7 +82,7 @@ Abstract_Accept_Socket::
 do_socket_on_poll_close(int err)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
-    this->m_cstate = connection_state_closed;
+    this->m_connection_state = connection_state_closed;
     lock.unlock();
 
     this->do_socket_on_close(err);
@@ -93,7 +93,7 @@ Abstract_Accept_Socket::
 do_socket_listen(const Socket_Address& addr, uint32_t backlog)
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
-    if(this->m_cstate != connection_state_empty)
+    if(this->m_connection_state != connection_state_empty)
       POSEIDON_THROW("socket state error (fresh socket expected)");
 
     static constexpr int yes[] = { -1 };
@@ -111,7 +111,7 @@ do_socket_listen(const Socket_Address& addr, uint32_t backlog)
                      format_errno(), this->get_local_address());
 
     // Mark this socket listening.
-    this->m_cstate = connection_state_established;
+    this->m_connection_state = connection_state_established;
 
     POSEIDON_LOG_INFO("Accept socket listening: local '$1'",
                       this->get_local_address());
@@ -130,12 +130,12 @@ Abstract_Accept_Socket::
 close() noexcept
   {
     simple_mutex::unique_lock lock(this->m_io_mutex);
-    if(this->m_cstate > connection_state_established)
+    if(this->m_connection_state > connection_state_established)
       return false;
 
     // Initiate asynchronous shutdown.
     ::shutdown(this->get_fd(), SHUT_RDWR);
-    this->m_cstate = connection_state_closed;
+    this->m_connection_state = connection_state_closed;
     POSEIDON_LOG_TRACE("Marked accept socket as CLOSED (not open): $1", this);
     lock.unlock();
 
