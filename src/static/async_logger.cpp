@@ -91,8 +91,8 @@ struct Log_Entry
     const char* func;
     cow_string text;
 
-    ::pid_t thr_lwpid;  // kernel thread (LWP) ID, not pthread_t
     char thr_name[16];  // thread name
+    ::pid_t thr_lwpid;  // kernel thread (LWP) ID, not pthread_t
   };
 
 constexpr char s_escapes[][8] =
@@ -211,30 +211,30 @@ do_write_log_entry(const Level_Config_Array& conf_levels, Log_Entry&& entry)
     do_color(log_text, conf, "7");  // reverse
     log_text += names.fmt_name;
     do_end_color(log_text, conf);
-    log_text += "  ";
+    log_text += " ";
 
     // Write the thread ID and name.
     do_color(log_text, conf, "30;1");  // grey
-    log_text += "Thread \"";
+    log_text += "THREAD \"";
     log_text += entry.thr_name;
-    ::sprintf(temp, "\" [LWP %ld]", long(entry.thr_lwpid));
+    ::sprintf(temp, "\" LWP %ld", (long) entry.thr_lwpid);
     log_text += temp;
     do_end_color(log_text, conf);
-    log_text += "  ";
+    log_text += " ";
 
     // Write the function name.
     do_color(log_text, conf, "37;1");  // bright white
-    log_text += "Function `";
+    log_text += "FUNCTION `";
     log_text += entry.func;
     log_text += "`";
     do_end_color(log_text, conf);
-    log_text += "  ";
+    log_text += " ";
 
-    // Write the file name and line number.
+    // Write the source file name and line number.
     do_color(log_text, conf, "34;1");  // bright blue
-    log_text += "@ ";
+    log_text += "SOURCE \'";
     log_text += entry.file;
-    ::sprintf(temp, ":%ld", entry.line);
+    ::sprintf(temp, ":%ld\'", entry.line);
     log_text += temp;
     do_end_color(log_text, conf);
     log_text += "\n\t";
@@ -294,7 +294,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
         self->m_init_once.call(
           [&] {
             // Create the thread. Note it is never joined or detached.
-            simple_mutex::unique_lock io_lock(self->m_queue_mutex);
+            simple_mutex::unique_lock io_lock(self->m_conf_mutex);
             self->m_thread = create_daemon_thread<do_thread_loop>("logger");
           });
       }
@@ -387,9 +387,9 @@ enqueue(Log_Level level, const char* file, long line, const char* func, cow_stri
     entry.func = func;
     entry.text = ::std::move(text);
 
-    entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
     ::stpcpy(entry.thr_name, "<unknown>");
     ::pthread_getname_np(::pthread_self(), entry.thr_name, sizeof(entry.thr_name));
+    entry.thr_lwpid = static_cast<::pid_t>(::syscall(__NR_gettid));
 
     // If the logger thread has not been created, write it immediately.
     if(ROCKET_UNEXPECT(self->m_thread == 0))
