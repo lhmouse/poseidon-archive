@@ -310,8 +310,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
 
         // Write all entries.
         lock.lock(self->m_queue_mutex);
-        while(self->m_queue.empty())
-          self->m_queue_avail.wait(lock);
+        self->m_queue_avail.wait(lock, [] { return self->m_queue.size();  });
 
         // Pop an entry and write it.
         Log_Entry entry = ::std::move(self->m_queue.front());

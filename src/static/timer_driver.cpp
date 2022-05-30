@@ -99,14 +99,18 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
     void
     do_thread_loop(void* /*param*/)
       {
-        int64_t now, delta;
-
         // Await a timer.
         simple_mutex::unique_lock lock(self->m_pq_mutex);
-        while((delta = self->m_pq.empty() ? INT64_MAX : (self->m_pq.front().next - (now = do_get_time(0)))) > 0)
-          self->m_pq_avail.wait_for(lock, ::rocket::clamp_cast<long>(delta, 0, LONG_MAX));
-
+      z:
+        self->m_pq_avail.wait(lock, [] { return self->m_pq.size();  });
+        int64_t now = do_get_time(0);
+        int64_t delta = self->m_pq.front().next - now;
+        if(delta > 0) {
+          self->m_pq_avail.wait_for(lock, delta);
+          goto z;
+        }
         ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+
         auto timer = ::std::move(self->m_pq.back().timer);
         if(timer->m_zombie.load()) {
           // Delete this timer asynchronously.

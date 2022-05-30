@@ -13,12 +13,12 @@ namespace {
 
 struct Worker
   {
-    once_flag init_once;
-    ::pthread_t thread;
+    once_flag m_init_once;
+    ::pthread_t m_thread;
 
-    mutable simple_mutex queue_mutex;
-    condition_variable queue_avail;
-    ::std::deque<rcptr<Abstract_Async_Job>> queue;
+    mutable simple_mutex m_queue_mutex;
+    condition_variable m_queue_avail;
+    ::std::deque<rcptr<Abstract_Async_Job>> m_queue;
 
     Worker() = default;
     Worker(const Worker&) = delete;
@@ -40,32 +40,30 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
         auto name = format_string("worker $1", index);
         POSEIDON_LOG_INFO("Creating new worker thread: $1", name);
 
-        simple_mutex::unique_lock lock(qwrk->queue_mutex);
-        qwrk->thread = create_daemon_thread<do_worker_thread_loop>(name.c_str(), qwrk);
+        simple_mutex::unique_lock lock(qwrk->m_queue_mutex);
+        qwrk->m_thread = create_daemon_thread<do_worker_thread_loop>(name.c_str(), qwrk);
       }
 
     static
     void
     do_worker_thread_loop(void* param)
       {
-        const auto qwrk = static_cast<Worker*>(param);
-
         // Await a job and pop it.
-        simple_mutex::unique_lock lock(qwrk->queue_mutex);
-        while(qwrk->queue.empty())
-          qwrk->queue_avail.wait(lock);
+        const auto qwrk = static_cast<Worker*>(param);
+        simple_mutex::unique_lock lock(qwrk->m_queue_mutex);
+        qwrk->m_queue_avail.wait(lock, [qwrk] { return qwrk->m_queue.size();  });
 
-        auto job = ::std::move(qwrk->queue.front());
+        auto job = ::std::move(qwrk->m_queue.front());
         if(job->m_zombie.load()) {
           // Delete this job asynchronously.
           POSEIDON_LOG_DEBUG("Shut down asynchronous job: $1", job);
-          qwrk->queue.pop_front();
+          qwrk->m_queue.pop_front();
           return;
         }
         else if(job.unique() && !job->m_resident.load()) {
           // Delete this job when no other reference of it exists.
           POSEIDON_LOG_DEBUG("Killed orphan asynchronous job: $1", job);
-          qwrk->queue.pop_front();
+          qwrk->m_queue.pop_front();
           return;
         }
         lock.unlock();
@@ -135,15 +133,15 @@ insert(uptr<Abstract_Async_Job>&& ujob)
 
     auto qwrk = self->m_workers.mut_data();
     qwrk = ::rocket::get_probing_origin(qwrk, qwrk + nworkers, job->m_key);
-    qwrk->init_once.call(self->do_worker_init_once, qwrk);
+    qwrk->m_init_once.call(self->do_worker_init_once, qwrk);
 
     // Perform some initialization. No locking is needed here.
     job->m_state.store(async_state_pending);
 
     // Insert the job.
-    simple_mutex::unique_lock lock(qwrk->queue_mutex);
-    qwrk->queue.emplace_back(job);
-    qwrk->queue_avail.notify_one();
+    simple_mutex::unique_lock lock(qwrk->m_queue_mutex);
+    qwrk->m_queue.emplace_back(job);
+    qwrk->m_queue_avail.notify_one();
     return job;
   }
 
