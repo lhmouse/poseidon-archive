@@ -99,61 +99,36 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
     void
     do_thread_loop(void* /*param*/)
       {
-        rcptr<Abstract_Timer> timer;
-        int64_t now;
+        int64_t now, delta;
 
-        // Await an element and pop it.
+        // Await a timer.
         simple_mutex::unique_lock lock(self->m_pq_mutex);
-        for(;;) {
-          timer.reset();
-          if(self->m_pq.empty()) {
-            // Wait until an element becomes available.
-            self->m_pq_avail.wait(lock);
-            continue;
-          }
+        while((delta = self->m_pq.empty() ? INT64_MAX : (self->m_pq.front().next - (now = do_get_time(0)))) > 0)
+          self->m_pq_avail.wait_for(lock, ::rocket::clamp_cast<long>(delta, 0, LONG_MAX));
 
-          // Check the first element.
-          now = do_get_time(0);
-          int64_t delta = self->m_pq.front().next - now;
-          if(delta > 0) {
-            // Wait for it.
-            delta = ::rocket::min(delta, LONG_MAX);
-            self->m_pq_avail.wait_for(lock, static_cast<long>(delta));
-            continue;
-          }
-
-          // Pop it.
-          ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
-          auto& elem = self->m_pq.back();
-          timer = ::std::move(elem.timer);
-
-          if(timer->m_zombie.load()) {
-            // Delete this timer asynchronously.
-            POSEIDON_LOG_DEBUG("Shut down timer: $1", timer);
-            self->m_pq.pop_back();
-            continue;
-          }
-
-          if(timer.unique() && !timer->m_resident.load()) {
-            // Delete this timer when no other reference of it exists.
-            POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
-            self->m_pq.pop_back();
-            continue;
-          }
-
-          // Process this timer!
-          int64_t period = timer->m_period;
-          if(period > 0) {
-            // The timer is periodic. Insert it back.
-            do_shift_time(elem.next, period);
-            elem.timer = timer;
-            ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
-          }
-          else {
-            // The timer is one-shot. Delete it.
-            self->m_pq.pop_back();
-          }
-          break;
+        ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+        auto timer = ::std::move(self->m_pq.back().timer);
+        if(timer->m_zombie.load()) {
+          // Delete this timer asynchronously.
+          POSEIDON_LOG_DEBUG("Shut down timer: $1", timer);
+          self->m_pq.pop_back();
+          return;
+        }
+        else if(timer.unique() && !timer->m_resident.load()) {
+          // Delete this timer when no other reference of it exists.
+          POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
+          self->m_pq.pop_back();
+          return;
+        }
+        else if(timer->m_period == 0) {
+          // If the timer is one-shot, delete it.
+          self->m_pq.pop_back();
+        }
+        else {
+          // If the timer is periodic, insert it back.
+          self->m_pq.back().timer = timer;
+          do_shift_time(self->m_pq.back().next, timer->m_period);
+          ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
         }
         lock.unlock();
 
