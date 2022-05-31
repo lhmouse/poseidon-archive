@@ -10,14 +10,17 @@ namespace poseidon {
 namespace {
 
 inline
-int64_t&
+void
 do_shift_time(int64_t& value, int64_t shift)
   {
     // `value` must be non-negative. `shift` may be any value.
     ROCKET_ASSERT(value >= 0);
-    value += ::rocket::clamp(shift, -value, INT64_MAX-value);
-    ROCKET_ASSERT(value >= 0);
-    return value;
+    int64_t result;
+
+    if(ROCKET_ADD_OVERFLOW(value, shift, &result))
+      value = INT64_MAX;
+    else
+      value = result & (~result >> 63);
   }
 
 int64_t
@@ -26,10 +29,7 @@ do_get_time(int64_t shift)
     // Get the time since the system was started.
     ::timespec ts;
     ::clock_gettime(CLOCK_MONOTONIC, &ts);
-
-    int64_t value = static_cast<int64_t>(ts.tv_sec) * 1'000;
-    value += static_cast<int64_t>(ts.tv_nsec) / 1'000'000;
-    value += 9876543210;
+    int64_t value = (int64_t) ts.tv_sec * 1000 + (int64_t) ts.tv_nsec / 1000000;
 
     // Shift the time point using saturation arithmetic.
     do_shift_time(value, shift);
@@ -96,13 +96,26 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
       }
 
     static
+    int64_t
+    do_get_pq_wait_time(int64_t& now)
+      {
+        if(self->m_pq.empty())
+          return INT64_MAX;
+
+        now = do_get_time(0);
+        int64_t delta = self->m_pq.front().next;
+        do_shift_time(delta, -now);
+        return delta;
+      }
+
+    static
     void
     do_thread_loop(void* /*param*/)
       {
         // Await a timer.
         simple_mutex::unique_lock lock(self->m_pq_mutex);
-        int64_t now, delta;
-        while((delta = (self->m_pq.empty() ? INT_MAX : (self->m_pq.front().next - (now = do_get_time(0))))) > 0)
+        int64_t now;
+        while(int64_t delta = self->do_get_pq_wait_time(now))
           self->m_pq_avail.wait_for(lock, delta);
 
         ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
