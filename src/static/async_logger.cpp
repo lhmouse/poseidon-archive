@@ -181,7 +181,7 @@ do_write_log_entry(const Level_Config_Array& conf_levels, Log_Entry&& entry)
       ::rocket::unique_posix_fd fd(::close);
       fd.reset(::open(conf.out_path.c_str(),  O_WRONLY | O_APPEND | O_CREAT, 0666));
       if(fd == -1)
-        ::std::fprintf(stderr,
+        ::fprintf(stderr,
              "WARNING: Could not open log file '%s': error %d: %m\n",
              conf.out_path.c_str(), errno);
       else
@@ -197,16 +197,14 @@ do_write_log_entry(const Level_Config_Array& conf_levels, Log_Entry&& entry)
     log_text.reserve(2047);
 
     // Write the timestamp and log level string.
+    do_color(log_text, conf, conf.color);
+    char temp[64];
     ::timespec ts;
     ::clock_gettime(CLOCK_REALTIME, &ts);
     ::tm tr;
     ::localtime_r(&(ts.tv_sec), &tr);
-
-    do_color(log_text, conf, conf.color);
-    char temp[64];
-    ::strftime(temp, sizeof(temp), "%F %R", &tr);
-    log_text += temp;
-    ::sprintf(temp, ":%012.9f ", tr.tm_sec + (double) ts.tv_nsec / 1.0e9);
+    ::sprintf(temp, "%04d-%02d-%02d %02d:%02d:%02d.%09ld ", tr.tm_year + 1900,
+        tr.tm_mon + 1, tr.tm_mday, tr.tm_hour, tr.tm_min, tr.tm_sec, ts.tv_nsec);
     log_text += temp;
     do_color(log_text, conf, "7");  // reverse
     log_text += names.fmt_name;
