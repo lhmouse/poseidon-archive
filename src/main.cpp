@@ -295,6 +295,41 @@ do_daemonize_fork()
 
 ROCKET_NEVER_INLINE
 void
+do_pthread_init()
+  {
+
+    // Set name of the main thread. Failure to set the name is ignored.
+    ::pthread_setname_np(::pthread_self(), "poseidon");
+
+    // Disable cancellation for safety. Failure to set the state is ignored.
+    ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
+
+    // Block signals in all threads. Errors are ignored.
+    ::sigset_t sigset;
+    ::sigemptyset(&sigset);
+    ::sigaddset(&sigset, SIGINT);
+    ::sigaddset(&sigset, SIGTERM);
+    ::sigaddset(&sigset, SIGHUP);
+    ::sigaddset(&sigset, SIGALRM);
+    ::pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
+
+    // Ignore `SIGPIPE` for good.
+    struct ::sigaction sigact;
+    ::sigemptyset(&(sigact.sa_mask));
+    sigact.sa_flags = 0;
+    sigact.sa_handler = SIG_IGN;
+    ::sigaction(SIGPIPE, &sigact, nullptr);
+
+    // Trap signals. Errors are ignored.
+    sigact.sa_handler = [](int n) { exit_sig.store(n);  };
+    ::sigaction(SIGINT, &sigact, nullptr);
+    ::sigaction(SIGTERM, &sigact, nullptr);
+    ::sigaction(SIGHUP, &sigact, nullptr);
+    ::sigaction(SIGALRM, &sigact, nullptr);
+  }
+
+ROCKET_NEVER_INLINE
+void
 do_daemonize_finish()
   {
     if(!daemon_pipe)
@@ -412,54 +447,24 @@ main(int argc, char** argv)
     // visible to the user.
     Main_Config::reload();
     Async_Logger::reload();
+
+    POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, ::getpid());
+
     Network_Driver::reload();
     Worker_Pool::reload();
     Fiber_Scheduler::reload();
 
     do_check_euid();
     do_daemonize_fork();
-
-    // Set name of the main thread. Failure to set the name is ignored.
-    ::pthread_setname_np(::pthread_self(), "poseidon");
-
-    // Disable cancellation for safety. Failure to set the state is ignored.
-    ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
-
-    // Block signals in all threads. Errors are ignored.
-    ::sigset_t sigset;
-    ::sigemptyset(&sigset);
-    ::sigaddset(&sigset, SIGINT);
-    ::sigaddset(&sigset, SIGTERM);
-    ::sigaddset(&sigset, SIGHUP);
-    ::sigaddset(&sigset, SIGALRM);
-    ::pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
-
-    // Ignore `SIGPIPE` for good.
-    struct ::sigaction sigact;
-    ::sigemptyset(&(sigact.sa_mask));
-    sigact.sa_flags = 0;
-    sigact.sa_handler = SIG_IGN;
-    ::sigaction(SIGPIPE, &sigact, nullptr);
-
-    // Trap signals. Errors are ignored.
-    sigact.sa_handler = [](int n) { exit_sig.store(n);  };
-    ::sigaction(SIGINT, &sigact, nullptr);
-    ::sigaction(SIGTERM, &sigact, nullptr);
-    ::sigaction(SIGHUP, &sigact, nullptr);
-    ::sigaction(SIGALRM, &sigact, nullptr);
-
+    do_pthread_init();
 
     // Start daemon threads.
-    POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, ::getpid());
-
     Async_Logger::start();
     Timer_Driver::start();
     Network_Driver::start();
 
     do_write_pid_file();
     do_check_ulimits();
-
-    POSEIDON_LOG_INFO("Startup complete: $1 (PID $2)", PACKAGE_STRING, ::getpid());
 
     if(do_load_addons() == 0)
       POSEIDON_LOG_FATAL("No add-ons have been loaded. What's the job now?");
