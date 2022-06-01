@@ -20,7 +20,8 @@ class Abstract_Fiber
     atomic_relaxed<Async_State> m_state;
 
     // These are scheduler data.
-    uint32_t m_sched_version;
+    uint32_t m_sched_serial;
+    bool m_sched_running;
     int64_t m_sched_yield_since;
     int64_t m_sched_yield_timeout;
 
