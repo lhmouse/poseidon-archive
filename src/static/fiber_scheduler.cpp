@@ -567,8 +567,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           }
 
           bool cancel = sig ||   // termination pending
-                        fiber->m_zombie.load() ||  // shut down explicitly
-                        (fiber.unique() && !fiber->m_resident.load());  // orphan
+                 fiber->m_zombie.load() ||  // shut down explicitly
+                 (fiber.unique() && !fiber->m_resident.load());  // orphan
 
           if(cancel && (fiber->state() == async_state_pending)) {
             // Note cancellation is only possible before initialization.

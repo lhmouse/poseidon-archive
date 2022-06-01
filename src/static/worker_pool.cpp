@@ -58,13 +58,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
         lock.unlock();
 
         if(job->m_zombie.load()) {
-          // Delete this job asynchronously.
           POSEIDON_LOG_DEBUG("Shut down asynchronous job: $1", job);
           return;
         }
-
-        if(job.unique() && !job->m_resident.load()) {
-          // Delete this job when no other reference of it exists.
+        else if(job.unique() && !job->m_resident.load()) {
           POSEIDON_LOG_DEBUG("Killed orphan asynchronous job: $1", job);
           return;
         }

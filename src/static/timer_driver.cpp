@@ -124,13 +124,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
         lock.unlock();
 
         if(elem.timer->m_zombie.load()) {
-          // Delete this timer asynchronously.
           POSEIDON_LOG_DEBUG("Shut down timer: $1", elem.timer);
           return;
         }
-
-        if(elem.timer.unique() && !elem.timer->m_resident.load()) {
-          // Delete this timer when no other reference of it exists.
+        else if(elem.timer.unique() && !elem.timer->m_resident.load()) {
           POSEIDON_LOG_DEBUG("Killed orphan timer: $1", elem.timer);
           return;
         }
