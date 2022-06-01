@@ -396,6 +396,15 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         const auto& exit_sig = *(const atomic_signal*) param;
         const auto myctx = self->mut_thread_context();
 
+        // Allow signals in the current thread. Errors are ignored.
+        ::sigset_t sigset;
+        ::sigemptyset(&sigset);
+        ::sigaddset(&sigset, SIGINT);
+        ::sigaddset(&sigset, SIGTERM);
+        ::sigaddset(&sigset, SIGHUP);
+        ::sigaddset(&sigset, SIGALRM);
+        ::pthread_sigmask(SIG_UNBLOCK, &sigset, nullptr);
+
         // Reload configuration.
         simple_mutex::unique_lock lock(self->m_conf_mutex);
         const auto conf = self->m_conf;

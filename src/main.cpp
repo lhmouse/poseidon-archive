@@ -83,15 +83,6 @@ Report bugs to <%s>.
 // We want to detect Ctrl-C.
 atomic_signal exit_sig;
 
-void
-do_trap_exit_signal(int sig) noexcept
-  {
-    // Trap Ctrl-C. Failure to set the signal handler is ignored.
-    struct ::sigaction sigx = { };
-    sigx.sa_handler = [](int n) { exit_sig.store(n);  };
-    ::sigaction(sig, &sigx, nullptr);
-  }
-
 // Define command-line options here.
 struct Command_Line_Options
   {
@@ -434,15 +425,29 @@ main(int argc, char** argv)
     // Disable cancellation for safety. Failure to set the state is ignored.
     ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
 
-    // Trap exit signals. Failure to set signal handlers is ignored.
-    // This also makes stdio functions fail immediately.
-    do_trap_exit_signal(SIGINT);
-    do_trap_exit_signal(SIGTERM);
-    do_trap_exit_signal(SIGHUP);
-    do_trap_exit_signal(SIGALRM);
+    // Block signals in all threads. Errors are ignored.
+    ::sigset_t sigset;
+    ::sigemptyset(&sigset);
+    ::sigaddset(&sigset, SIGINT);
+    ::sigaddset(&sigset, SIGTERM);
+    ::sigaddset(&sigset, SIGHUP);
+    ::sigaddset(&sigset, SIGALRM);
+    ::pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
 
     // Ignore `SIGPIPE` for good.
-    ::signal(SIGPIPE, SIG_IGN);
+    struct ::sigaction sigact;
+    ::sigemptyset(&(sigact.sa_mask));
+    sigact.sa_flags = 0;
+    sigact.sa_handler = SIG_IGN;
+    ::sigaction(SIGPIPE, &sigact, nullptr);
+
+    // Trap signals. Errors are ignored.
+    sigact.sa_handler = [](int n) { exit_sig.store(n);  };
+    ::sigaction(SIGINT, &sigact, nullptr);
+    ::sigaction(SIGTERM, &sigact, nullptr);
+    ::sigaction(SIGHUP, &sigact, nullptr);
+    ::sigaction(SIGALRM, &sigact, nullptr);
+
 
     // Start daemon threads.
     POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, ::getpid());
