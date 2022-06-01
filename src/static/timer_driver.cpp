@@ -81,20 +81,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
     condition_variable m_pq_avail;
     ::std::vector<PQ_Element> m_pq;
 
-    static
-    void
-    do_start()
-      {
-        self->m_init_once.call(
-          [] {
-            // Create the thread. Note it is never joined or detached.
-            simple_mutex::unique_lock lock(self->m_pq_mutex);
-            int err = ::pthread_create(&(self->m_thread), nullptr, do_thread_procedure, nullptr);
-            if(err != 0)
-              POSEIDON_THROW("`pthread_create()` failed: $1", format_errno(err));
-          });
-      }
-
     [[noreturn]] static
     void*
     do_thread_procedure(void*)
@@ -191,17 +177,21 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
       }
   };
 
-void
-Timer_Driver::
-start()
-  {
-    self->do_start();
-  }
-
 rcptr<Abstract_Timer>
 Timer_Driver::
 insert(uptr<Abstract_Timer>&& utimer)
   {
+    // Perform daemon initialization.
+    self->m_init_once.call(
+      [] {
+        POSEIDON_LOG_INFO("Initializing timer driver...");
+        simple_mutex::unique_lock lock(self->m_pq_mutex);
+
+        // Create the thread. Note it is never joined or detached.
+        int err = ::pthread_create(&(self->m_thread), nullptr, self->do_thread_procedure, nullptr);
+        if(err != 0) ::std::terminate();
+      });
+
     // Take ownership of `utimer`.
     rcptr<Abstract_Timer> timer(utimer.release());
     if(!timer)

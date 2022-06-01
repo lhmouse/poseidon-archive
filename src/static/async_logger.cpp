@@ -286,20 +286,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     ::std::deque<Log_Entry> m_queue;
     mutable simple_mutex m_io_mutex;
 
-    static
-    void
-    do_start()
-      {
-        self->m_init_once.call(
-          [] {
-            // Create the thread. Note it is never joined or detached.
-            simple_mutex::unique_lock lock(self->m_conf_mutex);
-            int err = ::pthread_create(&(self->m_thread), nullptr, do_thread_procedure, nullptr);
-            if(err != 0)
-              POSEIDON_THROW("`pthread_create()` failed: $1", format_errno(err));
-          });
-      }
-
     [[noreturn]] static
     void*
     do_thread_procedure(void*)
@@ -364,13 +350,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
 
 void
 Async_Logger::
-start()
-  {
-    self->do_start();
-  }
-
-void
-Async_Logger::
 reload()
   {
     // Load logger settings into this temporary array.
@@ -405,6 +384,16 @@ bool
 Async_Logger::
 enqueue(Log_Level level, const char* file, long line, const char* func, cow_string&& text)
   {
+    // Perform daemon initialization.
+    self->m_init_once.call(
+      [] {
+        simple_mutex::unique_lock lock(self->m_conf_mutex);
+
+        // Create the thread. Note it is never joined or detached.
+        int err = ::pthread_create(&(self->m_thread), nullptr, self->do_thread_procedure, nullptr);
+        if(err != 0) ::std::terminate();
+      });
+
     // Get configuration for this level.
     simple_mutex::unique_lock lock(self->m_conf_mutex);
     const auto conf_levels = self->m_conf_levels;

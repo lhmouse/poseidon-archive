@@ -75,48 +75,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     Poll_List_root<&Poll_Socket::node_rd> m_poll_root_rd;
     Poll_List_root<&Poll_Socket::node_wr> m_poll_root_wr;
 
-    static
-    void
-    do_start()
-      {
-        self->m_init_once.call(
-          [&] {
-            // Create an epoll object.
-            unique_FD epoll_fd(::epoll_create(100));
-            if(!epoll_fd)
-              POSEIDON_THROW(
-                  "could not create epoll object\n"
-                  "[`epoll_create()` failed: $1]",
-                  format_errno());
-
-            // Create the notification eventfd and add it into epoll.
-            unique_FD event_fd(::eventfd(0, EFD_NONBLOCK));
-            if(!event_fd)
-              POSEIDON_THROW(
-                  "could not create eventfd object\n"
-                  "[`eventfd()` failed: $1]",
-                  format_errno());
-
-            ::epoll_event event;
-            event.data.u64 = self->make_epoll_data(poll_index_event, 0);
-            event.events = EPOLLIN | EPOLLET;
-            if(::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &event) != 0)
-              POSEIDON_THROW(
-                  "failed to add socket into epoll\n"
-                  "[`epoll_ctl()` failed: $1]",
-                  format_errno());
-
-            // Create the thread. Note it is never joined or detached.
-            simple_mutex::unique_lock lock(self->m_conf_mutex);
-            int err = ::pthread_create(&(self->m_thread), nullptr, do_thread_procedure, nullptr);
-            if(err != 0)
-              POSEIDON_THROW("`pthread_create()` failed: $1", format_errno(err));
-
-            self->m_epoll_fd = epoll_fd.release();
-            self->m_event_fd = event_fd.release();
-          });
-      }
-
     [[noreturn]] static
     void*
     do_thread_procedure(void*)
@@ -534,13 +492,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
 void
 Network_Driver::
-start()
-  {
-    self->do_start();
-  }
-
-void
-Network_Driver::
 reload()
   {
     // Load network settings into temporary objects.
@@ -566,6 +517,31 @@ rcptr<Abstract_Socket>
 Network_Driver::
 insert(uptr<Abstract_Socket>&& usock)
   {
+    // Perform daemon initialization.
+    self->m_init_once.call(
+      [&] {
+        POSEIDON_LOG_INFO("Initializing network driver...");
+        simple_mutex::unique_lock lock(self->m_conf_mutex);
+
+        // Create an epoll object.
+        self->m_epoll_fd = ::epoll_create(100);
+        if(self->m_epoll_fd == -1) ::std::terminate();
+
+        // Create the notification eventfd and add it into epoll.
+        self->m_event_fd = ::eventfd(0, EFD_NONBLOCK);
+        if(self->m_event_fd == -1) ::std::terminate();
+
+        ::epoll_event event;
+        event.data.u64 = self->make_epoll_data(poll_index_event, 0);
+        event.events = EPOLLIN | EPOLLET;
+        int err = ::epoll_ctl(self->m_epoll_fd, EPOLL_CTL_ADD, self->m_event_fd, &event);
+        if(err != 0) ::std::terminate();
+
+        // Create the thread. Note it is never joined or detached.
+        err = ::pthread_create(&(self->m_thread), nullptr, self->do_thread_procedure, nullptr);
+        if(err != 0) ::std::terminate();
+      });
+
     // Take ownership of `usock`.
     rcptr<Abstract_Socket> sock(usock.release());
     if(!sock)

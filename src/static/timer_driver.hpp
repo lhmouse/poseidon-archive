@@ -13,11 +13,6 @@ class Timer_Driver
     POSEIDON_STATIC_CLASS_DECLARE(Timer_Driver);
 
   public:
-    // Creates the timer thread if one hasn't been created.
-    static
-    void
-    start();
-
     // Inserts a timer.
     // The driver holds a reference-counted pointer to the timer. If it becomes a unique
     // reference, the timer is deleted.

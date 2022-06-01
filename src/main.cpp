@@ -295,15 +295,8 @@ do_daemonize_fork()
 
 ROCKET_NEVER_INLINE
 void
-do_pthread_init()
+do_init_signal_handlers()
   {
-
-    // Set name of the main thread. Failure to set the name is ignored.
-    ::pthread_setname_np(::pthread_self(), "poseidon");
-
-    // Disable cancellation for safety. Failure to set the state is ignored.
-    ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
-
     // Ignore `SIGPIPE` for good.
     struct ::sigaction sigact;
     ::sigemptyset(&(sigact.sa_mask));
@@ -438,22 +431,15 @@ main(int argc, char** argv)
     // visible to the user.
     Main_Config::reload();
     Async_Logger::reload();
-
-    POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, ::getpid());
-
     Network_Driver::reload();
     Worker_Pool::reload();
     Fiber_Scheduler::reload();
 
+    POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, ::getpid());
+
     do_check_euid();
     do_daemonize_fork();
-    do_pthread_init();
-
-    // Start daemon threads.
-    Async_Logger::start();
-    Timer_Driver::start();
-    Network_Driver::start();
-
+    do_init_signal_handlers();
     do_write_pid_file();
     do_check_ulimits();
 

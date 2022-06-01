@@ -13,11 +13,6 @@ class Async_Logger
     POSEIDON_STATIC_CLASS_DECLARE(Async_Logger);
 
   public:
-    // Creates the logger thread if one hasn't been created.
-    static
-    void
-    start();
-
     // Reloads settings from main config.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.

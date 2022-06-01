@@ -30,26 +30,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
     // dynamic data
     ::std::vector<Worker> m_workers;
 
-    static
-    void
-    allocate_worker(Worker*& worker, uintptr_t key)
-      {
-        if(self->m_workers.empty())
-          POSEIDON_THROW("no worker available");
-
-        worker = ::rocket::get_probing_origin(self->m_workers.data(),
-                        self->m_workers.data() + self->m_workers.size(), key);
-
-        worker->m_init_once.call(
-          [worker] {
-            // Create the thread. Note it is never joined or detached.
-            simple_mutex::unique_lock lock(worker->m_queue_mutex);
-            int err = ::pthread_create(&(worker->m_thread), nullptr, do_thread_procedure, worker);
-            if(err != 0)
-              POSEIDON_THROW("`pthread_create()` failed: $1", format_errno(err));
-          });
-      }
-
     [[noreturn]] static
     void*
     do_thread_procedure(void* param)
@@ -164,8 +144,26 @@ insert(uptr<Abstract_Async_Job>&& ujob)
       POSEIDON_THROW("job pointer must be unique");
 
     // Assign the job to a worker.
-    Worker* worker;
-    self->allocate_worker(worker, job->m_key);
+    size_t nworkers = self->m_workers.size();
+    if(nworkers == 0)
+      POSEIDON_THROW("no worker available");
+
+    uint64_t index = (uint32_t) (job->m_key * 0x9E3779B9);
+    index *= nworkers;
+    index >>= 32;
+    ROCKET_ASSERT(index < nworkers);
+    const auto worker = self->m_workers.data() + index;
+
+    // Perform initialization.
+    worker->m_init_once.call(
+      [worker] {
+        POSEIDON_LOG_INFO("Initializing worker thread...");
+        simple_mutex::unique_lock lock(worker->m_queue_mutex);
+
+        // Create the thread. Note it is never joined or detached.
+        int err = ::pthread_create(&(worker->m_thread), nullptr, self->do_thread_procedure, worker);
+        if(err != 0) ::std::terminate();
+      });
 
     // Perform some initialization. No locking is needed here.
     job->m_state.store(async_state_pending);

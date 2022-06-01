@@ -268,48 +268,12 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
     ::std::vector<rcptr<Abstract_Fiber>> m_sched_ready_q;
 
     static
-    void
-    do_start()
-      {
-        self->m_init_once.call(
-          [&] {
-            // Create a thread-specific key for the per-thread context.
-            // Note it is never destroyed.
-            ::pthread_key_t key;
-            int err = ::pthread_key_create(&key, nullptr);
-            if(err != 0)
-              POSEIDON_THROW(
-                  "failed to allocate thread-specific key for fibers\n"
-                  "[`pthread_key_create()` failed: $1]",
-                  format_errno(err));
-
-            auto key_guard = ::rocket::make_unique_handle(key, ::pthread_key_delete);
-
-            // Create the semaphore.
-            // Note it is never destroyed.
-            err = ::sem_init(self->m_sched_sem, 0, 0);
-            if(err != 0)
-              POSEIDON_THROW(
-                  "failed to initialize semaphore\n"
-                  "[`sem_init()` failed: $1]",
-                  format_errno(err));
-
-            auto sem_guard = ::rocket::make_unique_handle(self->m_sched_sem, ::sem_destroy);
-
-            // Set up initialized data.
-            simple_mutex::unique_lock lock(self->m_sched_mutex);
-            self->m_sched_key = key_guard.release();
-            sem_guard.release();
-          });
-      }
-
-    static
     Thread_Context*
     get_thread_context()
       {
         auto ptr = ::pthread_getspecific(self->m_sched_key);
         if(ROCKET_EXPECT(ptr))
-          return static_cast<Thread_Context*>(ptr);
+          return (Thread_Context*) ptr;
 
         POSEIDON_LOG_ERROR("No fiber scheduler thread context (wrong thread?)");
         return nullptr;
@@ -321,7 +285,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
       {
         auto ptr = ::pthread_getspecific(self->m_sched_key);
         if(ROCKET_EXPECT(ptr))
-          return static_cast<Thread_Context*>(ptr);
+          return (Thread_Context*) ptr;
 
         // Allocate it if one hasn't been allocated yet.
         auto qctx = ::rocket::make_unique<Thread_Context>();
@@ -381,22 +345,19 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         int err = ::getcontext(fiber->m_sched_uctx);
         ROCKET_ASSERT(err == 0);
 
-        fiber->m_sched_uctx->uc_link = reinterpret_cast<::ucontext_t*>(-0x21520FF3);
+        fiber->m_sched_uctx->uc_link = (::ucontext_t*) -0x21520FF3;
         fiber->m_sched_uctx->uc_stack = stack.release();
 
         // Fill in the executor function, whose argument is a copy of `fiber`.
         Fiber_pointer fcptr(fiber);
-        ::makecontext(fiber->m_sched_uctx, reinterpret_cast<void (*)()>(do_execute_fiber), 2, fcptr.words[0], fcptr.words[1]);
+        ::makecontext(fiber->m_sched_uctx, (void (*)()) do_execute_fiber, 2, fcptr.words[0], fcptr.words[1]);
       }
 
-    static
-    void
-    do_thread_loop(void* param)
+    [[noreturn]] static
+    void*
+    do_thread_procedure(void* param)
       {
-        const auto& exit_sig = *(const atomic_signal*) param;
-        const auto myctx = self->mut_thread_context();
-
-        // Allow signals in the current thread. Errors are ignored.
+        // Set thread information. Errors are ignored.
         ::sigset_t sigset;
         ::sigemptyset(&sigset);
         ::sigaddset(&sigset, SIGINT);
@@ -405,6 +366,28 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         ::sigaddset(&sigset, SIGALRM);
         ::pthread_sigmask(SIG_UNBLOCK, &sigset, nullptr);
 
+        int oldst;
+        ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldst);
+
+        ::pthread_setname_np(::pthread_self(), "poseidon");
+
+        // Enter an infinite loop.
+        for(;;)
+          try {
+            self->do_thread_loop(*(const atomic_signal*) param);
+          }
+          catch(exception& stdex) {
+            POSEIDON_LOG_FATAL(
+                "Caught an exception from fiber scheduler thread loop: $1\n"
+                "[exception class `$2`]\n",
+                stdex.what(), typeid(stdex).name());
+          }
+      }
+
+    static
+    void
+    do_thread_loop(const atomic_signal& exit_sig)
+      {
         // Reload configuration.
         simple_mutex::unique_lock lock(self->m_conf_mutex);
         const auto conf = self->m_conf;
@@ -418,6 +401,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         ::timespec ts;
         ::clock_gettime(CLOCK_MONOTONIC, &ts);
         int sig = exit_sig.load();
+        unique_stack stack;
 
         while(self->m_sched_sleep_q.size()) {
           // Move a fiber from the sleep queue into the scheduler queue.
@@ -556,9 +540,10 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         }
 
         if(elem.fiber->state() == async_state_pending) {
+          // Perform initialization that might throw exceptions here.
           try {
-            // Perform initialization that might throw exceptions here.
-            self->do_initialize_context(elem.fiber, do_allocate_stack(conf.stack_vm_size));
+            stack = do_allocate_stack(conf.stack_vm_size);
+            self->do_initialize_context(elem.fiber, ::std::move(stack));
           }
           catch(exception& stdex) {
             POSEIDON_LOG_ERROR(
@@ -579,6 +564,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
         }
 
         ROCKET_ASSERT(elem.fiber->state() == async_state_suspended);
+        const auto myctx = self->mut_thread_context();
         myctx->current = elem.fiber;
         POSEIDON_LOG_TRACE("Resuming execution of fiber `$1`", elem.fiber);
 
@@ -602,7 +588,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
 
         // Free its stack and delete it thereafter.
         ROCKET_ASSERT(elem.fiber->state() == async_state_finished);
-        unique_stack stack(elem.fiber->m_sched_uctx->uc_stack);
+        stack.reset(elem.fiber->m_sched_uctx->uc_stack);
       }
   };
 
@@ -610,11 +596,25 @@ void
 Fiber_Scheduler::
 modal_loop(const atomic_signal& exit_sig)
   {
-    self->do_start();
+    // Perform daemon initialization.
+    self->m_init_once.call(
+      [&] {
+        POSEIDON_LOG_INFO("Initializing fiber scheduler...");
+        simple_mutex::unique_lock lock(self->m_sched_mutex);
+
+        // Create a thread-specific key for the per-thread context.
+        // Note it is never destroyed.
+        int err = ::pthread_key_create(&(self->m_sched_key), nullptr);
+        if(err != 0) ::std::terminate();
+
+        // Create the semaphore.
+        // Note it is never destroyed.
+        err = ::sem_init(self->m_sched_sem, 0, 0);
+        if(err != 0) ::std::terminate();
+      });
 
     // Schedule fibers and block until `exit_sig` becomes non-zero.
-    for(;;)
-      self->do_thread_loop((void*)&exit_sig);
+    self->do_thread_procedure((void*) &exit_sig);
   }
 
 void

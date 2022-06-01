@@ -13,11 +13,6 @@ class Network_Driver
     POSEIDON_STATIC_CLASS_DECLARE(Network_Driver);
 
   public:
-    // Creates the network thread if one hasn't been created.
-    static
-    void
-    start();
-
     // Reloads settings from main config.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
