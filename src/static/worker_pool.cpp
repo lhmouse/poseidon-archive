@@ -7,11 +7,11 @@
 #include "../core/abstract_async_job.hpp"
 #include "../core/config_file.hpp"
 #include "../utils.hpp"
+#include <signal.h>
 
 namespace poseidon {
-namespace {
 
-struct Worker
+struct Worker_Pool::Worker
   {
     once_flag m_init_once;
     ::pthread_t m_thread;
@@ -25,36 +25,75 @@ struct Worker
     Worker& operator=(const Worker&) = delete;
   };
 
-}  // namespace
-
 POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
   {
     // dynamic data
-    ::rocket::cow_vector<Worker> m_workers;
+    ::std::vector<Worker> m_workers;
 
     static
     void
-    do_worker_init_once(Worker* qwrk)
+    allocate_worker(Worker*& worker, uintptr_t key)
       {
-        size_t index = static_cast<size_t>(qwrk - self->m_workers.data());
-        auto name = format_string("worker $1", index);
-        POSEIDON_LOG_INFO("Creating new worker thread: $1", name);
+        if(self->m_workers.empty())
+          POSEIDON_THROW("no worker available");
 
-        simple_mutex::unique_lock lock(qwrk->m_queue_mutex);
-        qwrk->m_thread = create_daemon_thread<do_worker_thread_loop>(name.c_str(), qwrk);
+        worker = ::rocket::get_probing_origin(self->m_workers.data(),
+                        self->m_workers.data() + self->m_workers.size(), key);
+
+        worker->m_init_once.call(
+          [worker] {
+            // Create the thread. Note it is never joined or detached.
+            simple_mutex::unique_lock lock(worker->m_queue_mutex);
+            int err = ::pthread_create(&(worker->m_thread), nullptr, do_thread_procedure, worker);
+            if(err != 0)
+              POSEIDON_THROW("`pthread_create()` failed: $1", format_errno(err));
+          });
+      }
+
+    [[noreturn]] static
+    void*
+    do_thread_procedure(void* param)
+      {
+        // Set thread information. Errors are ignored.
+        ::sigset_t sigset;
+        ::sigemptyset(&sigset);
+        ::sigaddset(&sigset, SIGINT);
+        ::sigaddset(&sigset, SIGTERM);
+        ::sigaddset(&sigset, SIGHUP);
+        ::sigaddset(&sigset, SIGALRM);
+        ::pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
+
+        int oldst;
+        ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldst);
+
+        char name[32];
+        Worker* worker = (Worker*) param;
+        ::sprintf(name, "worker %u", (unsigned) (worker - self->m_workers.data() + 1));
+        ::pthread_setname_np(::pthread_self(), name);
+
+        // Enter an infinite loop.
+        for(;;)
+          try {
+            self->do_thread_loop(worker);
+          }
+          catch(exception& stdex) {
+            POSEIDON_LOG_FATAL(
+                "Caught an exception from worker thread loop: $1\n"
+                "[exception class `$2`]\n",
+                stdex.what(), typeid(stdex).name());
+          }
       }
 
     static
     void
-    do_worker_thread_loop(void* param)
+    do_thread_loop(Worker* worker)
       {
         // Await a job and pop it.
-        const auto qwrk = static_cast<Worker*>(param);
-        simple_mutex::unique_lock lock(qwrk->m_queue_mutex);
-        qwrk->m_queue_avail.wait(lock, [qwrk] { return qwrk->m_queue.size();  });
+        simple_mutex::unique_lock lock(worker->m_queue_mutex);
+        worker->m_queue_avail.wait(lock, [&] { return worker->m_queue.size();  });
 
-        auto job = ::std::move(qwrk->m_queue.front());
-        qwrk->m_queue.pop_front();
+        auto job = ::std::move(worker->m_queue.front());
+        worker->m_queue.pop_front();
         lock.unlock();
 
         if(job->m_zombie.load()) {
@@ -75,7 +114,8 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
         }
         catch(exception& stdex) {
           POSEIDON_LOG_WARN(
-              "$1\n[thrown from an asynchronous job of class `$2`]",
+              "$1\n"
+              "[thrown from an asynchronous job of class `$2`]",
               stdex, typeid(*job));
         }
 
@@ -101,7 +141,7 @@ reload()
     // Note the pool cannot be resized, so we only have to do this once.
     // No locking is needed.
     if(self->m_workers.empty())
-      self->m_workers.resize(thread_count);
+      self->m_workers = ::std::vector<Worker>(thread_count);
   }
 
 size_t
@@ -124,21 +164,16 @@ insert(uptr<Abstract_Async_Job>&& ujob)
       POSEIDON_THROW("job pointer must be unique");
 
     // Assign the job to a worker.
-    size_t nworkers = self->m_workers.size();
-    if(nworkers == 0)
-      POSEIDON_THROW("no worker available");
-
-    auto qwrk = self->m_workers.mut_data();
-    qwrk = ::rocket::get_probing_origin(qwrk, qwrk + nworkers, job->m_key);
-    qwrk->m_init_once.call(self->do_worker_init_once, qwrk);
+    Worker* worker;
+    self->allocate_worker(worker, job->m_key);
 
     // Perform some initialization. No locking is needed here.
     job->m_state.store(async_state_pending);
 
     // Insert the job.
-    simple_mutex::unique_lock lock(qwrk->m_queue_mutex);
-    qwrk->m_queue.emplace_back(job);
-    qwrk->m_queue_avail.notify_one();
+    simple_mutex::unique_lock lock(worker->m_queue_mutex);
+    worker->m_queue.emplace_back(job);
+    worker->m_queue_avail.notify_one();
     return job;
   }
 

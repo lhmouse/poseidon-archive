@@ -53,32 +53,6 @@ format_throw(const char* file, long line, const char* func, const char* templ, c
         file, line);
   }
 
-template<void loopfnT(void*)>
-[[noreturn]] ROCKET_NEVER_INLINE static
-void*
-daemon_thread_proc(void* param)
-  {
-    // Disable cancellation for safety.
-    // Failure to set the cancel state is ignored.
-    int state;
-    ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &state);
-
-    // Execute `loopfnT` repeatedly.
-    // The thread never exits.
-    do
-      try {
-        loopfnT(param);
-      }
-      catch(exception& stdex) {
-        ::std::fprintf(stderr,
-            "%s: %s\n"
-            "[exception class `%s` thrown from daemon thread loop]\n",
-            __func__, stdex.what(),
-            typeid(stdex).name());
-      }
-    while(true);
-  }
-
 template<typename FuncT>
 class Timer
   final

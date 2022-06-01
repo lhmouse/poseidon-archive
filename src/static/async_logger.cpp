@@ -7,6 +7,7 @@
 #include "../core/config_file.hpp"
 #include "../utils.hpp"
 #include <sys/syscall.h>
+#include <signal.h>
 
 namespace poseidon {
 namespace {
@@ -273,7 +274,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
   {
     // constant data
     once_flag m_init_once;
-    ::pthread_t m_thread = 0;
+    ::pthread_t m_thread;
 
     // configuration
     mutable simple_mutex m_conf_mutex;
@@ -290,16 +291,49 @@ POSEIDON_STATIC_CLASS_DEFINE(Async_Logger)
     do_start()
       {
         self->m_init_once.call(
-          [&] {
+          [] {
             // Create the thread. Note it is never joined or detached.
-            simple_mutex::unique_lock io_lock(self->m_conf_mutex);
-            self->m_thread = create_daemon_thread<do_thread_loop>("logger");
+            simple_mutex::unique_lock lock(self->m_conf_mutex);
+            int err = ::pthread_create(&(self->m_thread), nullptr, do_thread_procedure, nullptr);
+            if(err != 0)
+              POSEIDON_THROW("`pthread_create()` failed: $1", format_errno(err));
           });
+      }
+
+    [[noreturn]] static
+    void*
+    do_thread_procedure(void*)
+      {
+        // Set thread information. Errors are ignored.
+        ::sigset_t sigset;
+        ::sigemptyset(&sigset);
+        ::sigaddset(&sigset, SIGINT);
+        ::sigaddset(&sigset, SIGTERM);
+        ::sigaddset(&sigset, SIGHUP);
+        ::sigaddset(&sigset, SIGALRM);
+        ::pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
+
+        int oldst;
+        ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldst);
+
+        ::pthread_setname_np(::pthread_self(), "logger");
+
+        // Enter an infinite loop.
+        for(;;)
+          try {
+            self->do_thread_loop();
+          }
+          catch(exception& stdex) {
+            POSEIDON_LOG_FATAL(
+                "Caught an exception from logger thread loop: $1\n"
+                "[exception class `$2`]\n",
+                stdex.what(), typeid(stdex).name());
+          }
       }
 
     static
     void
-    do_thread_loop(void* /*param*/)
+    do_thread_loop()
       {
         // Get configuration for this level.
         simple_mutex::unique_lock lock(self->m_conf_mutex);

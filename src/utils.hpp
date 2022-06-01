@@ -18,6 +18,7 @@
 
 namespace poseidon {
 
+using ::rocket::clamp_cast;
 using ::asteria::format_string;
 using ::asteria::weaken_enum;
 using ::asteria::generate_random_seed;
@@ -78,28 +79,16 @@ ascii_ci_has_token(const cow_string& text, const OtherT& oth)
 using cow_vstrings = ::rocket::cow_vector<cow_string>;
 
 size_t
-explode(cow_vstrings& segments, const cow_string& text, char delim = ',',
-        size_t limit = SIZE_MAX);
+explode(cow_vstrings& segments, const cow_string& text, char delim = ',', size_t limit = SIZE_MAX);
 
 size_t
 implode(cow_string& text, const cow_vstrings& segments, char delim = ',');
-
-// Cast a value using saturation arithmetic.
-template<typename ResultT, typename ValueT>
-constexpr
-ResultT
-clamp_cast(const ValueT& value,
-           const typename ::std::enable_if<true, ValueT>::type& lower,
-           const typename ::std::enable_if<true, ValueT>::type& upper)
-  {
-    return static_cast<ResultT>(::rocket::clamp(value, lower, upper));
-  }
 
 // Composes a string and submits it to the logger.
 #define POSEIDON_LOG_X_(level, ...)  \
     (::poseidon::Async_Logger::enabled(level) &&  \
          (::poseidon::details_utils::format_log(level,  \
-                __FILE__, __LINE__, __func__, "" __VA_ARGS__), true))
+              __FILE__, __LINE__, __func__, "" __VA_ARGS__), true))
 
 #define POSEIDON_LOG_FATAL(...)   POSEIDON_LOG_X_(::poseidon::log_level_fatal,  __VA_ARGS__)
 #define POSEIDON_LOG_ERROR(...)   POSEIDON_LOG_X_(::poseidon::log_level_error,  __VA_ARGS__)
@@ -110,39 +99,8 @@ clamp_cast(const ValueT& value,
 
 // Composes a string and throws an exception.
 #define POSEIDON_THROW(...)  \
-    (::poseidon::details_utils::format_throw(__FILE__, __LINE__, __func__, "" __VA_ARGS__))
-
-// Creates a thread that invokes `loopfnT` repeatedly and never exits.
-// Exceptions thrown from the thread procedure are ignored.
-template<void loopfnT(void*)>
-::pthread_t
-create_daemon_thread(const char* name, void* param = nullptr)
-  {
-    ROCKET_ASSERT_MSG(name, "No thread name specified");
-    ROCKET_ASSERT_MSG(::std::strlen(name) <= 15, "Thread name too long");
-
-    // Create the thread.
-    ::pthread_t thr;
-    int err = ::pthread_create(&thr, nullptr, details_utils::daemon_thread_proc<loopfnT>, param);
-    if(err != 0)
-      POSEIDON_THROW(
-          "could not create thread '$2'\n"
-          "[`pthread_create()` failed: $1]",
-          format_errno(err), name);
-
-    // Set the thread name. Failure to set the name is ignored.
-    err = ::pthread_setname_np(thr, name);
-    if(err != 0)
-      POSEIDON_LOG_ERROR(
-          "Could set thread name '$2'\n"
-          "[`pthread_setname_np()` failed: $1]",
-          format_errno(err), name);
-
-    // Detach the thread.
-    // The thread can't actually exit, but let's be nitpicky.
-    ::pthread_detach(thr);
-    return thr;
-  }
+    (::poseidon::details_utils::format_throw(  \
+         __FILE__, __LINE__, __func__, "" __VA_ARGS__))
 
 // Creates an asynchronous timer. The timer function will be called by
 // the timer thread, so thread safety must be taken into account.
@@ -151,9 +109,9 @@ rcptr<Abstract_Timer>
 create_async_timer(int64_t next, int64_t period, FuncT&& func)
   {
     return Timer_Driver::insert(
-                 ::rocket::make_unique<details_utils::Timer<
-                       typename ::std::decay<FuncT>::type>>(
-                           next, period, ::std::forward<FuncT>(func)));
+        ::rocket::make_unique<details_utils::Timer<
+            typename ::std::decay<FuncT>::type>>(
+                next, period, ::std::forward<FuncT>(func)));
   }
 
 // Creates a one-shot timer.
@@ -162,9 +120,9 @@ rcptr<Abstract_Timer>
 create_async_timer_oneshot(int64_t next, FuncT&& func)
   {
     return Timer_Driver::insert(
-                 ::rocket::make_unique<details_utils::Timer<
-                       typename ::std::decay<FuncT>::type>>(
-                           next, 0, ::std::forward<FuncT>(func)));
+        ::rocket::make_unique<details_utils::Timer<
+            typename ::std::decay<FuncT>::type>>(
+                next, 0, ::std::forward<FuncT>(func)));
   }
 
 // Creates a periodic timer.
@@ -173,9 +131,9 @@ rcptr<Abstract_Timer>
 create_async_timer_periodic(int64_t period, FuncT&& func)
   {
     return Timer_Driver::insert(
-                 ::rocket::make_unique<details_utils::Timer<
-                       typename ::std::decay<FuncT>::type>>(
-                           period, period, ::std::forward<FuncT>(func)));
+        ::rocket::make_unique<details_utils::Timer<
+            typename ::std::decay<FuncT>::type>>(
+                period, period, ::std::forward<FuncT>(func)));
   }
 
 // Enqueues an asynchronous job and returns a future to its result.
@@ -185,9 +143,9 @@ futp<typename ::std::result_of<typename ::std::decay<FuncT>::type& ()>::type>
 enqueue_async_job(uintptr_t key, FuncT&& func)
   {
     return details_utils::promise(
-                 ::rocket::make_unique<details_utils::Async<
-                       typename ::std::decay<FuncT>::type>>(
-                           key, ::std::forward<FuncT>(func)));
+        ::rocket::make_unique<details_utils::Async<
+            typename ::std::decay<FuncT>::type>>(
+                key, ::std::forward<FuncT>(func)));
   }
 
 // Enqueues an asynchronous job and returns a future to its result.
@@ -197,9 +155,9 @@ futp<typename ::std::result_of<typename ::std::decay<FuncT>::type& ()>::type>
 enqueue_async_job(FuncT&& func)
   {
     return details_utils::promise(
-                 ::rocket::make_unique<details_utils::Async<
-                       typename ::std::decay<FuncT>::type>>(
-                           details_utils::random_key, ::std::forward<FuncT>(func)));
+        ::rocket::make_unique<details_utils::Async<
+            typename ::std::decay<FuncT>::type>>(
+                details_utils::random_key, ::std::forward<FuncT>(func)));
   }
 
 }  // namespace poseidon

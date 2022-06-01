@@ -10,6 +10,7 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/eventfd.h>
+#include <signal.h>
 
 namespace poseidon {
 namespace {
@@ -107,10 +108,44 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
             // Create the thread. Note it is never joined or detached.
             simple_mutex::unique_lock lock(self->m_conf_mutex);
-            self->m_thread = create_daemon_thread<do_thread_loop>("network");
+            int err = ::pthread_create(&(self->m_thread), nullptr, do_thread_procedure, nullptr);
+            if(err != 0)
+              POSEIDON_THROW("`pthread_create()` failed: $1", format_errno(err));
+
             self->m_epoll_fd = epoll_fd.release();
             self->m_event_fd = event_fd.release();
           });
+      }
+
+    [[noreturn]] static
+    void*
+    do_thread_procedure(void*)
+      {
+        // Set thread information. Errors are ignored.
+        ::sigset_t sigset;
+        ::sigemptyset(&sigset);
+        ::sigaddset(&sigset, SIGINT);
+        ::sigaddset(&sigset, SIGTERM);
+        ::sigaddset(&sigset, SIGHUP);
+        ::sigaddset(&sigset, SIGALRM);
+        ::pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
+
+        int oldst;
+        ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldst);
+
+        ::pthread_setname_np(::pthread_self(), "network");
+
+        // Enter an infinite loop.
+        for(;;)
+          try {
+            self->do_thread_loop();
+          }
+          catch(exception& stdex) {
+            POSEIDON_LOG_FATAL(
+                "Caught an exception from network thread loop: $1\n"
+                "[exception class `$2`]\n",
+                stdex.what(), typeid(stdex).name());
+          }
       }
 
     // The index takes up 24 bits. That's 16M simultaneous connections.
@@ -237,7 +272,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
     static
     void
-    do_thread_loop(void* /*param*/)
+    do_thread_loop()
       {
         // Reload configuration.
         simple_mutex::unique_lock lock(self->m_conf_mutex);

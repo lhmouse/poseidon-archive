@@ -18,27 +18,6 @@
 #include <deque>
 #include <unistd.h>
 
-// Macros
-#define POSEIDON_STATIC_CLASS_DECLARE(C)  \
-    private:  \
-      /* Data members are not visible in headers. */  \
-      struct __attribute__((__visibility__("hidden"))) C##_self;  \
-      static C##_self* const self;  \
-    \
-      constexpr C() noexcept = default;  \
-      C(const C&) = delete;  \
-      C& operator=(const C&) = delete;  \
-      ~C() = default  // no semicolon
-
-#define POSEIDON_STATIC_CLASS_DEFINE(C)  \
-    class C;  \
-    /* This hack is required by incomplete types. */  \
-    struct C::C##_self* const C::self =  \
-        ::rocket::make_unique<C::C##_self>().release();  \
-    \
-    struct C::C##_self : C  \
-      // add members here
-
 namespace poseidon {
 namespace noadl = poseidon;
 
@@ -183,6 +162,26 @@ class Timer_Driver;
 class Network_Driver;
 class Worker_Pool;
 class Fiber_Scheduler;
+
+// Macros
+#define POSEIDON_STATIC_CLASS_DECLARE(C)  \
+  private:  \
+    /* Data members are not visible in headers. */  \
+    struct __attribute__((__visibility__("hidden"))) C##_self;  \
+    static C##_self* const self;  \
+    /* Instantiation is not allowed.  */  \
+    constexpr C() noexcept = default;  \
+    C(const C&) = delete;  \
+    C& operator=(const C&) = delete;  \
+    ~C() = default  // no semicolon
+
+#define POSEIDON_STATIC_CLASS_DEFINE(C)  \
+  class C;  \
+  struct C::C##_self* const C::self =  \
+      ::rocket::make_unique<C::C##_self>().release();  \
+  /* Define the class.  */  \
+  struct C::C##_self : C  \
+    // add members here
 
 // Log levels
 // Note each level has a hardcoded name and number.

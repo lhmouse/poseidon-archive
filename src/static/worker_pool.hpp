@@ -11,6 +11,7 @@ namespace poseidon {
 class Worker_Pool
   {
     POSEIDON_STATIC_CLASS_DECLARE(Worker_Pool);
+    struct __attribute__((__visibility__("hidden"))) Worker;
 
   public:
     // Reloads settings from main config.

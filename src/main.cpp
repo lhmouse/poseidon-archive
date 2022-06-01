@@ -304,15 +304,6 @@ do_pthread_init()
     // Disable cancellation for safety. Failure to set the state is ignored.
     ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, nullptr);
 
-    // Block signals in all threads. Errors are ignored.
-    ::sigset_t sigset;
-    ::sigemptyset(&sigset);
-    ::sigaddset(&sigset, SIGINT);
-    ::sigaddset(&sigset, SIGTERM);
-    ::sigaddset(&sigset, SIGHUP);
-    ::sigaddset(&sigset, SIGALRM);
-    ::pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
-
     // Ignore `SIGPIPE` for good.
     struct ::sigaction sigact;
     ::sigemptyset(&(sigact.sa_mask));

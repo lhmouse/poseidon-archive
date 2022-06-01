@@ -5,6 +5,8 @@
 #include "timer_driver.hpp"
 #include "../core/abstract_timer.hpp"
 #include "../utils.hpp"
+#include <time.h>
+#include <signal.h>
 
 namespace poseidon {
 namespace {
@@ -15,12 +17,8 @@ do_shift_time(int64_t& value, int64_t shift)
   {
     // `value` must be non-negative. `shift` may be any value.
     ROCKET_ASSERT(value >= 0);
-    int64_t result;
-
-    if(ROCKET_ADD_OVERFLOW(value, shift, &result))
-      value = INT64_MAX;
-    else
-      value = result & (~result >> 63);
+    int64_t res;
+    value = ROCKET_ADD_OVERFLOW(value, shift, &res) ? INT64_MAX : (res & (~res >> 63));
   }
 
 int64_t
@@ -88,11 +86,44 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
     do_start()
       {
         self->m_init_once.call(
-          [&] {
+          [] {
             // Create the thread. Note it is never joined or detached.
             simple_mutex::unique_lock lock(self->m_pq_mutex);
-            self->m_thread = create_daemon_thread<do_thread_loop>("timer");
+            int err = ::pthread_create(&(self->m_thread), nullptr, do_thread_procedure, nullptr);
+            if(err != 0)
+              POSEIDON_THROW("`pthread_create()` failed: $1", format_errno(err));
           });
+      }
+
+    [[noreturn]] static
+    void*
+    do_thread_procedure(void*)
+      {
+        // Set thread information. Errors are ignored.
+        ::sigset_t sigset;
+        ::sigemptyset(&sigset);
+        ::sigaddset(&sigset, SIGINT);
+        ::sigaddset(&sigset, SIGTERM);
+        ::sigaddset(&sigset, SIGHUP);
+        ::sigaddset(&sigset, SIGALRM);
+        ::pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
+
+        int oldst;
+        ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldst);
+
+        ::pthread_setname_np(::pthread_self(), "timer");
+
+        // Enter an infinite loop.
+        for(;;)
+          try {
+            self->do_thread_loop();
+          }
+          catch(exception& stdex) {
+            POSEIDON_LOG_FATAL(
+                "Caught an exception from timer thread loop: $1\n"
+                "[exception class `$2`]\n",
+                stdex.what(), typeid(stdex).name());
+          }
       }
 
     static
@@ -110,7 +141,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
 
     static
     void
-    do_thread_loop(void* /*param*/)
+    do_thread_loop()
       {
         // Await a timer.
         simple_mutex::unique_lock lock(self->m_pq_mutex);
