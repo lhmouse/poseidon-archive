@@ -54,26 +54,26 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
         qwrk->m_queue_avail.wait(lock, [qwrk] { return qwrk->m_queue.size();  });
 
         auto job = ::std::move(qwrk->m_queue.front());
+        qwrk->m_queue.pop_front();
+        lock.unlock();
+
         if(job->m_zombie.load()) {
           // Delete this job asynchronously.
           POSEIDON_LOG_DEBUG("Shut down asynchronous job: $1", job);
-          qwrk->m_queue.pop_front();
           return;
         }
-        else if(job.unique() && !job->m_resident.load()) {
+
+        if(job.unique() && !job->m_resident.load()) {
           // Delete this job when no other reference of it exists.
           POSEIDON_LOG_DEBUG("Killed orphan asynchronous job: $1", job);
-          qwrk->m_queue.pop_front();
           return;
         }
-        lock.unlock();
-
-        // Execute the job.
-        ROCKET_ASSERT(job->state() == async_state_pending);
-        job->m_state.store(async_state_running);
-        POSEIDON_LOG_TRACE("Starting execution of asynchronous job `$1`", job);
 
         try {
+          // Execute the job.
+          ROCKET_ASSERT(job->state() == async_state_pending);
+          job->m_state.store(async_state_running);
+          POSEIDON_LOG_TRACE("Starting execution of asynchronous job `$1`", job);
           job->do_execute();
         }
         catch(exception& stdex) {

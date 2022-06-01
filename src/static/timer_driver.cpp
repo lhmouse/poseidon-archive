@@ -119,45 +119,47 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           self->m_pq_avail.wait_for(lock, delta);
 
         ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
-        auto timer = ::std::move(self->m_pq.back().timer);
-        if(timer->m_zombie.load()) {
-          // Delete this timer asynchronously.
-          POSEIDON_LOG_DEBUG("Shut down timer: $1", timer);
-          self->m_pq.pop_back();
-          return;
-        }
-        else if(timer.unique() && !timer->m_resident.load()) {
-          // Delete this timer when no other reference of it exists.
-          POSEIDON_LOG_DEBUG("Killed orphan timer: $1", timer);
-          self->m_pq.pop_back();
-          return;
-        }
-        else if(timer->m_period == 0) {
-          // If the timer is one-shot, delete it.
-          self->m_pq.pop_back();
-        }
-        else {
-          // If the timer is periodic, insert it back.
-          self->m_pq.back().timer = timer;
-          do_shift_time(self->m_pq.back().next, timer->m_period);
-          ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
-        }
+        auto elem = ::std::move(self->m_pq.back());
+        self->m_pq.pop_back();
         lock.unlock();
 
-        // Execute the timer procedure.
-        // The argument is a snapshot of the monotonic clock, not its real-time value.
+        if(elem.timer->m_zombie.load()) {
+          // Delete this timer asynchronously.
+          POSEIDON_LOG_DEBUG("Shut down timer: $1", elem.timer);
+          return;
+        }
+
+        if(elem.timer.unique() && !elem.timer->m_resident.load()) {
+          // Delete this timer when no other reference of it exists.
+          POSEIDON_LOG_DEBUG("Killed orphan timer: $1", elem.timer);
+          return;
+        }
+
+        if(elem.timer->m_period != 0) {
+          // If the timer is periodic, insert it back.
+          do_shift_time(elem.next, elem.timer->m_period);
+
+          lock.lock(self->m_pq_mutex);
+          self->m_pq.emplace_back(elem);
+          ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
+          lock.unlock();
+        }
+
         try {
-          timer->do_on_async_timer(now);
+          // Execute the timer procedure. The argument is a snapshot of the
+          // monotonic clock, not its real-time value.
+          POSEIDON_LOG_TRACE("Starting execution of timer `$1`: now = $2", elem.timer, now);
+          elem.timer->do_on_async_timer(now);
         }
         catch(exception& stdex) {
           POSEIDON_LOG_WARN(
               "Exception thrown from timer:\n"
               "$1\n"
               "[timer class `$2`]",
-              stdex, typeid(*timer));
+              stdex, typeid(*(elem.timer)));
         }
 
-        timer->m_count.fetch_add(1);
+        elem.timer->m_count.fetch_add(1);
       }
   };
 
