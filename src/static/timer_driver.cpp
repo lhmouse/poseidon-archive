@@ -13,26 +13,24 @@ namespace poseidon {
 namespace {
 
 inline
-void
-do_shift_time(int64_t& value, int64_t shift)
+int64_t
+do_shift_time(int64_t& value, int64_t shift) noexcept
   {
     // `value` must be non-negative. `shift` may be any value.
     ROCKET_ASSERT(value >= 0);
     int64_t res;
     value = ROCKET_ADD_OVERFLOW(value, shift, &res) ? INT64_MAX : (res & (~res >> 63));
+    return value;
   }
 
 int64_t
-do_get_time(int64_t shift)
+do_get_time(int64_t& value, int64_t shift) noexcept
   {
     // Get the time since the system was started.
     ::timespec ts;
     ::clock_gettime(CLOCK_MONOTONIC, &ts);
-    int64_t value = (int64_t) ts.tv_sec * 1000 + (int64_t) ts.tv_nsec / 1000000;
-
-    // Shift the time point using saturation arithmetic.
-    do_shift_time(value, shift);
-    return value;
+    value = (int64_t) ts.tv_sec * 1000 + (int64_t) ts.tv_nsec / 1000000;
+    return do_shift_time(value, shift);
   }
 
 struct PQ_Element
@@ -114,27 +112,17 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
       }
 
     static
-    int64_t
-    do_get_pq_wait_time(int64_t& now)
-      {
-        if(self->m_pq.empty())
-          return INT64_MAX;
-
-        now = do_get_time(0);
-        int64_t delta = self->m_pq.front().next;
-        do_shift_time(delta, -now);
-        return delta;
-      }
-
-    static
     void
     do_thread_loop()
       {
         // Await a timer.
         simple_mutex::unique_lock lock(self->m_pq_mutex);
         int64_t now;
-        while(int64_t delta = self->do_get_pq_wait_time(now))
-          self->m_pq_avail.wait_for(lock, delta);
+        while(self->m_pq.empty() || (do_get_time(now, 0) < self->m_pq.front().next))
+          if(self->m_pq.empty())
+            self->m_pq_avail.wait(lock);
+          else
+            self->m_pq_avail.wait_for(lock, self->m_pq.front().next - now);
 
         ::std::pop_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
         auto elem = ::std::move(self->m_pq.back());
@@ -208,7 +196,7 @@ insert(uptr<Abstract_Timer>&& utimer)
     // Get the next trigger time.
     // The timer is considered to be owned uniquely, so there is no need to lock it.
     PQ_Element elem;
-    elem.next = do_get_time(first);
+    do_get_time(elem.next, first);
     elem.timer = timer;
 
     // Insert the timer.
@@ -234,7 +222,7 @@ invalidate_internal(const Abstract_Timer& timer, int64_t first, int64_t period) 
     qelem->timer->m_period = period;
 
     // Update the element in place.
-    qelem->next = do_get_time(first);
+    do_get_time(qelem->next, first);
     ::std::make_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     self->m_pq_avail.notify_one();
     return true;
