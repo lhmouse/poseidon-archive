@@ -77,11 +77,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Worker_Pool)
         lock.unlock();
 
         if(job->m_zombie.load()) {
-          POSEIDON_LOG_DEBUG("Shut down asynchronous job: $1", job);
+          POSEIDON_LOG_DEBUG("Shut down asynchronous job: $1 ($2)", job, typeid(*job));
           return;
         }
         else if(job.unique() && !job->m_resident.load()) {
-          POSEIDON_LOG_DEBUG("Killed orphan asynchronous job: $1", job);
+          POSEIDON_LOG_DEBUG("Killed orphan asynchronous job: $1 ($2)", job, typeid(*job));
           return;
         }
 

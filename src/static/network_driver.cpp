@@ -246,7 +246,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           for(const auto& elem : self->m_poll_elems) {
             if(elem.sock.unique() && !elem.sock->m_resident.load()) {
               // Delete sockets that have no other references to them.
-              POSEIDON_LOG_DEBUG("Killed orphan socket: $1", elem.sock);
+              POSEIDON_LOG_DEBUG("Killed orphan socket: $1 (type $2)", elem.sock, typeid(*(elem.sock)));
               elem.sock->kill();
               continue;
             }

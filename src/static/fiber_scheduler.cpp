@@ -485,7 +485,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           // Note cancellation is only possible before initialization.
           // If the fiber stack is in use, it cannot be deallocated without
           // possibility of resource leaks.
-          POSEIDON_LOG_DEBUG("Killed fiber because of signal $2: $1", elem.fiber, sig);
+          POSEIDON_LOG_DEBUG("Killed fiber because of signal $1: $2 (type $3)", sig, elem.fiber, typeid(*(elem.fiber)));
           if(elem.fiber->state() == async_state_pending)
             return;
         }
@@ -493,7 +493,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           // Note cancellation is only possible before initialization.
           // If the fiber stack is in use, it cannot be deallocated without
           // possibility of resource leaks.
-          POSEIDON_LOG_DEBUG("Shut down fiber: $1", elem.fiber);
+          POSEIDON_LOG_DEBUG("Shut down fiber: $1 (type $2)", elem.fiber, typeid(*(elem.fiber)));
           if(elem.fiber->state() == async_state_pending)
             return;
         }
@@ -501,7 +501,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           // Note cancellation is only possible before initialization.
           // If the fiber stack is in use, it cannot be deallocated without
           // possibility of resource leaks.
-          POSEIDON_LOG_DEBUG("Killed orphan fiber: $1", elem.fiber);
+          POSEIDON_LOG_DEBUG("Killed orphan fiber: $1 (type $2)", elem.fiber, typeid(*(elem.fiber)));
           if(elem.fiber->state() == async_state_pending)
             return;
         }

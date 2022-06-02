@@ -141,11 +141,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
         lock.unlock();
 
         if(elem.timer->m_zombie.load()) {
-          POSEIDON_LOG_DEBUG("Shut down timer: $1", elem.timer);
+          POSEIDON_LOG_DEBUG("Shut down timer: $1 (type $2)", elem.timer, typeid(*(elem.timer)));
           return;
         }
         else if(elem.timer.unique() && !elem.timer->m_resident.load()) {
-          POSEIDON_LOG_DEBUG("Killed orphan timer: $1", elem.timer);
+          POSEIDON_LOG_DEBUG("Killed orphan timer: $1 (type $2)", elem.timer, typeid(*(elem.timer)));
           return;
         }
 
