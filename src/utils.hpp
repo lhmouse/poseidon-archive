@@ -6,12 +6,6 @@
 
 #include "fwd.hpp"
 #include "static/async_logger.hpp"
-#include "core/abstract_timer.hpp"
-#include "static/timer_driver.hpp"
-#include "core/abstract_async_job.hpp"
-#include "core/promise.hpp"
-#include "core/future.hpp"
-#include "static/worker_pool.hpp"
 #include <asteria/utils.hpp>
 #include <cstdio>
 #include "details/utils.ipp"
@@ -101,64 +95,6 @@ implode(cow_string& text, const cow_vstrings& segments, char delim = ',');
 #define POSEIDON_THROW(...)  \
     (::poseidon::details_utils::format_throw(  \
          __FILE__, __LINE__, __func__, "" __VA_ARGS__))
-
-// Creates an asynchronous timer. The timer function will be called by
-// the timer thread, so thread safety must be taken into account.
-template<typename FuncT>
-rcptr<Abstract_Timer>
-create_async_timer(int64_t next, int64_t period, FuncT&& func)
-  {
-    return Timer_Driver::insert(
-        ::rocket::make_unique<details_utils::Timer<
-            typename ::std::decay<FuncT>::type>>(
-                next, period, ::std::forward<FuncT>(func)));
-  }
-
-// Creates a one-shot timer.
-template<typename FuncT>
-rcptr<Abstract_Timer>
-create_async_timer_oneshot(int64_t next, FuncT&& func)
-  {
-    return Timer_Driver::insert(
-        ::rocket::make_unique<details_utils::Timer<
-            typename ::std::decay<FuncT>::type>>(
-                next, 0, ::std::forward<FuncT>(func)));
-  }
-
-// Creates a periodic timer.
-template<typename FuncT>
-rcptr<Abstract_Timer>
-create_async_timer_periodic(int64_t period, FuncT&& func)
-  {
-    return Timer_Driver::insert(
-        ::rocket::make_unique<details_utils::Timer<
-            typename ::std::decay<FuncT>::type>>(
-                period, period, ::std::forward<FuncT>(func)));
-  }
-
-// Enqueues an asynchronous job and returns a future to its result.
-// Functions with the same key will always be delivered to the same worker.
-template<typename FuncT>
-futp<typename ::std::result_of<typename ::std::decay<FuncT>::type& ()>::type>
-enqueue_async_job(uintptr_t key, FuncT&& func)
-  {
-    return details_utils::promise(
-        ::rocket::make_unique<details_utils::Async<
-            typename ::std::decay<FuncT>::type>>(
-                key, ::std::forward<FuncT>(func)));
-  }
-
-// Enqueues an asynchronous job and returns a future to its result.
-// The function is delivered to a random worker.
-template<typename FuncT>
-futp<typename ::std::result_of<typename ::std::decay<FuncT>::type& ()>::type>
-enqueue_async_job(FuncT&& func)
-  {
-    return details_utils::promise(
-        ::rocket::make_unique<details_utils::Async<
-            typename ::std::decay<FuncT>::type>>(
-                details_utils::random_key, ::std::forward<FuncT>(func)));
-  }
 
 }  // namespace poseidon
 
