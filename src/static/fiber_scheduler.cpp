@@ -3,8 +3,10 @@
 
 #include "../precompiled.ipp"
 #include "fiber_scheduler.hpp"
+#include "async_logger.hpp"
 #include "main_config.hpp"
 #include "../core/abstract_fiber.hpp"
+#include "../core/abstract_future.hpp"
 #include "../core/config_file.hpp"
 #include "../utils.hpp"
 #include <sys/resource.h>
@@ -505,7 +507,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           if(elem.fiber->state() == async_state_pending)
             return;
         }
-        else if(elem.fiber->m_sched_futp && elem.fiber->m_sched_futp->do_is_empty()) {
+        else if(elem.fiber->m_sched_futp && ::asteria::unerase_cast<Abstract_Future*>(elem.fiber->m_sched_futp)->do_is_empty()) {
           // Check for blocking conditions.
           // Note that `Promise::set_value()` first attempts to lock the future
           // before constructing the value. Only after the construction succeeds,

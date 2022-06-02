@@ -4,6 +4,7 @@
 #include "../src/precompiled.ipp"
 #include "../src/core/abstract_timer.hpp"
 #include "../src/static/timer_driver.hpp"
+#include "../src/static/async_logger.hpp"
 #include "../src/utils.hpp"
 
 namespace {

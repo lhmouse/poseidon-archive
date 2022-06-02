@@ -25,7 +25,7 @@ class Abstract_Fiber
     int64_t m_sched_yield_since;
     int64_t m_sched_yield_timeout;
 
-    rcptr<Abstract_Future> m_sched_futp;
+    rcfwdp<Abstract_Future> m_sched_futp;
     ::ucontext_t m_sched_uctx[1];
 
   protected:

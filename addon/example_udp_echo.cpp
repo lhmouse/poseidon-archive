@@ -4,6 +4,7 @@
 #include "../src/precompiled.ipp"
 #include "../src/socket/abstract_udp_server_socket.hpp"
 #include "../src/static/network_driver.hpp"
+#include "../src/static/async_logger.hpp"
 #include "../src/utils.hpp"
 
 namespace {

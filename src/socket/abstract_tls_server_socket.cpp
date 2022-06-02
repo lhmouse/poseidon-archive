@@ -4,6 +4,7 @@
 #include "../precompiled.ipp"
 #include "abstract_tls_server_socket.hpp"
 #include "abstract_tls_socket.hpp"
+#include "../static/async_logger.hpp"
 #include "../static/main_config.hpp"
 #include "../core/config_file.hpp"
 #include "../utils.hpp"

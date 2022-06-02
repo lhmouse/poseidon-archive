@@ -3,6 +3,7 @@
 
 #include "../precompiled.ipp"
 #include "abstract_stream_socket.hpp"
+#include "../static/async_logger.hpp"
 #include "../static/network_driver.hpp"
 #include "../utils.hpp"
 #include <netinet/tcp.h>

@@ -3,6 +3,7 @@
 
 #include "../precompiled.ipp"
 #include "abstract_tls_socket.hpp"
+#include "../static/async_logger.hpp"
 #include "../utils.hpp"
 
 namespace poseidon {

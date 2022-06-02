@@ -5,6 +5,7 @@
 #include "../src/socket/abstract_tcp_server_socket.hpp"
 #include "../src/socket/abstract_tcp_socket.hpp"
 #include "../src/static/network_driver.hpp"
+#include "../src/static/async_logger.hpp"
 #include "../src/utils.hpp"
 
 namespace {

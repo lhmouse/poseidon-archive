@@ -3,6 +3,7 @@
 
 #include "../precompiled.ipp"
 #include "abstract_accept_socket.hpp"
+#include "../static/async_logger.hpp"
 #include "../static/network_driver.hpp"
 #include "../utils.hpp"
 

@@ -5,12 +5,12 @@
 #define POSEIDON_UTILS_
 
 #include "fwd.hpp"
-#include "static/async_logger.hpp"
 #include <asteria/utils.hpp>
 #include <cstdio>
-#include "details/utils.ipp"
 
 namespace poseidon {
+
+#define POSEIDON_THROW(...)    ASTERIA_THROW(__VA_ARGS__)
 
 using ::rocket::clamp_cast;
 using ::asteria::format_string;
@@ -36,8 +36,7 @@ constexpr
 bool
 ascii_ci_equal(const StringT& text, const OtherT& oth)
   {
-    return ::rocket::ascii_ci_equal(
-               text.c_str(), text.length(), oth.c_str(), oth.length());
+    return ::rocket::ascii_ci_equal(text.c_str(), text.length(), oth.c_str(), oth.length());
   }
 
 // Checks whether this list contains the specified token.
@@ -77,24 +76,6 @@ explode(cow_vstrings& segments, const cow_string& text, char delim = ',', size_t
 
 size_t
 implode(cow_string& text, const cow_vstrings& segments, char delim = ',');
-
-// Composes a string and submits it to the logger.
-#define POSEIDON_LOG_X_(level, ...)  \
-    (::poseidon::Async_Logger::enabled(level) &&  \
-         (::poseidon::details_utils::format_log(level,  \
-              __FILE__, __LINE__, __func__, "" __VA_ARGS__), true))
-
-#define POSEIDON_LOG_FATAL(...)   POSEIDON_LOG_X_(::poseidon::log_level_fatal,  __VA_ARGS__)
-#define POSEIDON_LOG_ERROR(...)   POSEIDON_LOG_X_(::poseidon::log_level_error,  __VA_ARGS__)
-#define POSEIDON_LOG_WARN(...)    POSEIDON_LOG_X_(::poseidon::log_level_warn,   __VA_ARGS__)
-#define POSEIDON_LOG_INFO(...)    POSEIDON_LOG_X_(::poseidon::log_level_info,   __VA_ARGS__)
-#define POSEIDON_LOG_DEBUG(...)   POSEIDON_LOG_X_(::poseidon::log_level_debug,  __VA_ARGS__)
-#define POSEIDON_LOG_TRACE(...)   POSEIDON_LOG_X_(::poseidon::log_level_trace,  __VA_ARGS__)
-
-// Composes a string and throws an exception.
-#define POSEIDON_THROW(...)  \
-    (::poseidon::details_utils::format_throw(  \
-         __FILE__, __LINE__, __func__, "" __VA_ARGS__))
 
 }  // namespace poseidon
 

@@ -7,7 +7,6 @@ include_poseidon_HEADERS =  \
 
 include_poseidon_detailsdir = ${includedir}/poseidon/details
 include_poseidon_details_HEADERS =  \
-  %reldir%/details/utils.ipp  \
   %reldir%/details/socket_address.ipp  \
   %reldir%/details/openssl_common.hpp  \
   ${END}

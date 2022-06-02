@@ -3,9 +3,11 @@
 
 #include "../src/precompiled.ipp"
 #include "../src/core/abstract_fiber.hpp"
+#include "../src/core/promise.hpp"
 #include "../src/static/fiber_scheduler.hpp"
 #include "../src/core/abstract_timer.hpp"
 #include "../src/static/timer_driver.hpp"
+#include "../src/static/async_logger.hpp"
 #include "../src/utils.hpp"
 
 namespace {

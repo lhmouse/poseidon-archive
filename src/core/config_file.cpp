@@ -3,6 +3,7 @@
 
 #include "../precompiled.ipp"
 #include "config_file.hpp"
+#include "../static/async_logger.hpp"
 #include "../utils.hpp"
 #include <asteria/library/system.hpp>
 

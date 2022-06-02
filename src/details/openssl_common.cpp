@@ -3,6 +3,7 @@
 
 #include "../precompiled.ipp"
 #include "openssl_common.hpp"
+#include "../static/async_logger.hpp"
 #include "../utils.hpp"
 #include <openssl/err.h>
 
