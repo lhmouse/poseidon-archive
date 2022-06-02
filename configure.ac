@@ -18,16 +18,6 @@ AS_VAR_SET([abi_major], [1])
 AS_VAR_SET([abi_minor], [0])
 AS_VAR_SET([abi_suffix], [beta.0])
 
-## Check for tcmalloc
-## This has to come first as others may depend on it.
-AC_ARG_ENABLE([tcmalloc], AS_HELP_STRING([--disable-tcmalloc],
-  [don't attempt to link against libtcmalloc when it is available]))
-
-AM_CONDITIONAL([enable_tcmalloc], [test "${enable_tcmalloc}" != "no"])
-AM_COND_IF([enable_tcmalloc], [
-  AC_CHECK_LIB([tcmalloc], [malloc], [], [AC_MSG_NOTICE(libtcmalloc is recommended)])
-])
-
 ## Check for required libraries
 AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR(dl library not found)])
 AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR(pthread library not found)])
