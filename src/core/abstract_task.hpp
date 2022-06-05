@@ -1,17 +1,17 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_CORE_ABSTRACT_ASYNC_JOB_
-#define POSEIDON_CORE_ABSTRACT_ASYNC_JOB_
+#ifndef POSEIDON_CORE_ABSTRACT_TASK_
+#define POSEIDON_CORE_ABSTRACT_TASK_
 
 #include "../fwd.hpp"
 
 namespace poseidon {
 
-class Abstract_Async_Job
-  : public ::asteria::Rcfwd<Abstract_Async_Job>
+class Abstract_Task
+  : public ::asteria::Rcfwd<Abstract_Task>
   {
-    friend Worker_Pool;
+    friend Task_Executor_Pool;
 
   private:
     const uintptr_t m_key;
@@ -22,34 +22,34 @@ class Abstract_Async_Job
 
   protected:
     explicit
-    Abstract_Async_Job(uintptr_t key) noexcept
+    Abstract_Task(uintptr_t key) noexcept
       : m_key(key)
       { }
 
   protected:
-    // Executes this job and satisfies some promise of the derived class.
+    // Executes this task and satisfies some promise of the derived class.
     // This function is called only once. No matter whether it returns or
-    // throws an exception, this job is deleted from the worker queue.
+    // throws an exception, this task is deleted from the executor queue.
     virtual
     void
-    do_execute()
+    do_abstract_task_execute()
       = 0;
 
   public:
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Async_Job);
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Task);
 
-    // Marks this job to be deleted immediately.
+    // Marks this task to be deleted immediately.
     bool
     shut_down() noexcept
-      { return this->m_zombie.exchange(true);  }
+      { return this->m_zombie.xchg(true);  }
 
-    // Prevents this job from being deleted if worker pool holds its last
+    // Prevents this task from being deleted if executor pool holds its last
     // reference.
     bool
     set_resident(bool value = true) noexcept
-      { return this->m_resident.exchange(value);  }
+      { return this->m_resident.xchg(value);  }
 
-    // Gets the asynchrnous state, which is set by worker threads.
+    // Gets the asynchrnous state, which is set by executor threads.
     ROCKET_PURE
     Async_State
     state() const noexcept

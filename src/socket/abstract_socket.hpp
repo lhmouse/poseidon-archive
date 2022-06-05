@@ -82,7 +82,7 @@ class Abstract_Socket
     // reference.
     bool
     set_resident(bool value = true) noexcept
-      { return this->m_resident.exchange(value);  }
+      { return this->m_resident.xchg(value);  }
 
     // Returns the stream descriptor.
     // This is used to query and adjust stream flags. You shall not perform I/O

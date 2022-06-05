@@ -35,7 +35,7 @@ struct Promise_Timer : Abstract_Timer
       }
 
     void
-    do_on_async_timer(int64_t /*now*/) override
+    do_abstract_timer_interval(int64_t /*now*/) override
       {
         POSEIDON_LOG_FATAL("set promise: $1", this->value);
         this->prom.set_value(this->value);
@@ -59,7 +59,7 @@ struct Example_Fiber : Abstract_Fiber
       }
 
     void
-    do_execute()
+    do_abstract_fiber_execute()
       {
         POSEIDON_LOG_WARN("fiber `$1`: init", this);
 

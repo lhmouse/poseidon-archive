@@ -148,11 +148,13 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
           lock.unlock();
         }
 
+        // Execute the timer procedure. The argument is a snapshot of the
+        // monotonic clock, not its real-time value.
+        POSEIDON_LOG_TRACE("Starting execution of timer `$1`: now = $2", elem.timer, now);
+        elem.timer->m_count.xadd(1);
+
         try {
-          // Execute the timer procedure. The argument is a snapshot of the
-          // monotonic clock, not its real-time value.
-          POSEIDON_LOG_TRACE("Starting execution of timer `$1`: now = $2", elem.timer, now);
-          elem.timer->do_on_async_timer(now);
+          elem.timer->do_abstract_timer_interval(now);
         }
         catch(exception& stdex) {
           POSEIDON_LOG_WARN(
@@ -161,8 +163,6 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
               "[timer class `$2`]",
               stdex, typeid(*(elem.timer)));
         }
-
-        elem.timer->m_count.fetch_add(1);
       }
   };
 

@@ -18,7 +18,7 @@ include_poseidon_core_HEADERS =  \
   %reldir%/core/promise.hpp  \
   %reldir%/core/abstract_future.hpp  \
   %reldir%/core/future.hpp  \
-  %reldir%/core/abstract_async_job.hpp  \
+  %reldir%/core/abstract_task.hpp  \
   %reldir%/core/abstract_fiber.hpp  \
   %reldir%/core/lcg48.hpp  \
   ${END}
@@ -49,7 +49,7 @@ include_poseidon_static_HEADERS =  \
   %reldir%/static/async_logger.hpp  \
   %reldir%/static/timer_driver.hpp  \
   %reldir%/static/network_driver.hpp  \
-  %reldir%/static/worker_pool.hpp  \
+  %reldir%/static/task_executor_pool.hpp  \
   %reldir%/static/fiber_scheduler.hpp  \
   ${END}
 
@@ -64,7 +64,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/config_file.cpp  \
   %reldir%/core/abstract_timer.cpp  \
   %reldir%/core/abstract_future.cpp  \
-  %reldir%/core/abstract_async_job.cpp  \
+  %reldir%/core/abstract_task.cpp  \
   %reldir%/core/abstract_fiber.cpp  \
   %reldir%/core/lcg48.cpp  \
   %reldir%/socket/enums.cpp  \
@@ -87,7 +87,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \
   %reldir%/static/network_driver.cpp  \
-  %reldir%/static/worker_pool.cpp  \
+  %reldir%/static/task_executor_pool.cpp  \
   %reldir%/static/fiber_scheduler.cpp  \
   ${END}
 

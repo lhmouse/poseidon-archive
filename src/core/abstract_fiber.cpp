@@ -14,25 +14,25 @@ Abstract_Fiber::
 
 void
 Abstract_Fiber::
-do_on_start() noexcept
+do_abstract_fiber_on_start() noexcept
   {
   }
 
 void
 Abstract_Fiber::
-do_on_suspend() noexcept
+do_abstract_fiber_on_suspend() noexcept
   {
   }
 
 void
 Abstract_Fiber::
-do_on_resume() noexcept
+do_abstract_fiber_on_resume() noexcept
   {
   }
 
 void
 Abstract_Fiber::
-do_on_finish() noexcept
+do_abstract_fiber_on_finish() noexcept
   {
   }
 

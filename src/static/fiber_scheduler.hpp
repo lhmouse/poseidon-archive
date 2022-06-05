@@ -14,7 +14,7 @@ class Fiber_Scheduler
 
   public:
     // Executes fibers and blocks until `exit_sig` becomes non-zero.
-    // This function is typically called by the main thread. Multiple worker
+    // This function is typically called by the main thread. Multiple executor
     // threads are allowed.
     // This function is thread-safe.
     [[noreturn]] static

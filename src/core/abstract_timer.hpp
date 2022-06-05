@@ -29,12 +29,11 @@ class Abstract_Timer
       { }
 
   protected:
-    // `now` is the time of `CLOCK_MONOTONIC`.
+    // `now` is the time of `CLOCK_MONOTONIC` when this timer is triggered.
     // Please mind thread safety, as this function is called by the timer thread.
-    // The default implementation prints a line of error.
     virtual
     void
-    do_on_async_timer(int64_t now)
+    do_abstract_timer_interval(int64_t now)
       = 0;
 
   public:
@@ -43,13 +42,13 @@ class Abstract_Timer
     // Marks this timer to be deleted.
     bool
     shut_down() noexcept
-      { return this->m_zombie.exchange(true);  }
+      { return this->m_zombie.xchg(true);  }
 
     // Prevents this this timer from being deleted if timer driver holds its
     // last reference.
     bool
     set_resident(bool value = true) noexcept
-      { return this->m_resident.exchange(value);  }
+      { return this->m_resident.xchg(value);  }
 
     // Gets the counter.
     ROCKET_PURE

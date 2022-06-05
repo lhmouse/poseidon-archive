@@ -1,17 +1,17 @@
 // This file is part of Poseidon.
 // Copyleft 2020, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_STATIC_WORKER_POOL_
-#define POSEIDON_STATIC_WORKER_POOL_
+#ifndef POSEIDON_STATIC_TASK_EXECUTOR_POOL_
+#define POSEIDON_STATIC_TASK_EXECUTOR_POOL_
 
 #include "../fwd.hpp"
 
 namespace poseidon {
 
-class Worker_Pool
+class Task_Executor_Pool
   {
-    POSEIDON_STATIC_CLASS_DECLARE(Worker_Pool);
-    struct __attribute__((__visibility__("hidden"))) Worker;
+    POSEIDON_STATIC_CLASS_DECLARE(Task_Executor_Pool);
+    struct __attribute__((__visibility__("hidden"))) Executor;
 
   public:
     // Reloads settings from main config.
@@ -23,22 +23,22 @@ class Worker_Pool
     void
     reload();
 
-    // Retrieves the maximum number of worker threads.
+    // Retrieves the maximum number of executor threads.
     // This function is thread-safe.
     ROCKET_PURE static
     size_t
     thread_count() noexcept;
 
-    // Inserts an asynchronous job.
-    // Functions with the same key will be delivered to the same worker thread.
-    // The worker pool holds a reference-counted pointer to the job. If the job has no
-    // other references elsewhere and has not started execution, it is deleted without
-    // being executed at all.
+    // Inserts an asynchronous task.
+    // Functions with the same key will be delivered to the same executor thread.
+    // The executor pool holds a reference-counted pointer to the task. If the task
+    // has no other references elsewhere and has not started execution, it is
+    // deleted without being executed at all.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static
-    rcptr<Abstract_Async_Job>
-    insert(uptr<Abstract_Async_Job>&& ujob);
+    rcptr<Abstract_Task>
+    insert(uptr<Abstract_Task>&& utask);
   };
 
 }  // namespace poseidon

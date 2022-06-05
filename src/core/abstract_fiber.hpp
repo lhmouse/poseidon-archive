@@ -39,26 +39,26 @@ class Abstract_Fiber
     // throws an exception, this fiber is deleted from the scheduler.
     virtual
     void
-    do_execute()
+    do_abstract_fiber_execute()
       = 0;
 
     // These are callbacks for profiling.
     // The default implementations do nothing.
     virtual
     void
-    do_on_start() noexcept;
+    do_abstract_fiber_on_start() noexcept;
 
     virtual
     void
-    do_on_suspend() noexcept;
+    do_abstract_fiber_on_suspend() noexcept;
 
     virtual
     void
-    do_on_resume() noexcept;
+    do_abstract_fiber_on_resume() noexcept;
 
     virtual
     void
-    do_on_finish() noexcept;
+    do_abstract_fiber_on_finish() noexcept;
 
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Fiber);
@@ -66,13 +66,13 @@ class Abstract_Fiber
     // Marks this fiber to be deleted.
     bool
     shut_down() noexcept
-      { return this->m_zombie.exchange(true);  }
+      { return this->m_zombie.xchg(true);  }
 
     // Prevents this fiber from being deleted if fiber scheduler holds its
     // last reference.
     bool
     set_resident(bool value = true) noexcept
-      { return this->m_resident.exchange(value);  }
+      { return this->m_resident.xchg(value);  }
 
     // Gets the fiber state, which is set by the scheduler.
     ROCKET_PURE

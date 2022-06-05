@@ -7,7 +7,7 @@
 #include "static/async_logger.hpp"
 #include "static/timer_driver.hpp"
 #include "static/network_driver.hpp"
-#include "static/worker_pool.hpp"
+#include "static/task_executor_pool.hpp"
 #include "static/fiber_scheduler.hpp"
 #include "utils.hpp"
 #include <locale.h>
@@ -432,7 +432,7 @@ main(int argc, char** argv)
     Main_Config::reload();
     Async_Logger::reload();
     Network_Driver::reload();
-    Worker_Pool::reload();
+    Task_Executor_Pool::reload();
     Fiber_Scheduler::reload();
 
     POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, ::getpid());

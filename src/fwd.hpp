@@ -108,7 +108,7 @@ static_assert(sizeof(unique_FD) == sizeof(int));
 // Core
 class Config_File;
 class Abstract_Timer;
-class Abstract_Async_Job;
+class Abstract_Task;
 class Abstract_Future;
 class Abstract_Fiber;
 template<typename> class Promise;
@@ -160,7 +160,7 @@ class Main_Config;
 class Async_Logger;
 class Timer_Driver;
 class Network_Driver;
-class Worker_Pool;
+class Task_Executor_Pool;
 class Fiber_Scheduler;
 
 // Macros
