@@ -37,8 +37,8 @@ class Task_Executor_Pool
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static
-    rcptr<Abstract_Task>
-    insert(uptr<Abstract_Task>&& utask);
+    shared_ptr<Abstract_Task>
+    insert(const shared_ptr<Abstract_Task>& task);
   };
 
 }  // namespace poseidon

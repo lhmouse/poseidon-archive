@@ -45,6 +45,13 @@ Abstract_Socket::
 
 void
 Abstract_Socket::
+do_abstract_socket_on_poll_close(int err)
+  {
+    POSEIDON_LOG_INFO("Socket `$1` closed: $2", typeid(*this), format_errno(err));
+  }
+
+void
+Abstract_Socket::
 kill() noexcept
   {
     // Enable linger to discard all pending data.
@@ -67,7 +74,7 @@ get_local_address() const
         // Try getting the local address.
         Socket_Address::storage addrst;
         ::socklen_t addrlen = sizeof(addrst);
-        if(::getsockname(this->get_fd(), addrst, &addrlen) != 0)
+        if(::getsockname(this->get_fd(), &addrst.addr, &addrlen) != 0)
           POSEIDON_THROW(
               "could not get local socket address\n"
               "[`getsockname()` failed: $1]",

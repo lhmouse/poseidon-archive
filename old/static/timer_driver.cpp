@@ -36,7 +36,7 @@ do_get_time(int64_t& value, int64_t shift) noexcept
 struct PQ_Element
   {
     int64_t next;
-    rcptr<Abstract_Timer> timer;
+    weak_ptr<Abstract_Timer> timer;
   };
 
 struct PQ_Compare
@@ -54,18 +54,6 @@ struct PQ_Compare
       { return lhs > rhs.next;  }
   }
   constexpr pq_compare;
-
-struct Timer_Compare
-  {
-    bool
-    operator()(const PQ_Element& lhs, const Abstract_Timer* rhs) const noexcept
-      { return lhs.timer == rhs;  }
-
-    bool
-    operator()(const Abstract_Timer* lhs, const PQ_Element& rhs) const noexcept
-      { return lhs == rhs.timer;  }
-  }
-  constexpr timer_compare;
 
 }  // namespace
 
@@ -129,18 +117,15 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
         self->m_pq.pop_back();
         lock.unlock();
 
-        if(elem.timer->m_zombie.load()) {
-          POSEIDON_LOG_DEBUG("Shut down timer: $1 (type $2)", elem.timer, typeid(*(elem.timer)));
+        auto timer = elem.timer.lock();
+        if(!timer)
           return;
-        }
-        else if(elem.timer.unique() && !elem.timer->m_resident.load()) {
-          POSEIDON_LOG_DEBUG("Killed orphan timer: $1 (type $2)", elem.timer, typeid(*(elem.timer)));
+        else if(timer->m_cancelled.load())
           return;
-        }
 
-        if(elem.timer->m_period != 0) {
+        if(timer->m_period != 0) {
           // If the timer is periodic, insert it back.
-          do_shift_time(elem.next, elem.timer->m_period);
+          do_shift_time(elem.next, timer->m_period);
 
           lock.lock(self->m_pq_mutex);
           self->m_pq.emplace_back(elem);
@@ -150,25 +135,25 @@ POSEIDON_STATIC_CLASS_DEFINE(Timer_Driver)
 
         // Execute the timer procedure. The argument is a snapshot of the
         // monotonic clock, not its real-time value.
-        POSEIDON_LOG_TRACE("Starting execution of timer `$1`: now = $2", elem.timer, now);
-        elem.timer->m_count.xadd(1);
+        POSEIDON_LOG_TRACE("Starting execution of timer `$1`: now = $2", timer.get(), now);
+        timer->m_count.xadd(1);
 
         try {
-          elem.timer->do_abstract_timer_interval(now);
+          timer->do_abstract_timer_interval(now);
         }
         catch(exception& stdex) {
           POSEIDON_LOG_WARN(
               "Exception thrown from timer:\n"
               "$1\n"
               "[timer class `$2`]",
-              stdex, typeid(*(elem.timer)));
+              stdex, typeid(timer));
         }
       }
   };
 
-rcptr<Abstract_Timer>
+shared_ptr<Abstract_Timer>
 Timer_Driver::
-insert(uptr<Abstract_Timer>&& utimer)
+insert(const shared_ptr<Abstract_Timer>& timer)
   {
     // Perform daemon initialization.
     self->m_init_once.call(
@@ -181,8 +166,6 @@ insert(uptr<Abstract_Timer>&& utimer)
         if(err != 0) ::std::terminate();
       });
 
-    // Take ownership of `utimer`.
-    rcptr<Abstract_Timer> timer(utimer.release());
     if(!timer)
       POSEIDON_THROW("null timer pointer not valid");
 
@@ -205,27 +188,6 @@ insert(uptr<Abstract_Timer>&& utimer)
     ::std::push_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
     self->m_pq_avail.notify_one();
     return timer;
-  }
-
-bool
-Timer_Driver::
-invalidate_internal(const Abstract_Timer& timer, int64_t first, int64_t period) noexcept
-  {
-    // Don't do anything if the timer does not exist in the queue.
-    simple_mutex::unique_lock lock(self->m_pq_mutex);
-    auto qelem = ::rocket::find(self->m_pq, ::std::addressof(timer), timer_compare);
-    if(qelem)
-      return false;
-
-    // Update the timer itself.
-    qelem->timer->m_first = first;
-    qelem->timer->m_period = period;
-
-    // Update the element in place.
-    do_get_time(qelem->next, first);
-    ::std::make_heap(self->m_pq.begin(), self->m_pq.end(), pq_compare);
-    self->m_pq_avail.notify_one();
-    return true;
   }
 
 }  // namespace poseidon

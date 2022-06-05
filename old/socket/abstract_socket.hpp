@@ -11,13 +11,11 @@
 namespace poseidon {
 
 class Abstract_Socket
-  : public ::asteria::Rcfwd<Abstract_Socket>
   {
     friend Network_Driver;
 
   private:
     unique_FD m_fd;
-    atomic_relaxed<bool> m_resident = { false };  // don't delete if orphaned
 
     // These are used by network driver.
     uint64_t m_epoll_data;
@@ -31,8 +29,8 @@ class Abstract_Socket
     // These are I/O components.
     mutable simple_mutex m_io_mutex;
     Connection_State m_conn_state = connection_state_empty;
-    linear_buffer m_queue_read;
-    linear_buffer m_queue_write;
+    linear_buffer m_queue_recv;
+    linear_buffer m_queue_send;
 
   protected:
     // Creates a new non-blocking socket.
@@ -42,6 +40,8 @@ class Abstract_Socket
     // Adopts a foreign or accepted socket.
     explicit
     Abstract_Socket(unique_FD&& fd);
+
+    POSEIDON_DELETE_COPY(Abstract_Socket);
 
   private:
     // The network driver notifies incoming data via this callback.
@@ -60,22 +60,17 @@ class Abstract_Socket
     do_abstract_socket_on_poll_write(simple_mutex::unique_lock& lock)
       = 0;
 
-    // The network driver notifies closure via this callback.
+    // The network driver notifies closure via this callback. This function has a
+    // default implementation that prints a message.
     // `err` is zero for graceful shutdown, or a system error number otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_abstract_socket_on_poll_close(int err)
-      = 0;
+    do_abstract_socket_on_poll_close(int err);
 
   public:
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Socket);
-
-    // Prevents this socket from being deleted if network driver holds its last
-    // reference.
-    bool
-    set_resident(bool value = true) noexcept
-      { return this->m_resident.xchg(value);  }
+    virtual
+    ~Abstract_Socket();
 
     // Returns the stream descriptor.
     // This is used to query and adjust stream flags. You shall not perform I/O

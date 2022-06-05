@@ -45,6 +45,13 @@ using ::std::wint_t;
 using ::std::exception;
 using ::std::type_info;
 using ::std::pair;
+using ::std::unique_ptr;
+using ::std::shared_ptr;
+using ::std::weak_ptr;
+
+using ::std::static_pointer_cast;
+using ::std::dynamic_pointer_cast;
+using ::std::const_pointer_cast;
 
 using ::asteria::nullopt_t;
 using ::asteria::cow_string;
@@ -53,6 +60,8 @@ using ::asteria::cow_u32string;
 using ::asteria::phsh_string;
 using ::asteria::tinybuf;
 using ::asteria::tinyfmt;
+using ::asteria::array;
+using ::asteria::opt;
 
 using ::asteria::begin;
 using ::asteria::end;
@@ -61,18 +70,6 @@ using ::asteria::xswap;
 using ::asteria::size;
 using ::asteria::nullopt;
 using ::asteria::sref;
-
-using ::asteria::uptr;
-using ::asteria::rcptr;
-using ::asteria::rcfwdp;
-using ::asteria::array;
-using ::asteria::opt;
-
-using ::asteria::static_pointer_cast;
-using ::asteria::dynamic_pointer_cast;
-using ::asteria::const_pointer_cast;
-using ::asteria::unerase_cast;
-using ::asteria::unerase_pointer_cast;
 
 using ::rocket::linear_buffer;
 using ::rocket::atomic;
@@ -167,6 +164,10 @@ class Fiber_Scheduler;
   struct C::C##_self : C  \
     // add members here
 
+#define POSEIDON_DELETE_COPY(C)  \
+    C(const C&) = delete;  \
+    C& operator=(const C&) = delete  // no semicolon
+
 // Log levels
 // Note each level has a hardcoded name and number.
 // Don't change their values or reorder them.
@@ -197,10 +198,6 @@ enum Async_State : uint8_t
     async_state_running    = 3,
     async_state_finished   = 4,
   };
-
-// Aliases
-template<typename V> using prom = Promise<V>;
-template<typename V> using futp = rcptr<Future<V>>;
 
 }  // namespace poseidon
 

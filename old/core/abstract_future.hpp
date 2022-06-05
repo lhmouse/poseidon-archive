@@ -9,7 +9,6 @@
 namespace poseidon {
 
 class Abstract_Future
-  : public ::asteria::Rcfwd<Abstract_Future>
   {
     template<typename> friend class Promise;
     template<typename> friend class Future;
@@ -20,15 +19,18 @@ class Abstract_Future
     mutable once_flag m_once;
 
     // These are scheduler data.
-    ::rocket::cow_vector<rcptr<Abstract_Fiber>> m_sched_sleep_q;
+    ::rocket::cow_vector<shared_ptr<Abstract_Fiber>> m_sched_sleep_q;
 
   protected:
     explicit
     Abstract_Future() noexcept
-      = default;
+      { }
+
+    POSEIDON_DELETE_COPY(Abstract_Future);
 
   public:
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Future);
+    virtual
+    ~Abstract_Future();
 
     // Gets the state, which is any of `future_state_empty`, `future_state_value`
     // or `future_state_except`.

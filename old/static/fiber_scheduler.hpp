@@ -31,8 +31,8 @@ class Fiber_Scheduler
     // Gets a pointer to the current fiber on the current thread.
     // Its fiber state is `fiber_state_running`.
     // This function is thread-safe.
-    ROCKET_PURE static
-    Abstract_Fiber*
+    static
+    shared_ptr<Abstract_Fiber>
     current_opt() noexcept;
 
     // Suspends the current fiber until a future becomes satisfied.
@@ -44,7 +44,7 @@ class Fiber_Scheduler
     // This function is thread-safe.
     static
     void
-    yield(rcptr<Abstract_Future> futp_opt, int64_t msecs = INT64_MAX);
+    yield(shared_ptr<Abstract_Future> futp_opt, int64_t msecs = INT64_MAX);
 
     // Inserts a fiber.
     // The scheduler holds a reference-counted pointer to the fiber. If the fiber has
@@ -53,8 +53,8 @@ class Fiber_Scheduler
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static
-    rcptr<Abstract_Fiber>
-    insert(uptr<Abstract_Fiber>&& ufiber);
+    shared_ptr<Abstract_Fiber>
+    insert(const shared_ptr<Abstract_Fiber>& fiber);
 
     // Wakes up fibers that are suspended on `futr`.
     // This function is thread-safe.

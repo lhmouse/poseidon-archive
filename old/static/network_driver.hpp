@@ -26,15 +26,15 @@ class Network_Driver
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     static
-    rcptr<Abstract_Socket>
-    insert(uptr<Abstract_Socket>&& usock);
+    shared_ptr<Abstract_Socket>
+    insert(const shared_ptr<Abstract_Socket>& sock);
 
     // Notifies the network thread about existence of writable data on a socket.
     // This is an internal function. You will not want to call it.
     // This function is thread-safe.
     static
     bool
-    notify_writable_internal(const Abstract_Socket& sock) noexcept;
+    notify_writable_internal(const Abstract_Socket& ref) noexcept;
   };
 
 }  // namespace poseidon

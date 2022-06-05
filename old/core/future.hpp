@@ -10,8 +10,7 @@ namespace poseidon {
 
 template<typename ValueT>
 class Future
-  : public ::asteria::Rcfwd<Future<ValueT>>,
-    public Abstract_Future
+  : public Abstract_Future
   {
     friend Promise<ValueT>;
 
@@ -28,12 +27,7 @@ class Future
         ROCKET_ASSERT(this->m_state.load() == future_state_empty);
       }
 
-    Future(const Future&)
-      = delete;
-
-    Future&
-    operator=(const Future&)
-      = delete;
+    POSEIDON_DELETE_COPY(Future);
 
   public:
     ~Future();

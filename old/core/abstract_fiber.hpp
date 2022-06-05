@@ -10,13 +10,11 @@
 namespace poseidon {
 
 class Abstract_Fiber
-  : public ::asteria::Rcfwd<Abstract_Fiber>
   {
     friend Fiber_Scheduler;
 
   private:
-    atomic_relaxed<bool> m_zombie;
-    atomic_relaxed<bool> m_resident;  // don't delete if orphaned
+    atomic_relaxed<bool> m_cancelled;
     atomic_relaxed<Async_State> m_state;
 
     // These are scheduler data.
@@ -25,13 +23,15 @@ class Abstract_Fiber
     int64_t m_sched_yield_since;
     int64_t m_sched_yield_timeout;
 
-    rcfwdp<Abstract_Future> m_sched_futp;
+    shared_ptr<Abstract_Future> m_sched_futp;
     ::ucontext_t m_sched_uctx[1];
 
   protected:
     explicit
     Abstract_Fiber() noexcept
-      = default;
+      { }
+
+    POSEIDON_DELETE_COPY(Abstract_Fiber);
 
   private:
     // Executes this fiber.
@@ -61,18 +61,13 @@ class Abstract_Fiber
     do_abstract_fiber_on_finish() noexcept;
 
   public:
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Fiber);
+    virtual
+    ~Abstract_Fiber();
 
     // Marks this fiber to be deleted.
     bool
-    shut_down() noexcept
-      { return this->m_zombie.xchg(true);  }
-
-    // Prevents this fiber from being deleted if fiber scheduler holds its
-    // last reference.
-    bool
-    set_resident(bool value = true) noexcept
-      { return this->m_resident.xchg(value);  }
+    cancel() noexcept
+      { return this->m_cancelled.xchg(true);  }
 
     // Gets the fiber state, which is set by the scheduler.
     ROCKET_PURE

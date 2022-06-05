@@ -18,14 +18,14 @@ class Config_File
   public:
     explicit constexpr
     Config_File() noexcept
-      = default;
+      { }
 
     explicit
     Config_File(const cow_string& path)
       { this->reload(path);  }
 
   public:
-    ASTERIA_COPYABLE_DESTRUCTOR(Config_File);
+    ~Config_File();
 
     const cow_string&
     abspath() const noexcept

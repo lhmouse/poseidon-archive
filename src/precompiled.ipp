@@ -19,8 +19,6 @@
 #include <rocket/unique_posix_file.hpp>
 #include <rocket/unique_posix_dir.hpp>
 #include <rocket/unique_posix_fd.hpp>
-#include <rocket/unique_ptr.hpp>
-#include <rocket/refcnt_ptr.hpp>
 #include <rocket/variant.hpp>
 #include <rocket/optional.hpp>
 #include <rocket/array.hpp>
@@ -39,6 +37,7 @@
 #include <rocket/once_flag.hpp>
 
 #include <iterator>
+#include <memory>
 #include <utility>
 #include <exception>
 #include <typeinfo>

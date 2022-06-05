@@ -9,14 +9,12 @@
 namespace poseidon {
 
 class Abstract_Task
-  : public ::asteria::Rcfwd<Abstract_Task>
   {
     friend Task_Executor_Pool;
 
   private:
     uintptr_t m_key;
-    atomic_relaxed<bool> m_zombie;
-    atomic_relaxed<bool> m_resident;  // don't delete if orphaned
+    atomic_relaxed<bool> m_cancelled;
     atomic_relaxed<Async_State> m_state;
 
   protected:
@@ -24,6 +22,8 @@ class Abstract_Task
     Abstract_Task(uintptr_t key) noexcept
       : m_key(key)
       { }
+
+    POSEIDON_DELETE_COPY(Abstract_Task);
 
   private:
     // Executes this task and satisfies some promise of the derived class.
@@ -35,18 +35,13 @@ class Abstract_Task
       = 0;
 
   public:
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Abstract_Task);
+    virtual
+    ~Abstract_Task();
 
-    // Marks this task to be deleted immediately.
+    // Marks this task to be deleted.
     bool
-    shut_down() noexcept
-      { return this->m_zombie.xchg(true);  }
-
-    // Prevents this task from being deleted if executor pool holds its last
-    // reference.
-    bool
-    set_resident(bool value = true) noexcept
-      { return this->m_resident.xchg(value);  }
+    cancel() noexcept
+      { return this->m_cancelled.xchg(true);  }
 
     // Gets the asynchrnous state, which is set by executor threads.
     ROCKET_PURE
