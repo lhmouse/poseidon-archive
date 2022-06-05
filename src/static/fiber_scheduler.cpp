@@ -205,17 +205,18 @@ struct Thread_Context
     ::ucontext_t return_uctx[1];
   };
 
+extern "C" void __sanitizer_start_switch_fiber(void**, const void*, size_t) noexcept;
+extern "C" void __sanitizer_finish_switch_fiber(void*, const void**, size_t*) noexcept;
+
 inline
 void
 do_start_switch_fiber(Thread_Context* myctx, ::ucontext_t* uctx) noexcept
   {
 #ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
-    extern "C" void __sanitizer_start_switch_fiber(void**, const void*, size_t) noexcept;
     __sanitizer_start_switch_fiber(&(myctx->asan_fiber_save), uctx->uc_stack.ss_sp, uctx->uc_stack.ss_size);
 #else
-    (void) myctx;
-    (void) uctx;
-#endif
+    (void) myctx, (void) uctx;
+#endif  // POSEIDON_ENABLE_ADDRESS_SANITIZER
   }
 
 inline
@@ -223,11 +224,10 @@ void
 do_finish_switch_fiber(Thread_Context* myctx) noexcept
   {
 #ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
-    extern "C" void __sanitizer_finish_switch_fiber(void*, const void**, size_t*) noexcept;
     __sanitizer_finish_switch_fiber(myctx->asan_fiber_save, nullptr, nullptr);
 #else
     (void) myctx;
-#endif
+#endif  // POSEIDON_ENABLE_ADDRESS_SANITIZER
   }
 
 union Fiber_pointer
