@@ -1,24 +1,14 @@
 lib_LTLIBRARIES += lib/libposeidon_example_timer.la
-lib_libposeidon_example_timer_la_SOURCES =  \
-  %reldir%/example_timer.cpp  \
-  ${END}
-
-lib_LTLIBRARIES += lib/libposeidon_example_tcp_echo.la
-lib_libposeidon_example_tcp_echo_la_SOURCES =  \
-  %reldir%/example_tcp_echo.cpp  \
-  ${END}
-
-lib_LTLIBRARIES += lib/libposeidon_example_tls_echo.la
-lib_libposeidon_example_tls_echo_la_SOURCES =  \
-  %reldir%/example_tls_echo.cpp  \
-  ${END}
-
-lib_LTLIBRARIES += lib/libposeidon_example_udp_echo.la
-lib_libposeidon_example_udp_echo_la_SOURCES =  \
-  %reldir%/example_udp_echo.cpp  \
-  ${END}
+lib_libposeidon_example_timer_la_SOURCES = %reldir%/example_timer.cpp
 
 lib_LTLIBRARIES += lib/libposeidon_example_fiber.la
-lib_libposeidon_example_fiber_la_SOURCES =  \
-  %reldir%/example_fiber.cpp  \
-  ${END}
+lib_libposeidon_example_fiber_la_SOURCES = %reldir%/example_fiber.cpp
+
+#lib_LTLIBRARIES += lib/libposeidon_example_tcp_echo.la
+#lib_libposeidon_example_tcp_echo_la_SOURCES = %reldir%/example_tcp_echo.cpp
+
+#lib_LTLIBRARIES += lib/libposeidon_example_tls_echo.la
+#lib_libposeidon_example_tls_echo_la_SOURCES = %reldir%/example_tls_echo.cpp
+
+#lib_LTLIBRARIES += lib/libposeidon_example_udp_echo.la
+#lib_libposeidon_example_udp_echo_la_SOURCES = %reldir%/example_udp_echo.cpp

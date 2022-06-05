@@ -8,7 +8,6 @@ include_poseidon_HEADERS =  \
 include_poseidon_detailsdir = ${includedir}/poseidon/details
 include_poseidon_details_HEADERS =  \
   %reldir%/details/socket_address.ipp  \
-  %reldir%/details/openssl_common.hpp  \
   ${END}
 
 include_poseidon_coredir = ${includedir}/poseidon/core
@@ -27,20 +26,7 @@ include_poseidon_socketdir = ${includedir}/poseidon/socket
 include_poseidon_socket_HEADERS =  \
   %reldir%/socket/enums.hpp  \
   %reldir%/socket/socket_address.hpp  \
-  %reldir%/socket/openssl_context.hpp  \
-  %reldir%/socket/openssl_stream.hpp  \
   %reldir%/socket/abstract_socket.hpp  \
-  %reldir%/socket/abstract_accept_socket.hpp  \
-  %reldir%/socket/abstract_stream_socket.hpp  \
-  %reldir%/socket/abstract_tcp_socket.hpp  \
-  %reldir%/socket/abstract_tcp_server_socket.hpp  \
-  %reldir%/socket/abstract_tcp_client_socket.hpp  \
-  %reldir%/socket/abstract_tls_socket.hpp  \
-  %reldir%/socket/abstract_tls_server_socket.hpp  \
-  %reldir%/socket/abstract_tls_client_socket.hpp  \
-  %reldir%/socket/abstract_udp_socket.hpp  \
-  %reldir%/socket/abstract_udp_server_socket.hpp  \
-  %reldir%/socket/abstract_udp_client_socket.hpp  \
   ${END}
 
 include_poseidon_staticdir = ${includedir}/poseidon/static
@@ -60,7 +46,6 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/exit_stubs.cpp  \
   %reldir%/fwd.cpp  \
   %reldir%/utils.cpp  \
-  %reldir%/details/openssl_common.cpp  \
   %reldir%/core/config_file.cpp  \
   %reldir%/core/abstract_timer.cpp  \
   %reldir%/core/abstract_future.cpp  \
@@ -69,20 +54,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/lcg48.cpp  \
   %reldir%/socket/enums.cpp  \
   %reldir%/socket/socket_address.cpp  \
-  %reldir%/socket/openssl_context.cpp  \
-  %reldir%/socket/openssl_stream.cpp  \
   %reldir%/socket/abstract_socket.cpp  \
-  %reldir%/socket/abstract_accept_socket.cpp  \
-  %reldir%/socket/abstract_stream_socket.cpp  \
-  %reldir%/socket/abstract_tcp_socket.cpp  \
-  %reldir%/socket/abstract_tcp_server_socket.cpp  \
-  %reldir%/socket/abstract_tcp_client_socket.cpp  \
-  %reldir%/socket/abstract_tls_socket.cpp  \
-  %reldir%/socket/abstract_tls_server_socket.cpp  \
-  %reldir%/socket/abstract_tls_client_socket.cpp  \
-  %reldir%/socket/abstract_udp_socket.cpp  \
-  %reldir%/socket/abstract_udp_server_socket.cpp  \
-  %reldir%/socket/abstract_udp_client_socket.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \
@@ -102,6 +74,12 @@ endif
 
 if enable_thread_sanitizer
 lib_libposeidon_la_LDFLAGS += -fsanitize=thread
+endif
+
+if enable_mysql
+endif
+
+if enable_mongodb
 endif
 
 bin_PROGRAMS += bin/poseidon

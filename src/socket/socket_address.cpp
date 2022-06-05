@@ -160,9 +160,6 @@ do_classify_ipv6(const ::std::bitset<128>& addr) noexcept
 
 }  // namespace
 
-static_assert(::std::is_trivially_copyable<Socket_Address>::value &&
-              ::std::is_trivially_destructible<Socket_Address>::value);
-
 Socket_Address_Class
 Socket_Address::
 classify() const noexcept

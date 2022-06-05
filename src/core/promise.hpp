@@ -29,11 +29,11 @@ class Promise
     Promise&
     operator=(Promise&& other) noexcept
       {
-        if(this->m_futp == other.m_futp)
-          return *this;
-
-        this->do_dispose();
-        this->m_futp = ::std::move(other.m_futp);
+        if(this->m_futp != other.m_futp) {
+          // Break the current promise.
+          this->do_dispose();
+          this->m_futp = ::std::move(other.m_futp);
+        }
         return *this;
       }
 
@@ -62,7 +62,7 @@ class Promise
     do_throw_no_future() const
       {
         ::rocket::sprintf_and_throw<::std::invalid_argument>(
-              "Promise: No future associated (value type `%s`)",
+              "Promise: no future associated (value type `%s`)",
               typeid(ValueT).name());
       }
 
@@ -102,8 +102,7 @@ class Promise
           return false;
 
         // Construct a new value in the future.
-        futp->m_stor.template emplace<future_state_value>(
-                                   ::std::forward<ParamsT>(params)...);
+        futp->m_stor.template emplace<future_state_value>(::std::forward<ParamsT>(params)...);
         lock.unlock();
 
         Fiber_Scheduler::signal(*futp);
@@ -122,7 +121,7 @@ class Promise
 
         if(!eptr)
           ::rocket::sprintf_and_throw<::std::invalid_argument>(
-                "Promise: Null exception pointer (value type `%s`)",
+                "Promise: null exception pointer (value type `%s`)",
                 typeid(ValueT).name());
 
         // Check future state.
@@ -131,8 +130,7 @@ class Promise
           return false;
 
         // Construct a exception pointer in the future.
-        futp->m_stor.template emplace<future_state_except>(
-                                   ::std::move(eptr));
+        futp->m_stor.template emplace<future_state_except>(::std::move(eptr));
         lock.unlock();
 
         Fiber_Scheduler::signal(*futp);

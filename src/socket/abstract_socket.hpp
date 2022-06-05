@@ -20,8 +20,8 @@ class Abstract_Socket
     atomic_relaxed<bool> m_resident = { false };  // don't delete if orphaned
 
     // These are used by network driver.
-    uint64_t m_epoll_data = UINT64_MAX;
-    uint32_t m_epoll_events = UINT32_MAX;
+    uint64_t m_epoll_data;
+    uint32_t m_epoll_events;
 
     // This the local address. It is initialized upon the first request.
     mutable once_flag m_local_addr_once;
@@ -30,49 +30,42 @@ class Abstract_Socket
   protected:
     // These are I/O components.
     mutable simple_mutex m_io_mutex;
-    Connection_State m_connection_state = connection_state_empty;
-    linear_buffer m_rqueue;
-    linear_buffer m_wqueue;
+    Connection_State m_conn_state = connection_state_empty;
+    linear_buffer m_queue_read;
+    linear_buffer m_queue_write;
 
   protected:
+    // Creates a new non-blocking socket.
+    explicit
+    Abstract_Socket(::sa_family_t family, int type, int protocol);
+
     // Adopts a foreign or accepted socket.
     explicit
     Abstract_Socket(unique_FD&& fd);
 
-    // Creates a new non-blocking socket.
-    explicit
-    Abstract_Socket(::sa_family_t family, int type, int protocol = 0);
-
-  protected:
+  private:
     // The network driver notifies incoming data via this callback.
-    // `lock` shall lock `*this` after the call if locking is supported.
+    // `lock` should lock `*this` after the call if locking is supported.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     IO_Result
-    do_socket_on_poll_read(simple_mutex::unique_lock& lock)
-      = 0;
-
-    // This function shall return the number of bytes that are pending for writing.
-    // `lock` shall lock `*this` after the call if locking is supported.
-    virtual
-    size_t
-    do_write_queue_size(simple_mutex::unique_lock& lock) const
+    do_abstract_socket_on_poll_read(simple_mutex::unique_lock& lock)
       = 0;
 
     // The network driver notifies possibility of outgoing data via this callback.
-    // `lock` shall lock `*this` after the call if locking is supported.
+    // `lock` should lock `*this` after the call if locking is supported.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     IO_Result
-    do_socket_on_poll_write(simple_mutex::unique_lock& lock)
+    do_abstract_socket_on_poll_write(simple_mutex::unique_lock& lock)
       = 0;
 
     // The network driver notifies closure via this callback.
-    // `err` is zero for graceful shutdown.
+    // `err` is zero for graceful shutdown, or a system error number otherwise.
     // Please mind thread safety, as this function is called by the network thread.
     virtual
     void
-    do_socket_on_poll_close(int err)
+    do_abstract_socket_on_poll_close(int err)
       = 0;
 
   public:

@@ -28,7 +28,7 @@ class Abstract_Timer
       : m_first(first), m_period(period)
       { }
 
-  protected:
+  private:
     // `now` is the time of `CLOCK_MONOTONIC` when this timer is triggered.
     // Please mind thread safety, as this function is called by the timer thread.
     virtual

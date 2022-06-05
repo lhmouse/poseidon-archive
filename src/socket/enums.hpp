@@ -22,7 +22,7 @@ enum IO_Result : uint8_t
 
 // Translate a system `errno` to `IO_Result` or throw an exception.
 IO_Result
-get_io_result_from_errno(const char* func, int syserr);
+get_io_result_from_errno(const char* func, int err);
 
 // This describes the lifetime of a connection.
 // It is mainly designed for stream-oriented protocols such as

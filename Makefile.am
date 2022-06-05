@@ -54,14 +54,6 @@ TESTS = ${check_PROGRAMS}
 ## Programs and libraries
 include src/Makefile.inc.am
 
-if enable_mysql
-include src/mysql/Makefile.inc.am
-endif
-
-if enable_mongodb
-include src/mongodb/Makefile.inc.am
-endif
-
 ## Sample add-ons
 include addon/Makefile.inc.am
 

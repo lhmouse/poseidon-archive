@@ -8,9 +8,9 @@
 namespace poseidon {
 
 IO_Result
-get_io_result_from_errno(const char* func, int syserr)
+get_io_result_from_errno(const char* func, int err)
   {
-    switch(syserr) {
+    switch(err) {
 #if EAGAIN != EWOULDBLOCK
       case EAGAIN:
 #endif
@@ -21,10 +21,11 @@ get_io_result_from_errno(const char* func, int syserr)
       case 0:
         return io_result_partial_work;
 
+      case EPIPE:
+        return io_result_end_of_stream;
+
       default:
-        POSEIDON_THROW(
-            "i/O syscall error\n[`$1()` failed: $2]",
-            func, format_errno(syserr));
+        POSEIDON_THROW("`$1()` failed: $2", func, format_errno(err));
     }
   }
 

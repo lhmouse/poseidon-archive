@@ -33,7 +33,7 @@ class Abstract_Fiber
     Abstract_Fiber() noexcept
       = default;
 
-  protected:
+  private:
     // Executes this fiber.
     // This function is called only once. No matter whether it returns or
     // throws an exception, this fiber is deleted from the scheduler.

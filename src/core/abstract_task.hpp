@@ -14,8 +14,7 @@ class Abstract_Task
     friend Task_Executor_Pool;
 
   private:
-    const uintptr_t m_key;
-
+    uintptr_t m_key;
     atomic_relaxed<bool> m_zombie;
     atomic_relaxed<bool> m_resident;  // don't delete if orphaned
     atomic_relaxed<Async_State> m_state;
@@ -26,7 +25,7 @@ class Abstract_Task
       : m_key(key)
       { }
 
-  protected:
+  private:
     // Executes this task and satisfies some promise of the derived class.
     // This function is called only once. No matter whether it returns or
     // throws an exception, this task is deleted from the executor queue.

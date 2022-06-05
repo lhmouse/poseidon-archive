@@ -123,37 +123,7 @@ enum Connection_State : uint8_t;
 enum Socket_Address_Class : uint8_t;
 
 class Socket_Address;
-class OpenSSL_Context;
-class OpenSSL_Stream;
 class Abstract_Socket;
-class Abstract_Accept_Socket;
-class Abstract_Stream_Socket;
-class Abstract_TCP_Socket;
-class Abstract_TCP_Server_Socket;
-class Abstract_TCP_Client_Socket;
-class Abstract_TLS_Socket;
-class Abstract_TLS_Server_Socket;
-class Abstract_TLS_Client_Socket;
-class Abstract_UDP_Socket;
-
-// HTTP
-enum HTTP_Version : uint16_t;
-enum HTTP_Method : uint8_t;
-enum HTTP_Status : uint16_t;
-enum HTTP_Encoder_State : uint8_t;
-enum HTTP_Decoder_State : uint8_t;
-enum HTTP_Connection : uint8_t;
-enum WebSocket_Opcode : uint8_t;
-enum WebSocket_Status : uint16_t;
-
-class URL;
-class Option_Map;
-class HTTP_Exception;
-class WebSocket_Exception;
-class Abstract_HTTP_Server_Encoder;
-class Abstract_HTTP_Client_Decoder;
-class Abstract_HTTP_Client_Encoder;
-class Abstract_HTTP_Server_Decoder;
 
 // Singletons
 class Main_Config;

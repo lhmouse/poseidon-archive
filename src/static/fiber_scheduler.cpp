@@ -507,38 +507,39 @@ POSEIDON_STATIC_CLASS_DEFINE(Fiber_Scheduler)
           if(elem.fiber->state() == async_state_pending)
             return;
         }
-        else if(elem.fiber->m_sched_futp && ::asteria::unerase_cast<Abstract_Future*>(elem.fiber->m_sched_futp)->do_is_empty()) {
+        else {
           // Check for blocking conditions.
-          // Note that `Promise::set_value()` first attempts to lock the future
-          // before constructing the value. Only after the construction succeeds,
-          // does it call `Fiber_Scheduler::signal()`.
-          int64_t delta = ts.tv_sec - elem.fiber->m_sched_yield_since;
-          int64_t timeout = ::rocket::min(elem.fiber->m_sched_yield_timeout, conf.fail_timeout);
-          if(delta < timeout) {
-            // Print a warning message if the fiber has been suspended for too long.
-            if(delta >= conf.warn_timeout)
-              POSEIDON_LOG_WARN(
-                  "Fiber `$1` has been suspended for `$2` seconds.\n"
+          auto futp_opt = ::asteria::unerase_cast<Abstract_Future*>(elem.fiber->m_sched_futp);
+          if(futp_opt && (futp_opt->state() == future_state_empty)) {
+            // Calculate the time to wait.
+            int64_t delta = ts.tv_sec - elem.fiber->m_sched_yield_since;
+            int64_t timeout = ::rocket::min(elem.fiber->m_sched_yield_timeout, conf.fail_timeout);
+            if(delta < timeout) {
+              // Print a warning message if the fiber has been suspended for too long.
+              if(delta >= conf.warn_timeout)
+                POSEIDON_LOG_WARN(
+                    "Fiber `$1` has been suspended for `$2` seconds.\n"
+                    "[fiber class `$3`]",
+                    elem.fiber, delta, typeid(*(elem.fiber)));
+
+              // Put the fiber back into the queue.
+              elem.time = ::rocket::min(ts.tv_sec + conf.warn_timeout, elem.fiber->m_sched_yield_since + timeout);
+
+              lock.lock(self->m_sched_mutex);
+              elem.fiber->m_sched_running = false;
+              self->m_sched_pq.emplace_back(elem);
+              ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
+              return;
+            }
+
+            // Proceed anyway.
+            if(delta >= conf.fail_timeout)
+              POSEIDON_LOG_ERROR(
+                  "Suspension of fiber `$1` has exceeded `$2` seconds.\n"
+                  "This circumstance looks permanent. Please check for deadlocks.\n",
                   "[fiber class `$3`]",
-                  elem.fiber, delta, typeid(*(elem.fiber)));
-
-            // Put the fiber back into the queue.
-            elem.time = ::rocket::min(ts.tv_sec + conf.warn_timeout, elem.fiber->m_sched_yield_since + timeout);
-
-            lock.lock(self->m_sched_mutex);
-            elem.fiber->m_sched_running = false;
-            self->m_sched_pq.emplace_back(elem);
-            ::std::push_heap(self->m_sched_pq.begin(), self->m_sched_pq.end(), pq_compare);
-            return;
+                  elem.fiber, conf.fail_timeout, typeid(*(elem.fiber)));
           }
-
-          // Proceed anyway.
-          if(delta >= conf.fail_timeout)
-            POSEIDON_LOG_ERROR(
-                "Suspension of fiber `$1` has exceeded `$2` seconds.\n"
-                "This circumstance looks permanent. Please check for deadlocks.\n",
-                "[fiber class `$3`]",
-                elem.fiber, conf.fail_timeout, typeid(*(elem.fiber)));
         }
 
         if(elem.fiber->state() == async_state_pending) {
@@ -712,19 +713,19 @@ yield(rcptr<Abstract_Future> futp_opt, int64_t msecs)
     fiber->m_sched_yield_since = ts.tv_sec;
     fiber->m_sched_yield_timeout = (int64_t) ((double) msecs * 0.001 + 0.999);
 
-    if(futp_opt && futp_opt->do_is_empty()) {
-      // The value in the future object may still be under construction, but the lock
-      // here prevents the other thread from modifying the scheduler queue. We still
-      // attach the fiber to the future's wait queue, which may be moved into the
-      // ready queue once the other thread locks the scheduler mutex successfully.
+    if(futp_opt && (futp_opt->state() == future_state_empty)) {
+      // The value in the future object may have already been constructed, but the
+      // lock here prevents the other thread from modifying the scheduler queue. We
+      // still attach the fiber to the future's wait queue, which may be moved into
+      // the ready queue once the other thread locks the scheduler mutex successfully.
       futp_opt->m_sched_sleep_q.emplace_back(fiber);
       fiber->m_sched_futp = futp_opt;
     }
     else {
       // Attach the fiber to the ready queue of the current thread otherwise.
       fiber->m_sched_futp = nullptr;
-      ::sem_post(self->m_sched_sem);
       self->m_sched_ready_q.emplace_back(fiber);
+      ::sem_post(self->m_sched_sem);
     }
     lock.unlock();
 
@@ -801,14 +802,15 @@ signal(Abstract_Future& futr) noexcept
 
     try {
       // Move all fibers from the sleep queue to the ready queue.
-      ::sem_post(self->m_sched_sem);
-      self->m_sched_ready_q.insert(self->m_sched_ready_q.end(), futr.m_sched_sleep_q.move_begin(), futr.m_sched_sleep_q.move_end());
+      self->m_sched_ready_q.insert(self->m_sched_ready_q.end(),
+          futr.m_sched_sleep_q.move_begin(), futr.m_sched_sleep_q.move_end());
     }
     catch(::std::exception& stdex) {
       // Errors are ignored, as fibers will time out eventually.
       POSEIDON_LOG_WARN("Failed to reschedule fibers: $1", stdex);
     }
     futr.m_sched_sleep_q.clear();
+    ::sem_post(self->m_sched_sem);
     return true;
   }
 

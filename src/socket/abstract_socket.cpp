@@ -10,26 +10,32 @@
 namespace poseidon {
 
 Abstract_Socket::
-Abstract_Socket(unique_FD&& fd)
-  {
-    // Adopt the socket and enable non-blocking mode.
-    this->m_fd = ::std::move(fd);
-
-    int flags = ::fcntl(this->m_fd, F_GETFL);
-    if(!(flags & O_NONBLOCK))
-      ::fcntl(this->m_fd, F_SETFL, flags | O_NONBLOCK);
-  }
-
-Abstract_Socket::
 Abstract_Socket(::sa_family_t family, int type, int protocol)
   {
     // Create a non-blocking socket.
     this->m_fd.reset(::socket(family, type | SOCK_NONBLOCK, protocol));
     if(!this->m_fd)
       POSEIDON_THROW(
-        "Could not create socket (family `$2`, type `$3`, protocol `$4`)\n"
-        "[`socket()` failed: $1]",
-        format_errno(), family, type, protocol);
+         "could not create socket (family `$2`, type `$3`, protocol `$4`)\n"
+         "[`socket()` failed: $1]",
+         format_errno(), family, type, protocol);
+  }
+
+Abstract_Socket::
+Abstract_Socket(unique_FD&& fd)
+  {
+    // Adopt the socket and enable non-blocking mode.
+    this->m_fd = ::std::move(fd);
+
+    int flags = ::fcntl(this->m_fd, F_GETFL);
+    if(flags == -1)
+      POSEIDON_THROW(
+         "could not get socket flags\n"
+         "[`fcntl()` failed: $1]",
+         format_errno());
+
+    if((flags & O_NONBLOCK) == 0)
+      ::fcntl(this->m_fd, F_SETFL, flags | O_NONBLOCK);
   }
 
 Abstract_Socket::
@@ -70,6 +76,7 @@ get_local_address() const
         // The result is cached once it becomes available.
         this->m_local_addr.assign(addrst, addrlen);
       });
+
     return this->m_local_addr;
   }
 

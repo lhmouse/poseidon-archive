@@ -120,7 +120,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
     uint32_t
     index_from_epoll_data(uint64_t epoll_data) noexcept
       {
-        return static_cast<uint32_t>(epoll_data >> 40);
+        return (uint32_t) (epoll_data >> 40);
       }
 
     // Note epoll events are bound to kernel files, not individual file descriptors.
@@ -329,7 +329,7 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
                 format_errno());
 
           try {
-            sock->do_socket_on_poll_close(err);
+            sock->do_abstract_socket_on_poll_close(err);
           }
           catch(exception& stdex) {
             POSEIDON_LOG_WARN(
@@ -375,14 +375,16 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
           bool clear_status;
 
           try {
-            if(sock->do_write_queue_size(lock) > conf.throttle_size) {
+            lock.lock(sock->m_io_mutex);
+            if(sock->m_queue_write.size() > conf.throttle_size) {
               // If the socket is throttled, remove it from read queue.
               detach = true;
               clear_status = false;
             }
             else {
               // Perform a single read operation (no retry upon EINTR).
-              auto io_res = sock->do_socket_on_poll_read(lock);
+              auto io_res = sock->do_abstract_socket_on_poll_read(lock);
+              lock.lock(sock->m_io_mutex);
 
               // If the read operation didn't proceed, the socket shall be removed from
               // read queue and the `EPOLLIN` status shall be cleared.
@@ -428,11 +430,11 @@ POSEIDON_STATIC_CLASS_DEFINE(Network_Driver)
 
           try {
             // Perform a single write operation (no retry upon EINTR).
-            auto io_res = sock->do_socket_on_poll_write(lock);
+            auto io_res = sock->do_abstract_socket_on_poll_write(lock);
+            lock.lock(sock->m_io_mutex);
 
             // Check whether the socket should be unthrottled.
-            unthrottle = (sock->m_epoll_events & EPOLLIN) &&
-                         (sock->do_write_queue_size(lock) <= conf.throttle_size);
+            unthrottle = (sock->m_epoll_events & EPOLLIN) && (sock->m_queue_write.size() <= conf.throttle_size);
 
             // If the write operation didn't proceed, the socket shall be removed from
             // write queue. If the write operation reported `io_result_would_block`, in
@@ -551,6 +553,10 @@ insert(uptr<Abstract_Socket>&& usock)
     if(!sock.unique())
       POSEIDON_THROW("socket pointer must be unique");
 
+    // Initialize the new element.
+    Poll_Socket elem;
+    elem.sock = sock;
+
     // Lock epoll for modification.
     simple_mutex::unique_lock lock(self->m_poll_mutex);
 
@@ -578,8 +584,6 @@ insert(uptr<Abstract_Socket>&& usock)
 
     // Push the new element.
     // Space has been reserved so no exception can be thrown.
-    Poll_Socket elem;
-    elem.sock = sock;
     self->m_poll_elems.emplace_back(::std::move(elem));
     POSEIDON_LOG_TRACE("Socket added: $1", sock);
     return sock;
