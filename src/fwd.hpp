@@ -124,6 +124,20 @@ enum Socket_Address_Class : uint8_t;
 
 class Socket_Address;
 class Abstract_Socket;
+class Abstract_Listen_Socket;  // TCP and SSL
+class Abstract_Stream_Socket;  // TCP and SSL
+class Abstract_Datagram_Socket;  // UDP
+
+class TCP_Listen_Socket;
+class TCP_Server_Socket;
+class TCP_Client_Socket;
+
+class SSL_Listen_Socket;
+class SSL_Server_Socket;
+class SSL_Client_Socket;
+
+class UDP_Server_Socket;
+class UDP_Client_Socket;
 
 // Singletons
 class Main_Config;
