@@ -16,45 +16,34 @@ class Future
     friend Promise<ValueT>;
 
   private:
-    ::rocket::variant<
-        ::rocket::nullopt_t,  // future_state_empty
-        typename ::std::conditional<::std::is_void<ValueT>::value, int, ValueT>::type,  // future_state_value
-        ::std::exception_ptr  // future_state_except
-      > m_stor;
+    union {
+      typename ::std::conditional<::std::is_void<ValueT>::value, int, ValueT>::type m_value;
+      ::std::exception_ptr m_exptr;
+    };
 
   public:
     explicit
     Future() noexcept
-      = default;
+      {
+        ROCKET_ASSERT(this->m_state.load() == future_state_empty);
+      }
+
+    Future(const Future&)
+      = delete;
+
+    Future&
+    operator=(const Future&)
+      = delete;
 
   public:
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Future);
-
-    // Gets the state, which is any of `future_state_empty`, `future_state_value`
-    // or `future_state_except`.
-    //
-    // * `future_state_empty` indicates no value has been set yet.
-    //   Any retrieval operation shall block.
-    // * `future_state_value` indicates a value has been set and can be read.
-    //   Any retrieval operation shall unblock and return the value.
-    // * `future_state_except` indicates either an exception has been set or the
-    //   associated promise went out of scope without setting a value.
-    //   Any retrieval operation shall unblock and throw an exception.
-    ROCKET_PURE
-    Future_State
-    state() const noexcept final
-      {
-        simple_mutex::unique_lock lock(this->m_mutex);
-        return (Future_State) this->m_stor.index();
-      }
+    ~Future();
 
     // Retrieves the value, if one has been set.
     // If no value has been set, an exception is thrown, and there is no effect.
     typename ::std::add_lvalue_reference<const ValueT>::type
     value() const
       {
-        simple_mutex::unique_lock lock(this->m_mutex);
-        switch(this->m_stor.index()) {
+        switch(this->m_state.load()) {
           case future_state_empty:
             // Nothing has been set yet.
             ::rocket::sprintf_and_throw<::std::invalid_argument>(
@@ -63,22 +52,17 @@ class Future
 
           case future_state_value:
             // The cast is necessary when `ValueT` is `void`.
-            return static_cast<typename ::std::add_lvalue_reference<const ValueT>::type>(
-                         this->m_stor.template as<future_state_value>());
+            return (typename ::std::add_lvalue_reference<const ValueT>::type) this->m_value;
 
-          case future_state_except: {
+          case future_state_except:
             // This state indicates either an exception has been set or the associated
             // promise went out of scope without setting a value.
-            const auto& eptr = this->m_stor.template as<future_state_except>();
-            if(eptr)
-              ::std::rethrow_exception(eptr);
-
-            // Report broken promise if a null exception pointer has been set,
-            // anticipatedly by the destructor of the associated promise.
-            ::rocket::sprintf_and_throw<::std::invalid_argument>(
-                  "Future: broken promise (value type `%s`)",
-                  typeid(ValueT).name());
-          }
+            if(this->m_exptr)
+              ::std::rethrow_exception(this->m_exptr);
+            else
+              ::rocket::sprintf_and_throw<::std::invalid_argument>(
+                    "Future: broken promise (value type `%s`)",
+                    typeid(ValueT).name());
         }
         ROCKET_UNREACHABLE();
       }
@@ -86,8 +70,7 @@ class Future
     typename ::std::add_lvalue_reference<ValueT>::type
     value()
       {
-        simple_mutex::unique_lock lock(this->m_mutex);
-        switch(this->m_stor.index()) {
+        switch(this->m_state.load()) {
           case future_state_empty:
             // Nothing has been set yet.
             ::rocket::sprintf_and_throw<::std::invalid_argument>(
@@ -96,22 +79,17 @@ class Future
 
           case future_state_value:
             // The cast is necessary when `ValueT` is `void`.
-            return static_cast<typename ::std::add_lvalue_reference<ValueT>::type>(
-                         this->m_stor.template as<future_state_value>());
+            return (typename ::std::add_lvalue_reference<ValueT>::type) this->m_value;
 
-          case future_state_except: {
+          case future_state_except:
             // This state indicates either an exception has been set or the associated
             // promise went out of scope without setting a value.
-            const auto& eptr = this->m_stor.template as<future_state_except>();
-            if(eptr)
-              ::std::rethrow_exception(eptr);
-
-            // Report broken promise if a null exception pointer has been set,
-            // anticipatedly by the destructor of the associated promise.
-            ::rocket::sprintf_and_throw<::std::invalid_argument>(
-                  "Future: broken promise (value type `%s`)",
-                  typeid(ValueT).name());
-          }
+            if(this->m_exptr)
+              ::std::rethrow_exception(this->m_exptr);
+            else
+              ::rocket::sprintf_and_throw<::std::invalid_argument>(
+                    "Future: broken promise (value type `%s`)",
+                    typeid(ValueT).name());
         }
         ROCKET_UNREACHABLE();
       }
@@ -120,7 +98,20 @@ class Future
 template<typename ValueT>
 Future<ValueT>::
 ~Future()
-  = default;
+  {
+    switch(this->m_state.load()) {
+      case future_state_empty:
+        return;
+
+      case future_state_value:
+        ::rocket::destroy(::std::addressof(this->m_value));
+        return;
+
+      case future_state_except:
+        ::rocket::destroy(&(this->m_exptr));
+        return;
+    }
+  }
 
 }  // namespace poseidon
 

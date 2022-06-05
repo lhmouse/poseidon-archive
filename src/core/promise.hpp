@@ -18,7 +18,7 @@ class Promise
     rcptr<Future<ValueT>> m_futp;
 
   public:
-    explicit constexpr
+    explicit
     Promise() noexcept
       { }
 
@@ -29,112 +29,84 @@ class Promise
     Promise&
     operator=(Promise&& other) noexcept
       {
-        if(this->m_futp != other.m_futp) {
-          // Break the current promise.
-          this->do_dispose();
-          this->m_futp = ::std::move(other.m_futp);
-        }
+        this->~Promise();
+        ::rocket::construct(this, ::std::move(other));
         return *this;
       }
 
-  private:
-    bool
-    do_dispose() noexcept
-      {
-        auto futp = this->m_futp.get();
-        if(!futp)
-          return false;
-
-        simple_mutex::unique_lock lock(futp->m_mutex);
-        if(futp->m_stor.index() != future_state_empty)
-          return false;
-
-        // Mark the future broken.
-        futp->m_stor.template emplace<future_state_except>();
-        lock.unlock();
-
-        Fiber_Scheduler::signal(*futp);
-        return true;
-      }
-
-    [[noreturn]]
-    void
-    do_throw_no_future() const
-      {
-        ::rocket::sprintf_and_throw<::std::invalid_argument>(
-              "Promise: no future associated (value type `%s`)",
-              typeid(ValueT).name());
-      }
-
   public:
-    ~Promise()
-      { this->do_dispose();  }
+    ~Promise();
 
-    // Gets a reference to the associated future.
-    // If `m_futp` is null, a new future is created and associated.
+    // Gets a pointer to the associated future.
     futp<ValueT>
     future()
       {
-        auto futp = this->m_futp;
-        if(futp)
-          return futp;
+        if(!this->m_futp)
+          this->m_futp = ::rocket::make_refcnt<Future<ValueT>>();
 
-        // Create a new future if one hasn't been allocated.
-        futp = ::rocket::make_refcnt<Future<ValueT>>();
-        this->m_futp = futp;
-        return futp;
+        // Return a shared future.
+        return this->m_futp;
       }
 
     // Puts a value into the associated future.
-    // If the future is not empty, `false` is returned, and there
-    // is no effect.
+    // If the future is not empty, `false` is returned, and there is no effect.
     template<typename... ParamsT,
     ROCKET_DISABLE_IF(::std::is_void<ValueT>::value && sizeof...(ParamsT))>
     bool
     set_value(ParamsT&&... params)
       {
-        auto futp = this->m_futp.get();
-        if(!futp)
-          this->do_throw_no_future();
-
-        simple_mutex::unique_lock lock(futp->m_mutex);
-        if(futp->m_stor.index() != future_state_empty)
-          return false;
+        if(!this->m_futp)
+          ::rocket::sprintf_and_throw<::std::invalid_argument>(
+                "Promise: no future associated (value type `%s`)",
+                typeid(ValueT).name());
 
         // Construct a new value in the future.
-        futp->m_stor.template emplace<future_state_value>(::std::forward<ParamsT>(params)...);
-        lock.unlock();
+        bool new_value_set = false;
 
-        Fiber_Scheduler::signal(*futp);
-        return true;
+        this->m_futp->m_once.call(
+          [&] {
+            ROCKET_ASSERT(this->m_futp->m_state.load() == future_state_empty);
+            ::rocket::construct(&(this->m_futp->m_value), ::std::forward<ParamsT>(params)...);
+            this->m_futp->m_state.store(future_state_value);
+            new_value_set = true;
+          });
+
+        if(new_value_set)
+          Fiber_Scheduler::signal(*(this->m_futp));
+
+        return new_value_set;
       }
 
     // Puts an exception into the associated future.
-    // If the future is not empty, `false` is returned, and there
-    // is no effect.
+    // If the future is not empty, `false` is returned, and there is no effect.
     bool
     set_exception(const ::std::exception_ptr& eptr)
       {
-        auto futp = this->m_futp.get();
-        if(!futp)
-          this->do_throw_no_future();
-
         if(!eptr)
           ::rocket::sprintf_and_throw<::std::invalid_argument>(
                 "Promise: null exception pointer (value type `%s`)",
                 typeid(ValueT).name());
 
-        // Check future state.
-        simple_mutex::unique_lock lock(futp->m_mutex);
-        if(futp->m_stor.index() != future_state_empty)
-          return false;
+        if(!this->m_futp)
+          ::rocket::sprintf_and_throw<::std::invalid_argument>(
+                "Promise: no future associated (value type `%s`)",
+                typeid(ValueT).name());
 
-        // Construct a exception pointer in the future.
-        futp->m_stor.template emplace<future_state_except>(::std::move(eptr));
-        lock.unlock();
+        // Construct a new exception pointer in the future.
+        bool new_value_set = false;
 
-        Fiber_Scheduler::signal(*futp);
-        return true;
+        this->m_futp->m_once.call(
+          [&] {
+            ROCKET_ASSERT(this->m_futp->m_state.load() == future_state_empty);
+            ::rocket::construct(&(this->m_futp->m_exptr), eptr);
+            this->m_futp->m_state.store(future_state_except);
+            new_value_set = true;
+          });
+
+        if(new_value_set)
+          Fiber_Scheduler::signal(*(this->m_futp));
+
+        return new_value_set;
       }
 
     bool
@@ -143,6 +115,27 @@ class Promise
         return this->set_exception(::std::current_exception());
       }
   };
+
+template<typename ValueT>
+Promise<ValueT>::
+~Promise()
+  {
+    if(!this->m_futp)
+      return;
+
+    // Construct a null exception pointer in the future.
+    bool new_value_set = false;
+
+    this->m_futp->m_once.call(
+      [&] {
+        ROCKET_ASSERT(this->m_futp->m_state.load() == future_state_empty);
+        ::rocket::construct(&(this->m_futp->m_exptr));
+        this->m_futp->m_state.store(future_state_except);
+      });
+
+    if(new_value_set)
+      Fiber_Scheduler::signal(*(this->m_futp));
+  }
 
 }  // namespace poseidon
 
