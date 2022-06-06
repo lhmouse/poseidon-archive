@@ -1,5 +1,5 @@
 // This file is part of Poseidon.
-// Copyleft 2020, LH_Mouse. All wrongs reserved.
+// Copyleft 2022, LH_Mouse. All wrongs reserved.
 
 #ifndef POSEIDON_FWD_
 #define POSEIDON_FWD_
