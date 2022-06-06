@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 #include <deque>
-#include <unistd.h>
 
 namespace poseidon {
 namespace noadl = poseidon;
@@ -48,28 +47,11 @@ using ::std::pair;
 using ::std::unique_ptr;
 using ::std::shared_ptr;
 using ::std::weak_ptr;
+using ::std::array;
 
 using ::std::static_pointer_cast;
 using ::std::dynamic_pointer_cast;
 using ::std::const_pointer_cast;
-
-using ::asteria::nullopt_t;
-using ::asteria::cow_string;
-using ::asteria::cow_u16string;
-using ::asteria::cow_u32string;
-using ::asteria::phsh_string;
-using ::asteria::tinybuf;
-using ::asteria::tinyfmt;
-using ::asteria::array;
-using ::asteria::opt;
-
-using ::asteria::begin;
-using ::asteria::end;
-using ::asteria::swap;
-using ::asteria::xswap;
-using ::asteria::size;
-using ::asteria::nullopt;
-using ::asteria::sref;
 
 using ::rocket::linear_buffer;
 using ::rocket::atomic;
@@ -82,87 +64,33 @@ using ::rocket::recursive_mutex;
 using ::rocket::condition_variable;
 using ::rocket::once_flag;
 
-struct FD_Closer
-  {
-    constexpr
-    int
-    null() const noexcept
-      { return -1;  }
+using ::asteria::nullopt_t;
+using ::asteria::cow_string;
+using ::asteria::cow_u16string;
+using ::asteria::cow_u32string;
+using ::asteria::phsh_string;
+using ::asteria::tinybuf;
+using ::asteria::tinyfmt;
 
-    constexpr
-    bool
-    is_null(int fd) const noexcept
-      { return fd == -1;  }
-
-    void
-    close(int fd)
-      { ::close(fd);  }
-  };
-
-using unique_FD = ::rocket::unique_handle<int, FD_Closer>;
-static_assert(sizeof(unique_FD) == sizeof(int));
+using ::asteria::begin;
+using ::asteria::end;
+using ::asteria::swap;
+using ::asteria::xswap;
+using ::asteria::size;
+using ::asteria::nullopt;
+using ::asteria::sref;
 
 // Core
 class Config_File;
-class Abstract_Timer;
-class Abstract_Task;
-class Abstract_Future;
-class Abstract_Fiber;
-template<typename> class Promise;
-template<typename> class Future;
-class LCG48;
-class zlib_Deflator;
-class zlib_Inflator;
-
-// Socket
-enum IO_Result : uint8_t;
-enum Connection_State : uint8_t;
-enum Socket_Address_Class : uint8_t;
-
-class Socket_Address;
-class Abstract_Socket;
-class Abstract_Listen_Socket;  // TCP and SSL
-class Abstract_Stream_Socket;  // TCP and SSL
-class Abstract_Datagram_Socket;  // UDP
-
-class TCP_Listen_Socket;
-class TCP_Server_Socket;
-class TCP_Client_Socket;
-
-class SSL_Listen_Socket;
-class SSL_Server_Socket;
-class SSL_Client_Socket;
-
-class UDP_Server_Socket;
-class UDP_Client_Socket;
-
-// Singletons
-class Main_Config;
-class Async_Logger;
-class Timer_Driver;
-class Network_Driver;
-class Task_Executor_Pool;
-class Fiber_Scheduler;
 
 // Macros
-#define POSEIDON_STATIC_CLASS_DECLARE(C)  \
-  private:  \
-    /* Data members are not visible in headers. */  \
-    struct __attribute__((__visibility__("hidden"))) C##_self;  \
-    static C##_self* const self;  \
-    /* Instantiation is not allowed.  */  \
-    constexpr C() noexcept = default;  \
-    C(const C&) = delete;  \
-    C& operator=(const C&) = delete;  \
-    ~C() = default  // no semicolon
+#define POSEIDON_DEFAULT_COPY(C)  \
+    C(const C&) = default;  \
+    C& operator=(const C&) = default  // no semicolon
 
-#define POSEIDON_STATIC_CLASS_DEFINE(C)  \
-  class C;  \
-  struct C::C##_self* const C::self =  \
-      ::rocket::make_unique<C::C##_self>().release();  \
-  /* Define the class.  */  \
-  struct C::C##_self : C  \
-    // add members here
+#define POSEIDON_DEFAULT_MOVE(C)  \
+    C(C&&) noexcept = default;  \
+    C& operator=(C&&) noexcept = default  // no semicolon
 
 #define POSEIDON_DELETE_COPY(C)  \
     C(const C&) = delete;  \

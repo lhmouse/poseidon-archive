@@ -11,6 +11,7 @@ include_poseidon_details_HEADERS =  \
 
 include_poseidon_coredir = ${includedir}/poseidon/core
 include_poseidon_core_HEADERS =  \
+  %reldir%/core/config_file.hpp  \
   ${END}
 
 include_poseidon_socketdir = ${includedir}/poseidon/socket
@@ -28,6 +29,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/exit_stubs.cpp  \
   %reldir%/fwd.cpp  \
   %reldir%/utils.cpp  \
+  %reldir%/core/config_file.cpp  \
   ${END}
 
 lib_libposeidon_la_CXXFLAGS = ${AM_CXXFLAGS}

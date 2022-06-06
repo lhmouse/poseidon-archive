@@ -10,13 +10,12 @@
 
 namespace poseidon {
 
-#define POSEIDON_THROW(...)    ASTERIA_THROW(__VA_ARGS__)
-
 using ::rocket::clamp_cast;
 using ::asteria::format_string;
 using ::asteria::weaken_enum;
 using ::asteria::generate_random_seed;
 using ::asteria::format_errno;
+#define POSEIDON_THROW(...)   ASTERIA_THROW(__VA_ARGS__)
 
 // Converts all ASCII letters in a string into uppercase.
 cow_string
@@ -34,38 +33,38 @@ ascii_trim(cow_string text);
 template<typename StringT, typename OtherT>
 constexpr
 bool
-ascii_ci_equal(const StringT& text, const OtherT& oth)
+ascii_ci_equal(const StringT& text, const OtherT& other)
   {
-    return ::rocket::ascii_ci_equal(text.c_str(), text.length(), oth.c_str(), oth.length());
+    return ::rocket::ascii_ci_equal(text.c_str(), text.length(), other.c_str(), other.length());
   }
 
 // Checks whether this list contains the specified token.
 // Tokens are case-insensitive.
 ROCKET_PURE
 bool
-ascii_ci_has_token(const cow_string& text, char delim, const char* tok, size_t len);
+ascii_ci_has_token(const cow_string& text, char delim, const char* token, size_t len);
 
 template<typename OtherT>
 inline
 bool
-ascii_ci_has_token(const cow_string& text, char delim, const OtherT& oth)
+ascii_ci_has_token(const cow_string& text, char delim, const OtherT& other)
   {
-    return noadl::ascii_ci_has_token(text, delim, oth.c_str(), oth.length());
+    return noadl::ascii_ci_has_token(text, delim, other.c_str(), other.length());
   }
 
 ROCKET_PURE inline
 bool
-ascii_ci_has_token(const cow_string& text, const char* tok, size_t len)
+ascii_ci_has_token(const cow_string& text, const char* token, size_t len)
   {
-    return noadl::ascii_ci_has_token(text, ',', tok, len);
+    return noadl::ascii_ci_has_token(text, ',', token, len);
   }
 
 template<typename OtherT>
 inline
 bool
-ascii_ci_has_token(const cow_string& text, const OtherT& oth)
+ascii_ci_has_token(const cow_string& text, const OtherT& other)
   {
-    return noadl::ascii_ci_has_token(text, oth.c_str(), oth.length());
+    return noadl::ascii_ci_has_token(text, other.c_str(), other.length());
   }
 
 // Split a string into a vector of tokens, and vice versa.

@@ -212,7 +212,7 @@ do_set_working_directory()
 
     if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
       POSEIDON_THROW(
-          "could not set working directory to '$2'\n"
+          "Could not set working directory to '$2'\n"
           "[`chdir()` failed: $1]",
           format_errno(), cmdline.cd_here);
   }
@@ -249,7 +249,7 @@ do_daemonize_fork()
     int pipefds[2];
     if(::pipe(pipefds) != 0)
       POSEIDON_THROW(
-          "could not create pipe for child process\n"
+          "Could not create pipe for child process\n"
           "[`pipe()` failed: $1]",
           format_errno());
 
@@ -261,7 +261,7 @@ do_daemonize_fork()
     ::pid_t child = ::fork();
     if(child < 0)
       POSEIDON_THROW(
-          "could not create child process\n"
+          "Could not create child process\n"
           "[`fork()` failed: $1]",
           format_errno());
 
@@ -343,14 +343,14 @@ do_write_pid_file()
     pid_file.reset(::creat(kpath->safe_c_str(), 0644));
     if(!pid_file)
       POSEIDON_THROW(
-          "could not create PID file '$2'\n"
+          "Could not create PID file '$2'\n"
           "[`open()` failed: $1]",
           format_errno(), kpath->c_str());
 
     // Lock it in exclusive mode before overwriting.
     if(::flock(pid_file, LOCK_EX | LOCK_NB) != 0)
       POSEIDON_THROW(
-          "could not lock PID file '$2'\n"
+          "Could not lock PID file '$2'\n"
           "(is another instance running?)\n"
           "[`flock()` failed: $1]",
           format_errno(), kpath->c_str());
@@ -403,7 +403,7 @@ do_load_addons()
 
       if(!::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE))
         POSEIDON_THROW(
-            "error loading add-on '$1'\n"
+            "Failed to load add-on '$1'\n"
             "[`dlopen()` failed: $2]",
             path, ::dlerror());
 
