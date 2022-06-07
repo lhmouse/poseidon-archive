@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <dlfcn.h>
+#include <pthread.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <sys/file.h>

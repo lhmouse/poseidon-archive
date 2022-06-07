@@ -13,17 +13,15 @@
 #include <rocket/recursive_mutex.hpp>
 #include <rocket/condition_variable.hpp>
 #include <rocket/once_flag.hpp>
-#include <string>
 #include <vector>
 #include <deque>
+#include <unordered_map>
 
 namespace poseidon {
 namespace noadl = poseidon;
 
 // Aliases
 using ::std::initializer_list;
-using ::std::integer_sequence;
-using ::std::index_sequence;
 using ::std::nullptr_t;
 using ::std::max_align_t;
 using ::std::int8_t;
@@ -48,6 +46,9 @@ using ::std::unique_ptr;
 using ::std::shared_ptr;
 using ::std::weak_ptr;
 using ::std::array;
+using ::std::vector;
+using ::std::deque;
+using ::std::unordered_map;
 
 using ::std::static_pointer_cast;
 using ::std::dynamic_pointer_cast;
@@ -82,6 +83,9 @@ using ::asteria::sref;
 
 // Core
 class Config_File;
+
+// Managers
+extern class Main_Config* const main_config;
 
 // Log levels
 // Note each level has a hardcoded name and number.

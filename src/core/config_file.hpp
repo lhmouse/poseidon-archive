@@ -9,33 +9,24 @@
 
 namespace poseidon {
 
+// This class can be used to parse a configuration file.
+// Please see 'etc/poseidon/main.default.conf' for details about the file
+// format and syntax.
 class Config_File
   {
   private:
-    cow_string m_path;  // file path
-    ::asteria::V_object m_root;  // contents
+    cow_string m_path;
+    ::asteria::V_object m_root;
 
   public:
-    constexpr
-    Config_File() noexcept
-      { }
+    // Constructs an empty file.
+    Config_File() noexcept;
 
-    explicit
-    Config_File(const cow_string& path)
-      {
-        this->reload(path);
-      }
-
-    Config_File&
-    swap(Config_File& other) noexcept
-      {
-        this->m_path.swap(other.m_path);
-        this->m_root.swap(other.m_root);
-        return *this;
-      }
+    // Loads the file denoted by `path`, like `reload(path)`.
+    explicit Config_File(const cow_string& path);
 
   public:
-    ~Config_File();
+    ASTERIA_COPYABLE_DESTRUCTOR(Config_File);
 
     // Returns the absolute file path.
     // If no file has been loaded, an empty string is returned.
@@ -57,6 +48,14 @@ class Config_File
       {
         this->m_path.clear();
         this->m_root.clear();
+        return *this;
+      }
+
+    Config_File&
+    swap(Config_File& other) noexcept
+      {
+        this->m_path.swap(other.m_path);
+        this->m_root.swap(other.m_root);
         return *this;
       }
 

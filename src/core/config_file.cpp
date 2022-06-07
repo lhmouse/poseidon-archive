@@ -10,6 +10,17 @@
 namespace poseidon {
 
 Config_File::
+Config_File() noexcept
+  {
+  }
+
+Config_File::
+Config_File(const cow_string& path)
+  {
+    this->reload(path);
+  }
+
+Config_File::
 ~Config_File()
   {
   }
