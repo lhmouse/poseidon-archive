@@ -63,18 +63,19 @@ class Config_File
     // This function provides strong exception guarantee. In case of failure,
     // an exception is thrown, and the contents of this object are unchanged.
     Config_File&
-    reload(const cow_string& path);
+    reload(const cow_string& file_path);
 
     // Gets a value denoted by a path, which shall not be empty.
     // If the path does not denote an existent value, a statically allocated
     // null value is returned. If during path resolution, an attempt is made
     // to get a field of a non-object, an exception is thrown.
     const ::asteria::Value&
-    query(const char* const* psegs, size_t nsegs) const;
+    query(initializer_list<phsh_string> value_path) const;
 
+    template<typename... SegmentsT>
     const ::asteria::Value&
-    query(initializer_list<const char*> path) const
-      { return this->query(path.begin(), path.size());  }
+    query(const SegmentsT&... value_path) const
+      { return this->query({ ::rocket::sref(value_path)... });  }
   };
 
 inline

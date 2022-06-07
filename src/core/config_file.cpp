@@ -27,59 +27,62 @@ Config_File::
 
 Config_File&
 Config_File::
-reload(const cow_string& path)
+reload(const cow_string& file_path)
   {
     // Resolve the path to an absolute one.
-    ::rocket::unique_ptr<char, void (void*)> upath(::realpath(path.safe_c_str(), nullptr), ::free);
-    if(!upath)
+    ::rocket::unique_ptr<char, void (void*)> abs_path(::free);
+    if(! abs_path.reset(::realpath(file_path.safe_c_str(), nullptr)))
       POSEIDON_THROW(
           "Could not resolve path '$2'\n"
           "[`realpath()` failed: $1]",
-          format_errno(), path);
+          format_errno(), file_path);
 
     // Read the file.
-    cow_string path_new(upath.get());
-    ::asteria::V_object root_new = ::asteria::std_system_conf_load_file(path_new);
+    cow_string path(abs_path.get());
+    ::asteria::V_object root = ::asteria::std_system_conf_load_file(path);
 
     // Set new contents. This shall not throw exceptions.
-    this->m_path = ::std::move(path_new);
-    this->m_root = ::std::move(root_new);
+    this->m_path = ::std::move(path);
+    this->m_root = ::std::move(root);
     return *this;
   }
 
 const ::asteria::Value&
 Config_File::
-query(const char* const* psegs, size_t nsegs) const
+query(initializer_list<phsh_string> value_path) const
   {
     // We would like to return a `Value`, so the path shall not be empty.
-    if(nsegs == 0)
+    auto pcur = value_path.begin();
+    if(pcur == value_path.end())
       POSEIDON_THROW("Empty path not valid");
 
     // Resolve the first segment.
     auto parent = &(this->m_root);
-    auto value = parent->ptr(::rocket::sref(psegs[0]));
+    auto value = parent->ptr(*pcur);
 
     // Resolve all remaining segments.
-    for(size_t k = 1;  value && (k != nsegs);  ++k) {
+    while(value && (++pcur != value_path.end())) {
       if(value->is_null())
         return ::asteria::null_value;
 
-      if(!value->is_object()) {
+      if(! value->is_object()) {
         // Fail.
-        cow_string str;
-        str << psegs[0];
-        for(size_t r = 1;  r != k;  ++r)
-          str << '.' << psegs[r];
+        cow_string vpstr;
+        auto pbak = value_path.begin();
+        vpstr << pbak->rdstr();
+        while(++pbak != pcur)
+          vpstr << '.' << pbak->rdstr();
 
         POSEIDON_THROW(
-            "Unexpected type of `$2` (expecting `object`, got `$3`)\n"
-            "[in configuration file '$1']",
-            this->m_path, str, ::asteria::describe_type(value->type()));
+            "Unexpected type of `$1` (expecting `object`, got `$2`)\n"
+            "[in configuration file '$3']",
+            vpstr, ::asteria::describe_type(value->type()),
+            this->m_path);
       }
 
       // Descend into this child object.
       parent = &(value->as_object());
-      value = parent->ptr(::rocket::sref(psegs[k]));
+      value = parent->ptr(*pcur);
     }
 
     // If the path does not exist, return the static null value.

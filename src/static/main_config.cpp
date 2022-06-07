@@ -5,18 +5,10 @@
 #include "main_config.hpp"
 
 namespace poseidon {
-namespace {
-
-// This is the path to the main configuration file, relative to
-// the working directory.
-constexpr auto file_path = ::rocket::sref("main.conf");
-
-}  // namespace
 
 Main_Config::
 Main_Config()
   {
-    this->m_file.reload(file_path);
   }
 
 Main_Config::
@@ -28,12 +20,12 @@ void
 Main_Config::
 reload()
   {
-    Config_File new_file;
-    new_file.reload(file_path);
+    Config_File file;
+    file.reload(::rocket::sref("main.conf"));
 
     // Set up new data.
     simple_mutex::unique_lock lock(this->m_mutex);
-    this->m_file.swap(new_file);
+    this->m_file.swap(file);
   }
 
 Config_File

@@ -18,7 +18,7 @@ class Main_Config
     Config_File m_file;
 
   public:
-    // Loads 'main.conf'.
+    // Constructs an empty configuration file.
     Main_Config();
 
   public:

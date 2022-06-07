@@ -4,6 +4,7 @@
 #include "precompiled.ipp"
 #include "fwd.hpp"
 #include "static/main_config.hpp"
+#include "static/async_logger.hpp"
 #include <pthread.h>
 #include <signal.h>
 #include <string.h>
@@ -14,25 +15,25 @@ namespace {
 
 template<class ManagerT>
 inline
-ManagerT*
+ManagerT&
 do_create_manager()
   {
-    static ManagerT manager[1];
+    static ManagerT manager;
 
-    // Return a pointer to the static instance.
+    // Return a reference to the static instance.
     return manager;
   }
 
-template<class ManagerT, typename ParamT = void>
+template<class ManagerT>
 inline
-ManagerT*
-do_create_manager_with_thread(const char* name, ParamT* param = nullptr)
+ManagerT&
+do_create_manager_with_thread(const char* name)
   {
-    static ManagerT manager[1];
-    static ::pthread_t thrd_handle[1];
+    static ManagerT manager;
+    static ::pthread_t thrd_handle;
     static char thrd_name[16];
 
-    auto thrd_function = [](void* thrd_param) -> void*
+    auto thrd_function = [](void*) -> void*
       {
         // Set thread information. Errors are ignored.
         ::sigset_t sigset;
@@ -52,7 +53,7 @@ do_create_manager_with_thread(const char* name, ParamT* param = nullptr)
         // Enter an infinite loop.
         for(;;)
           try {
-            manager->thread_loop((ParamT*) thrd_param);
+            manager.thread_loop();
           }
           catch(exception& stdex) {
             ::fprintf(stderr,
@@ -65,19 +66,21 @@ do_create_manager_with_thread(const char* name, ParamT* param = nullptr)
     if(name)
       ::memcpy(thrd_name, name, ::std::min(::strlen(name), sizeof(thrd_name)));
 
-    int err = ::pthread_create(thrd_handle, nullptr, thrd_function, (void*) param);
+    // Create the thread. It is never joined or detached.
+    int err = ::pthread_create(&thrd_handle, nullptr, thrd_function, nullptr);
     if(err != 0)
       ::rocket::sprintf_and_throw<::std::runtime_error>(
           "Could not spawn manager thread: %s\n"
           "[`pthread_create()` failed: %d]",
           ::strerror(err), err);
 
-    // Return a pointer to the static instance.
+    // Return a reference to the static instance.
     return manager;
   }
 
 }  // namespace
 
-Main_Config* const main_config = do_create_manager<Main_Config>();
+Main_Config& main_config = do_create_manager<Main_Config>();
+Async_Logger& async_logger = do_create_manager_with_thread<Async_Logger>("log");
 
 }  // namespace poseidon

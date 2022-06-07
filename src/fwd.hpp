@@ -13,6 +13,7 @@
 #include <rocket/recursive_mutex.hpp>
 #include <rocket/condition_variable.hpp>
 #include <rocket/once_flag.hpp>
+#include <array>
 #include <vector>
 #include <deque>
 #include <unordered_map>
@@ -64,28 +65,38 @@ using simple_mutex = ::rocket::mutex;
 using ::rocket::recursive_mutex;
 using ::rocket::condition_variable;
 using ::rocket::once_flag;
+using ::rocket::cow_vector;
+using ::rocket::cow_hashmap;
+using ::rocket::static_vector;
+using ::rocket::cow_string;
+using ::rocket::cow_u16string;
+using ::rocket::cow_u32string;
+using ::rocket::tinybuf;
+using ::rocket::tinyfmt;
+using ::rocket::tinyfmt_str;
+using ::rocket::tinyfmt_file;
 
-using ::asteria::nullopt_t;
-using ::asteria::cow_string;
-using ::asteria::cow_u16string;
-using ::asteria::cow_u32string;
+using ::rocket::begin;
+using ::rocket::end;
+using ::rocket::swap;
+using ::rocket::xswap;
+using ::rocket::size;
+using ::rocket::nullopt;
+using ::rocket::nullopt_t;
+using ::rocket::sref;
+using ::rocket::optional;
+using ::rocket::variant;
+
 using ::asteria::phsh_string;
-using ::asteria::tinybuf;
-using ::asteria::tinyfmt;
 
-using ::asteria::begin;
-using ::asteria::end;
-using ::asteria::swap;
-using ::asteria::xswap;
-using ::asteria::size;
-using ::asteria::nullopt;
-using ::asteria::sref;
+#define POSEIDON_THROW(...)       ASTERIA_THROW(__VA_ARGS__)
+#define POSEIDON_TERMINATE(...)   ASTERIA_TERMINATE(__VA_ARGS__)
+
+#define POSEIDON_PUBLIC_STRUCT   struct __attribute__((__visibility__("default")))
+#define POSEIDON_HIDDEN_STRUCT   struct __attribute__((__visibility__("hidden")))
 
 // Core
 class Config_File;
-
-// Managers
-extern class Main_Config* const main_config;
 
 // Log levels
 // Note each level has a hardcoded name and number.
@@ -117,6 +128,47 @@ enum Async_State : uint8_t
     async_state_running    = 3,
     async_state_finished   = 4,
   };
+
+// Managers
+extern class Main_Config& main_config;
+extern class Async_Logger& async_logger;
+
+// Composes a string and submits it to the logger. In order to use these
+// macros, you still have to include <poseidon/static/async_logger.hpp>.
+// Otherwise there may be errors about incomplete types.
+#define POSEIDON_LOG_GENERIC(LEVEL, ...)  \
+  (::poseidon::async_logger.enabled(::poseidon::log_level_##LEVEL)  \
+   &&  \
+   ([=]() noexcept -> bool  \
+     __attribute__((__noinline__)) {  \
+       try {  \
+         ::poseidon::Async_Logger::Element iQw3Zbsf;  \
+         iQw3Zbsf.level = ::poseidon::log_level_##LEVEL;  \
+         iQw3Zbsf.file = __FILE__;  \
+         iQw3Zbsf.line = __LINE__;  \
+         iQw3Zbsf.func = __func__;  \
+         \
+         using ::rocket::format;  \
+         format(iQw3Zbsf.strm, "" __VA_ARGS__);  /* ADL intended  */  \
+         \
+         ::poseidon::async_logger.enqueue(::std::move(iQw3Zbsf));  \
+         \
+         if(iQw3Zbsf.level <= ::poseidon::log_level_error)  \
+           ::poseidon::async_logger.synchronize();  \
+       }  \
+       catch(::std::exception& aJHPhv84) {  \
+         ::fprintf(stderr,  \
+             "%s: Error writing log: %s\n", __func__, aJHPhv84.what());  \
+       }  \
+       return true;  \
+     }()))
+
+#define POSEIDON_LOG_FATAL(...)   POSEIDON_LOG_GENERIC(fatal, __VA_ARGS__)
+#define POSEIDON_LOG_ERROR(...)   POSEIDON_LOG_GENERIC(error, __VA_ARGS__)
+#define POSEIDON_LOG_WARN(...)    POSEIDON_LOG_GENERIC(warn,  __VA_ARGS__)
+#define POSEIDON_LOG_INFO(...)    POSEIDON_LOG_GENERIC(info,  __VA_ARGS__)
+#define POSEIDON_LOG_DEBUG(...)   POSEIDON_LOG_GENERIC(debug, __VA_ARGS__)
+#define POSEIDON_LOG_TRACE(...)   POSEIDON_LOG_GENERIC(trace, __VA_ARGS__)
 
 }  // namespace poseidon
 

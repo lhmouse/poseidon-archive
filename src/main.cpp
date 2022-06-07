@@ -5,10 +5,6 @@
 #include "core/config_file.hpp"
 #include "static/main_config.hpp"
 #include "static/async_logger.hpp"
-#include "static/timer_driver.hpp"
-#include "static/network_driver.hpp"
-#include "static/task_executor_pool.hpp"
-#include "static/fiber_scheduler.hpp"
 #include "utils.hpp"
 #include <locale.h>
 #include <signal.h>
@@ -17,9 +13,8 @@
 #include <stdarg.h>
 #include <dlfcn.h>
 #include <pthread.h>
-#include <sys/resource.h>
-#include <sys/wait.h>
-#include <sys/file.h>
+#include <sys/file.h>  // flock()
+#include <sys/resource.h>  // getrlimit()
 
 namespace {
 using namespace poseidon;
@@ -34,13 +29,9 @@ do_print_help_and_exit(const char* self)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""" R"'''''''''''''''(
 Usage: %s [OPTIONS] [[--] DIRECTORY]
 
-  -d      daemonize
   -h      show help message then exit
   -V      show version information then exit
   -v      enable verbose mode
-
-Daemonization, if requested, is performed after loading config files. Early
-failues are printed to standard error.
 
 If DIRECTORY is specified, the working directory is switched there before
 doing everything else.
@@ -88,7 +79,6 @@ atomic_signal exit_sig;
 struct Command_Line_Options
   {
     // options
-    bool daemonize = false;
     bool verbose = false;
 
     // non-options
@@ -97,8 +87,6 @@ struct Command_Line_Options
 
 // They are declared here for convenience.
 Command_Line_Options cmdline;
-::rocket::unique_posix_fd daemon_pipe(::close);
-::rocket::unique_posix_fd pid_file(::close);
 
 // These are process exit status codes.
 enum Exit_Code : uint8_t
@@ -112,8 +100,8 @@ enum Exit_Code : uint8_t
 int
 do_exit_printf(Exit_Code code, const char* fmt, ...) noexcept
   {
-    // Sleep for a few moments so pending logs are flushed.
-    Async_Logger::synchronize();
+    // Wait for pending logs to be flushed.
+    async_logger.synchronize();
 
     // Output the string to standard error.
     ::va_list ap;
@@ -133,9 +121,8 @@ do_parse_command_line(int argc, char** argv)
     bool help = false;
     bool version = false;
 
-    opt<bool> daemonize;
-    opt<bool> verbose;
-    opt<cow_string> cd_here;
+    optional<bool> verbose;
+    optional<cow_string> cd_here;
 
     // Check for some common options before calling `getopt()`.
     if(argc > 1) {
@@ -148,12 +135,8 @@ do_parse_command_line(int argc, char** argv)
 
     // Parse command-line options.
     int ch;
-    while((ch = ::getopt(argc, argv, "+dhVv")) != -1) {
+    while((ch = ::getopt(argc, argv, "+hVv")) != -1) {
       switch(ch) {
-        case 'd':
-          daemonize = true;
-          continue;
-
         case 'h':
           help = true;
           continue;
@@ -169,7 +152,7 @@ do_parse_command_line(int argc, char** argv)
         default:
           // `getopt()` will have written a message to standard error.
           do_exit_printf(exit_invalid_argument,
-                 "Try `%s -h` for help.\n", argv[0]);
+              "Try `%s -h` for help.\n", argv[0]);
       }
     }
 
@@ -190,10 +173,6 @@ do_parse_command_line(int argc, char** argv)
 
     if(argc - optind > 0)
       cd_here = cow_string(argv[optind]);
-
-    // Daemonization mode is off by default.
-    if(daemonize)
-      cmdline.daemonize = *daemonize;
 
     // Verbose mode is off by default.
     if(verbose)
@@ -222,76 +201,27 @@ ROCKET_NEVER_INLINE
 void
 do_check_euid()
   {
-    const auto file = Main_Config::copy();
-    const auto qroot = file.get_bool_opt({"general","permit_root_startup"});
-    if(qroot && *qroot)
-      return;
+    bool permit_root_startup = false;
+    const auto conf = main_config.copy();
 
-    if(::geteuid() == 0)
+    auto value = conf.query("general", "permit_root_startup");
+    if(value.is_boolean())
+      permit_root_startup = value.as_boolean();
+    else if(! value.is_null())
+      POSEIDON_LOG_WARN(
+          "Ignoring `general.permit_root_startup`: expecting `boolean`, got `$1`\n"
+          "[in configuration file '$2']",
+          ::asteria::describe_type(value.type()), conf.path());
+
+    if(! permit_root_startup && (::geteuid() == 0))
       POSEIDON_THROW(
           "Please do not start this program as root.\n"
-          "If you insist, you may set `general.permit_root_startup` in "
-          "`main.conf` to `true` to bypass this check. Note that starting "
-          "as root is considered insecure. An unprivileged user should have "
-          "been created for this service.\n"
-          "You have been warned.");
-  }
-
-ROCKET_NEVER_INLINE
-void
-do_daemonize_fork()
-  {
-    if(!cmdline.daemonize)
-      return;
-
-    // If the child process has started up successfully, it should write a
-    // message through this pipe. If it is closed without any data received,
-    // the parent process shall assume there is an error and wait.
-    int pipefds[2];
-    if(::pipe(pipefds) != 0)
-      POSEIDON_THROW(
-          "Could not create pipe for child process\n"
-          "[`pipe()` failed: $1]",
-          format_errno());
-
-    ::rocket::unique_posix_fd rfd(pipefds[0], ::close);
-    daemon_pipe.reset(pipefds[1]);
-
-    // Create the child process now.
-    ::fflush(nullptr);
-    ::pid_t child = ::fork();
-    if(child < 0)
-      POSEIDON_THROW(
-          "Could not create child process\n"
-          "[`fork()` failed: $1]",
-          format_errno());
-
-    // If this is the child process, continue execution.
-    if(child == 0)
-      return;
-
-    // Wait for the notification from the child process. Should one be
-    // received, the parent process shall exit. This may be interrupted
-    // so we need a loop.
-    char dummy[16];
-    int wstat;
-
-    for(;;)
-      if(::read(rfd, dummy, sizeof(dummy)) >= 0)
-        ::_Exit(0);
-      else if(errno != EINTR)
-        break;
-
-    // Otherwise, wait for the child and forward its exit status.
-    // Note `waitpid()` may also return if the child has been stopped
-    // or continued.
-    for(;;)
-      if(::waitpid(child, &wstat, 0) == -1)
-        ::_Exit(255);
-      else if(WIFEXITED(wstat))
-        ::_Exit(WEXITSTATUS(wstat));
-      else if(WIFSIGNALED(wstat))
-        ::_Exit(128 + WTERMSIG(wstat));
+          "If you insist, you may set `general.permit_root_startup` in `$1` "
+          "to `true` to bypass this check. Note that starting as root should be "
+          "considered insecure. An unprivileged user should have been created "
+          "for this service.\n"
+          "You have been warned.",
+          conf.path());
   }
 
 ROCKET_NEVER_INLINE
@@ -315,52 +245,42 @@ do_init_signal_handlers()
 
 ROCKET_NEVER_INLINE
 void
-do_daemonize_finish()
-  {
-    if(!daemon_pipe)
-      return;
-
-    // Notify my parent process. Errors are ignored.
-    for(;;)
-      if(::write(daemon_pipe, "OK", 2) >= 0)
-        break;
-      else if(errno != EINTR)
-        break;
-
-    // The pipe can be closed now.
-    daemon_pipe.reset();
-  }
-
-ROCKET_NEVER_INLINE
-void
 do_write_pid_file()
   {
-    const auto file = Main_Config::copy();
-    const auto kpath = file.get_string_opt({"general","pid_file_path"});
-    if(!kpath || kpath->empty())
+    cow_string pid_file_path;
+    const auto conf = main_config.copy();
+
+    auto value = conf.query("general", "pid_file_path");
+    if(value.is_string())
+      pid_file_path = value.as_string();
+    else if(! value.is_null())
+      POSEIDON_LOG_WARN(
+          "Ignoring `general.permit_root_startup`: expecting `string`, got `$1`\n"
+          "[in configuration file '$2']",
+          ::asteria::describe_type(value.type()), conf.path());
+
+    if(pid_file_path.empty())
       return;
 
-    // Create the lock file.
-    pid_file.reset(::creat(kpath->safe_c_str(), 0644));
-    if(!pid_file)
+    // Create the lock file and lock it in exclusive mode before overwriting.
+    ::rocket::unique_posix_fd pid_file(::close);
+    if(! pid_file.reset(::creat(pid_file_path.safe_c_str(), 0644)))
       POSEIDON_THROW(
           "Could not create PID file '$2'\n"
           "[`open()` failed: $1]",
-          format_errno(), kpath->c_str());
+          format_errno(), pid_file_path.c_str());
 
-    // Lock it in exclusive mode before overwriting.
     if(::flock(pid_file, LOCK_EX | LOCK_NB) != 0)
       POSEIDON_THROW(
-          "Could not lock PID file '$2'\n"
-          "(is another instance running?)\n"
+          "Could not lock PID file '$2' because it is being locked by another process\n"
           "[`flock()` failed: $1]",
-          format_errno(), kpath->c_str());
+          format_errno(), pid_file_path.c_str());
 
     // Write the PID of myself.
-    POSEIDON_LOG_DEBUG("Writing current process ID to '$1'", kpath->c_str());
-    ::dprintf(pid_file, "%d\n", static_cast<int>(::getpid()));
+    POSEIDON_LOG_DEBUG("Writing current process ID to '$1'", pid_file_path.c_str());
+    ::dprintf(pid_file, "%d\n", (int) ::getpid());
 
-    // Downgrade the lock so the PID may be read by other processes.
+    // Downgrade the lock so the PID may be read by others.
     ::flock(pid_file, LOCK_SH);
   }
 
@@ -386,31 +306,50 @@ do_check_ulimits()
   }
 
 ROCKET_NEVER_INLINE
-size_t
+void
 do_load_addons()
   {
-    const auto file = Main_Config::copy();
-    const auto qaddons = file.get_array_opt({"general","addons"});
-    if(!qaddons || qaddons->empty())
-      return 0;
+    cow_vector<::asteria::Value> addons;
+    size_t count = 0;
+    const auto conf = main_config.copy();
 
-    for(const auto& addon : *qaddons) {
-      // Each add-on shall be a path to a shared library to load.
-      if(!addon.is_string())
-        POSEIDON_LOG_FATAL("Invalid add-on path (`$1` is not a string)", addon);
+    auto value = conf.query("addons");
+    if(value.is_array())
+      addons = value.as_array();
+    else if(! value.is_null())
+      POSEIDON_LOG_WARN(
+          "Ignoring `addons`: expecting `array`, got `$1`\n"
+          "[in configuration file '$2']",
+          ::asteria::describe_type(value.type()), conf.path());
 
-      const auto& path = addon.as_string();
+    for(const auto& addon : addons) {
+      cow_string path;
+
+      if(addon.is_string())
+        path = addon.as_string();
+      else if(! addon.is_null())
+        POSEIDON_LOG_WARN(
+            "Ignoring invalid path to add-on: $1\n"
+            "[in configuration file '$2']",
+            addon, conf.path());
+
+      if(path.empty())
+        continue;
+
       POSEIDON_LOG_INFO("Loading add-on: $1", path);
 
-      if(!::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_NODELETE))
-        POSEIDON_THROW(
-            "Failed to load add-on '$1'\n"
+      if(::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_NODELETE) == nullptr)
+        POSEIDON_LOG_ERROR(
+            "Failed to load add-on: $1\n"
             "[`dlopen()` failed: $2]",
             path, ::dlerror());
 
+      count ++;
       POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
     }
-    return qaddons->size();
+
+    if(count == 0)
+      POSEIDON_LOG_FATAL("No add-on has been loaded. What's the job now?");
   }
 
 }  // namespace
@@ -421,38 +360,30 @@ main(int argc, char** argv)
     // Select the C locale.
     // UTF-8 is required for wide-oriented standard streams.
     ::setlocale(LC_ALL, "C.UTF-8");
+    ::tzset();
 
     // Note that this function shall not return in case of errors.
     do_parse_command_line(argc, argv);
 
-    // Set current working directory if one is specified.
+    // Load configuration and start the logger early.
     do_set_working_directory();
+    main_config.reload();
+    async_logger.reload(main_config.copy());
 
-    // Load 'main.conf' before daemonization, so any earlier failures are
-    // visible to the user.
-    Main_Config::reload();
-    Async_Logger::reload();
-    Network_Driver::reload();
-    Task_Executor_Pool::reload();
-    Fiber_Scheduler::reload();
-
-    POSEIDON_LOG_INFO("Starting up: $1 (PID $2)", PACKAGE_STRING, ::getpid());
+    POSEIDON_LOG_INFO("Starting up: " PACKAGE_STRING);
 
     do_check_euid();
-    do_daemonize_fork();
+    do_check_ulimits();
     do_init_signal_handlers();
     do_write_pid_file();
-    do_check_ulimits();
+    do_load_addons();
 
-    if(do_load_addons() == 0)
-      POSEIDON_LOG_FATAL("No add-ons have been loaded. What's the job now?");
-
+do_exit_printf(exit_system_error, "meow\n");
     // Schedule fibers until a termination signal is caught.
-    do_daemonize_finish();
-    Fiber_Scheduler::modal_loop(exit_sig);
+//    Fiber_Scheduler::modal_loop(exit_sig);
   }
   catch(exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.
     do_exit_printf(exit_system_error,
-          "%s\n[exception class `%s`]\n", stdex.what(), typeid(stdex).name());
+        "%s\n[exception class `%s`]\n", stdex.what(), typeid(stdex).name());
   }
