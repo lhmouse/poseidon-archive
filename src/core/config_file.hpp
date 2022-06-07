@@ -34,21 +34,6 @@ class Config_File
         return *this;
       }
 
-    // These can be noexcept, thanks to copy-on-write values.
-    Config_File(const Config_File&) noexcept
-      = default;
-
-    Config_File&
-    operator=(const Config_File&) noexcept
-      = default;
-
-    Config_File(Config_File&&) noexcept
-      = default;
-
-    Config_File&
-    operator=(Config_File&&) noexcept
-      = default;
-
   public:
     ~Config_File();
 

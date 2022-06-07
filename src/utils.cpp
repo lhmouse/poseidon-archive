@@ -11,9 +11,9 @@ ascii_uppercase(cow_string text)
   {
     // Only modify the string when it really has to modified.
     for(size_t k = 0;  k != text.size();  ++k) {
-      char32_t ch = static_cast<uint8_t>(text[k]);
+      char32_t ch = (uint8_t) text[k];
       if(('a' <= ch) && (ch <= 'z'))
-        text.mut(k) = static_cast<char>(ch - 0x20);
+        text.mut(k) = (char) (ch - 0x20);
     }
     return ::std::move(text);
   }
@@ -23,9 +23,9 @@ ascii_lowercase(cow_string text)
   {
     // Only modify the string when it really has to modified.
     for(size_t k = 0;  k != text.size();  ++k) {
-      char32_t ch = static_cast<uint8_t>(text[k]);
+      char32_t ch = (uint8_t) text[k];
       if(('A' <= ch) && (ch <= 'Z'))
-        text.mut(k) = static_cast<char>(ch + 0x20);
+        text.mut(k) = (char) (ch + 0x20);
     }
     return ::std::move(text);
   }
@@ -40,7 +40,7 @@ ascii_trim(cow_string text)
       if(++k == text.size())
         return { };
 
-      char32_t ch = static_cast<uint8_t>(text[k]);
+      char32_t ch = (uint8_t) text[k];
       if((ch != ' ') && (ch != '\t'))
         break;
     }
@@ -53,7 +53,7 @@ ascii_trim(cow_string text)
       if(--k == 0)
         break;
 
-      char32_t ch = static_cast<uint8_t>(text[k]);
+      char32_t ch = (uint8_t) text[k];
       if((ch != ' ') && (ch != '\t'))
         break;
     }

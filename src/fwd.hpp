@@ -83,19 +83,6 @@ using ::asteria::sref;
 // Core
 class Config_File;
 
-// Macros
-#define POSEIDON_DEFAULT_COPY(C)  \
-    C(const C&) = default;  \
-    C& operator=(const C&) = default  // no semicolon
-
-#define POSEIDON_DEFAULT_MOVE(C)  \
-    C(C&&) noexcept = default;  \
-    C& operator=(C&&) noexcept = default  // no semicolon
-
-#define POSEIDON_DELETE_COPY(C)  \
-    C(const C&) = delete;  \
-    C& operator=(const C&) = delete  // no semicolon
-
 // Log levels
 // Note each level has a hardcoded name and number.
 // Don't change their values or reorder them.
