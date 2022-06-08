@@ -60,8 +60,8 @@ using ::rocket::atomic;
 using ::rocket::atomic_relaxed;
 using ::rocket::atomic_acq_rel;
 using ::rocket::atomic_seq_cst;
-using atomic_signal = atomic_relaxed<int>;
-using simple_mutex = ::rocket::mutex;
+using atomic_signal = ::rocket::atomic_relaxed<int>;
+using plain_mutex = ::rocket::mutex;
 using ::rocket::recursive_mutex;
 using ::rocket::condition_variable;
 using ::rocket::once_flag;
@@ -86,14 +86,11 @@ using ::rocket::nullopt_t;
 using ::rocket::sref;
 using ::rocket::optional;
 using ::rocket::variant;
-
-using ::asteria::phsh_string;
+using phsh_string = ::rocket::prehashed_string;
 
 #define POSEIDON_THROW(...)       ASTERIA_THROW(__VA_ARGS__)
 #define POSEIDON_TERMINATE(...)   ASTERIA_TERMINATE(__VA_ARGS__)
-
-#define POSEIDON_PUBLIC_STRUCT   struct __attribute__((__visibility__("default")))
-#define POSEIDON_HIDDEN_STRUCT   struct __attribute__((__visibility__("hidden")))
+#define POSEIDON_HIDDEN_STRUCT    struct __attribute__((__visibility__("hidden")))
 
 // Core
 class Config_File;

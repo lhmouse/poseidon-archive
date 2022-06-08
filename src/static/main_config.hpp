@@ -14,7 +14,7 @@ namespace poseidon {
 class Main_Config
   {
   private:
-    mutable simple_mutex m_mutex;
+    mutable plain_mutex m_mutex;
     Config_File m_file;
 
   public:

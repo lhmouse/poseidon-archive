@@ -24,7 +24,7 @@ reload()
     file.reload(::rocket::sref("main.conf"));
 
     // Set up new data.
-    simple_mutex::unique_lock lock(this->m_mutex);
+    plain_mutex::unique_lock lock(this->m_mutex);
     this->m_file.swap(file);
   }
 
@@ -32,7 +32,7 @@ Config_File
 Main_Config::
 copy() noexcept
   {
-    simple_mutex::unique_lock lock(this->m_mutex);
+    plain_mutex::unique_lock lock(this->m_mutex);
     return this->m_file;
   }
 

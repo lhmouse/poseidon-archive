@@ -287,11 +287,11 @@ Async_Logger::
 thread_loop()
   {
     // Get all pending elements.
-    simple_mutex::unique_lock lock(this->m_queue_mutex);
+    plain_mutex::unique_lock lock(this->m_queue_mutex);
     while(this->m_queue.empty())
       this->m_queue_avail.wait(lock);
 
-    simple_mutex::unique_lock io_lock(this->m_io_mutex);
+    plain_mutex::unique_lock io_lock(this->m_io_mutex);
     this->m_io_queue.clear();
     this->m_io_queue.swap(this->m_queue);
     lock.unlock();
@@ -332,7 +332,7 @@ reload(const Config_File& file)
         mask |= 1U << k;
 
     // Set up new data.
-    simple_mutex::unique_lock lock(this->m_conf_mutex);
+    plain_mutex::unique_lock lock(this->m_conf_mutex);
     this->m_conf.swap(conf);
     this->m_mask.store(mask);
   }
@@ -347,7 +347,7 @@ enqueue(Element&& elem)
     elem.thrd_lwpid = (uint32_t) ::syscall(__NR_gettid);
 
     // Enqueue the element.
-    simple_mutex::unique_lock lock(this->m_queue_mutex);
+    plain_mutex::unique_lock lock(this->m_queue_mutex);
     this->m_queue.emplace_back(::std::move(elem));
     this->m_queue_avail.notify_one();
   }
@@ -357,11 +357,11 @@ Async_Logger::
 synchronize() noexcept
   {
     // Get all pending elements.
-    simple_mutex::unique_lock lock(this->m_queue_mutex);
+    plain_mutex::unique_lock lock(this->m_queue_mutex);
     if(this->m_queue.empty())
       return;
 
-    simple_mutex::unique_lock io_lock(this->m_io_mutex);
+    plain_mutex::unique_lock io_lock(this->m_io_mutex);
     this->m_io_queue.clear();
     this->m_io_queue.swap(this->m_queue);
     lock.unlock();
