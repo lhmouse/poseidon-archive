@@ -10,9 +10,8 @@ namespace poseidon {
 
 class Abstract_Timer
   {
-    friend class Timer_Driver;
-
   private:
+    friend class Timer_Driver;
     atomic_relaxed<Async_State> m_async_state = { async_state_null };
     atomic_relaxed<uint64_t> m_count = { 0 };
 
