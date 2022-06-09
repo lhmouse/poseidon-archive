@@ -198,7 +198,7 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Element& elem) n
 
     do_color(data, lconf, "7");  // inverse
     data.append(lconf.tag, 7);
-    do_color(data, lconf, "27");  // no inverse
+    do_color(data, lconf, "0");  // reset
     data += " ";
 
     // Write the thread name and ID.
@@ -226,6 +226,7 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Element& elem) n
     data += "\'\n";
 
     // Write the message.
+    do_color(data, lconf, "0");  // reset
     do_color(data, lconf, lconf.color.c_str());
     data += '\t';
 
