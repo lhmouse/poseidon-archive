@@ -88,9 +88,11 @@ using ::rocket::optional;
 using ::rocket::variant;
 using phsh_string = ::rocket::prehashed_string;
 
-#define POSEIDON_THROW(...)       ASTERIA_THROW(__VA_ARGS__)
-#define POSEIDON_TERMINATE(...)   ASTERIA_TERMINATE(__VA_ARGS__)
-#define POSEIDON_HIDDEN_STRUCT    struct __attribute__((__visibility__("hidden")))
+#define POSEIDON_THROW(...)   ASTERIA_THROW(__VA_ARGS__)
+
+#define POSEIDON_HIDDEN_STRUCT(TYPE, BASE)  \
+  struct __attribute__((__visibility__("hidden")))  \
+    TYPE : BASE { }  // no semicolon
 
 // Core
 class Config_File;

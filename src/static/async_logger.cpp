@@ -270,7 +270,7 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Element& elem) n
 
 }  // namespace
 
-POSEIDON_HIDDEN_STRUCT Async_Logger::Level_Fwd : Level_Config { };
+POSEIDON_HIDDEN_STRUCT(Async_Logger::Level_Fwd, Level_Config);
 
 Async_Logger::
 Async_Logger()
