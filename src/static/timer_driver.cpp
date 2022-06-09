@@ -3,6 +3,7 @@
 
 #include "../precompiled.ipp"
 #include "timer_driver.hpp"
+#include "async_logger.hpp"
 #include "../core/abstract_timer.hpp"
 #include "../utils.hpp"
 #include <time.h>
@@ -53,6 +54,39 @@ void
 Timer_Driver::
 thread_loop()
   {
+    // Await an element.
+    plain_mutex::unique_lock lock(this->m_pq_mutex);
+    while(this->m_pq.empty())
+      this->m_pq_avail.wait(lock);
+
+    int64_t now = do_monotonic_now();
+    int64_t delta = this->m_pq.front().next - now;
+    if(delta > 0) {
+      this->m_pq_avail.wait_for(lock, delta);
+      return;
+    }
+
+    ::std::pop_heap(this->m_pq.mut_begin(), this->m_pq.mut_end());
+    auto elem = ::std::move(this->m_pq.mut_back());
+    this->m_pq.pop_back();
+
+    auto timer = elem.timer.lock();
+    if(!timer)
+      return;
+    else if(elem.serial != timer->m_serial)
+      return;
+    else if(elem.period != 0) {
+      // Insert it back.
+      elem.next += elem.period;
+      this->m_pq.emplace_back(::std::move(elem));
+      ::std::push_heap(this->m_pq.mut_begin(), this->m_pq.mut_end());
+    }
+    timer->m_count ++;
+    lock.unlock();
+
+    // Execute it. Exceptions are ignored.
+    POSEIDON_LOG_TRACE("Executing timer `$1` (type `$2`)", timer.get(), typeid(*timer));
+    timer->do_abstract_timer_on_tick(now);
   }
 
 void
@@ -81,7 +115,7 @@ insert(const shared_ptr<Abstract_Timer>& timer, int64_t delay, int64_t period)
     elem.next = do_monotonic_now() + delay;
     elem.period = period;
 
-    // Enqueue the timer.
+    // Insert the timer.
     plain_mutex::unique_lock lock(this->m_pq_mutex);
     elem.serial = ++ this->m_serial;
     timer->m_serial = elem.serial;

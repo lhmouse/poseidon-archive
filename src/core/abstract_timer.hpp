@@ -14,7 +14,7 @@ class Abstract_Timer
 
   private:
     uint64_t m_serial;
-    atomic_relaxed<uint64_t> m_count;
+    uint64_t m_count = 0;
 
   public:
     // Constructs a timer whose count is zero.
@@ -33,9 +33,9 @@ class Abstract_Timer
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Timer);
 
     // Gets the number of times that this timer has been triggered.
-    size_t
+    uint64_t
     count() const noexcept
-      { return this->m_count.load();  }
+      { return this->m_count;  }
   };
 
 }  // namespace
