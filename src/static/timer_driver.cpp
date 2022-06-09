@@ -66,7 +66,6 @@ thread_loop()
       this->m_pq_avail.wait_for(lock, delta);
       return;
     }
-
     ::std::pop_heap(this->m_pq.begin(), this->m_pq.end());
     auto elem = ::std::move(this->m_pq.back());
     this->m_pq.pop_back();
@@ -76,8 +75,9 @@ thread_loop()
       return;
     else if(elem.serial != timer->m_serial)
       return;
-    else if(elem.period != 0) {
-      // Insert it back.
+
+    if(elem.period != 0) {
+      // Update the next time point and insert the timer back.
       elem.next += elem.period;
       this->m_pq.emplace_back(::std::move(elem));
       ::std::push_heap(this->m_pq.begin(), this->m_pq.end());
