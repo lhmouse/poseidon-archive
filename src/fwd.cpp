@@ -5,6 +5,7 @@
 #include "fwd.hpp"
 #include "static/main_config.hpp"
 #include "static/async_logger.hpp"
+#include "static/timer_driver.hpp"
 #include <pthread.h>
 #include <signal.h>
 #include <string.h>
@@ -81,6 +82,7 @@ do_create_manager_with_thread(const char* name)
 }  // namespace
 
 Main_Config& main_config = do_create_manager<Main_Config>();
-Async_Logger& async_logger = do_create_manager_with_thread<Async_Logger>("log");
+Async_Logger& async_logger = do_create_manager_with_thread<Async_Logger>("logger");
+Timer_Driver& timer_driver = do_create_manager_with_thread<Timer_Driver>("timer");
 
 }  // namespace poseidon

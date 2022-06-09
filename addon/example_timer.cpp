@@ -10,25 +10,30 @@
 namespace {
 using namespace poseidon;
 
-constexpr int64_t first = 3000;  // trigger after 3000ms
-constexpr int64_t period = 5000;  // repeat evert 5000ms
-
 struct Example_Timer : Abstract_Timer
   {
     explicit
     Example_Timer()
-      : Abstract_Timer(first, period)
       {
-        POSEIDON_LOG_ERROR("example timer created: first = $1, period = $2", first, period);
+        POSEIDON_LOG_ERROR("example timer created");
       }
 
     void
-    do_abstract_timer_interval(int64_t now) override
+    do_abstract_timer_on_tick(int64_t now) override
       {
-        POSEIDON_LOG_ERROR("example timer running: now = $1", now);
+        POSEIDON_LOG_ERROR("example timer on tick: now = $1", now);
       }
   };
 
-const auto timer = Timer_Driver::insert(::rocket::make_unique<Example_Timer>());
+
+shared_ptr<Example_Timer>
+do_create_timer()
+  {
+    auto timer = ::std::make_shared<Example_Timer>();
+    timer_driver.insert(timer, 5000, 3000);
+    return timer;
+  }
+
+const auto timer = do_create_timer();
 
 }  // namespace

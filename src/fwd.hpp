@@ -93,11 +93,6 @@ using phsh_string = ::rocket::prehashed_string;
   struct __attribute__((__visibility__("hidden")))  \
     CLASS::MEMBER : CLASS##_##MEMBER { }  // no semicolon
 
-#define POSEIDON_THROW(...)   ASTERIA_THROW(__VA_ARGS__)
-
-// Core
-class Config_File;
-
 // Log levels
 // Note each level has a hardcoded name and number.
 // Don't change their values or reorder them.
@@ -129,9 +124,14 @@ enum Async_State : uint8_t
     async_state_finished   = 4,
   };
 
-// Managers
+// Core classes
+class Config_File;
+class Abstract_Timer;
+
+// Manager classes
 extern class Main_Config& main_config;
 extern class Async_Logger& async_logger;
+extern class Timer_Driver& timer_driver;
 
 // Composes a string and submits it to the logger. In order to use these
 // macros, you still have to include <poseidon/static/async_logger.hpp>.

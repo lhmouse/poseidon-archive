@@ -12,6 +12,7 @@ include_poseidon_details_HEADERS =  \
 include_poseidon_coredir = ${includedir}/poseidon/core
 include_poseidon_core_HEADERS =  \
   %reldir%/core/config_file.hpp  \
+  %reldir%/core/abstract_timer.hpp  \
   ${END}
 
 include_poseidon_socketdir = ${includedir}/poseidon/socket
@@ -22,6 +23,7 @@ include_poseidon_staticdir = ${includedir}/poseidon/static
 include_poseidon_static_HEADERS =  \
   %reldir%/static/main_config.hpp  \
   %reldir%/static/async_logger.hpp  \
+  %reldir%/static/timer_driver.hpp  \
   ${END}
 
 lib_LTLIBRARIES += lib/libposeidon.la
@@ -34,6 +36,8 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/config_file.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
+  %reldir%/core/abstract_timer.cpp  \
+  %reldir%/static/timer_driver.cpp  \
   ${END}
 
 lib_libposeidon_la_CXXFLAGS = ${AM_CXXFLAGS}

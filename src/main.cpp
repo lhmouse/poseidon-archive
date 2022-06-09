@@ -378,6 +378,7 @@ main(int argc, char** argv)
     do_write_pid_file();
     do_load_addons();
 
+::sleep(100);
 do_exit_printf(exit_system_error, "meow\n");
     // Schedule fibers until a termination signal is caught.
 //    Fiber_Scheduler::modal_loop(exit_sig);

@@ -16,6 +16,8 @@ using ::asteria::weaken_enum;
 using ::asteria::generate_random_seed;
 using ::asteria::format_errno;
 
+#define POSEIDON_THROW(...)   ASTERIA_THROW(__VA_ARGS__)
+
 // Converts all ASCII letters in a string into uppercase.
 cow_string
 ascii_uppercase(cow_string text);
