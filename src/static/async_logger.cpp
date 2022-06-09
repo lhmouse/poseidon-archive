@@ -318,15 +318,15 @@ Async_Logger::
 reload(const Config_File& file)
   {
     // Parse new configuration.
-    cow_vector<Level_Config> conf(6);
+    vector<Level_Config> conf(6);
     uint32_t mask = 0;
 
-    do_load_level_config(conf.mut(log_level_trace), file, "trace");
-    do_load_level_config(conf.mut(log_level_debug), file, "debug");
-    do_load_level_config(conf.mut(log_level_info ), file, "info" );
-    do_load_level_config(conf.mut(log_level_warn ), file, "warn" );
-    do_load_level_config(conf.mut(log_level_error), file, "error");
-    do_load_level_config(conf.mut(log_level_fatal), file, "fatal");
+    do_load_level_config(conf.at(log_level_trace), file, "trace");
+    do_load_level_config(conf.at(log_level_debug), file, "debug");
+    do_load_level_config(conf.at(log_level_info ), file, "info" );
+    do_load_level_config(conf.at(log_level_warn ), file, "warn" );
+    do_load_level_config(conf.at(log_level_error), file, "error");
+    do_load_level_config(conf.at(log_level_fatal), file, "fatal");
 
     for(size_t k = 0;  k != conf.size();  ++k)
       if((conf[k].fd != -1) || ! conf[k].file.empty())

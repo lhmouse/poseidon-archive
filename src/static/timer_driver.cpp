@@ -67,8 +67,8 @@ thread_loop()
       return;
     }
 
-    ::std::pop_heap(this->m_pq.mut_begin(), this->m_pq.mut_end());
-    auto elem = ::std::move(this->m_pq.mut_back());
+    ::std::pop_heap(this->m_pq.begin(), this->m_pq.end());
+    auto elem = ::std::move(this->m_pq.back());
     this->m_pq.pop_back();
 
     auto timer = elem.timer.lock();
@@ -80,7 +80,7 @@ thread_loop()
       // Insert it back.
       elem.next += elem.period;
       this->m_pq.emplace_back(::std::move(elem));
-      ::std::push_heap(this->m_pq.mut_begin(), this->m_pq.mut_end());
+      ::std::push_heap(this->m_pq.begin(), this->m_pq.end());
     }
     lock.unlock();
 
@@ -135,7 +135,7 @@ insert(const shared_ptr<Abstract_Timer>& timer, int64_t delay, int64_t period)
     elem.serial = ++ this->m_serial;
     timer->m_serial = elem.serial;
     this->m_pq.emplace_back(::std::move(elem));
-    ::std::push_heap(this->m_pq.mut_begin(), this->m_pq.mut_end());
+    ::std::push_heap(this->m_pq.begin(), this->m_pq.end());
     this->m_pq_avail.notify_one();
   }
 

@@ -30,15 +30,15 @@ class Async_Logger
   private:
     mutable plain_mutex m_conf_mutex;
     struct Level_Config;
-    cow_vector<Level_Config> m_conf;
+    vector<Level_Config> m_conf;
     atomic_relaxed<uint32_t> m_mask;
 
     mutable plain_mutex m_queue_mutex;
-    cow_vector<Element> m_queue;
+    vector<Element> m_queue;
     condition_variable m_queue_avail;
 
     mutable plain_mutex m_io_mutex;
-    cow_vector<Element> m_io_queue;
+    vector<Element> m_io_queue;
 
   public:
     // Creates a logger that outputs to nowhere.

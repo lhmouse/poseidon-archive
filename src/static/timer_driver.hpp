@@ -17,7 +17,7 @@ class Timer_Driver
     mutable plain_mutex m_pq_mutex;
     uint64_t m_serial;
     struct Queued_Timer;
-    cow_vector<Queued_Timer> m_pq;
+    vector<Queued_Timer> m_pq;
     condition_variable m_pq_avail;
 
   public:
