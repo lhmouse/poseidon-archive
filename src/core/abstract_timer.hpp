@@ -13,8 +13,11 @@ class Abstract_Timer
     friend class Timer_Driver;
 
   private:
+    atomic_relaxed<Async_State> m_async_state = { async_state_null };
+    atomic_relaxed<uint64_t> m_count = { 0 };
+
+    // These fields are used internally by the timer driver.
     uint64_t m_serial;
-    uint64_t m_count = 0;
 
   public:
     // Constructs a timer whose count is zero.
@@ -32,10 +35,15 @@ class Abstract_Timer
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Timer);
 
+    // Gets the schedule state.
+    Async_State
+    async_state() const noexcept
+      { return this->m_async_state.load();  }
+
     // Gets the number of times that this timer has been triggered.
     uint64_t
     count() const noexcept
-      { return this->m_count;  }
+      { return this->m_count.load();  }
   };
 
 }  // namespace

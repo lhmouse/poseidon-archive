@@ -59,9 +59,10 @@ thread_loop()
     while(this->m_pq.empty())
       this->m_pq_avail.wait(lock);
 
-    int64_t now = do_monotonic_now();
+    const int64_t now = do_monotonic_now();
     int64_t delta = this->m_pq.front().next - now;
     if(delta > 0) {
+      POSEIDON_LOG_TRACE("Timer driver waiting: $1 millisecond(s) remaining", delta);
       this->m_pq_avail.wait_for(lock, delta);
       return;
     }
@@ -81,12 +82,26 @@ thread_loop()
       this->m_pq.emplace_back(::std::move(elem));
       ::std::push_heap(this->m_pq.mut_begin(), this->m_pq.mut_end());
     }
-    timer->m_count ++;
     lock.unlock();
 
-    // Execute it. Exceptions are ignored.
-    POSEIDON_LOG_TRACE("Executing timer `$1` (type `$2`)", timer.get(), typeid(*timer));
-    timer->do_abstract_timer_on_tick(now);
+    // Execute it.
+    // Exceptions are ignored.
+    POSEIDON_LOG_TRACE("Executing timer `$1` (class `$2`)", timer.get(), typeid(*timer));
+    timer->m_async_state.store(async_state_running);
+    timer->m_count.xadd(1);
+
+    try {
+      timer->do_abstract_timer_on_tick(now);
+    }
+    catch(exception& stdex) {
+      POSEIDON_LOG_WARN(
+          "Timer error: $1\n"
+          "[exception class `$2`]\n"
+          "[timer class `$3`]",
+          stdex.what(), typeid(stdex), typeid(*timer));
+    }
+
+    timer->m_async_state.store(async_state_suspended);
   }
 
 void
