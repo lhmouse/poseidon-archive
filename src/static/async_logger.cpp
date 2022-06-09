@@ -203,12 +203,12 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Element& elem) n
 
     // Write the thread name and ID.
     do_color(data, lconf, "30;1");  // grey
-    data += "THREAD \"";
-    data += elem.thrd_name;
-    data += "\" LWP ";
+    data += "THREAD ";
     nump.put_DU(elem.thrd_lwpid);
     data.append(nump.data(), nump.size());
-    data += " ";
+    data += " \"";
+    data += elem.thrd_name;
+    data += "\" ";
 
     // Write the function name.
     do_color(data, lconf, "37;1");  // bright white
