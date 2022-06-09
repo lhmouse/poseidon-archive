@@ -12,7 +12,7 @@ class Abstract_Timer
   {
   private:
     friend class Timer_Driver;
-    atomic_relaxed<Async_State> m_async_state = { async_state_null };
+    atomic_relaxed<Async_State> m_async_state = { async_state_pending };
     atomic_relaxed<uint64_t> m_count = { 0 };
 
     // These fields are used internally by the timer driver.
