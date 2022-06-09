@@ -41,6 +41,7 @@ using ::std::ptrdiff_t;
 using ::std::size_t;
 using ::std::wint_t;
 using ::std::exception;
+using ::std::exception_ptr;
 using ::std::type_info;
 using ::std::pair;
 using ::std::unique_ptr;
@@ -91,7 +92,7 @@ using phsh_string = ::rocket::prehashed_string;
 #define POSEIDON_HIDDEN_STRUCT(CLASS, MEMBER)  \
   using CLASS##_##MEMBER = MEMBER;  \
   struct __attribute__((__visibility__("hidden")))  \
-    CLASS::MEMBER : CLASS##_##MEMBER { }  // no semicolon
+      CLASS::MEMBER : CLASS##_##MEMBER { }  // no semicolon
 
 // Log levels
 // Note each level has a hardcoded name and number.
@@ -127,11 +128,15 @@ enum Future_State : uint8_t
 // Core classes
 class Config_File;
 class Abstract_Timer;
+class Abstract_Future;
+template<typename ValueT> class Future;
+class Abstract_Fiber;
 
 // Manager classes
 extern class Main_Config& main_config;
 extern class Async_Logger& async_logger;
 extern class Timer_Driver& timer_driver;
+extern class Fiber_Scheduler& fiber_scheduler;
 
 // Composes a string and submits it to the logger. In order to use these
 // macros, you still have to include <poseidon/static/async_logger.hpp>.
