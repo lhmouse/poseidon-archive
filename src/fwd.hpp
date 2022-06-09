@@ -139,14 +139,15 @@ extern class Timer_Driver& timer_driver;
 #define POSEIDON_LOG_GENERIC(LEVEL, ...)  \
   (::poseidon::async_logger.enabled(::poseidon::log_level_##LEVEL)  \
    &&  \
-   ([=]() noexcept -> bool  \
-     __attribute__((__noinline__)) {  \
+   ([=](const char* es7dhunF, size_t tlLm4krp, const char* f5zuNP3w) -> bool  \
+       __attribute__((__noinline__, __nothrow__))  \
+     {  \
        try {  \
          ::poseidon::Async_Logger::Element iQw3Zbsf;  \
          iQw3Zbsf.level = ::poseidon::log_level_##LEVEL;  \
-         iQw3Zbsf.file = __FILE__;  \
-         iQw3Zbsf.line = __LINE__;  \
-         iQw3Zbsf.func = __func__;  \
+         iQw3Zbsf.file = es7dhunF;  \
+         iQw3Zbsf.line = tlLm4krp;  \
+         iQw3Zbsf.func = f5zuNP3w;  \
          \
          using ::rocket::format;  \
          format(iQw3Zbsf.strm, "" __VA_ARGS__);  /* ADL intended  */  \
@@ -155,13 +156,14 @@ extern class Timer_Driver& timer_driver;
          \
          if(iQw3Zbsf.level <= ::poseidon::log_level_error)  \
            ::poseidon::async_logger.synchronize();  \
+         \
+         return true;  \
        }  \
        catch(::std::exception& aJHPhv84) {  \
-         ::fprintf(stderr,  \
-             "%s: Error writing log: %s\n", __func__, aJHPhv84.what());  \
+         ::fprintf(stderr, "%s: Error writing log: %s\n", __func__, aJHPhv84.what());  \
+         return false;  \
        }  \
-       return true;  \
-     }()))
+     }(__FILE__, __LINE__, __func__)))
 
 #define POSEIDON_LOG_FATAL(...)   POSEIDON_LOG_GENERIC(fatal, __VA_ARGS__)
 #define POSEIDON_LOG_ERROR(...)   POSEIDON_LOG_GENERIC(error, __VA_ARGS__)
