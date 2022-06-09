@@ -29,8 +29,8 @@ class Async_Logger
 
   private:
     mutable plain_mutex m_conf_mutex;
-    struct Level_Fwd;
-    cow_vector<Level_Fwd> m_conf;
+    struct Level_Config;
+    cow_vector<Level_Config> m_conf;
     atomic_relaxed<uint32_t> m_mask;
 
     mutable plain_mutex m_queue_mutex;

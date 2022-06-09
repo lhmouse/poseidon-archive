@@ -270,7 +270,7 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Element& elem) n
 
 }  // namespace
 
-POSEIDON_HIDDEN_STRUCT(Async_Logger::Level_Fwd, Level_Config);
+POSEIDON_HIDDEN_STRUCT(Async_Logger, Level_Config);
 
 Async_Logger::
 Async_Logger()
@@ -317,7 +317,7 @@ Async_Logger::
 reload(const Config_File& file)
   {
     // Parse new configuration.
-    cow_vector<Level_Fwd> conf(6);
+    cow_vector<Level_Config> conf(6);
     uint32_t mask = 0;
 
     do_load_level_config(conf.mut(log_level_trace), file, "trace");
