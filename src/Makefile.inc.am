@@ -34,9 +34,9 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/fwd.cpp  \
   %reldir%/utils.cpp  \
   %reldir%/core/config_file.cpp  \
+  %reldir%/core/abstract_timer.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
-  %reldir%/core/abstract_timer.cpp  \
   %reldir%/static/timer_driver.cpp  \
   ${END}
 
