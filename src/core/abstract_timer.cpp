@@ -3,7 +3,6 @@
 
 #include "../precompiled.ipp"
 #include "abstract_timer.hpp"
-#include "../utils.hpp"
 
 namespace poseidon {
 

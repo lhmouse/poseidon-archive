@@ -45,6 +45,6 @@ class Abstract_Timer
       { return this->m_count.load();  }
   };
 
-}  // namespace
+}  // namespace poseidon
 
 #endif
