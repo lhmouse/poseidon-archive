@@ -387,5 +387,6 @@ do_exit_printf(exit_system_error, "meow\n");
   catch(exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.
     do_exit_printf(exit_system_error,
-        "%s\n[exception class `%s`]\n", stdex.what(), typeid(stdex).name());
+        "%s\n[exception class `%s`]\n",
+        stdex.what(), typeid(stdex).name());
   }

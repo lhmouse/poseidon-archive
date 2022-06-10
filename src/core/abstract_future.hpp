@@ -19,6 +19,11 @@ class Abstract_Future
     // Constructs an empty future.
     Abstract_Future() noexcept;
 
+  protected:
+    [[noreturn]]
+    void
+    do_throw_future_exception(const type_info& type, const exception_ptr* exptr) const;
+
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Future);
 

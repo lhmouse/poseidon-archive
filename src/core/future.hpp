@@ -5,6 +5,7 @@
 #define POSEIDON_CORE_FUTURE_
 
 #include "../fwd.hpp"
+#include "abstract_future.hpp"
 
 namespace poseidon {
 
@@ -26,36 +27,6 @@ class Future
     // Constructs an empty future.
     Future() noexcept;
 
-  private:
-    int
-    do_check_throw_common() const
-      {
-        switch(this->m_future_state.load()) {
-          case future_state_empty:
-            // Fail.
-            ::rocket::sprintf_and_throw<::std::invalid_argument>(
-                "Future: No value set\n"
-                "[value type `%s`]",
-                typeid(ValueT).name());
-
-          case future_state_value:
-            return 0;
-
-          case future_state_exception:
-            // Throw the caught exception.
-            if(this->m_exception[0])
-              ::std::rethrow_exception(this->m_exception[0]);
-            else
-              ::rocket::sprintf_and_throw<::std::invalid_argument>(
-                  "Future: Promise broken without an exception\n"
-                  "[value type `%s`]",
-                  typeid(ValueT).name());
-
-          default:
-            ::std::terminate();
-        }
-      }
-
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Future);
 
@@ -63,22 +34,24 @@ class Future
     typename ::std::add_lvalue_reference<const ValueT>::type
     value() const
       {
-        this->do_check_throw_common();
+        if(this->m_future_state.load() != future_state_value)
+          this->do_throw_future_exception(typeid(ValueT), this->m_exception);
 
         // The cast is necessary when `ValueT` is void.
-        return static_cast<typename
-           ::std::add_lvalue_reference<const ValueT>::type>(this->m_value[0]);
+        return static_cast<typename ::std::add_lvalue_reference<
+                   const ValueT>::type>(this->m_value[0]);
       }
 
     // Gets the value if one has been set, or throws an exception otherwise.
     typename ::std::add_lvalue_reference<ValueT>::type
     value()
       {
-        this->do_check_throw_common();
+        if(this->m_future_state.load() != future_state_value)
+          this->do_throw_future_exception(typeid(ValueT), this->m_exception);
 
         // The cast is necessary when `ValueT` is void.
-        return static_cast<typename
-           ::std::add_lvalue_reference<ValueT>::type>(this->m_value[0]);
+        return static_cast<typename ::std::add_lvalue_reference<
+                   ValueT>::type>(this->m_value[0]);
       }
 
     // Sets a value.
@@ -89,7 +62,6 @@ class Future
       {
         this->m_once.call(
           [&] {
-            // Construct the value.
             ROCKET_ASSERT(this->m_future_state.load() == future_state_empty);
             ::rocket::construct(this->m_value, ::std::forward<ParamsT>(params)...);
             this->m_future_state.store(future_state_value);
@@ -103,7 +75,6 @@ class Future
       {
         this->m_once.call(
           [&] {
-            // Construct the exception.
             ROCKET_ASSERT(this->m_future_state.load() == future_state_empty);
             ::rocket::construct(this->m_exception, exception_opt);
             this->m_future_state.store(future_state_exception);
@@ -136,7 +107,7 @@ Future<ValueT>::
         return;
 
       default:
-        ::std::terminate();
+        ROCKET_ASSERT(false);
     }
   }
 
