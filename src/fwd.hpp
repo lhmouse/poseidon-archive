@@ -137,10 +137,10 @@ extern class Async_Logger& async_logger;
 extern class Timer_Driver& timer_driver;
 extern class Fiber_Scheduler& fiber_scheduler;
 
-// Composes a string and submits it to the logger. In order to use these
-// macros, you still have to include <poseidon/static/async_logger.hpp>.
-// Otherwise there may be errors about incomplete types.
-#define POSEIDON_LOG_GENERIC(LEVEL, ...)  \
+// Composes a string and submits it to the logger.
+// Note that in order to use these macros, you still have to include
+// <poseidon/static/async_logger.hpp> and <asteria/utils.hpp>.
+#define POSEIDON_LOG_GENERIC(LEVEL, TEMPLATE, ...)  \
   (::poseidon::async_logger.enabled(::poseidon::log_level_##LEVEL)  \
    &&  \
    ([=](const char* f5zuNP3w) -> bool  \
@@ -154,7 +154,9 @@ extern class Fiber_Scheduler& fiber_scheduler;
          iQw3Zbsf.func = f5zuNP3w;  \
          \
          using ::rocket::format;  \
-         format(iQw3Zbsf.strm, "" __VA_ARGS__);  /* ADL intended  */  \
+         format(iQw3Zbsf.strm,  \
+             (::asteria::details_utils::join_strings TEMPLATE)  \
+             ,##__VA_ARGS__);  \
          \
          ::poseidon::async_logger.enqueue(::std::move(iQw3Zbsf));  \
          \
@@ -164,7 +166,9 @@ extern class Fiber_Scheduler& fiber_scheduler;
          return true;  \
        }  \
        catch(::std::exception& aJHPhv84) {  \
-         ::fprintf(stderr, "%s: Error writing log: %s\n", __func__, aJHPhv84.what());  \
+         ::fprintf(stderr,  \
+             "%s: Error writing log: %s\n", __func__, aJHPhv84.what());  \
+         \
          return false;  \
        }  \
      }  \

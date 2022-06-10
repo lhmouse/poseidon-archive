@@ -62,7 +62,7 @@ thread_loop()
     const int64_t now = do_monotonic_now();
     int64_t delta = this->m_pq.front().next - now;
     if(delta > 0) {
-      POSEIDON_LOG_TRACE("Timer driver waiting: $1 millisecond(s) remaining", delta);
+      POSEIDON_LOG_TRACE(("Timer driver waiting: $1 millisecond(s) remaining"), delta);
       this->m_pq_avail.wait_for(lock, delta);
       return;
     }
@@ -86,7 +86,7 @@ thread_loop()
 
     // Execute it.
     // Exceptions are ignored.
-    POSEIDON_LOG_TRACE("Executing timer `$1` (class `$2`)", timer.get(), typeid(*timer));
+    POSEIDON_LOG_TRACE(("Executing timer `$1` (class `$2`)"), timer.get(), typeid(*timer));
     timer->m_async_state.store(async_state_running);
     timer->m_count.xadd(1);
 
@@ -94,10 +94,10 @@ thread_loop()
       timer->do_abstract_timer_on_tick(now);
     }
     catch(exception& stdex) {
-      POSEIDON_LOG_WARN(
-          "Timer error: $1\n"
-          "[exception class `$2`]\n"
-          "[timer class `$3`]",
+      POSEIDON_LOG_WARN((
+          "Timer error: $1",
+          "[exception class `$2`]",
+          "[timer class `$3`]"),
           stdex.what(), typeid(stdex), typeid(*timer));
     }
 
@@ -110,19 +110,19 @@ insert(const shared_ptr<Abstract_Timer>& timer, int64_t delay, int64_t period)
   {
     // Validate arguments.
     if(!timer)
-      POSEIDON_THROW("Null timer pointer not valid");
+      POSEIDON_THROW(("Null timer pointer not valid"));
 
     if(delay < 0)
-      POSEIDON_THROW("Negative time delay not valid: $1", delay);
+      POSEIDON_THROW(("Negative time delay not valid: $1"), delay);
 
     if(delay > INT32_MAX)
-      POSEIDON_THROW("Time delay too large: $1", delay);
+      POSEIDON_THROW(("Time delay too large: $1"), delay);
 
     if(period < 0)
-      POSEIDON_THROW("Negative timer period not valid: $1", period);
+      POSEIDON_THROW(("Negative timer period not valid: $1"), period);
 
     if(period > INT32_MAX)
-      POSEIDON_THROW("Timer period too large: $1", period);
+      POSEIDON_THROW(("Timer period too large: $1"), period);
 
     // Calculate the end time point.
     Queued_Timer elem;

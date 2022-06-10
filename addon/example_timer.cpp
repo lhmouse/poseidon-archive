@@ -15,13 +15,13 @@ struct Example_Timer : Abstract_Timer
     explicit
     Example_Timer()
       {
-        POSEIDON_LOG_ERROR("example timer created");
+        POSEIDON_LOG_ERROR(("example timer created"));
       }
 
     void
     do_abstract_timer_on_tick(int64_t now) override
       {
-        POSEIDON_LOG_ERROR("example timer on tick: now = $1, count = $2", now, this->count());
+        POSEIDON_LOG_ERROR(("example timer: now = $1, count = $2"), now, this->count());
       }
   };
 

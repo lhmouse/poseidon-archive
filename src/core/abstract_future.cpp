@@ -23,9 +23,9 @@ do_throw_future_exception(const type_info& type, const exception_ptr* exptr) con
   {
     switch(this->m_future_state.load()) {
       case future_state_empty:
-        POSEIDON_THROW(
-            "No value has been set\n"
-            "[value type `$1`]",
+        POSEIDON_THROW((
+            "No value has been set",
+            "[value type `$1`]"),
             type);
 
       case future_state_value:
@@ -36,9 +36,9 @@ do_throw_future_exception(const type_info& type, const exception_ptr* exptr) con
         if(*exptr)
           ::std::rethrow_exception(*exptr);
         else
-          POSEIDON_THROW(
-              "Promise broken without an exception\n"
-              "[value type `$1`]",
+          POSEIDON_THROW((
+              "Promise broken without an exception",
+              "[value type `$1`]"),
               type);
 
       default:

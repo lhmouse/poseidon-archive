@@ -32,9 +32,9 @@ reload(const cow_string& file_path)
     // Resolve the path to an absolute one.
     ::rocket::unique_ptr<char, void (void*)> abs_path(::free);
     if(! abs_path.reset(::realpath(file_path.safe_c_str(), nullptr)))
-      POSEIDON_THROW(
-          "Could not resolve path '$2'\n"
-          "[`realpath()` failed: $1]",
+      POSEIDON_THROW((
+          "Could not resolve path '$2'",
+          "[`realpath()` failed: $1]"),
           format_errno(), file_path);
 
     // Read the file.
@@ -54,7 +54,7 @@ query(initializer_list<phsh_string> value_path) const
     // We would like to return a `Value`, so the path shall not be empty.
     auto pcur = value_path.begin();
     if(pcur == value_path.end())
-      POSEIDON_THROW("Empty path not valid");
+      POSEIDON_THROW(("Empty value path not valid"));
 
     // Resolve the first segment.
     auto parent = &(this->m_root);
@@ -73,9 +73,9 @@ query(initializer_list<phsh_string> value_path) const
         while(++pbak != pcur)
           vpstr << '.' << pbak->rdstr();
 
-        POSEIDON_THROW(
-            "Unexpected type of `$1` (expecting `object`, got `$2`)\n"
-            "[in configuration file '$3']",
+        POSEIDON_THROW((
+            "Unexpected type of `$1` (expecting `object`, got `$2`)",
+            "[in configuration file '$3']"),
             vpstr, ::asteria::describe_type(value->type()),
             this->m_path);
       }

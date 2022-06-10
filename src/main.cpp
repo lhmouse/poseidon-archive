@@ -191,9 +191,9 @@ do_set_working_directory()
       return;
 
     if(::chdir(cmdline.cd_here.safe_c_str()) != 0)
-      POSEIDON_THROW(
-          "Could not set working directory to '$2'\n"
-          "[`chdir()` failed: $1]",
+      POSEIDON_THROW((
+          "Could not set working directory to '$2'",
+          "[`chdir()` failed: $1]"),
           format_errno(), cmdline.cd_here);
   }
 
@@ -208,19 +208,19 @@ do_check_euid()
     if(value.is_boolean())
       permit_root_startup = value.as_boolean();
     else if(! value.is_null())
-      POSEIDON_LOG_WARN(
-          "Ignoring `general.permit_root_startup`: expecting `boolean`, got `$1`\n"
-          "[in configuration file '$2']",
+      POSEIDON_LOG_WARN((
+          "Ignoring `general.permit_root_startup`: expecting `boolean`, got `$1`",
+          "[in configuration file '$2']"),
           ::asteria::describe_type(value.type()), conf.path());
 
     if(! permit_root_startup && (::geteuid() == 0))
-      POSEIDON_THROW(
-          "Please do not start this program as root.\n"
+      POSEIDON_THROW((
+          "Please do not start this program as root.",
           "If you insist, you may set `general.permit_root_startup` in `$1` "
           "to `true` to bypass this check. Note that starting as root should be "
           "considered insecure. An unprivileged user should have been created "
-          "for this service.\n"
-          "You have been warned.",
+          "for this service.",
+          "You have been warned."),
           conf.path());
   }
 
@@ -254,9 +254,9 @@ do_write_pid_file()
     if(value.is_string())
       pid_file_path = value.as_string();
     else if(! value.is_null())
-      POSEIDON_LOG_WARN(
-          "Ignoring `general.permit_root_startup`: expecting `string`, got `$1`\n"
-          "[in configuration file '$2']",
+      POSEIDON_LOG_WARN((
+          "Ignoring `general.permit_root_startup`: expecting `string`, got `$1`",
+          "[in configuration file '$2']"),
           ::asteria::describe_type(value.type()), conf.path());
 
     if(pid_file_path.empty())
@@ -265,19 +265,19 @@ do_write_pid_file()
     // Create the lock file and lock it in exclusive mode before overwriting.
     ::rocket::unique_posix_fd pid_file(::close);
     if(! pid_file.reset(::creat(pid_file_path.safe_c_str(), 0644)))
-      POSEIDON_THROW(
-          "Could not create PID file '$2'\n"
-          "[`open()` failed: $1]",
+      POSEIDON_THROW((
+          "Could not create PID file '$2'",
+          "[`open()` failed: $1]"),
           format_errno(), pid_file_path.c_str());
 
     if(::flock(pid_file, LOCK_EX | LOCK_NB) != 0)
-      POSEIDON_THROW(
-          "Could not lock PID file '$2' because it is being locked by another process\n"
-          "[`flock()` failed: $1]",
+      POSEIDON_THROW((
+          "Could not lock PID file '$2' because it is being locked by another process",
+          "[`flock()` failed: $1]"),
           format_errno(), pid_file_path.c_str());
 
     // Write the PID of myself.
-    POSEIDON_LOG_DEBUG("Writing current process ID to '$1'", pid_file_path.c_str());
+    POSEIDON_LOG_DEBUG(("Writing current process ID to '$1'"), pid_file_path.c_str());
     ::dprintf(pid_file, "%d\n", (int) ::getpid());
 
     // Downgrade the lock so the PID may be read by others.
@@ -290,18 +290,17 @@ do_check_ulimits()
   {
     ::rlimit rlim;
     if((::getrlimit(RLIMIT_CORE, &rlim) == 0) && (rlim.rlim_cur <= 0))
-      POSEIDON_LOG_WARN(
-          "Core dumps are disabled. We highly suggest you enable them in "
-          "case of crashes.\n"
-          "See `/etc/security/limits.conf` for details.");
+      POSEIDON_LOG_WARN((
+          "Core dumps are disabled. We highly suggest you enable them in case of crashes.",
+          "See `/etc/security/limits.conf` for details."));
 
     if((::getrlimit(RLIMIT_NOFILE, &rlim) == 0) && (rlim.rlim_cur <= 10'000))
-      POSEIDON_LOG_WARN(
-          "The limit of number of open files (which is `$1`) is too low. "
+      POSEIDON_LOG_WARN((
+          "The limit of number of open files (which is `$1`) is too low.",
           "This might result in denial of service when there are too many "
           "simultaneous network connections. We suggest you set it to least "
-          "10,000 for production use.\n"
-          "See `/etc/security/limits.conf` for details.",
+          "10,000 for production use.",
+          "See `/etc/security/limits.conf` for details."),
           rlim.rlim_cur);
   }
 
@@ -317,9 +316,9 @@ do_load_addons()
     if(value.is_array())
       addons = value.as_array();
     else if(! value.is_null())
-      POSEIDON_LOG_WARN(
-          "Ignoring `addons`: expecting `array`, got `$1`\n"
-          "[in configuration file '$2']",
+      POSEIDON_LOG_WARN((
+          "Ignoring `addons`: expecting `array`, got `$1`",
+          "[in configuration file '$2']"),
           ::asteria::describe_type(value.type()), conf.path());
 
     for(const auto& addon : addons) {
@@ -328,28 +327,28 @@ do_load_addons()
       if(addon.is_string())
         path = addon.as_string();
       else if(! addon.is_null())
-        POSEIDON_LOG_WARN(
-            "Ignoring invalid path to add-on: $1\n"
-            "[in configuration file '$2']",
+        POSEIDON_LOG_WARN((
+            "Ignoring invalid path to add-on: $1",
+            "[in configuration file '$2']"),
             addon, conf.path());
 
       if(path.empty())
         continue;
 
-      POSEIDON_LOG_INFO("Loading add-on: $1", path);
+      POSEIDON_LOG_INFO(("Loading add-on: $1"), path);
 
       if(::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_NODELETE) == nullptr)
-        POSEIDON_LOG_ERROR(
-            "Failed to load add-on: $1\n"
-            "[`dlopen()` failed: $2]",
+        POSEIDON_LOG_ERROR((
+            "Failed to load add-on: $1",
+            "[`dlopen()` failed: $2]"),
             path, ::dlerror());
 
       count ++;
-      POSEIDON_LOG_INFO("Finished loading add-on: $1", path);
+      POSEIDON_LOG_INFO(("Finished loading add-on: $1"), path);
     }
 
     if(count == 0)
-      POSEIDON_LOG_FATAL("No add-on has been loaded. What's the job now?");
+      POSEIDON_LOG_FATAL(("No add-on has been loaded. What's the job now?"));
   }
 
 }  // namespace
@@ -371,7 +370,7 @@ main(int argc, char** argv)
     main_config.reload();
     async_logger.reload(main_config.copy());
 
-    POSEIDON_LOG_INFO("Starting up: " PACKAGE_STRING);
+    POSEIDON_LOG_INFO(("Starting up: " PACKAGE_STRING));
 
     do_check_euid();
     do_check_ulimits();
