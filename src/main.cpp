@@ -207,11 +207,11 @@ do_check_euid()
       permit_root_startup = value.as_boolean();
     else if(!value.is_null())
       POSEIDON_LOG_WARN((
-          "Ignoring `general.permit_root_startup`: expecting `boolean`, got `$1`",
+          "Ignoring `general.permit_root_startup`: expecting a `boolean`, got `$1`",
           "[in configuration file '$2']"),
-          ::asteria::describe_type(value.type()), conf.path());
+          value.type(), conf.path());
 
-    if(! permit_root_startup && (::geteuid() == 0))
+    if(!permit_root_startup && (::geteuid() == 0))
       POSEIDON_THROW((
           "Please do not start this program as root.",
           "If you insist, you may set `general.permit_root_startup` in `$1` "
@@ -253,16 +253,16 @@ do_write_pid_file()
       pid_file_path = value.as_string();
     else if(!value.is_null())
       POSEIDON_LOG_WARN((
-          "Ignoring `general.permit_root_startup`: expecting `string`, got `$1`",
+          "Ignoring `general.permit_root_startup`: expecting a `string`, got `$1`",
           "[in configuration file '$2']"),
-          ::asteria::describe_type(value.type()), conf.path());
+          value.type(), conf.path());
 
     if(pid_file_path.empty())
       return;
 
     // Create the lock file and lock it in exclusive mode before overwriting.
     ::rocket::unique_posix_fd pid_file(::close);
-    if(! pid_file.reset(::creat(pid_file_path.safe_c_str(), 0644)))
+    if(!pid_file.reset(::creat(pid_file_path.safe_c_str(), 0644)))
       POSEIDON_THROW((
           "Could not create PID file '$2'",
           "[`open()` failed: $1]"),
@@ -314,16 +314,16 @@ do_load_addons()
       addons = value.as_array();
     else if(!value.is_null())
       POSEIDON_LOG_WARN((
-          "Ignoring `addons`: expecting `array`, got `$1`",
+          "Ignoring `addons`: expecting an `array`, got `$1`",
           "[in configuration file '$2']"),
-          ::asteria::describe_type(value.type()), conf.path());
+          value.type(), conf.path());
 
     for(const auto& addon : addons) {
       cow_string path;
 
       if(addon.is_string())
         path = addon.as_string();
-      else if(! addon.is_null())
+      else if(!addon.is_null())
         POSEIDON_LOG_WARN((
             "Ignoring invalid path to add-on: $1",
             "[in configuration file '$2']"),

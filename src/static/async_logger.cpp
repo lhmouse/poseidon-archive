@@ -73,9 +73,9 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
       stream = value.as_string();
     else if(!value.is_null())
       POSEIDON_LOG_WARN((
-          "Ignoring `logger.levels.$1.stream`: expecting `string`, got `$2`",
+          "Ignoring `logger.levels.$1.stream`: expecting a `string`, got `$2`",
           "[in configuration file '$3']"),
-          name, ::asteria::describe_type(value.type()), file.path());
+          name, value.type(), file.path());
 
     if(! stream.empty()) {
       // Set special streams.
@@ -91,9 +91,9 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
         color = value.as_boolean();
       else if(!value.is_null())
         POSEIDON_LOG_WARN((
-            "Ignoring `logger.streams.$1.color`: expecting `boolean`, got `$2`",
+            "Ignoring `logger.streams.$1.color`: expecting a `boolean`, got `$2`",
             "[in configuration file '$3']"),
-            stream, ::asteria::describe_type(value.type()), file.path());
+            stream, value.type(), file.path());
 
       if(color < 0)
         color = (lconf.fd != -1) && ::isatty(lconf.fd);
@@ -105,9 +105,9 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
           lconf.color = value.as_string();
         else if(!value.is_null())
           POSEIDON_LOG_WARN((
-              "Ignoring `logger.levels.$1.color`: expecting `string`, got `$2`",
+              "Ignoring `logger.levels.$1.color`: expecting a `string`, got `$2`",
               "[in configuration file '$3']"),
-              name, ::asteria::describe_type(value.type()), file.path());
+              name, value.type(), file.path());
       }
 
       // Read the output file path.
@@ -116,9 +116,9 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
         lconf.file = value.as_string();
       else if(!value.is_null())
         POSEIDON_LOG_WARN((
-            "Ignoring `logger.streams.$1.file`: expecting `string`, got `$2`",
+            "Ignoring `logger.streams.$1.file`: expecting a `string`, got `$2`",
             "[in configuration file '$3']"),
-            stream, ::asteria::describe_type(value.type()), file.path());
+            stream, value.type(), file.path());
     }
 
     // Read verbosity settings.
@@ -127,9 +127,9 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
       lconf.trivial = value.as_boolean();
     else if(!value.is_null())
       POSEIDON_LOG_WARN((
-          "Ignoring `logger.levels.$1.trivial`: expecting `boolean`, got `$2`",
+          "Ignoring `logger.levels.$1.trivial`: expecting a `boolean`, got `$2`",
           "[in configuration file '$3']"),
-          name, ::asteria::describe_type(value.type()), file.path());
+          name, value.type(), file.path());
   }
 
 inline

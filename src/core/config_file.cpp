@@ -74,10 +74,9 @@ query(initializer_list<phsh_string> value_path) const
           vpstr << '.' << pbak->rdstr();
 
         POSEIDON_THROW((
-            "Unexpected type of `$1` (expecting `object`, got `$2`)",
+            "Unexpected type of `$1` (expecting an `object`, got `$2`)",
             "[in configuration file '$3']"),
-            vpstr, ::asteria::describe_type(value->type()),
-            this->m_path);
+            vpstr, *value, this->m_path);
       }
 
       // Descend into this child object.
