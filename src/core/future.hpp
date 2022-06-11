@@ -13,6 +13,10 @@ template<typename ValueT>
 class Future
   : public Abstract_Future
   {
+    using value_type       = ValueT;
+    using const_reference  = typename ::std::add_lvalue_reference<const ValueT>::type;
+    using reference        = typename ::std::add_lvalue_reference<ValueT>::type;
+
   private:
     union {
       // This member is active if `future_state() == future_state_value`.
@@ -27,31 +31,50 @@ class Future
     // Constructs an empty future.
     Future() noexcept;
 
+  private:
+    ROCKET_ALWAYS_INLINE
+    void
+    do_check_state_common() const
+      {
+        switch(this->m_future_state.load()) {
+          case future_state_empty:
+            ::rocket::sprintf_and_throw<::std::invalid_argument>(
+                "Future: No value set\n[value type `%s`]",
+                typeid(ValueT).name());
+
+          case future_state_value:
+            return;
+
+          case future_state_exception:
+            if(this->m_exptr[0])
+              ::std::rethrow_exception(this->m_exptr[0]);
+
+            ::rocket::sprintf_and_throw<::std::invalid_argument>(
+                "Future: Promise broken without an exception\n[value type `%s`]",
+                typeid(ValueT).name());
+
+          default:
+            ROCKET_ASSERT(false);
+        }
+      }
+
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Future);
 
     // Gets the value if one has been set, or throws an exception otherwise.
-    typename ::std::add_lvalue_reference<const ValueT>::type
+    const_reference
     value() const
       {
-        if(this->m_future_state.load() != future_state_value)
-          this->do_throw_future_exception(typeid(ValueT), this->m_exptr);
-
-        // The cast is necessary when `ValueT` is void.
-        return static_cast<typename ::std::add_lvalue_reference<
-                   const ValueT>::type>(this->m_value[0]);
+        this->do_check_state_common();
+        return static_cast<const_reference>(this->m_value[0]);
       }
 
     // Gets the value if one has been set, or throws an exception otherwise.
-    typename ::std::add_lvalue_reference<ValueT>::type
+    reference
     value()
       {
-        if(this->m_future_state.load() != future_state_value)
-          this->do_throw_future_exception(typeid(ValueT), this->m_exptr);
-
-        // The cast is necessary when `ValueT` is void.
-        return static_cast<typename ::std::add_lvalue_reference<
-                   ValueT>::type>(this->m_value[0]);
+        this->do_check_state_common();
+        return static_cast<reference>(this->m_value[0]);
       }
 
     // Sets a value.

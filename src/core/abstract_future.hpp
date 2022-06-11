@@ -19,11 +19,6 @@ class Abstract_Future
     // Constructs an empty future.
     Abstract_Future() noexcept;
 
-  protected:
-    [[noreturn]]
-    void
-    do_throw_future_exception(const type_info& type, const exception_ptr* exptr) const;
-
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Future);
 
@@ -33,6 +28,18 @@ class Abstract_Future
     Future_State
     future_state() const noexcept
       { return this->m_future_state.load();  }
+
+    bool
+    empty() const noexcept
+      { return this->m_future_state.load() == future_state_empty;  }
+
+    bool
+    has_value() const noexcept
+      { return this->m_future_state.load() == future_state_value;  }
+
+    bool
+    has_exception() const noexcept
+      { return this->m_future_state.load() == future_state_exception;  }
   };
 
 }  // namespace poseidon
