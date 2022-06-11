@@ -20,7 +20,7 @@ class Future
           ::std::is_void<ValueT>::value, int, ValueT>::type m_value[1];
 
       // This member is active if `future_state() == future_state_exception`.
-      exception_ptr m_exception[1];
+      exception_ptr m_exptr[1];
     };
 
   public:
@@ -35,7 +35,7 @@ class Future
     value() const
       {
         if(this->m_future_state.load() != future_state_value)
-          this->do_throw_future_exception(typeid(ValueT), this->m_exception);
+          this->do_throw_future_exception(typeid(ValueT), this->m_exptr);
 
         // The cast is necessary when `ValueT` is void.
         return static_cast<typename ::std::add_lvalue_reference<
@@ -47,7 +47,7 @@ class Future
     value()
       {
         if(this->m_future_state.load() != future_state_value)
-          this->do_throw_future_exception(typeid(ValueT), this->m_exception);
+          this->do_throw_future_exception(typeid(ValueT), this->m_exptr);
 
         // The cast is necessary when `ValueT` is void.
         return static_cast<typename ::std::add_lvalue_reference<
@@ -71,12 +71,12 @@ class Future
     // Sets an exception.
     // If a value or exception has already been set, this function does nothing.
     void
-    set_exception(const ::std::exception_ptr& exception_opt) noexcept
+    set_exception(const ::std::exception_ptr& exptr_opt) noexcept
       {
         this->m_once.call(
           [&] {
             ROCKET_ASSERT(this->m_future_state.load() == future_state_empty);
-            ::rocket::construct(this->m_exception, exception_opt);
+            ::rocket::construct(this->m_exptr, exptr_opt);
             this->m_future_state.store(future_state_exception);
           });
       }
@@ -103,7 +103,7 @@ Future<ValueT>::
 
       case future_state_exception:
         // Destroy the exception that has been constructed.
-        ::rocket::destroy(this->m_exception);
+        ::rocket::destroy(this->m_exptr);
         return;
 
       default:
