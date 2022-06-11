@@ -5,6 +5,7 @@
 #include "core/config_file.hpp"
 #include "static/main_config.hpp"
 #include "static/async_logger.hpp"
+#include "static/fiber_scheduler.hpp"
 #include "utils.hpp"
 #include <locale.h>
 #include <signal.h>
@@ -365,19 +366,22 @@ main(int argc, char** argv)
     do_set_working_directory();
     main_config.reload();
     async_logger.reload(main_config.copy());
-
-    POSEIDON_LOG_INFO(("Starting up: " PACKAGE_STRING));
+    POSEIDON_LOG_INFO(("Starting up: $1"), PACKAGE_STRING);
+    fiber_scheduler.reload(main_config.copy());
 
     do_check_euid();
     do_check_ulimits();
     do_init_signal_handlers();
     do_write_pid_file();
     do_load_addons();
+    POSEIDON_LOG_INFO(("Startup complete: $1"), PACKAGE_STRING);
 
-::sleep(100);
-do_exit_printf(exit_system_error, "meow\n");
-    // Schedule fibers until a termination signal is caught.
-//    Fiber_Scheduler::modal_loop(exit_sig);
+    // Schedule fibers until a signal has been received and the scheduler is empty.
+    while((exit_signal.load() == 0) || (fiber_scheduler.count() != 0))
+      fiber_scheduler.thread_loop();
+
+    POSEIDON_LOG_INFO(("Shutting down: $1"), PACKAGE_STRING);
+    do_exit_printf(exit_success, "");
   }
   catch(exception& stdex) {
     // Print the message in `stdex`. There isn't much we can do.
