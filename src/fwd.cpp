@@ -28,28 +28,29 @@ do_create_manager()
 template<class ManagerT>
 inline
 ManagerT&
-do_create_manager_with_thread(const char* name)
+do_create_manager_with_thread(const char* name = nullptr, bool allow_signals = false)
   {
     static ManagerT manager;
     static ::pthread_t thrd_handle;
     static char thrd_name[16];
+    static int thrd_signal_how = SIG_BLOCK;
 
     auto thrd_function = [](void*) -> void*
       {
         // Set thread information. Errors are ignored.
+        int oldst;
+        ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldst);
+
+        if(thrd_name[0] != 0)
+          ::pthread_setname_np(::pthread_self(), thrd_name);
+
         ::sigset_t sigset;
         ::sigemptyset(&sigset);
         ::sigaddset(&sigset, SIGINT);
         ::sigaddset(&sigset, SIGTERM);
         ::sigaddset(&sigset, SIGHUP);
         ::sigaddset(&sigset, SIGALRM);
-        ::pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
-
-        int oldst;
-        ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldst);
-
-        if(thrd_name[0] != 0)
-          ::pthread_setname_np(::pthread_self(), thrd_name);
+        ::pthread_sigmask(thrd_signal_how, &sigset, nullptr);
 
         // Enter an infinite loop.
         for(;;)
@@ -65,7 +66,10 @@ do_create_manager_with_thread(const char* name)
       };
 
     if(name)
-      ::memcpy(thrd_name, name, ::std::min(::strlen(name), sizeof(thrd_name)));
+      ::memcpy(thrd_name, name, ::std::min(::strlen(name), sizeof(thrd_name) - 1));
+
+    if(allow_signals)
+      thrd_signal_how = SIG_UNBLOCK;
 
     // Create the thread. It is never joined or detached.
     int err = ::pthread_create(&thrd_handle, nullptr, thrd_function, nullptr);
@@ -84,5 +88,6 @@ do_create_manager_with_thread(const char* name)
 Main_Config& main_config = do_create_manager<Main_Config>();
 Async_Logger& async_logger = do_create_manager_with_thread<Async_Logger>("logger");
 Timer_Driver& timer_driver = do_create_manager_with_thread<Timer_Driver>("timer");
+atomic_signal exit_signal;
 
 }  // namespace poseidon

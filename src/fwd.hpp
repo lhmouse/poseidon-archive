@@ -136,6 +136,7 @@ extern class Main_Config& main_config;
 extern class Async_Logger& async_logger;
 extern class Timer_Driver& timer_driver;
 extern class Fiber_Scheduler& fiber_scheduler;
+extern atomic_signal exit_signal;
 
 // Composes a string and submits it to the logger.
 // Note that in order to use these macros, you still have to include

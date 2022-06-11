@@ -72,9 +72,6 @@ Report bugs to <%s>.
     ::quick_exit(0);
   }
 
-// We want to detect Ctrl-C.
-atomic_signal exit_sig;
-
 // Define command-line options here.
 struct Command_Line_Options
   {
@@ -236,7 +233,7 @@ do_init_signal_handlers()
     ::sigaction(SIGPIPE, &sigact, nullptr);
 
     // Trap signals. Errors are ignored.
-    sigact.sa_handler = [](int n) { exit_sig.store(n);  };
+    sigact.sa_handler = [](int n) { exit_signal.store(n);  };
     ::sigaction(SIGINT, &sigact, nullptr);
     ::sigaction(SIGTERM, &sigact, nullptr);
     ::sigaction(SIGHUP, &sigact, nullptr);
