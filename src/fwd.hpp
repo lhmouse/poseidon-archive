@@ -152,11 +152,8 @@ extern class Fiber_Scheduler& fiber_scheduler;
          iQw3Zbsf.file = __FILE__;  \
          iQw3Zbsf.line = __LINE__;  \
          iQw3Zbsf.func = f5zuNP3w;  \
-         \
-         using ::rocket::format;  \
-         format(iQw3Zbsf.strm,  \
-             (::asteria::details_utils::join_strings TEMPLATE)  \
-             ,##__VA_ARGS__);  \
+         iQw3Zbsf.text = ::asteria::format_string(  \
+             (::asteria::make_string_template TEMPLATE), ##__VA_ARGS__);  \
          \
          ::poseidon::async_logger.enqueue(::std::move(iQw3Zbsf));  \
          \

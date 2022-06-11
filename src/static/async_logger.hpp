@@ -20,7 +20,7 @@ class Async_Logger
         const char* file;
         size_t line;
         const char* func;
-        tinyfmt_str strm;
+        cow_string text;
 
         // Users should not set these.
         char thrd_name[16];

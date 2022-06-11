@@ -231,7 +231,7 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Element& elem) n
     do_color(data, lconf, lconf.color.c_str());
     data += '\t';
 
-    for(char ch : elem.strm.get_string()) {
+    for(char ch : elem.text) {
       const char* seq = escapes[(uint8_t) ch];
       if(seq[1] == 0) {
         // non-escaped
