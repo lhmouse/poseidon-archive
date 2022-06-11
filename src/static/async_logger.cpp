@@ -75,7 +75,7 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
       POSEIDON_LOG_WARN((
           "Ignoring `logger.levels.$1.stream`: expecting a `string`, got `$2`",
           "[in configuration file '$3']"),
-          name, value.type(), file.path());
+          name, value, file.path());
 
     if(! stream.empty()) {
       // Set special streams.
@@ -93,7 +93,7 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
         POSEIDON_LOG_WARN((
             "Ignoring `logger.streams.$1.color`: expecting a `boolean`, got `$2`",
             "[in configuration file '$3']"),
-            stream, value.type(), file.path());
+            stream, value, file.path());
 
       if(color < 0)
         color = (lconf.fd != -1) && ::isatty(lconf.fd);
@@ -107,7 +107,7 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
           POSEIDON_LOG_WARN((
               "Ignoring `logger.levels.$1.color`: expecting a `string`, got `$2`",
               "[in configuration file '$3']"),
-              name, value.type(), file.path());
+              name, value, file.path());
       }
 
       // Read the output file path.
@@ -118,7 +118,7 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
         POSEIDON_LOG_WARN((
             "Ignoring `logger.streams.$1.file`: expecting a `string`, got `$2`",
             "[in configuration file '$3']"),
-            stream, value.type(), file.path());
+            stream, value, file.path());
     }
 
     // Read verbosity settings.
@@ -129,7 +129,7 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
       POSEIDON_LOG_WARN((
           "Ignoring `logger.levels.$1.trivial`: expecting a `boolean`, got `$2`",
           "[in configuration file '$3']"),
-          name, value.type(), file.path());
+          name, value, file.path());
   }
 
 inline

@@ -209,7 +209,7 @@ do_check_euid()
       POSEIDON_LOG_WARN((
           "Ignoring `general.permit_root_startup`: expecting a `boolean`, got `$1`",
           "[in configuration file '$2']"),
-          value.type(), conf.path());
+          value, conf.path());
 
     if(!permit_root_startup && (::geteuid() == 0))
       POSEIDON_THROW((
@@ -255,7 +255,7 @@ do_write_pid_file()
       POSEIDON_LOG_WARN((
           "Ignoring `general.permit_root_startup`: expecting a `string`, got `$1`",
           "[in configuration file '$2']"),
-          value.type(), conf.path());
+          value, conf.path());
 
     if(pid_file_path.empty())
       return;
@@ -316,7 +316,7 @@ do_load_addons()
       POSEIDON_LOG_WARN((
           "Ignoring `addons`: expecting an `array`, got `$1`",
           "[in configuration file '$2']"),
-          value.type(), conf.path());
+          value, conf.path());
 
     for(const auto& addon : addons) {
       cow_string path;
