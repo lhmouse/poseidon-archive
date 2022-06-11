@@ -65,7 +65,7 @@ query(initializer_list<phsh_string> value_path) const
       if(value->is_null())
         return ::asteria::null_value;
 
-      if(! value->is_object()) {
+      if(!value->is_object()) {
         // Fail.
         cow_string vpstr;
         auto pbak = value_path.begin();

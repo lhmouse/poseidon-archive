@@ -71,7 +71,7 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
     auto value = file.query("logger", "levels", name, "stream");
     if(value.is_string())
       stream = value.as_string();
-    else if(! value.is_null())
+    else if(!value.is_null())
       POSEIDON_LOG_WARN((
           "Ignoring `logger.levels.$1.stream`: expecting `string`, got `$2`",
           "[in configuration file '$3']"),
@@ -89,7 +89,7 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
       value = file.query("logger", "streams", stream, "color");
       if(value.is_boolean())
         color = value.as_boolean();
-      else if(! value.is_null())
+      else if(!value.is_null())
         POSEIDON_LOG_WARN((
             "Ignoring `logger.streams.$1.color`: expecting `boolean`, got `$2`",
             "[in configuration file '$3']"),
@@ -103,7 +103,7 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
         value = file.query("logger", "levels", name, "color");
         if(value.is_string())
           lconf.color = value.as_string();
-        else if(! value.is_null())
+        else if(!value.is_null())
           POSEIDON_LOG_WARN((
               "Ignoring `logger.levels.$1.color`: expecting `string`, got `$2`",
               "[in configuration file '$3']"),
@@ -114,7 +114,7 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
       value = file.query("logger", "streams", stream, "file");
       if(value.is_string())
         lconf.file = value.as_string();
-      else if(! value.is_null())
+      else if(!value.is_null())
         POSEIDON_LOG_WARN((
             "Ignoring `logger.streams.$1.file`: expecting `string`, got `$2`",
             "[in configuration file '$3']"),
@@ -125,7 +125,7 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
     value = file.query("logger", "levels", name, "trivial");
     if(value.is_boolean())
       lconf.trivial = value.as_boolean();
-    else if(! value.is_null())
+    else if(!value.is_null())
       POSEIDON_LOG_WARN((
           "Ignoring `logger.levels.$1.trivial`: expecting `boolean`, got `$2`",
           "[in configuration file '$3']"),

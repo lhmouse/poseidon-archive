@@ -204,7 +204,7 @@ do_check_euid()
     auto value = conf.query("general", "permit_root_startup");
     if(value.is_boolean())
       permit_root_startup = value.as_boolean();
-    else if(! value.is_null())
+    else if(!value.is_null())
       POSEIDON_LOG_WARN((
           "Ignoring `general.permit_root_startup`: expecting `boolean`, got `$1`",
           "[in configuration file '$2']"),
@@ -250,7 +250,7 @@ do_write_pid_file()
     auto value = conf.query("general", "pid_file_path");
     if(value.is_string())
       pid_file_path = value.as_string();
-    else if(! value.is_null())
+    else if(!value.is_null())
       POSEIDON_LOG_WARN((
           "Ignoring `general.permit_root_startup`: expecting `string`, got `$1`",
           "[in configuration file '$2']"),
@@ -312,7 +312,7 @@ do_load_addons()
     auto value = conf.query("addons");
     if(value.is_array())
       addons = value.as_array();
-    else if(! value.is_null())
+    else if(!value.is_null())
       POSEIDON_LOG_WARN((
           "Ignoring `addons`: expecting `array`, got `$1`",
           "[in configuration file '$2']"),
