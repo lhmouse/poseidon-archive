@@ -304,14 +304,14 @@ thread_loop()
 
     // Get configuration.
     lock.lock(this->m_conf_mutex);
-    const auto conf = this->m_conf;
+    const auto levels = this->m_conf_levels;
     lock.unlock();
 
     // Write all elements.
     for(const auto& elem : this->m_io_queue)
-      if(elem.level < conf.size())
-        if(! conf[elem.level].trivial || (this->m_io_queue.size() <= 1024U))
-          do_write_nothrow(conf[elem.level], elem);
+      if(elem.level < levels.size())
+        if((this->m_io_queue.size() <= 1024U) || !levels[elem.level].trivial)
+          do_write_nothrow(levels[elem.level], elem);
 
     this->m_io_queue.clear();
     io_lock.unlock();
@@ -323,24 +323,24 @@ Async_Logger::
 reload(const Config_File& file)
   {
     // Parse new configuration.
-    vector<Level_Config> conf(6);
-    uint32_t mask = 0;
+    vector<Level_Config> levels(6);
+    uint32_t level_mask = 0;
 
-    do_load_level_config(conf.at(log_level_trace), file, "trace");
-    do_load_level_config(conf.at(log_level_debug), file, "debug");
-    do_load_level_config(conf.at(log_level_info ), file, "info" );
-    do_load_level_config(conf.at(log_level_warn ), file, "warn" );
-    do_load_level_config(conf.at(log_level_error), file, "error");
-    do_load_level_config(conf.at(log_level_fatal), file, "fatal");
+    do_load_level_config(levels.at(log_level_trace), file, "trace");
+    do_load_level_config(levels.at(log_level_debug), file, "debug");
+    do_load_level_config(levels.at(log_level_info ), file, "info" );
+    do_load_level_config(levels.at(log_level_warn ), file, "warn" );
+    do_load_level_config(levels.at(log_level_error), file, "error");
+    do_load_level_config(levels.at(log_level_fatal), file, "fatal");
 
-    for(size_t k = 0;  k != conf.size();  ++k)
-      if((conf[k].fd != -1) || ! conf[k].file.empty())
-        mask |= 1U << k;
+    for(size_t k = 0;  k != levels.size();  ++k)
+      if((levels[k].fd != -1) || !levels[k].file.empty())
+        level_mask |= 1U << k;
 
     // Set up new data.
     plain_mutex::unique_lock lock(this->m_conf_mutex);
-    this->m_conf.swap(conf);
-    this->m_mask.store(mask);
+    this->m_conf_levels.swap(levels);
+    this->m_conf_level_mask.store(level_mask);
   }
 
 void
@@ -374,13 +374,13 @@ synchronize() noexcept
 
     // Get configuration.
     lock.lock(this->m_conf_mutex);
-    const auto conf = this->m_conf;
+    const auto levels = this->m_conf_levels;
     lock.unlock();
 
     // Write all elements.
     for(const auto& elem : this->m_io_queue)
-      if(elem.level < conf.size())
-        do_write_nothrow(conf[elem.level], elem);
+      if(elem.level < levels.size())
+        do_write_nothrow(levels[elem.level], elem);
 
     this->m_io_queue.clear();
     io_lock.unlock();

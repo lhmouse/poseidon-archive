@@ -30,8 +30,8 @@ class Async_Logger
   private:
     mutable plain_mutex m_conf_mutex;
     struct Level_Config;
-    vector<Level_Config> m_conf;
-    atomic_relaxed<uint32_t> m_mask;
+    vector<Level_Config> m_conf_levels;
+    atomic_relaxed<uint32_t> m_conf_level_mask;
 
     mutable plain_mutex m_queue_mutex;
     vector<Element> m_queue;
@@ -64,7 +64,7 @@ class Async_Logger
     bool
     enabled(Log_Level level) const noexcept
       {
-        return (level < 16U) && (this->m_mask.load() >> level & 1U);
+        return (level <= 15U) && (this->m_conf_level_mask.load() >> level & 1U);
       }
 
     // Enqueues a log message.
