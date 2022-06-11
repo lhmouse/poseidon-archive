@@ -16,7 +16,17 @@ using ::asteria::weaken_enum;
 using ::asteria::generate_random_seed;
 using ::asteria::format_errno;
 
-#define POSEIDON_THROW(...)   ASTERIA_THROW(__VA_ARGS__)
+// Throws an exception, with backtraces.
+[[noreturn]]
+void
+throw_runtime_error_with_backtrace(const char* file, long line, const char* func, cow_string&& msg);
+
+#define POSEIDON_THROW(TEMPLATE, ...)  \
+    (::poseidon::throw_runtime_error_with_backtrace(__FILE__, __LINE__, __func__,  \
+       ::asteria::format_string(  \
+         (::asteria::make_string_template TEMPLATE), ##__VA_ARGS__)  \
+       ),  \
+     __builtin_unreachable())
 
 // Converts all ASCII letters in a string into uppercase.
 cow_string

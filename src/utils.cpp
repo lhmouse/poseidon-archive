@@ -3,8 +3,70 @@
 
 #include "precompiled.ipp"
 #include "utils.hpp"
+#include <execinfo.h>  // backtrace();
 
 namespace poseidon {
+
+void
+throw_runtime_error_with_backtrace(const char* file, long line, const char* func, cow_string&& msg)
+  {
+    // Compose the string to throw.
+    cow_string data;
+    data.reserve(2047);
+
+    // Append the function name.
+    data += func;
+    data += ": ";
+
+    // Append the user-provided exception message.
+    data.append(msg.begin(), msg.end());
+
+    // Remove trailing space characters.
+    size_t pos = data.find_last_not_of(" \f\n\r\t\v");
+    data.erase(pos + 1);
+    data += "\n";
+
+    // Append the source location.
+    data += "[thrown from '";
+    data += file;
+    data += ':';
+    ::rocket::ascii_numput nump;
+    nump.put_DU((unsigned long) line);
+    data.append(nump.data(), nump.size());
+    data += "']";
+
+    // Backtrace frames.
+    ::rocket::unique_ptr<char*, void (void*)> bt_syms(::free);
+
+    array<void*, 32> bt_frames;
+    int nframes = ::backtrace(bt_frames.data(), (int) bt_frames.size());
+    if(nframes > 0)
+      bt_syms.reset(::backtrace_symbols(bt_frames.data(), nframes));
+
+    if(bt_syms) {
+      // Determine the width of the frame index field.
+      nump.put_DU((uint32_t) nframes - 1);
+      static_vector<char, 24> sbuf(nump.size(), ' ');
+      sbuf.emplace_back();
+
+      // Append stack frames.
+      data += "\n[backtrace frames:\n  ";
+      for(size_t k = 0;  k != (uint32_t) nframes;  ++k) {
+        nump.put(k);
+        ::std::reverse_copy(nump.begin(), nump.end(), sbuf.mut_rbegin() + 1);
+        data += sbuf.data();
+        data += ") ";
+        data += bt_syms[k];
+        data += "\n  ";
+      }
+      data += "-- end of backtrace frames]";
+    }
+    else
+      data += "\n[no backtrace available]";
+
+    // Throw it.
+    throw ::std::runtime_error(data.c_str());
+  }
 
 cow_string
 ascii_uppercase(cow_string text)
