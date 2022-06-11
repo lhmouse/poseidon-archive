@@ -364,13 +364,13 @@ synchronize() noexcept
   {
     // Get all pending elements.
     plain_mutex::unique_lock lock(this->m_queue_mutex);
+    if(this->m_queue.empty())
+      return;
+
     plain_mutex::unique_lock io_lock(this->m_io_mutex);
     this->m_io_queue.clear();
     this->m_io_queue.swap(this->m_queue);
     lock.unlock();
-
-    if(this->m_io_queue.empty())
-      return;
 
     // Get configuration.
     lock.lock(this->m_conf_mutex);
