@@ -140,7 +140,8 @@ extern atomic_signal exit_signal;
 
 // Composes a string and submits it to the logger.
 // Note that in order to use these macros, you still have to include
-// <poseidon/static/async_logger.hpp> and <asteria/utils.hpp>.
+// <poseidon/static/async_logger.hpp>; otherwise there may be errors
+// about incomplete types.
 #define POSEIDON_LOG_GENERIC(LEVEL, TEMPLATE, ...)  \
   (::poseidon::async_logger.enabled(::poseidon::log_level_##LEVEL)  \
    &&  \
