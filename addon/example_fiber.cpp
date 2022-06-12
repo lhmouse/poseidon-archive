@@ -3,7 +3,7 @@
 
 #include "../src/precompiled.ipp"
 #include "../src/core/abstract_fiber.hpp"
-#include "../src/core/promise.hpp"
+#include "../src/core/future.hpp"
 #include "../src/static/fiber_scheduler.hpp"
 #include "../src/core/abstract_timer.hpp"
 #include "../src/static/timer_driver.hpp"
@@ -13,80 +13,72 @@
 namespace {
 using namespace poseidon;
 
-struct Promise_Timer : Abstract_Timer
+struct Future_Timer : Abstract_Timer
   {
-    Promise<int> prom;
     int64_t value;
+    shared_ptr<Future<int>> futr;
 
     explicit
-    Promise_Timer(int64_t seconds)
-      : Abstract_Timer(seconds * 1000, 0),
-        value(seconds)
+    Future_Timer(int64_t x)
+      : value(x), futr(::std::make_shared<Future<int>>())
       {
-        POSEIDON_LOG_FATAL("new timer `$1`", this);
-
-        // create the future
-        this->prom.future();
+        POSEIDON_LOG_FATAL(("new timer `$1`"), this);
       }
 
-    ~Promise_Timer() override
+    ~Future_Timer()
       {
-        POSEIDON_LOG_FATAL("delete timer `$1`", this);
+        POSEIDON_LOG_FATAL(("delete timer `$1`"), this);
       }
 
     void
-    do_abstract_timer_interval(int64_t /*now*/) override
+    do_abstract_timer_on_tick(int64_t /*now*/) override
       {
-        POSEIDON_LOG_FATAL("set promise: $1", this->value);
-        this->prom.set_value(this->value);
+        POSEIDON_LOG_FATAL(("timer sets value: $1"), this->value);
+        this->futr->set_value(this->value);
       }
   };
 
 struct Example_Fiber : Abstract_Fiber
   {
-    int64_t value;
+    int value;
 
     explicit
-    Example_Fiber(int64_t seconds)
+    Example_Fiber(int seconds)
       : value(seconds)
       {
-        POSEIDON_LOG_ERROR("new fiber `$1`: $2", this, this->value);
+        POSEIDON_LOG_ERROR(("new fiber `$1`: $2"), this, this->value);
       }
 
     ~Example_Fiber() override
       {
-        POSEIDON_LOG_ERROR("delete fiber `$1`: $2", this, this->value);
+        POSEIDON_LOG_ERROR(("delete fiber `$1`: $2"), this, this->value);
       }
 
     void
-    do_abstract_fiber_execute()
+    do_abstract_fiber_on_execution() override
       {
-        POSEIDON_LOG_WARN("fiber `$1`: init", this);
+        POSEIDON_LOG_WARN(("fiber `$1`: init"), this);
 
-        auto timer = Timer_Driver::insert(::rocket::make_unique<Promise_Timer>(this->value));
-        auto futr = ::rocket::static_pointer_cast<Promise_Timer>(timer)->prom.future();
-        Fiber_Scheduler::yield(futr);
-        POSEIDON_LOG_WARN("fiber `$1`: value = $2", this, futr->value());
+        auto timer = ::std::make_shared<Future_Timer>(this->value);
+        timer_driver.insert(timer, this->value, 0);  // delay = value, period = 0
+        fiber_scheduler.yield(timer->futr);
+        POSEIDON_LOG_WARN(("fiber `$1`: first pass: value = $2"), this, timer->futr->value());
 
-        timer = Timer_Driver::insert(::rocket::make_unique<Promise_Timer>(this->value + 3));
-        futr = ::rocket::static_pointer_cast<Promise_Timer>(timer)->prom.future();
-        Fiber_Scheduler::yield(futr);
-        POSEIDON_LOG_WARN("fiber `$1`: value = $2", this, futr->value());
+        timer = ::std::make_shared<Future_Timer>(this->value);
+        timer_driver.insert(timer, this->value + 6, 0);  // delay = value + 6, period = 0
+        fiber_scheduler.yield(timer->futr);
+        POSEIDON_LOG_WARN(("fiber `$1`: second pass: value = $2"), this, timer->futr->value());
       }
   };
 
-const auto plain =
+struct Init
   {
-    Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(1)),
-    Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(2)),
-    Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(3)),
-  };
-
-const auto resident =
-  {
-    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(1))->set_resident(), 1),
-    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(2))->set_resident(), 1),
-    (Fiber_Scheduler::insert(::rocket::make_unique<Example_Fiber>(3))->set_resident(), 1),
-  };
+    Init()
+      {
+        for(int k = 1;  k <= 5;  ++k)
+          fiber_scheduler.insert(::std::make_unique<Example_Fiber>(k));
+      }
+  }
+  const init;
 
 }  // namespace

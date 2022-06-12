@@ -37,15 +37,6 @@ class Fiber_Scheduler
     void
     thread_loop();
 
-    // Gets the current fiber if one is being scheduled.
-    // This function shall be called from the same thread as `thread_loop()`.
-    ROCKET_CONST
-    Abstract_Fiber*
-    self_opt() const noexcept
-      {
-        return this->m_exec_self_opt;
-      }
-
     // Reloads configuration from 'main.conf'.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
@@ -62,6 +53,23 @@ class Fiber_Scheduler
     // This function is thread-safe.
     void
     insert(unique_ptr<Abstract_Fiber>&& fiber);
+
+    // Gets the current fiber if one is being scheduled.
+    // This function shall be called from the same thread as `thread_loop()`.
+    ROCKET_CONST
+    Abstract_Fiber*
+    self_opt() const noexcept
+      {
+        return this->m_exec_self_opt;
+      }
+
+    // Suspends the current fiber until a future becomes satisfied. `self_opt()`
+    // must not return a null pointer when this function is called. If no future
+    // is specified, this function relinquishes the current time slice, similar
+    // to `sched_yield()`. Suspension may not exceed `fiber.fail_timeout` in
+    // 'main.conf'.
+    void
+    yield(const shared_ptr<Abstract_Future>& futr_opt = nullptr);
   };
 
 }  // namespace poseidon
