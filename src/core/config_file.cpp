@@ -31,7 +31,7 @@ reload(const cow_string& file_path)
   {
     // Resolve the path to an absolute one.
     ::rocket::unique_ptr<char, void (void*)> abs_path(::free);
-    if(! abs_path.reset(::realpath(file_path.safe_c_str(), nullptr)))
+    if(!abs_path.reset(::realpath(file_path.safe_c_str(), nullptr)))
       POSEIDON_THROW((
           "Could not resolve path to configuration file '$2'",
           "[`realpath()` failed: $1]"),
