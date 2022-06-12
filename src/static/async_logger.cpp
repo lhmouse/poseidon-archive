@@ -77,7 +77,7 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
           "[in configuration file '$3']"),
           name, value, file.path());
 
-    if(! stream.empty()) {
+    if(!stream.empty()) {
       // Set special streams.
       if(stream == ::rocket::sref("stdout"))
         lconf.fd = STDOUT_FILENO;
@@ -136,7 +136,7 @@ inline
 void
 do_color(cow_string& data, const Level_Config& lconf, const char* code)
   {
-    if(! lconf.color.empty())
+    if(!lconf.color.empty())
       data << "\x1B[" << code << "m";
   }
 
@@ -254,7 +254,7 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Element& elem) n
     do_color(data, lconf, "0");  // reset
 
     // Write text to streams. Errors are ignored.
-    if(! lconf.file.empty()) {
+    if(!lconf.file.empty()) {
       ::rocket::unique_posix_fd ofd(::close);
       if(ofd.reset(::open(lconf.file.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644)))
         do_write_loop(ofd, data);
