@@ -95,7 +95,7 @@ thread_loop()
 
     // Execute it.
     // Exceptions are ignored.
-    POSEIDON_LOG_TRACE(("Executing timer `$1` (class `$2`)"), timer.get(), typeid(*timer));
+    POSEIDON_LOG_TRACE(("Executing timer `$1` (class `$2`)"), timer, typeid(*timer));
     timer->m_async_state.store(async_state_running);
     timer->m_count.xadd(1);
 
