@@ -21,10 +21,10 @@ class Future
     union {
       // This member is active if `future_state() == future_state_value`.
       typename ::std::conditional<
-          ::std::is_void<ValueT>::value, int, ValueT>::type m_value[1];
+          ::std::is_void<ValueT>::value, int, ValueT>::type m_value;
 
       // This member is active if `future_state() == future_state_exception`.
-      exception_ptr m_exptr[1];
+      exception_ptr m_exptr;
     };
 
   public:
@@ -46,8 +46,8 @@ class Future
             return;
 
           case future_state_exception:
-            if(this->m_exptr[0])
-              ::std::rethrow_exception(this->m_exptr[0]);
+            if(this->m_exptr)
+              ::std::rethrow_exception(this->m_exptr);
 
             ::rocket::sprintf_and_throw<::std::invalid_argument>(
                 "Future: Promise broken without an exception\n[value type `%s`]",
@@ -66,7 +66,7 @@ class Future
     value() const
       {
         this->do_check_state_common();
-        return static_cast<const_reference>(this->m_value[0]);
+        return static_cast<const_reference>(this->m_value);
       }
 
     // Gets the value if one has been set, or throws an exception otherwise.
@@ -74,7 +74,7 @@ class Future
     value()
       {
         this->do_check_state_common();
-        return static_cast<reference>(this->m_value[0]);
+        return static_cast<reference>(this->m_value);
       }
 
     // Sets a value.
@@ -86,7 +86,7 @@ class Future
         this->m_once.call(
           [&] {
             ROCKET_ASSERT(this->m_future_state.load() == future_state_empty);
-            ::rocket::construct(this->m_value, ::std::forward<ParamsT>(params)...);
+            ::rocket::construct(::std::addressof(this->m_value), ::std::forward<ParamsT>(params)...);
             this->m_future_state.store(future_state_value);
           });
       }
@@ -99,7 +99,7 @@ class Future
         this->m_once.call(
           [&] {
             ROCKET_ASSERT(this->m_future_state.load() == future_state_empty);
-            ::rocket::construct(this->m_exptr, exptr_opt);
+            ::rocket::construct(::std::addressof(this->m_exptr), exptr_opt);
             this->m_future_state.store(future_state_exception);
           });
       }
@@ -121,12 +121,12 @@ Future<ValueT>::
 
       case future_state_value:
         // Destroy the value that has been constructed.
-        ::rocket::destroy(this->m_value);
+        ::rocket::destroy(::std::addressof(this->m_value));
         return;
 
       case future_state_exception:
         // Destroy the exception that has been constructed.
-        ::rocket::destroy(this->m_exptr);
+        ::rocket::destroy(::std::addressof(this->m_exptr));
         return;
 
       default:
