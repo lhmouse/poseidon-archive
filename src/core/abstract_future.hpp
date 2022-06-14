@@ -10,8 +10,10 @@ namespace poseidon {
 
 class Abstract_Future
   {
-  protected:
+  private:
+    template<typename> friend class Future;;
     friend class Fiber_Scheduler;
+
     mutable plain_mutex m_mutex;
     atomic_acq_rel<Future_State> m_future_state = { future_state_empty };
     vector<weak_ptr<atomic_relaxed<int64_t>>> m_waiters;
@@ -20,7 +22,7 @@ class Abstract_Future
     // Constructs an empty future.
     Abstract_Future() noexcept;
 
-  protected:
+  private:
     void
     do_abstract_future_check_value(const char* type, const exception_ptr* exptr) const;
 

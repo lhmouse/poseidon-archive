@@ -13,6 +13,7 @@ class Abstract_Fiber
   {
   protected:
     friend class Fiber_Scheduler;
+
     atomic_relaxed<Async_State> m_async_state = { async_state_pending };
 
     // These are internal data for the scheduler.
