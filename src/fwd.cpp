@@ -36,7 +36,7 @@ do_create_manager_with_thread(const char* name = nullptr, bool allow_signals = f
     static char thrd_name[16];
     static int thrd_signal_how = SIG_BLOCK;
 
-    auto thrd_function = [](void*) -> void*
+    auto thrd_function = +[](void*) -> void*
       {
         // Set thread information. Errors are ignored.
         int oldst;
