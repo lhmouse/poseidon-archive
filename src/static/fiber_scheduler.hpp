@@ -6,6 +6,7 @@
 
 #include "../fwd.hpp"
 #include "../core/config_file.hpp"
+#include <ucontext.h>  // ucontext_t
 
 namespace poseidon {
 
@@ -19,11 +20,15 @@ class Fiber_Scheduler
     uint32_t m_conf_warn_timeout = 0;
     uint32_t m_conf_fail_timeout = 0;
 
-    mutable plain_mutex m_sched_mutex;
-    vector<unique_ptr<Abstract_Fiber>> m_sched_queue;
+    mutable plain_mutex m_queue_mutex;
+    struct Queued_Fiber;
+    vector<shared_ptr<Queued_Fiber>> m_queue;
 
-    mutable plain_mutex m_exec_mutex;
-    Abstract_Fiber* m_exec_self_opt = nullptr;
+    mutable plain_mutex m_sched_mutex;
+    weak_ptr<Queued_Fiber> m_sched_self_opt;
+    void* m_sched_asan_save;  // private data for address sanitizer
+    ::ucontext_t m_sched_outer[1];  // yield target
+    long m_sched_wait_ns = 0;
 
   public:
     // Constructs an empty scheduler.
@@ -58,10 +63,7 @@ class Fiber_Scheduler
     // This function shall be called from the same thread as `thread_loop()`.
     ROCKET_CONST
     Abstract_Fiber*
-    self_opt() const noexcept
-      {
-        return this->m_exec_self_opt;
-      }
+    self_opt() const noexcept;
 
     // Suspends the current fiber until a future becomes satisfied. `self_opt()`
     // must not return a null pointer when this function is called. If no future

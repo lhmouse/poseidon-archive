@@ -5,21 +5,15 @@
 #define POSEIDON_CORE_ABSTRACT_FIBER_
 
 #include "../fwd.hpp"
-#include <ucontext.h>  // ucontext_t
 
 namespace poseidon {
 
 class Abstract_Fiber
   {
-  protected:
+  private:
     friend class Fiber_Scheduler;
 
     atomic_relaxed<Async_State> m_async_state = { async_state_pending };
-
-    // These are internal data for the scheduler.
-    ::ucontext_t m_sched_uctx[1];
-    int64_t m_sched_timeout;
-    int64_t m_sched_yield_since;
 
   public:
     // Constructs an empty fiber.
