@@ -21,42 +21,15 @@ class Future
     union {
       // This member is active if `future_state() == future_state_value`.
       typename ::std::conditional<
-          ::std::is_void<ValueT>::value, int, ValueT>::type m_value;
+          ::std::is_void<ValueT>::value, int, ValueT>::type m_value[1];
 
       // This member is active if `future_state() == future_state_exception`.
-      exception_ptr m_exptr;
+      exception_ptr m_exptr[1];
     };
 
   public:
     // Constructs an empty future.
     Future() noexcept;
-
-  private:
-    ROCKET_ALWAYS_INLINE
-    void
-    do_check_state_common() const
-      {
-        switch(this->m_future_state.load()) {
-          case future_state_empty:
-            ::rocket::sprintf_and_throw<::std::invalid_argument>(
-                "Future: No value set\n[value type `%s`]",
-                typeid(ValueT).name());
-
-          case future_state_value:
-            return;
-
-          case future_state_exception:
-            if(this->m_exptr)
-              ::std::rethrow_exception(this->m_exptr);
-
-            ::rocket::sprintf_and_throw<::std::invalid_argument>(
-                "Future: Promise broken without an exception\n[value type `%s`]",
-                typeid(ValueT).name());
-
-          default:
-            ROCKET_ASSERT(false);
-        }
-      }
 
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Future);
@@ -65,43 +38,57 @@ class Future
     const_reference
     value() const
       {
-        this->do_check_state_common();
-        return static_cast<const_reference>(this->m_value);
+        // If no value has been set, throw an exception.
+        if(this->m_future_state.load() != future_state_value)
+          this->do_abstract_future_check_value(typeid(ValueT).name(), this->m_exptr);
+
+        // This cast is necessary when `const_reference` is void.
+        return (const_reference) this->m_value[0];
       }
 
     // Gets the value if one has been set, or throws an exception otherwise.
     reference
     value()
       {
-        this->do_check_state_common();
-        return static_cast<reference>(this->m_value);
+        // If no value has been set, throw an exception.
+        if(this->m_future_state.load() != future_state_value)
+          this->do_abstract_future_check_value(typeid(ValueT).name(), this->m_exptr);
+
+        // This cast is necessary when `reference` is void.
+        return (reference) this->m_value[0];
       }
 
     // Sets a value.
-    // If a value or exception has already been set, this function does nothing.
     template<typename... ParamsT>
     void
     set_value(ParamsT&&... params)
       {
-        this->m_once.call(
-          [&] {
-            ROCKET_ASSERT(this->m_future_state.load() == future_state_empty);
-            ::rocket::construct(::std::addressof(this->m_value), ::std::forward<ParamsT>(params)...);
-            this->m_future_state.store(future_state_value);
-          });
+        // If a value or exception has already been set, this function shall
+        // do nothing.
+        plain_mutex::unique_lock lock(this->m_mutex);
+        if(this->m_future_state.load() != future_state_empty)
+          return;
+
+        // Construct the value.
+        ::rocket::construct(this->m_value, ::std::forward<ParamsT>(params)...);
+        this->m_future_state.store(future_state_value);
+        this->do_abstract_future_signal_nolock();
       }
 
     // Sets an exception.
-    // If a value or exception has already been set, this function does nothing.
     void
     set_exception(const ::std::exception_ptr& exptr_opt) noexcept
       {
-        this->m_once.call(
-          [&] {
-            ROCKET_ASSERT(this->m_future_state.load() == future_state_empty);
-            ::rocket::construct(::std::addressof(this->m_exptr), exptr_opt);
-            this->m_future_state.store(future_state_exception);
-          });
+        // If a value or exception has already been set, this function shall
+        // do nothing.
+        plain_mutex::unique_lock lock(this->m_mutex);
+        if(this->m_future_state.load() != future_state_empty)
+          return;
+
+        // Construct the exception pointer.
+        ::rocket::construct(this->m_exptr, exptr_opt);
+        this->m_future_state.store(future_state_exception);
+        this->do_abstract_future_signal_nolock();
       }
   };
 
@@ -117,20 +104,17 @@ Future<ValueT>::
   {
     switch(this->m_future_state.load()) {
       case future_state_empty:
-        return;
+        break;
 
       case future_state_value:
         // Destroy the value that has been constructed.
-        ::rocket::destroy(::std::addressof(this->m_value));
-        return;
+        ::rocket::destroy(this->m_value);
+        break;
 
       case future_state_exception:
         // Destroy the exception that has been constructed.
-        ::rocket::destroy(::std::addressof(this->m_exptr));
-        return;
-
-      default:
-        ROCKET_ASSERT(false);
+        ::rocket::destroy(this->m_exptr);
+        break;
     }
   }
 

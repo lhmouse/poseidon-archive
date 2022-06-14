@@ -12,12 +12,20 @@ class Abstract_Future
   {
   protected:
     friend class Fiber_Scheduler;
-    once_flag m_once;
+    mutable plain_mutex m_mutex;
     atomic_acq_rel<Future_State> m_future_state = { future_state_empty };
+    vector<weak_ptr<atomic_relaxed<int64_t>>> m_waiters;
 
   public:
     // Constructs an empty future.
     Abstract_Future() noexcept;
+
+  protected:
+    void
+    do_abstract_future_check_value(const char* type, const exception_ptr* exptr) const;
+
+    void
+    do_abstract_future_signal_nolock() noexcept;
 
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Future);

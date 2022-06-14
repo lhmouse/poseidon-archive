@@ -17,4 +17,39 @@ Abstract_Future::
   {
   }
 
+void
+Abstract_Future::
+do_abstract_future_check_value(const char* type, const exception_ptr* exptr) const
+  {
+    switch(this->m_future_state.load()) {
+      case future_state_empty:
+        POSEIDON_THROW((
+            "No value set",
+            "[value type was `$1`]"),
+            type);
+
+      case future_state_value:
+        break;
+
+      case future_state_exception:
+        // `exptr` shall point to an initialized exception pointer here.
+        if(*exptr)
+          rethrow_exception(*exptr);
+
+        POSEIDON_THROW((
+            "Promise brkoen without an exception",
+            "[value type was `$1`]"),
+            type);
+    }
+  }
+
+void
+Abstract_Future::
+do_abstract_future_signal_nolock() noexcept
+  {
+    for(const auto& wp : this->m_waiters)
+      if(auto time = wp.lock())
+        time->store(0);
+  }
+
 }  // namespace poseidon
