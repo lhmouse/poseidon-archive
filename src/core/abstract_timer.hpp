@@ -14,9 +14,7 @@ class Abstract_Timer
     friend class Timer_Driver;
     atomic_relaxed<Async_State> m_async_state = { async_state_pending };
     atomic_relaxed<uint64_t> m_count = { 0 };
-
-    // These fields are used internally by the timer driver.
-    uint64_t m_serial;
+    uint64_t m_serial;  // used by timer driver
 
   public:
     // Constructs a timer whose count is zero.
