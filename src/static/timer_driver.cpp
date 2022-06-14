@@ -21,6 +21,7 @@ struct Queued_Timer
 
 struct Timer_Comparator
   {
+    // We have to build a minheap here.
     bool
     operator()(const Queued_Timer& lhs, const Queued_Timer& rhs) noexcept
       { return lhs.next > rhs.next;  }
