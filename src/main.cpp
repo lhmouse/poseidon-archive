@@ -358,6 +358,7 @@ main(int argc, char** argv)
     ::setlocale(LC_ALL, "C.UTF-8");
     ::tzset();
     ::pthread_setname_np(::pthread_self(), PACKAGE);
+    ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &::opterr);
 
     // Note that this function shall not return in case of errors.
     do_parse_command_line(argc, argv);
