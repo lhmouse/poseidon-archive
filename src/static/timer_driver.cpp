@@ -19,12 +19,21 @@ struct Queued_Timer
     int64_t period;
   };
 
-inline
-bool
-operator<(const Queued_Timer& lhs, const Queued_Timer& rhs) noexcept
+struct Timer_Comparator
   {
-    return lhs.next > rhs.next;
+    bool
+    operator()(const Queued_Timer& lhs, const Queued_Timer& rhs) noexcept
+      { return lhs.next > rhs.next;  }
+
+    bool
+    operator()(const Queued_Timer& lhs, int64_t rhs) noexcept
+      { return lhs.next > rhs;  }
+
+    bool
+    operator()(int64_t lhs, const Queued_Timer& rhs) noexcept
+      { return lhs > rhs.next;  }
   }
+  constexpr timer_comparator;
 
 int64_t
 do_monotonic_now() noexcept
@@ -66,7 +75,7 @@ thread_loop()
       this->m_pq_avail.wait_for(lock, delta);
       return;
     }
-    ::std::pop_heap(this->m_pq.begin(), this->m_pq.end());
+    ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), timer_comparator);
     auto elem = ::std::move(this->m_pq.back());
     this->m_pq.pop_back();
 
@@ -80,7 +89,7 @@ thread_loop()
       // Update the next time point and insert the timer back.
       elem.next += elem.period;
       this->m_pq.emplace_back(::std::move(elem));
-      ::std::push_heap(this->m_pq.begin(), this->m_pq.end());
+      ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), timer_comparator);
     }
     lock.unlock();
 
@@ -135,7 +144,7 @@ insert(const shared_ptr<Abstract_Timer>& timer, int64_t delay, int64_t period)
     elem.serial = ++ this->m_serial;
     timer->m_serial = elem.serial;
     this->m_pq.emplace_back(::std::move(elem));
-    ::std::push_heap(this->m_pq.begin(), this->m_pq.end());
+    ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), timer_comparator);
     this->m_pq_avail.notify_one();
   }
 
