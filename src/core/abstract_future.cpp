@@ -48,8 +48,8 @@ Abstract_Future::
 do_abstract_future_signal_nolock() noexcept
   {
     for(const auto& wp : this->m_waiters)
-      if(auto time = wp.lock())
-        time->store(0);
+      if(auto timep = wp.lock())
+        timep->store(0);
   }
 
 }  // namespace poseidon
