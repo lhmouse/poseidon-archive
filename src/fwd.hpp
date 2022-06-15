@@ -161,8 +161,7 @@ extern atomic_signal exit_signal;
          }  \
          catch(::std::exception& xSG022wB) {  \
            iQw3Zbsf.text = ::asteria::format_string(  \
-               "Failed to compose log message: $1\n[exception class `$2`]",  \
-               xSG022wB, typeid(xSG022wB));  \
+               "Failed to compose log message: $1", xSG022wB);  \
          }  \
          ::poseidon::async_logger.enqueue(::std::move(iQw3Zbsf));  \
          \
