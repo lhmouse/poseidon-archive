@@ -179,8 +179,6 @@ thread_loop()
 
     lock.lock(this->m_queue_mutex);
     if(!this->m_queue.empty() && (now < this->m_queue.front()->ready_since)) {
-      POSEIDON_LOG_TRACE(("Rebuilding PQ of fiber scheduler: number of fibers = $1"), this->m_queue.size());
-
       // Note `async_time` may be overwritten by other threads at any time, so
       // we have to copy it to somewhere safe.
       for(const auto& back : this->m_queue)
@@ -189,6 +187,7 @@ thread_loop()
       ::std::make_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
     }
     while(!elem && !this->m_queue.empty() && ((this->m_queue.front()->ready_since < now) || (exit_signal.load() != 0))) {
+      // Pop a fiber and check it.
       ::std::pop_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
       auto& back = this->m_queue.back();
 
@@ -251,7 +250,6 @@ thread_loop()
       this->m_sched_wait_ns = ts.tv_nsec;
 
       sched_lock.unlock();
-      POSEIDON_LOG_TRACE(("Fiber scheduler waiting $1 ns"), ts.tv_nsec);
       ::nanosleep(&ts, nullptr);
       return;
     }
