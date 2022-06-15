@@ -92,9 +92,10 @@ do_pool_stack(::stack_t ss) noexcept
 struct Queued_Fiber
   {
     unique_ptr<Abstract_Fiber> fiber;
-    int64_t yield_since;
     atomic_relaxed<int64_t> async_time;  // this might get modified at any time
 
+    weak_ptr<Abstract_Future> futr_opt;
+    int64_t yield_since;
     int64_t ready_since;
     ::ucontext_t m_sched_inner[1];
   };
@@ -166,9 +167,9 @@ thread_loop()
   {
     // Await a fiber.
     plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
-    const uint32_t sig = (uint32_t) exit_signal.load();
     int64_t now = do_sched_now();
     shared_ptr<Queued_Fiber> elem;
+    shared_ptr<Abstract_Future> futr;
 
     plain_mutex::unique_lock lock(this->m_conf_mutex);
     const size_t stack_vm_size = this->m_conf_stack_vm_size;
@@ -179,39 +180,64 @@ thread_loop()
     // Note `async_time` may be overwritten by other threads at any time, so
     // we have to copy it to somewhere safe.
     lock.lock(this->m_queue_mutex);
-    for(const auto& qelem : this->m_queue)
-      qelem->ready_since = qelem->async_time.load();
+    for(const auto& back : this->m_queue)
+      back->ready_since = back->async_time.load();
 
-    // Sort them according to `ready_since`.
+    // Sort fibers to get the one with minimum `ready_since`.
     ::std::make_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
 
-    // Get the first element whose `ready_since` has been exceeded. The timeout
-    // is ignored when a signal is pending.
-    while(!this->m_queue.empty() && (sig || (this->m_queue.front()->ready_since <= now))) {
+    // Get the first element whose `ready_since` has been exceeded.
+    while(!elem && !this->m_queue.empty() && ((this->m_queue.front()->ready_since <= now) || (exit_signal.load() != 0))) {
       ::std::pop_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
       auto& back = this->m_queue.back();
 
-      if(back->fiber->m_async_state.load() != async_state_finished) {
-        // Use this fiber. Put it back.
-        elem = back;
-        elem->ready_since = elem->async_time.xadd(warn_timeout) + warn_timeout;
-        ::std::push_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
-        break;
+      // If the fiber has finished execution, delete it.
+      if(back->fiber->m_async_state.load() == async_state_finished) {
+        POSEIDON_LOG_TRACE(("Deleting fiber `$1` (class `$2`)"), back->fiber, typeid(*(back->fiber)));
+        back->fiber.reset();
+        do_pool_stack(back->m_sched_inner->uc_stack);
+        this->m_queue.pop_back();
+        continue;
       }
 
-      // If the fiber has finished execution, delete it.
-      POSEIDON_LOG_DEBUG(("Deleting fiber `$1` (class `$2`)"), back->fiber, typeid(*(back->fiber)));
-      do_pool_stack(back->m_sched_inner->uc_stack);
-#ifdef ROCKET_DEBUG
-      ::memset(back->m_sched_inner, 0xCD, sizeof(back->m_sched_inner));
-#endif
-      this->m_queue.pop_back();
+      // Print some messages if the fiber has been suspended for too long.
+      if((back->yield_since != 0) && (now - back->yield_since >= fail_timeout)) {
+        POSEIDON_LOG_ERROR((
+            "Fiber `$1` (class `$2`) has been suspended for `$3` ms",
+            "This circumstance looks permanent. Please check for deadlocks."),
+            back->fiber, typeid(*(back->fiber)),
+            (uint64_t) (now - back->yield_since) / 1000000ULL);
+
+        // This fiber should be resumed now.
+        elem = back;
+      }
+      else if((back->yield_since != 0) && (now - back->yield_since >= warn_timeout))
+        POSEIDON_LOG_WARN((
+            "Fiber `$1` (class `$2`) has been suspended for `$3` ms"),
+            back->fiber, typeid(*(back->fiber)),
+            (uint64_t) (now - back->yield_since) / 1000000ULL);
+
+      // If an exit signal is pending, all fibers should be resumed. The current
+      // process should exit thereafter.
+      if(!elem && (exit_signal.load() != 0))
+        elem = back;
+
+      // Otherwise, resume the fiber if it is not waiting for a future, or if the
+      // future has been marked ready.
+      if(!elem && (!(futr = back->futr_opt.lock()) || (futr->m_future_state.load() != future_state_empty)))
+        elem = back;
+
+      // Put the fiber back.
+      back->async_time.xadd(warn_timeout);
+      back->ready_since += warn_timeout;
+      ::std::push_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
     }
     lock.unlock();
 
     if(!elem) {
       // If a signal is pending and all fibers have finished execution, exit.
-      if(sig) {
+      uint32_t sig = (uint32_t) exit_signal.xchg(0);
+      if(sig != 0) {
         POSEIDON_LOG_INFO(("Shutting down due to signal $1: $2"), sig, ::sys_siglist[sig]);
         async_logger.synchronize();
         ::std::quick_exit(0);
@@ -235,12 +261,12 @@ thread_loop()
     // Now we execute this fiber.
     // If the fiber has not got a stack, allocate one.
     if(!elem->m_sched_inner->uc_stack.ss_sp) {
-      POSEIDON_LOG_DEBUG(("Initializing fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
+      POSEIDON_LOG_TRACE(("Initializing fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
       ::getcontext(elem->m_sched_inner);
       elem->m_sched_inner->uc_stack = do_alloc_stack(stack_vm_size);  // may throw an exception
       elem->m_sched_inner->uc_link = this->m_sched_outer;
 
-      auto fiber_function = +[](int a0, int a1) -> void
+      auto fiber_function = +[](int a0, int a1) noexcept -> void
         {
           // Unpack arguments.
           Fiber_Scheduler* self;
@@ -396,10 +422,6 @@ insert(unique_ptr<Abstract_Fiber>&& fiber)
     auto elem = ::std::make_shared<Queued_Fiber>();
     elem->fiber = ::std::move(fiber);
 
-    int64_t now = do_sched_now();
-    elem->yield_since = now;
-    elem->async_time.store(now);
-
     // Insert it.
     plain_mutex::unique_lock lock(this->m_queue_mutex);
     this->m_queue.emplace_back(::std::move(elem));
@@ -444,9 +466,9 @@ yield(const shared_ptr<Abstract_Future>& futr_opt)
     const int64_t fail_timeout = this->m_conf_fail_timeout * 1000000000LL;
     lock.unlock();
 
-    int64_t now = do_sched_now();
-    elem->yield_since = now;
-    elem->async_time.store(now + ::std::min(warn_timeout, fail_timeout));
+    elem->futr_opt = futr_opt;
+    elem->yield_since = do_sched_now();
+    elem->async_time.store(elem->yield_since + ::std::min(warn_timeout, fail_timeout));
 
     if(futr_opt) {
       // Attach this fiber to the wait queue of the future.
@@ -471,6 +493,8 @@ yield(const shared_ptr<Abstract_Future>& futr_opt)
     POSEIDON_LOG_TRACE(("Resumed fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
     ROCKET_ASSERT(elem->fiber->m_async_state.load() == async_state_suspended);
     elem->fiber->m_async_state.store(async_state_running);
+
+    elem->futr_opt.reset();
   }
 
 }  // namespace poseidon

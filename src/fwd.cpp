@@ -29,21 +29,16 @@ do_create_manager()
 template<class ManagerT>
 inline
 ManagerT&
-do_create_manager_with_thread(const char* name = nullptr, bool allow_signals = false)
+do_create_manager_with_thread(const char* name = nullptr)
   {
     static ManagerT manager;
     static ::pthread_t thrd_handle;
-    static char thrd_name[16];
-    static int thrd_signal_how = SIG_BLOCK;
 
-    auto thrd_function = +[](void*) -> void*
+    auto thrd_function = +[](void*) noexcept -> void*
       {
         // Set thread information. Errors are ignored.
         int oldst;
         ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldst);
-
-        if(thrd_name[0] != 0)
-          ::pthread_setname_np(::pthread_self(), thrd_name);
 
         ::sigset_t sigset;
         ::sigemptyset(&sigset);
@@ -51,7 +46,7 @@ do_create_manager_with_thread(const char* name = nullptr, bool allow_signals = f
         ::sigaddset(&sigset, SIGTERM);
         ::sigaddset(&sigset, SIGHUP);
         ::sigaddset(&sigset, SIGALRM);
-        ::pthread_sigmask(thrd_signal_how, &sigset, nullptr);
+        ::pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
 
         // Enter an infinite loop.
         for(;;)
@@ -66,12 +61,6 @@ do_create_manager_with_thread(const char* name = nullptr, bool allow_signals = f
           }
       };
 
-    if(name)
-      ::memcpy(thrd_name, name, ::std::min(::strlen(name), sizeof(thrd_name) - 1));
-
-    if(allow_signals)
-      thrd_signal_how = SIG_UNBLOCK;
-
     // Create the thread. It is never joined or detached.
     int err = ::pthread_create(&thrd_handle, nullptr, thrd_function, nullptr);
     if(err != 0)
@@ -79,6 +68,9 @@ do_create_manager_with_thread(const char* name = nullptr, bool allow_signals = f
           "Could not spawn manager thread: %s\n"
           "[`pthread_create()` failed: %d]",
           ::strerror(err), err);
+
+    if(name)
+      ::pthread_setname_np(thrd_handle, name);
 
     // Return a reference to the static instance.
     return manager;
