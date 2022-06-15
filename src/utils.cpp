@@ -45,14 +45,14 @@ throw_runtime_error_with_backtrace(const char* file, long line, const char* func
 
     if(bt_syms) {
       // Determine the width of the frame index field.
-      nump.put_DU((uint32_t) nframes - 1);
+      nump.put_DU((uint32_t) nframes);
       static_vector<char, 24> sbuf(nump.size(), ' ');
       sbuf.emplace_back();
 
       // Append stack frames.
       data += "\n[backtrace frames:\n  ";
       for(size_t k = 0;  k != (uint32_t) nframes;  ++k) {
-        nump.put(k);
+        nump.put(k + 1);
         ::std::reverse_copy(nump.begin(), nump.end(), sbuf.mut_rbegin() + 1);
         data += sbuf.data();
         data += ") ";
