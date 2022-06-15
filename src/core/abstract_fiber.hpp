@@ -27,6 +27,17 @@ class Abstract_Fiber
     do_abstract_fiber_on_execution()
       = 0;
 
+    // These callbacks are called when a fiber is suspended and resumed. They
+    // are not called when the fiber starts execution or terminates.
+    // The default implementations merely print a message.
+    virtual
+    void
+    do_abstract_fiber_on_suspended();
+
+    virtual
+    void
+    do_abstract_fiber_on_resumed();
+
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Fiber);
 

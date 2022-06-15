@@ -482,6 +482,8 @@ yield(const shared_ptr<Abstract_Future>& futr_opt)
       future_lock.unlock();
     }
 
+    elem->fiber->do_abstract_fiber_on_suspended();
+
     // Suspend the current fiber...
     ROCKET_ASSERT(elem->fiber->m_async_state.load() == async_state_running);
     elem->fiber->m_async_state.store(async_state_suspended);
@@ -496,7 +498,9 @@ yield(const shared_ptr<Abstract_Future>& futr_opt)
     ROCKET_ASSERT(elem->fiber->m_async_state.load() == async_state_suspended);
     elem->fiber->m_async_state.store(async_state_running);
 
+    // Disassociate the future, if any.
     elem->futr_opt.reset();
+    elem->fiber->do_abstract_fiber_on_resumed();
   }
 
 }  // namespace poseidon
