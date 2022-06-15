@@ -104,13 +104,14 @@ thread_loop()
       timer->do_abstract_timer_on_tick(now);
     }
     catch(exception& stdex) {
-      POSEIDON_LOG_WARN((
-          "Timer error: $1",
+      POSEIDON_LOG_ERROR((
+          "Unhandled exception from timer: $1",
           "[exception class `$2`]",
           "[timer class `$3`]"),
           stdex.what(), typeid(stdex), typeid(*timer));
     }
 
+    ROCKET_ASSERT(timer->m_async_state.load() == async_state_running);
     timer->m_async_state.store(async_state_suspended);
   }
 

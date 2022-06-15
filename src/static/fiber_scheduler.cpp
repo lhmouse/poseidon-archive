@@ -252,24 +252,24 @@ thread_loop()
           ROCKET_ASSERT(elec);
 
           // Invoke the fiber procedure.
-          POSEIDON_LOG_TRACE(("Starting fiber `$1` (class `$2`)"), elec->fiber, typeid(*(elec->fiber)));
           ROCKET_ASSERT(elec->fiber->m_async_state.load() == async_state_pending);
           elec->fiber->m_async_state.store(async_state_running);
+          POSEIDON_LOG_TRACE(("Starting fiber `$1` (class `$2`)"), elec->fiber, typeid(*(elec->fiber)));
 
           try {
             elec->fiber->do_abstract_fiber_on_execution();
           }
           catch(exception& stdex) {
-            POSEIDON_LOG_WARN((
-                "Fiber error: $1",
+            POSEIDON_LOG_ERROR((
+                "Fiber exception: $1",
                 "[exception class `$2`]",
                 "[fiber class `$3`]"),
                 stdex.what(), typeid(stdex), typeid(*(elec->fiber)));
           }
 
+          POSEIDON_LOG_TRACE(("Exiting from fiber `$1` (class `$2`)"), elec->fiber, typeid(*(elec->fiber)));
           ROCKET_ASSERT(elec->fiber->m_async_state.load() == async_state_running);
           elec->fiber->m_async_state.store(async_state_finished);
-          POSEIDON_LOG_TRACE(("Exiting from fiber `$1` (class `$2`)"), elec->fiber, typeid(*(elec->fiber)));
 
           // Return to `m_sched_outer`.
           do_start_switch_fiber(self->m_sched_asan_save, self->m_sched_outer);
@@ -282,16 +282,16 @@ thread_loop()
     }
 
     // Resume this fiber...
-    POSEIDON_LOG_TRACE(("Resuming fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
     this->m_sched_self_opt = elem;
+    POSEIDON_LOG_TRACE(("Resuming fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
 
     do_start_switch_fiber(this->m_sched_asan_save, elem->m_sched_inner);
     ::swapcontext(this->m_sched_outer, elem->m_sched_inner);
     do_finish_switch_fiber(this->m_sched_asan_save);
 
     // ... and return here.
-    this->m_sched_self_opt.reset();
     POSEIDON_LOG_TRACE(("Suspended fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
+    this->m_sched_self_opt.reset();
   }
 
 void
@@ -459,18 +459,18 @@ yield(const shared_ptr<Abstract_Future>& futr_opt)
     }
 
     // Suspend the current fiber...
-    POSEIDON_LOG_TRACE(("Suspending fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
     ROCKET_ASSERT(elem->fiber->m_async_state.load() == async_state_running);
     elem->fiber->m_async_state.store(async_state_suspended);
+    POSEIDON_LOG_TRACE(("Suspending fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
 
     do_start_switch_fiber(this->m_sched_asan_save, this->m_sched_outer);
     ::swapcontext(elem->m_sched_inner, this->m_sched_outer);
     do_finish_switch_fiber(this->m_sched_asan_save);
 
     // ... and return here.
+    POSEIDON_LOG_TRACE(("Resumed fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
     ROCKET_ASSERT(elem->fiber->m_async_state.load() == async_state_suspended);
     elem->fiber->m_async_state.store(async_state_running);
-    POSEIDON_LOG_TRACE(("Resumed fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
   }
 
 }  // namespace poseidon
