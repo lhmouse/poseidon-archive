@@ -71,7 +71,7 @@ class Fiber_Scheduler
     // to `sched_yield()`. Suspension may not exceed `fiber.fail_timeout` in
     // 'main.conf'.
     void
-    yield(const shared_ptr<Abstract_Future>& futr_opt = nullptr);
+    checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& futr_opt);
   };
 
 }  // namespace poseidon

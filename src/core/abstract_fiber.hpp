@@ -13,6 +13,7 @@ class Abstract_Fiber
   private:
     friend class Fiber_Scheduler;
 
+    Fiber_Scheduler* m_scheduler = nullptr;
     atomic_relaxed<Async_State> m_async_state = { async_state_pending };
 
   public:
@@ -45,6 +46,11 @@ class Abstract_Fiber
     Async_State
     async_state() const noexcept
       { return this->m_async_state.load();  }
+
+    // Calls `m_scheduler->yield(futr_opt)`.
+    // This function can only be called from `do_abstract_fiber_on_execution()`.
+    void
+    yield(const shared_ptr<Abstract_Future>& futr_opt = nullptr) const;
   };
 
 }  // namespace poseidon

@@ -422,6 +422,7 @@ insert(unique_ptr<Abstract_Fiber>&& fiber)
     // Create the management node.
     auto elem = ::std::make_shared<Queued_Fiber>();
     elem->fiber = ::std::move(fiber);
+    elem->fiber->m_scheduler = this;
 
     // Insert it.
     plain_mutex::unique_lock lock(this->m_queue_mutex);
@@ -444,12 +445,15 @@ self_opt() const noexcept
 
 void
 Fiber_Scheduler::
-yield(const shared_ptr<Abstract_Future>& futr_opt)
+checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& futr_opt)
   {
     // Get the current fiber.
     auto elem = this->m_sched_self_opt.lock();
     if(!elem)
-      POSEIDON_THROW(("Invalid call to `Fiber_Scheduler::yield()` outside a fiber"));
+      POSEIDON_THROW(("Cannot yield execution outside a fiber"));
+
+    if(elem->fiber.get() != current)
+      POSEIDON_THROW(("Cannot yield execution outside the current fiber"));
 
     // If a future is given, lock it, in order to prevent race conditions.
     plain_mutex::unique_lock future_lock;
