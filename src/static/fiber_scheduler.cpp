@@ -177,17 +177,18 @@ thread_loop()
     const int64_t fail_timeout = this->m_conf_fail_timeout * 1000000000LL;
     lock.unlock();
 
-    // Note `async_time` may be overwritten by other threads at any time, so
-    // we have to copy it to somewhere safe.
     lock.lock(this->m_queue_mutex);
-    for(const auto& back : this->m_queue)
-      back->ready_since = back->async_time.load();
+    if(!this->m_queue.empty() && (now < this->m_queue.front()->ready_since)) {
+      POSEIDON_LOG_TRACE(("Rebuilding PQ of fiber scheduler: number of fibers = $1"), this->m_queue.size());
 
-    // Sort fibers to get the one with minimum `ready_since`.
-    ::std::make_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
+      // Note `async_time` may be overwritten by other threads at any time, so
+      // we have to copy it to somewhere safe.
+      for(const auto& back : this->m_queue)
+        back->ready_since = back->async_time.load();
 
-    // Get the first element whose `ready_since` has been exceeded.
-    while(!elem && !this->m_queue.empty() && ((this->m_queue.front()->ready_since <= now) || (exit_signal.load() != 0))) {
+      ::std::make_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
+    }
+    while(!elem && !this->m_queue.empty() && ((this->m_queue.front()->ready_since < now) || (exit_signal.load() != 0))) {
       ::std::pop_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
       auto& back = this->m_queue.back();
 
