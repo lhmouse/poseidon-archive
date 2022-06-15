@@ -146,7 +146,7 @@ extern atomic_signal exit_signal;
   (::poseidon::async_logger.enabled(::poseidon::log_level_##LEVEL)  \
    &&  \
    ([=](const char* f5zuNP3w) -> bool  \
-       __attribute__((__noinline__, __nothrow__))  \
+       __attribute__((__noinline__, __nothrow__, __cold__))  \
      {  \
        try {  \
          ::poseidon::Async_Logger::Element iQw3Zbsf;  \
