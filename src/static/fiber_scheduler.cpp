@@ -121,7 +121,7 @@ int64_t
 do_sched_now() noexcept
   {
     ::timespec ts;
-    ::clock_gettime(CLOCK_MONOTONIC, &ts);
+    ::clock_gettime(CLOCK_MONOTONIC_COARSE, &ts);
     return ts.tv_sec * 1000000000 + (uint32_t) ts.tv_nsec;
   }
 
@@ -299,6 +299,7 @@ thread_loop()
           elec->fiber->m_async_state.store(async_state_finished);
 
           // Return to `m_sched_outer`.
+          elec->async_time.store(0);
           do_start_switch_fiber(self->m_sched_asan_save, self->m_sched_outer);
         };
 
