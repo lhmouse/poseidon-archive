@@ -169,7 +169,6 @@ thread_loop()
     plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     int64_t now = do_sched_now();
     shared_ptr<Queued_Fiber> elem;
-    shared_ptr<Abstract_Future> futr;
 
     plain_mutex::unique_lock lock(this->m_conf_mutex);
     const size_t stack_vm_size = this->m_conf_stack_vm_size;
@@ -184,6 +183,7 @@ thread_loop()
       for(const auto& back : this->m_queue)
         back->ready_since = back->async_time.load();
 
+      // Sort fibers using cached timestamps.
       ::std::make_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
     }
     while(!elem && !this->m_queue.empty() && ((this->m_queue.front()->ready_since < now) || (exit_signal.load() != 0))) {
@@ -224,6 +224,7 @@ thread_loop()
 
       // Otherwise, resume the fiber if it is not waiting for a future, or if the
       // future has been marked ready.
+      shared_ptr<Abstract_Future> futr;
       if(!elem && (!(futr = back->futr_opt.lock()) || (futr->m_future_state.load() != future_state_empty)))
         elem = back;
 
