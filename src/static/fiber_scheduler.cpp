@@ -186,8 +186,8 @@ thread_loop()
       // Sort fibers using cached timestamps.
       ::std::make_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
     }
-    while(!elem && !this->m_queue.empty() && ((this->m_queue.front()->ready_since < now) || (exit_signal.load() != 0))) {
-      // Pop a fiber and check it.
+
+    while(!elem && !this->m_queue.empty() && ((this->m_queue.front()->ready_since <= now) || (exit_signal.load() != 0))) {
       ::std::pop_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
       auto& back = this->m_queue.back();
 
