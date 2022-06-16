@@ -64,7 +64,6 @@ thread_loop()
     const int64_t now = this->clock();
     int64_t delta = this->m_pq.front().next - now;
     if(delta > 0) {
-      POSEIDON_LOG_TRACE(("Timer driver waiting: $1 nanosecond(s) remaining"), delta);
       ::timespec ts;
       ::clock_gettime(CLOCK_REALTIME, &ts);
       uint64_t value = (unsigned long) ts.tv_nsec + (uint64_t) delta;
