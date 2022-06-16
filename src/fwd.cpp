@@ -29,10 +29,9 @@ do_create_manager()
 template<class ManagerT>
 inline
 ManagerT&
-do_create_manager_with_thread(const char* name = nullptr)
+do_create_manager_with_thread(const char* name)
   {
     static ManagerT manager;
-    static ::pthread_t thrd_handle;
 
     auto thrd_function = +[](void*) noexcept -> void*
       {
@@ -61,16 +60,17 @@ do_create_manager_with_thread(const char* name = nullptr)
           }
       };
 
-    // Create the thread. It is never joined or detached.
-    int err = ::pthread_create(&thrd_handle, nullptr, thrd_function, nullptr);
+    // Create a detached thread.
+    ::pthread_t thrd;
+    int err = ::pthread_create(&thrd, nullptr, thrd_function, nullptr);
     if(err != 0)
       ::rocket::sprintf_and_throw<::std::runtime_error>(
           "Could not spawn manager thread: %s\n"
           "[`pthread_create()` failed: %d]",
           ::strerror(err), err);
 
-    if(name)
-      ::pthread_setname_np(thrd_handle, name);
+    ::pthread_setname_np(thrd, name);
+    ::pthread_detach(thrd);
 
     // Return a reference to the static instance.
     return manager;
