@@ -34,8 +34,8 @@ class Async_Logger
     atomic_relaxed<uint32_t> m_conf_level_mask;
 
     mutable plain_mutex m_queue_mutex;
-    vector<Element> m_queue;
     condition_variable m_queue_avail;
+    vector<Element> m_queue;
 
     mutable plain_mutex m_io_mutex;
     vector<Element> m_io_queue;
