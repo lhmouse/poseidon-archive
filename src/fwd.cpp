@@ -15,25 +15,16 @@
 namespace poseidon {
 namespace {
 
-template<class ManagerT>
-inline
-ManagerT&
-do_create_manager()
+struct Thrd
   {
-    static ManagerT manager;
+    char name[16];
+  };
 
-    // Return a reference to the static instance.
-    return manager;
-  }
-
-template<class ManagerT>
-inline
-ManagerT&
-do_create_manager_with_thread(const char* name)
+template<class MgrT>
+MgrT&
+operator/(MgrT& mgr, const Thrd& th)
   {
-    static ManagerT manager;
-
-    auto thrd_function = +[](void*) noexcept -> void*
+    auto thrd_function = +[](void* ptr) noexcept -> void*
       {
         // Set thread information. Errors are ignored.
         int oldst;
@@ -50,38 +41,38 @@ do_create_manager_with_thread(const char* name)
         // Enter an infinite loop.
         for(;;)
           try {
-            manager.thread_loop();
+            ((MgrT*) ptr)->thread_loop();
           }
           catch(exception& stdex) {
             ::fprintf(stderr,
                 "WARNING: Caught an exception from manager loop: %s\n"
+                "[manager class `%s`]\n"
                 "[exception class `%s`]\n",
-                stdex.what(), typeid(stdex).name());
+                stdex.what(), typeid(MgrT).name(), typeid(stdex).name());
           }
       };
 
     // Create a detached thread.
     ::pthread_t thrd;
-    int err = ::pthread_create(&thrd, nullptr, thrd_function, nullptr);
+    int err = ::pthread_create(&thrd, nullptr, thrd_function, ::std::addressof(mgr));
     if(err != 0)
       ::rocket::sprintf_and_throw<::std::runtime_error>(
           "Could not spawn manager thread: %s\n"
-          "[`pthread_create()` failed: %d]",
-          ::strerror(err), err);
+          "[`pthread_create()` failed: %d]"
+          "[manager class `%s`]\n",
+          ::strerror(err), err, typeid(MgrT).name());
 
-    ::pthread_setname_np(thrd, name);
+    ::pthread_setname_np(thrd, th.name);
     ::pthread_detach(thrd);
-
-    // Return a reference to the static instance.
-    return manager;
+    return mgr;
   }
 
 }  // namespace
 
-Main_Config& main_config = do_create_manager<Main_Config>();
-Async_Logger& async_logger = do_create_manager_with_thread<Async_Logger>("logger");
-Timer_Driver& timer_driver = do_create_manager_with_thread<Timer_Driver>("timer");
-Fiber_Scheduler& fiber_scheduler = do_create_manager<Fiber_Scheduler>();
+Main_Config& main_config = *new Main_Config();
+Async_Logger& async_logger = *new Async_Logger() / Thrd{"logger"};
+Timer_Driver& timer_driver = *new Timer_Driver() / Thrd{"timer"};
+Fiber_Scheduler& fiber_scheduler = *new Fiber_Scheduler();
 atomic_signal exit_signal;
 
 }  // namespace poseidon
