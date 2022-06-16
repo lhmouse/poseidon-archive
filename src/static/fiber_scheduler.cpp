@@ -8,7 +8,6 @@
 #include "../core/abstract_future.hpp"
 #include "../utils.hpp"
 #include <time.h>  // clock_gettime()
-#include <signal.h>  // sys_siglist
 #include <sys/resource.h>  // getrlimit()
 #include <sys/mman.h>  // mmap(), munmap()
 
@@ -169,6 +168,7 @@ thread_loop()
     // Await a fiber.
     plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     const int64_t now = this->clock();
+    const int signal = exit_signal.load();
     shared_ptr<Queued_Fiber> elem;
 
     plain_mutex::unique_lock lock(this->m_conf_mutex);
@@ -184,7 +184,7 @@ thread_loop()
       ::rocket::for_each(this->m_pq, [&](auto& ptr) { ptr->ready_since = ptr->async_time.load();  });
       ::std::make_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
     }
-    while(!elem && !this->m_pq.empty() && ((this->m_pq.front()->ready_since <= now) || (exit_signal.load() != 0))) {
+    while(!elem && !this->m_pq.empty() && ((this->m_pq.front()->ready_since <= now) || signal)) {
       ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
       auto& back = this->m_pq.back();
 
@@ -216,7 +216,7 @@ thread_loop()
 
       // If an exit signal is pending, all fibers should be resumed. The current
       // process should exit thereafter.
-      if(!elem && (exit_signal.load() != 0))
+      if(!elem && signal)
         elem = back;
 
       // Otherwise, resume the fiber if it is not waiting for a future, or if the
@@ -232,16 +232,13 @@ thread_loop()
     }
     lock.unlock();
 
-    if(!elem) {
-      // If a signal is pending and all fibers have finished execution, exit.
-      uint32_t sig = (uint32_t) exit_signal.xchg(0);
-      if(sig != 0) {
-        POSEIDON_LOG_INFO(("Shutting down due to signal $1: $2"), sig, ::sys_siglist[sig]);
-        async_logger.synchronize();
-        ::std::quick_exit(0);
-      }
+    // If a signal is pending and all fibers have finished execution, exit.
+    if(!elem && signal)
+      return;
 
-      // Sleep for a while. The wait duration is capped to roughly 134 ms.
+    // If no fiber can be scheduled, sleep for a while.
+    // The wait duration is capped to roughly 134 ms.
+    if(!elem) {
       ::timespec ts;
       ts.tv_sec = 0;
       ts.tv_nsec = this->m_sched_wait_ns;

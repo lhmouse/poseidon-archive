@@ -14,8 +14,8 @@
 #include <stdarg.h>
 #include <dlfcn.h>
 #include <pthread.h>
-#include <sys/file.h>  // flock()
-#include <sys/resource.h>  // getrlimit()
+#include <sys/file.h>
+#include <sys/resource.h>
 
 namespace {
 using namespace poseidon;
@@ -378,10 +378,11 @@ main(int argc, char** argv)
     POSEIDON_LOG_INFO(("Startup complete: $1"), PACKAGE_STRING);
 
     // Schedule fibers until a signal has been received and the scheduler is empty.
-    while((exit_signal.load() == 0) || (fiber_scheduler.count() != 0))
+    while(fiber_scheduler.count() || !exit_signal.load())
       fiber_scheduler.thread_loop();
 
-    POSEIDON_LOG_INFO(("Shutting down: $1"), PACKAGE_STRING);
+    uint32_t sig = (uint32_t) exit_signal.load();
+    POSEIDON_LOG_INFO(("Shutting down due to signal $1: $2"), sig, ::sys_siglist[sig]);
     do_exit_printf(exit_success, "");
   }
   catch(exception& stdex) {
