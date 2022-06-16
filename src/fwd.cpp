@@ -7,6 +7,7 @@
 #include "static/async_logger.hpp"
 #include "static/timer_driver.hpp"
 #include "static/fiber_scheduler.hpp"
+#include "static/task_executor.hpp"
 #include <pthread.h>
 #include <signal.h>
 #include <string.h>
@@ -69,10 +70,11 @@ operator/(MgrT& mgr, const Thrd& th)
 
 }  // namespace
 
-Main_Config& main_config = *new Main_Config();
-Async_Logger& async_logger = *new Async_Logger() / Thrd{"logger"};
-Timer_Driver& timer_driver = *new Timer_Driver() / Thrd{"timer"};
-Fiber_Scheduler& fiber_scheduler = *new Fiber_Scheduler();
+Main_Config& main_config = *new Main_Config;
+Async_Logger& async_logger = *new Async_Logger / Thrd{"logger"};
+Timer_Driver& timer_driver = *new Timer_Driver / Thrd{"timer"};
+Fiber_Scheduler& fiber_scheduler = *new Fiber_Scheduler;
+Task_Executor& task_executor = *new Task_Executor / Thrd{"task1"} / Thrd{"task2"} / Thrd{"task3"} / Thrd{"task4"};
 atomic_signal exit_signal;
 
 }  // namespace poseidon

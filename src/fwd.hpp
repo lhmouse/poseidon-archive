@@ -130,12 +130,14 @@ class Abstract_Timer;
 class Abstract_Future;
 template<typename ValueT> class Future;
 class Abstract_Fiber;
+class Abstract_Task;
 
 // Manager classes
 extern class Main_Config& main_config;
 extern class Async_Logger& async_logger;
 extern class Timer_Driver& timer_driver;
 extern class Fiber_Scheduler& fiber_scheduler;
+extern class Task_Executor& task_executor;
 extern atomic_signal exit_signal;
 
 // Composes a string and submits it to the logger.

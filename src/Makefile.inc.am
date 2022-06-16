@@ -16,6 +16,7 @@ include_poseidon_core_HEADERS =  \
   %reldir%/core/abstract_future.hpp  \
   %reldir%/core/future.hpp  \
   %reldir%/core/abstract_fiber.hpp  \
+  %reldir%/core/abstract_task.hpp  \
   ${END}
 
 include_poseidon_socketdir = ${includedir}/poseidon/socket
@@ -28,6 +29,7 @@ include_poseidon_static_HEADERS =  \
   %reldir%/static/async_logger.hpp  \
   %reldir%/static/timer_driver.hpp  \
   %reldir%/static/fiber_scheduler.hpp  \
+  %reldir%/static/task_executor.hpp  \
   ${END}
 
 lib_LTLIBRARIES += lib/libposeidon.la
@@ -40,10 +42,12 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/abstract_timer.cpp  \
   %reldir%/core/abstract_future.cpp  \
   %reldir%/core/abstract_fiber.cpp  \
+  %reldir%/core/abstract_task.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \
   %reldir%/static/fiber_scheduler.cpp  \
+  %reldir%/static/task_executor.cpp  \
   ${END}
 
 lib_libposeidon_la_CXXFLAGS = ${AM_CXXFLAGS}
