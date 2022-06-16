@@ -32,10 +32,16 @@ class Timer_Driver
     void
     thread_loop();
 
+    // Gets the current time from a monotonic clock, in nanoseconds.
+    // This function is thread-safe.
+    static
+    int64_t
+    clock() noexcept;
+
     // Inserts a timer. If a timer is inserted multiple times, operations other
     // than the last one are invalidated, which can be used to reset a timer.
-    // `delay` specifies the number of milliseconds that a timer will be triggered
-    // after it is inserted successfully. `period` is the number of milliseconds
+    // `delay` specifies the number of nanoseconds that a timer will be triggered
+    // after it is inserted successfully. `period` is the number of nanoseconds
     // of intervals for periodic timers. `period` can be zero to denote a one-shot
     // timer.
     // This function is thread-safe.

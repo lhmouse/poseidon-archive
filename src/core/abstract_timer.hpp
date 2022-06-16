@@ -23,8 +23,8 @@ class Abstract_Timer
 
   protected:
     // This callback is invoked by the timer thread and is intended to be
-    // overriden by derived classes. `now` is the number of milliseconds
-    // since system startup.
+    // overriden by derived classes. `now` is the number of nanoseconds since
+    // system startup.
     virtual
     void
     do_abstract_timer_on_tick(int64_t now)

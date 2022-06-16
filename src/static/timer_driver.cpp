@@ -36,14 +36,6 @@ struct Timer_Comparator
   }
   constexpr timer_comparator;
 
-int64_t
-do_monotonic_now() noexcept
-  {
-    ::timespec ts;
-    ::clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec * 1000 + (uint32_t) ts.tv_nsec / 1000000U;
-  }
-
 }  // namespace
 
 POSEIDON_HIDDEN_STRUCT(Timer_Driver, Queued_Timer);
@@ -52,7 +44,7 @@ Timer_Driver::
 Timer_Driver()
   {
     // Generate a random serial.
-    this->m_serial = (uint64_t) do_monotonic_now();
+    this->m_serial = (uint64_t) this->clock();
   }
 
 Timer_Driver::
@@ -69,11 +61,16 @@ thread_loop()
     while(this->m_pq.empty())
       this->m_pq_avail.wait(lock);
 
-    const int64_t now = do_monotonic_now();
+    const int64_t now = this->clock();
     int64_t delta = this->m_pq.front().next - now;
     if(delta > 0) {
-      POSEIDON_LOG_TRACE(("Timer driver waiting: $1 millisecond(s) remaining"), delta);
-      this->m_pq_avail.wait_for(lock, delta);
+      POSEIDON_LOG_TRACE(("Timer driver waiting: $1 nanosecond(s) remaining"), delta);
+      ::timespec ts;
+      ::clock_gettime(CLOCK_REALTIME, &ts);
+      uint64_t value = (unsigned long) ts.tv_nsec + (uint64_t) delta;
+      ts.tv_sec += (time_t) (value / 1000000000ULL);
+      ts.tv_nsec = (long) (value % 1000000000ULL);
+      this->m_pq_avail.wait_until(lock, ts);
       return;
     }
     ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), timer_comparator);
@@ -115,6 +112,15 @@ thread_loop()
     timer->m_async_state.store(async_state_suspended);
   }
 
+int64_t
+Timer_Driver::
+clock() noexcept
+  {
+    ::timespec ts;
+    ::clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1000000000LL + ts.tv_nsec;
+  }
+
 void
 Timer_Driver::
 insert(const shared_ptr<Abstract_Timer>& timer, int64_t delay, int64_t period)
@@ -123,22 +129,16 @@ insert(const shared_ptr<Abstract_Timer>& timer, int64_t delay, int64_t period)
     if(!timer)
       POSEIDON_THROW(("Null timer pointer not valid"));
 
-    if(delay < 0)
-      POSEIDON_THROW(("Negative time delay not valid: $1"), delay);
+    if(delay >> 56)
+      POSEIDON_THROW(("Timer delay out of range: $1"), delay);
 
-    if(delay > INT32_MAX)
-      POSEIDON_THROW(("Time delay too large: $1"), delay);
-
-    if(period < 0)
-      POSEIDON_THROW(("Negative timer period not valid: $1"), period);
-
-    if(period > INT32_MAX)
-      POSEIDON_THROW(("Timer period too large: $1"), period);
+    if(delay >> 56)
+      POSEIDON_THROW(("Timer period out of range: $1"), period);
 
     // Calculate the end time point.
     Queued_Timer elem;
     elem.timer = timer;
-    elem.next = do_monotonic_now() + delay;
+    elem.next = this->clock() + delay;
     elem.period = period;
 
     // Insert the timer.

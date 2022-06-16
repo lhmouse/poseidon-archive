@@ -30,7 +30,7 @@ shared_ptr<Example_Timer>
 do_create_timer()
   {
     auto timer = ::std::make_shared<Example_Timer>();
-    timer_driver.insert(timer, 3000, 500);
+    timer_driver.insert(timer, 3000'000000, 500'000000);
     return timer;
   }
 
