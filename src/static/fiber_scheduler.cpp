@@ -176,27 +176,24 @@ thread_loop()
     const int64_t fail_timeout = this->m_conf_fail_timeout * 1000000000LL;
     lock.unlock();
 
-    lock.lock(this->m_queue_mutex);
-    if(!this->m_queue.empty() && (now < this->m_queue.front()->ready_since)) {
+    lock.lock(this->m_pq_mutex);
+    if(!this->m_pq.empty() && (now < this->m_pq.front()->ready_since)) {
+      // Sort fibers using cached timestamps.
       // Note `async_time` may be overwritten by other threads at any time, so
       // we have to copy it to somewhere safe.
-      for(const auto& back : this->m_queue)
-        back->ready_since = back->async_time.load();
-
-      // Sort fibers using cached timestamps.
-      ::std::make_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
+      ::rocket::for_each(this->m_pq, [&](auto& ptr) { ptr->ready_since = ptr->async_time.load();  });
+      ::std::make_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
     }
-
-    while(!elem && !this->m_queue.empty() && ((this->m_queue.front()->ready_since <= now) || (exit_signal.load() != 0))) {
-      ::std::pop_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
-      auto& back = this->m_queue.back();
+    while(!elem && !this->m_pq.empty() && ((this->m_pq.front()->ready_since <= now) || (exit_signal.load() != 0))) {
+      ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
+      auto& back = this->m_pq.back();
 
       // If the fiber has finished execution, delete it.
       if(back->fiber->m_async_state.load() == async_state_finished) {
         POSEIDON_LOG_TRACE(("Deleting fiber `$1` (class `$2`)"), back->fiber, typeid(*(back->fiber)));
         back->fiber.reset();
         do_pool_stack(back->m_sched_inner->uc_stack);
-        this->m_queue.pop_back();
+        this->m_pq.pop_back();
         continue;
       }
 
@@ -231,7 +228,7 @@ thread_loop()
       // Put the fiber back.
       back->async_time.xadd(warn_timeout);
       back->ready_since += warn_timeout;
-      ::std::push_heap(this->m_queue.begin(), this->m_queue.end(), fiber_comparator);
+      ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
     }
     lock.unlock();
 
@@ -407,8 +404,8 @@ size_t
 Fiber_Scheduler::
 count() const noexcept
   {
-    plain_mutex::unique_lock lock(this->m_queue_mutex);
-    return this->m_queue.size();
+    plain_mutex::unique_lock lock(this->m_pq_mutex);
+    return this->m_pq.size();
   }
 
 void
@@ -425,8 +422,11 @@ insert(unique_ptr<Abstract_Fiber>&& fiber)
     elem->fiber->m_scheduler = this;
 
     // Insert it.
-    plain_mutex::unique_lock lock(this->m_queue_mutex);
-    this->m_queue.emplace_back(::std::move(elem));
+    plain_mutex::unique_lock lock(this->m_pq_mutex);
+    elem->ready_since = (int64_t) this->m_pq.size();  // keep it sorted a little
+    elem->async_time.store(elem->ready_since);
+    this->m_pq.emplace_back(::std::move(elem));
+    ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
   }
 
 Abstract_Fiber*

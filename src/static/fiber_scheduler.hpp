@@ -20,9 +20,9 @@ class Fiber_Scheduler
     uint32_t m_conf_warn_timeout = 0;
     uint32_t m_conf_fail_timeout = 0;
 
-    mutable plain_mutex m_queue_mutex;
+    mutable plain_mutex m_pq_mutex;
     struct Queued_Fiber;
-    vector<shared_ptr<Queued_Fiber>> m_queue;
+    vector<shared_ptr<Queued_Fiber>> m_pq;
 
     mutable plain_mutex m_sched_mutex;
     weak_ptr<Queued_Fiber> m_sched_self_opt;
