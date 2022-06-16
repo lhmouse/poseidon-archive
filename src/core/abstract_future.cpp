@@ -3,6 +3,7 @@
 
 #include "../precompiled.ipp"
 #include "abstract_future.hpp"
+#include "static/fiber_scheduler.hpp"
 #include "../utils.hpp"
 
 namespace poseidon {
@@ -49,7 +50,7 @@ do_abstract_future_signal_nolock() noexcept
   {
     for(const auto& wp : this->m_waiters)
       if(auto timep = wp.lock())
-        timep->store(0);
+        timep->store(Fiber_Scheduler::clock());
   }
 
 }  // namespace poseidon

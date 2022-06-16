@@ -42,6 +42,12 @@ class Fiber_Scheduler
     void
     thread_loop();
 
+    // Gets the current time from a monotonic clock, in nanoseconds.
+    // This function is thread-safe.
+    static
+    int64_t
+    clock() noexcept;
+
     // Reloads configuration from 'main.conf'.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.

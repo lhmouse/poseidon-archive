@@ -60,12 +60,12 @@ struct Example_Fiber : Abstract_Fiber
         POSEIDON_LOG_WARN(("fiber `$1`: init"), this);
 
         auto timer = ::std::make_shared<Future_Timer>(this->value);
-        timer_driver.insert(timer, this->value * 1000, 0);  // delay, period
+        timer_driver.insert(timer, this->value * 1000000000LL, 0);  // delay, period
         this->yield(timer->futr);
         POSEIDON_LOG_WARN(("fiber `$1`: first pass: value = $2"), this, timer->futr->value());
 
         timer = ::std::make_shared<Future_Timer>(this->value);
-        timer_driver.insert(timer, this->value * 1000 + 6000, 0);  // delay, period
+        timer_driver.insert(timer, (this->value + 6) * 1000000000LL, 0);  // delay, period
         this->yield(timer->futr);
         POSEIDON_LOG_WARN(("fiber `$1`: second pass: value = $2"), this, timer->futr->value());
       }

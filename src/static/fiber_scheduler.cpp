@@ -117,14 +117,6 @@ struct Fiber_Comparator
   }
   constexpr fiber_comparator;
 
-int64_t
-do_sched_now() noexcept
-  {
-    ::timespec ts;
-    ::clock_gettime(CLOCK_MONOTONIC_COARSE, &ts);
-    return ts.tv_sec * 1000000000 + (uint32_t) ts.tv_nsec;
-  }
-
 inline
 void
 do_start_switch_fiber(void*& save, const ::ucontext_t* uctx) noexcept
@@ -161,13 +153,22 @@ Fiber_Scheduler::
   {
   }
 
+int64_t
+Fiber_Scheduler::
+clock() noexcept
+  {
+    ::timespec ts;
+    ::clock_gettime(CLOCK_MONOTONIC_COARSE, &ts);
+    return ts.tv_sec * 1000000000LL + ts.tv_nsec;
+  }
+
 void
 Fiber_Scheduler::
 thread_loop()
   {
     // Await a fiber.
     plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
-    int64_t now = do_sched_now();
+    const int64_t now = this->clock();
     shared_ptr<Queued_Fiber> elem;
 
     plain_mutex::unique_lock lock(this->m_conf_mutex);
@@ -178,7 +179,6 @@ thread_loop()
 
     lock.lock(this->m_pq_mutex);
     if(!this->m_pq.empty() && (now < this->m_pq.front()->ready_since)) {
-      // Sort fibers using cached timestamps.
       // Note `async_time` may be overwritten by other threads at any time, so
       // we have to copy it to somewhere safe.
       ::rocket::for_each(this->m_pq, [&](auto& ptr) { ptr->ready_since = ptr->async_time.load();  });
@@ -198,7 +198,7 @@ thread_loop()
       }
 
       // Print some messages if the fiber has been suspended for too long.
-      if((back->yield_since != 0) && (now - back->yield_since >= fail_timeout)) {
+      if(now - back->yield_since >= fail_timeout) {
         POSEIDON_LOG_ERROR((
             "Fiber `$1` (class `$2`) has been suspended for `$3` ms",
             "This circumstance looks permanent. Please check for deadlocks."),
@@ -208,7 +208,7 @@ thread_loop()
         // This fiber should be resumed now.
         elem = back;
       }
-      else if((back->yield_since != 0) && (now - back->yield_since >= warn_timeout))
+      else if(now - back->yield_since >= warn_timeout)
         POSEIDON_LOG_WARN((
             "Fiber `$1` (class `$2`) has been suspended for `$3` ms"),
             back->fiber, typeid(*(back->fiber)),
@@ -295,7 +295,7 @@ thread_loop()
           elec->fiber->m_async_state.store(async_state_finished);
 
           // Return to `m_sched_outer`.
-          elec->async_time.store(0);
+          elec->async_time.store(self->clock());
           do_start_switch_fiber(self->m_sched_asan_save, self->m_sched_outer);
         };
 
@@ -418,13 +418,15 @@ insert(unique_ptr<Abstract_Fiber>&& fiber)
 
     // Create the management node.
     auto elem = ::std::make_shared<Queued_Fiber>();
+    fiber->m_scheduler = this;
     elem->fiber = ::std::move(fiber);
-    elem->fiber->m_scheduler = this;
+    const int64_t now = this->clock();
+    elem->async_time.store(now);
+    elem->yield_since = now;
+    elem->ready_since = now;
 
     // Insert it.
     plain_mutex::unique_lock lock(this->m_pq_mutex);
-    elem->ready_since = (int64_t) this->m_pq.size();  // keep it sorted a little
-    elem->async_time.store(elem->ready_since);
     this->m_pq.emplace_back(::std::move(elem));
     ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
   }
@@ -471,9 +473,10 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     const int64_t fail_timeout = this->m_conf_fail_timeout * 1000000000LL;
     lock.unlock();
 
+    const int64_t now = this->clock();
+    elem->async_time.store(now + ::std::min(warn_timeout, fail_timeout));
     elem->futr_opt = futr_opt;
-    elem->yield_since = do_sched_now();
-    elem->async_time.store(elem->yield_since + ::std::min(warn_timeout, fail_timeout));
+    elem->yield_since = now;
 
     if(futr_opt) {
       // Attach this fiber to the wait queue of the future.
