@@ -149,12 +149,11 @@ extern atomic_signal exit_signal;
        __attribute__((__noinline__, __nothrow__, __cold__))  \
      {  \
        try {  \
-         ::poseidon::Async_Logger::Element iQw3Zbsf;  \
+         ::poseidon::Async_Logger::Queued_Message iQw3Zbsf;  \
          iQw3Zbsf.level = ::poseidon::log_level_##LEVEL;  \
          iQw3Zbsf.file = __FILE__;  \
          iQw3Zbsf.line = __LINE__;  \
          iQw3Zbsf.func = f5zuNP3w;  \
-         \
          try {  \
            iQw3Zbsf.text = ::asteria::format_string(  \
                (::asteria::make_string_template TEMPLATE), ##__VA_ARGS__);  \

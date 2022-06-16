@@ -152,7 +152,7 @@ do_write_loop(int fd, const cow_string& data) noexcept
   }
 
 void
-do_write_nothrow(const Level_Config& lconf, const Async_Logger::Element& elem) noexcept
+do_write_nothrow(const Level_Config& lconf, const Async_Logger::Queued_Message& msg) noexcept
   try {
     // Compose the string to write.
     cow_string data;
@@ -205,24 +205,24 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Element& elem) n
     // Write the thread name and ID.
     do_color(data, lconf, "30;1");  // grey
     data += "THREAD ";
-    nump.put_DU(elem.thrd_lwpid);
+    nump.put_DU(msg.thrd_lwpid);
     data.append(nump.data(), nump.size());
     data += " \"";
-    data += elem.thrd_name;
+    data += msg.thrd_name;
     data += "\" ";
 
     // Write the function name.
     do_color(data, lconf, "37;1");  // bright white
     data += "FUNCTION `";
-    data += elem.func;
+    data += msg.func;
     data += "` ";
 
     // Write the source file name and line number.
     do_color(data, lconf, "34;1");  // bright blue
     data += "SOURCE \'";
-    data += elem.file;
+    data += msg.file;
     data += ':';
-    nump.put_DU(elem.line);
+    nump.put_DU(msg.line);
     data.append(nump.data(), nump.size());
     data += "\'\n";
 
@@ -231,7 +231,7 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Element& elem) n
     do_color(data, lconf, lconf.color.c_str());
     data += '\t';
 
-    for(char ch : elem.text) {
+    for(char ch : msg.text) {
       const char* seq = escapes[(uint8_t) ch];
       if(seq[1] == 0) {
         // non-escaped
@@ -308,10 +308,10 @@ thread_loop()
     lock.unlock();
 
     // Write all elements.
-    for(const auto& elem : this->m_io_queue)
-      if(elem.level < levels.size())
-        if((this->m_io_queue.size() <= 1024U) || !levels[elem.level].trivial)
-          do_write_nothrow(levels[elem.level], elem);
+    for(const auto& msg : this->m_io_queue)
+      if(msg.level < levels.size())
+        if((this->m_io_queue.size() <= 1024U) || !levels[msg.level].trivial)
+          do_write_nothrow(levels[msg.level], msg);
 
     this->m_io_queue.clear();
     io_sync_lock.unlock();
@@ -345,16 +345,16 @@ reload(const Config_File& file)
 
 void
 Async_Logger::
-enqueue(Element&& elem)
+enqueue(Queued_Message&& msg)
   {
     // Fill in the name and LWP ID of the calling thread.
-    ::strncpy(elem.thrd_name, "[unknown]", sizeof(elem.thrd_name));
-    ::pthread_getname_np(::pthread_self(), elem.thrd_name, sizeof(elem.thrd_name));
-    elem.thrd_lwpid = (uint32_t) ::syscall(__NR_gettid);
+    ::strncpy(msg.thrd_name, "[unknown]", sizeof(msg.thrd_name));
+    ::pthread_getname_np(::pthread_self(), msg.thrd_name, sizeof(msg.thrd_name));
+    msg.thrd_lwpid = (uint32_t) ::syscall(__NR_gettid);
 
     // Enqueue the element.
     plain_mutex::unique_lock lock(this->m_queue_mutex);
-    this->m_queue.emplace_back(::std::move(elem));
+    this->m_queue.emplace_back(::std::move(msg));
     this->m_queue_avail.notify_one();
   }
 
@@ -378,9 +378,9 @@ synchronize() noexcept
     lock.unlock();
 
     // Write all elements.
-    for(const auto& elem : this->m_io_queue)
-      if(elem.level < levels.size())
-        do_write_nothrow(levels[elem.level], elem);
+    for(const auto& msg : this->m_io_queue)
+      if(msg.level < levels.size())
+        do_write_nothrow(levels[msg.level], msg);
 
     this->m_io_queue.clear();
     io_sync_lock.unlock();

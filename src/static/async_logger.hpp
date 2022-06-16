@@ -14,7 +14,7 @@ class Async_Logger
   {
   public:
     // This represents a queued log message.
-    struct Element
+    struct Queued_Message
       {
         Log_Level level;
         const char* file;
@@ -35,10 +35,10 @@ class Async_Logger
 
     mutable plain_mutex m_queue_mutex;
     condition_variable m_queue_avail;
-    vector<Element> m_queue;
+    vector<Queued_Message> m_queue;
 
     mutable plain_mutex m_io_mutex;
-    vector<Element> m_io_queue;
+    vector<Queued_Message> m_io_queue;
 
   public:
     // Creates a logger that outputs to nowhere.
@@ -71,7 +71,7 @@ class Async_Logger
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     void
-    enqueue(Element&& elem);
+    enqueue(Queued_Message&& msg);
 
     // Waits until all pending log entries are delivered to output devices.
     // This function is thread-safe.
