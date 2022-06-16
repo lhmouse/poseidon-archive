@@ -167,6 +167,7 @@ Fiber_Scheduler::
 thread_loop()
   {
     // Await a fiber.
+    plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     const int64_t now = this->clock();
     shared_ptr<Queued_Fiber> elem;
 
@@ -231,7 +232,6 @@ thread_loop()
     }
     lock.unlock();
 
-    lock.lock(this->m_sched_mutex);
     if(!elem) {
       // If a signal is pending and all fibers have finished execution, exit.
       uint32_t sig = (uint32_t) exit_signal.xchg(0);
@@ -244,9 +244,12 @@ thread_loop()
       // Sleep for a while. The wait duration is capped to roughly 134 ms.
       ::timespec ts;
       ts.tv_sec = 0;
-      ts.tv_nsec = (this->m_sched_wait_ns * 2 + 1) & 0x7FFFFFF;
+      ts.tv_nsec = this->m_sched_wait_ns;
+      ts.tv_nsec <<= 1;
+      ts.tv_nsec |= 1;
+      ts.tv_nsec &= 0x7FFFFFF;
       this->m_sched_wait_ns = ts.tv_nsec;
-      lock.unlock();
+      sched_lock.unlock();
 
       ::nanosleep(&ts, nullptr);
       return;
