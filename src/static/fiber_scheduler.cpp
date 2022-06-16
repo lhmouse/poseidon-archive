@@ -97,7 +97,7 @@ struct Queued_Fiber
     weak_ptr<Abstract_Future> futr_opt;
     int64_t yield_since;
     int64_t ready_since;
-    ::ucontext_t m_sched_inner[1];
+    ::ucontext_t sched_inner[1];
   };
 
 struct Fiber_Comparator
@@ -167,7 +167,6 @@ Fiber_Scheduler::
 thread_loop()
   {
     // Await a fiber.
-    plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     const int64_t now = this->clock();
     shared_ptr<Queued_Fiber> elem;
 
@@ -192,7 +191,7 @@ thread_loop()
       if(back->fiber->m_async_state.load() == async_state_finished) {
         POSEIDON_LOG_TRACE(("Deleting fiber `$1` (class `$2`)"), back->fiber, typeid(*(back->fiber)));
         back->fiber.reset();
-        do_pool_stack(back->m_sched_inner->uc_stack);
+        do_pool_stack(back->sched_inner->uc_stack);
         this->m_pq.pop_back();
         continue;
       }
@@ -232,6 +231,7 @@ thread_loop()
     }
     lock.unlock();
 
+    lock.lock(this->m_sched_mutex);
     if(!elem) {
       // If a signal is pending and all fibers have finished execution, exit.
       uint32_t sig = (uint32_t) exit_signal.xchg(0);
@@ -246,8 +246,8 @@ thread_loop()
       ts.tv_sec = 0;
       ts.tv_nsec = (this->m_sched_wait_ns * 2 + 1) & 0x7FFFFFF;
       this->m_sched_wait_ns = ts.tv_nsec;
+      lock.unlock();
 
-      sched_lock.unlock();
       ::nanosleep(&ts, nullptr);
       return;
     }
@@ -257,11 +257,11 @@ thread_loop()
 
     // Now we execute this fiber.
     // If the fiber has not got a stack, allocate one.
-    if(!elem->m_sched_inner->uc_stack.ss_sp) {
+    if(!elem->sched_inner->uc_stack.ss_sp) {
       POSEIDON_LOG_TRACE(("Initializing fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
-      ::getcontext(elem->m_sched_inner);
-      elem->m_sched_inner->uc_stack = do_alloc_stack(stack_vm_size);  // may throw an exception
-      elem->m_sched_inner->uc_link = this->m_sched_outer;
+      ::getcontext(elem->sched_inner);
+      elem->sched_inner->uc_stack = do_alloc_stack(stack_vm_size);  // may throw an exception
+      elem->sched_inner->uc_link = this->m_sched_outer;
 
       auto fiber_function = +[](int a0, int a1) noexcept -> void
         {
@@ -302,15 +302,15 @@ thread_loop()
       int args[2];
       Fiber_Scheduler* self = this;
       ::memcpy(args, &self, sizeof(self));
-      ::makecontext(elem->m_sched_inner, (void (*)()) fiber_function, 2, args[0], args[1]);
+      ::makecontext(elem->sched_inner, (void (*)()) fiber_function, 2, args[0], args[1]);
     }
 
     // Resume this fiber...
     this->m_sched_self_opt = elem;
     POSEIDON_LOG_TRACE(("Resuming fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
 
-    do_start_switch_fiber(this->m_sched_asan_save, elem->m_sched_inner);
-    ::swapcontext(this->m_sched_outer, elem->m_sched_inner);
+    do_start_switch_fiber(this->m_sched_asan_save, elem->sched_inner);
+    ::swapcontext(this->m_sched_outer, elem->sched_inner);
     do_finish_switch_fiber(this->m_sched_asan_save);
 
     // ... and return here.
@@ -496,7 +496,7 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     POSEIDON_LOG_TRACE(("Suspending fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
 
     do_start_switch_fiber(this->m_sched_asan_save, this->m_sched_outer);
-    ::swapcontext(elem->m_sched_inner, this->m_sched_outer);
+    ::swapcontext(elem->sched_inner, this->m_sched_outer);
     do_finish_switch_fiber(this->m_sched_asan_save);
 
     // ... and return here.
