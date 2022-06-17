@@ -74,20 +74,24 @@ thread_loop()
     }
     ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), timer_comparator);
     auto elem = ::std::move(this->m_pq.back());
-    this->m_pq.pop_back();
-
+    auto next_state = async_state_finished;
     auto timer = elem.timer.lock();
-    if(!timer)
+    if(!timer || (elem.serial != timer->m_serial)) {
+      // If the element has been invalidated, delete it.
+      this->m_pq.pop_back();
       return;
-    else if(elem.serial != timer->m_serial)
-      return;
+    }
 
     if(elem.period != 0) {
       // Update the next time point and insert the timer back.
       elem.next += elem.period;
-      this->m_pq.emplace_back(::std::move(elem));
       ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), timer_comparator);
+      next_state = async_state_suspended;
     }
+    else
+      this->m_pq.pop_back();
+
+    plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     lock.unlock();
 
     // Execute it.
@@ -108,7 +112,7 @@ thread_loop()
     }
 
     ROCKET_ASSERT(timer->m_async_state.load() == async_state_running);
-    timer->m_async_state.store(async_state_suspended);
+    timer->m_async_state.store(next_state);
   }
 
 int64_t

@@ -20,6 +20,8 @@ class Timer_Driver
     struct Queued_Timer;
     vector<Queued_Timer> m_pq;
 
+    mutable plain_mutex m_sched_mutex;
+
   public:
     // Constructs an empty driver.
     Timer_Driver();
