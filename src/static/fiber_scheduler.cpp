@@ -166,7 +166,6 @@ Fiber_Scheduler::
 thread_loop()
   {
     // Await a fiber.
-    plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     const int64_t now = this->clock();
     const int signal = exit_signal.load();
     shared_ptr<Queued_Fiber> elem;
@@ -184,6 +183,7 @@ thread_loop()
       ::rocket::for_each(this->m_pq, [&](auto& ptr) { ptr->ready_since = ptr->async_time.load();  });
       ::std::make_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
     }
+
     while(!elem && !this->m_pq.empty() && ((this->m_pq.front()->ready_since <= now) || signal)) {
       ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
       auto& back = this->m_pq.back();
@@ -230,11 +230,11 @@ thread_loop()
       back->ready_since += warn_timeout;
       ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
     }
-    lock.unlock();
-
-    // If a signal is pending and all fibers have finished execution, exit.
     if(!elem && signal)
       return;
+
+    plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
+    lock.unlock();
 
     // If no fiber can be scheduled, sleep for a while.
     // The wait duration is capped to roughly 134 ms.
