@@ -17,6 +17,7 @@ class Task_Executor
     condition_variable m_queue_avail;
     struct Queued_Task;
     vector<Queued_Task> m_queue;
+    vector<Queued_Task> m_current;
 
   public:
     // Creates an empty task executor.
@@ -33,8 +34,8 @@ class Task_Executor
     // Enqueues a task.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
-//    void
-//    enqueue(Element&& elem);
+    void
+    enqueue(const shared_ptr<Abstract_Task>& task);
   };
 
 }  // namespace poseidon
