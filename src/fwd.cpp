@@ -70,11 +70,11 @@ operator|(MgrT& mgr, const Thrd& th)
 
 }  // namespace
 
+atomic_signal exit_signal;
 Main_Config& main_config = *new Main_Config;
 Async_Logger& async_logger = *new Async_Logger | Thrd{"logger"};
 Timer_Driver& timer_driver = *new Timer_Driver | Thrd{"timer"};
 Fiber_Scheduler& fiber_scheduler = *new Fiber_Scheduler;
 Task_Executor& task_executor = *new Task_Executor | Thrd{"task1"} | Thrd{"task2"} | Thrd{"task3"} | Thrd{"task4"};
-atomic_signal exit_signal;
 
 }  // namespace poseidon
