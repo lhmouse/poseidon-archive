@@ -106,6 +106,10 @@ template<typename ValueT> class Future;
 class Abstract_Fiber;
 class Abstract_Task;
 
+// Socket types
+enum Socket_Address_Class : uint8_t;
+class Socket_Address;
+
 // Manager types and instances
 extern atomic_signal exit_signal;
 extern class Main_Config& main_config;

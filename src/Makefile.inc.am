@@ -22,6 +22,8 @@ include_poseidon_core_HEADERS =  \
 
 include_poseidon_socketdir = ${includedir}/poseidon/socket
 include_poseidon_socket_HEADERS =  \
+  %reldir%/socket/enums.hpp  \
+  %reldir%/socket/socket_address.hpp  \
   ${END}
 
 include_poseidon_staticdir = ${includedir}/poseidon/static
@@ -44,6 +46,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/abstract_future.cpp  \
   %reldir%/core/abstract_fiber.cpp  \
   %reldir%/core/abstract_task.cpp  \
+  %reldir%/socket/socket_address.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \
