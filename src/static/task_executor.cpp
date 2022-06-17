@@ -87,4 +87,4 @@ enqueue(const shared_ptr<Abstract_Task>& task)
 
   }
 
-}  // poseidon
+}  // namespace poseidon
