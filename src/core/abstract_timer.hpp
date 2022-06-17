@@ -17,7 +17,7 @@ class Abstract_Timer
     atomic_relaxed<uint64_t> m_count = { 0 };
     uint64_t m_serial;  // used by timer driver
 
-  public:
+  protected:
     // Constructs a timer whose count is zero.
     Abstract_Timer() noexcept;
 

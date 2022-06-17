@@ -16,7 +16,7 @@ class Abstract_Fiber
     Fiber_Scheduler* m_scheduler = nullptr;
     atomic_relaxed<Async_State> m_state = { async_state_pending };
 
-  public:
+  protected:
     // Constructs an empty fiber.
     Abstract_Fiber() noexcept;
 

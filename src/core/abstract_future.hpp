@@ -18,7 +18,7 @@ class Abstract_Future
     atomic_acq_rel<Future_State> m_state = { future_state_empty };
     vector<weak_ptr<atomic_relaxed<int64_t>>> m_waiters;
 
-  public:
+  protected:
     // Constructs an empty future.
     Abstract_Future() noexcept;
 
