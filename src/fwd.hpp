@@ -113,7 +113,10 @@ class Abstract_Task;
 
 // Socket types
 enum Socket_Address_Class : uint8_t;
+enum Socket_State : uint8_t;
+enum IO_Result : uint8_t;
 class Socket_Address;
+class Abstract_Socket;
 
 // Manager types and instances
 extern atomic_signal exit_signal;
@@ -122,6 +125,7 @@ extern class Async_Logger& async_logger;
 extern class Timer_Driver& timer_driver;
 extern class Fiber_Scheduler& fiber_scheduler;
 extern class Task_Executor& task_executor;
+extern class Network_Driver& network_driver;
 
 // Log levels
 // Note each level has a hardcoded name and number.

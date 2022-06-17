@@ -6,6 +6,7 @@
 #include "static/main_config.hpp"
 #include "static/async_logger.hpp"
 #include "static/fiber_scheduler.hpp"
+#include "static/network_driver.hpp"
 #include "utils.hpp"
 #include <locale.h>
 #include <signal.h>
@@ -368,8 +369,10 @@ main(int argc, char** argv)
     // Load configuration and start the logger early.
     do_set_working_directory();
     main_config.reload();
+
     async_logger.reload(main_config.copy());
     fiber_scheduler.reload(main_config.copy());
+    network_driver.reload(main_config.copy());
     POSEIDON_LOG_INFO(("Finished load configuration"));
 
     do_check_euid();
