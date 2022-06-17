@@ -21,6 +21,7 @@ class Task_Executor
 
   public:
     // Creates an empty task executor.
+    explicit
     Task_Executor();
 
   public:

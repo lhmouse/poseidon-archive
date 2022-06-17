@@ -20,6 +20,7 @@ class Abstract_Future
 
   protected:
     // Constructs an empty future.
+    explicit
     Abstract_Future() noexcept;
 
   private:

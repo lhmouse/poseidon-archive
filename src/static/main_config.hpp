@@ -19,6 +19,7 @@ class Main_Config
 
   public:
     // Constructs an empty configuration file.
+    explicit
     Main_Config();
 
   public:

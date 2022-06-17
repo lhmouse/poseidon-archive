@@ -19,6 +19,7 @@ class Abstract_Timer
 
   protected:
     // Constructs a timer whose count is zero.
+    explicit
     Abstract_Timer() noexcept;
 
   protected:

@@ -29,6 +29,7 @@ class Future
 
   public:
     // Constructs an empty future.
+    explicit
     Future() noexcept;
 
   public:

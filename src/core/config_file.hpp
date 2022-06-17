@@ -20,10 +20,12 @@ class Config_File
 
   public:
     // Constructs an empty file.
+    explicit
     Config_File() noexcept;
 
     // Loads the file denoted by `path`, like `reload(path)`.
-    explicit Config_File(const cow_string& path);
+    explicit
+    Config_File(const cow_string& path);
 
   public:
     ASTERIA_COPYABLE_DESTRUCTOR(Config_File);
