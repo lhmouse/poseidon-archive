@@ -51,7 +51,7 @@ thread_loop()
     // Execute it.
     // Exceptions are ignored.
     POSEIDON_LOG_TRACE(("Executing task `$1` (class `$2`)"), task, typeid(*task));
-    task->m_async_state.store(async_state_running);
+    task->m_state.store(async_state_running);
 
     try {
       task->do_abstract_task_on_execution();
@@ -64,8 +64,8 @@ thread_loop()
           stdex.what(), typeid(stdex), typeid(*task));
     }
 
-    ROCKET_ASSERT(task->m_async_state.load() == async_state_running);
-    task->m_async_state.store(async_state_finished);
+    ROCKET_ASSERT(task->m_state.load() == async_state_running);
+    task->m_state.store(async_state_finished);
   }
 
 void

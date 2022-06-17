@@ -13,7 +13,7 @@ class Abstract_Task
   private:
     friend class Task_Executor;
 
-    atomic_relaxed<Async_State> m_async_state = { async_state_pending };
+    atomic_relaxed<Async_State> m_state = { async_state_pending };
 
   public:
     // Constructs an asynchronous task.
@@ -33,7 +33,7 @@ class Abstract_Task
     // Gets the schedule state.
     Async_State
     async_state() const noexcept
-      { return this->m_async_state.load();  }
+      { return this->m_state.load();  }
   };
 
 }  // namespace poseidon

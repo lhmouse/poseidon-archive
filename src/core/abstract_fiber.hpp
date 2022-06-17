@@ -14,7 +14,7 @@ class Abstract_Fiber
     friend class Fiber_Scheduler;
 
     Fiber_Scheduler* m_scheduler = nullptr;
-    atomic_relaxed<Async_State> m_async_state = { async_state_pending };
+    atomic_relaxed<Async_State> m_state = { async_state_pending };
 
   public:
     // Constructs an empty fiber.
@@ -45,7 +45,7 @@ class Abstract_Fiber
     // Gets the schedule state.
     Async_State
     async_state() const noexcept
-      { return this->m_async_state.load();  }
+      { return this->m_state.load();  }
 
     // Calls `m_scheduler->yield(futr_opt)`.
     // This function can only be called from `do_abstract_fiber_on_execution()`.

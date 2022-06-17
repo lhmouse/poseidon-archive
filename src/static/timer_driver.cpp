@@ -97,7 +97,7 @@ thread_loop()
     // Execute it.
     // Exceptions are ignored.
     POSEIDON_LOG_TRACE(("Executing timer `$1` (class `$2`)"), timer, typeid(*timer));
-    timer->m_async_state.store(async_state_running);
+    timer->m_state.store(async_state_running);
     timer->m_count.xadd(1);
 
     try {
@@ -111,8 +111,8 @@ thread_loop()
           stdex.what(), typeid(stdex), typeid(*timer));
     }
 
-    ROCKET_ASSERT(timer->m_async_state.load() == async_state_running);
-    timer->m_async_state.store(next_state);
+    ROCKET_ASSERT(timer->m_state.load() == async_state_running);
+    timer->m_state.store(next_state);
   }
 
 int64_t

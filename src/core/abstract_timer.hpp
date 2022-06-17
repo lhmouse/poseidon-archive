@@ -13,7 +13,7 @@ class Abstract_Timer
   private:
     friend class Timer_Driver;
 
-    atomic_relaxed<Async_State> m_async_state = { async_state_pending };
+    atomic_relaxed<Async_State> m_state = { async_state_pending };
     atomic_relaxed<uint64_t> m_count = { 0 };
     uint64_t m_serial;  // used by timer driver
 
@@ -36,7 +36,7 @@ class Abstract_Timer
     // Gets the schedule state.
     Async_State
     async_state() const noexcept
-      { return this->m_async_state.load();  }
+      { return this->m_state.load();  }
 
     // Gets the number of times that this timer has been triggered.
     uint64_t

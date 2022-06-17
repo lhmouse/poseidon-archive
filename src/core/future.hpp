@@ -39,7 +39,7 @@ class Future
     value() const
       {
         // If no value has been set, throw an exception.
-        if(this->m_future_state.load() != future_state_value)
+        if(this->m_state.load() != future_state_value)
           this->do_abstract_future_check_value(typeid(ValueT).name(), this->m_exptr);
 
         // This cast is necessary when `const_reference` is void.
@@ -51,7 +51,7 @@ class Future
     value()
       {
         // If no value has been set, throw an exception.
-        if(this->m_future_state.load() != future_state_value)
+        if(this->m_state.load() != future_state_value)
           this->do_abstract_future_check_value(typeid(ValueT).name(), this->m_exptr);
 
         // This cast is necessary when `reference` is void.
@@ -66,12 +66,12 @@ class Future
         // If a value or exception has already been set, this function shall
         // do nothing.
         plain_mutex::unique_lock lock(this->m_mutex);
-        if(this->m_future_state.load() != future_state_empty)
+        if(this->m_state.load() != future_state_empty)
           return;
 
         // Construct the value.
         ::rocket::construct(this->m_value, ::std::forward<ParamsT>(params)...);
-        this->m_future_state.store(future_state_value);
+        this->m_state.store(future_state_value);
         this->do_abstract_future_signal_nolock();
       }
 
@@ -82,12 +82,12 @@ class Future
         // If a value or exception has already been set, this function shall
         // do nothing.
         plain_mutex::unique_lock lock(this->m_mutex);
-        if(this->m_future_state.load() != future_state_empty)
+        if(this->m_state.load() != future_state_empty)
           return;
 
         // Construct the exception pointer.
         ::rocket::construct(this->m_exptr, exptr_opt);
-        this->m_future_state.store(future_state_exception);
+        this->m_state.store(future_state_exception);
         this->do_abstract_future_signal_nolock();
       }
   };
@@ -102,7 +102,7 @@ template<typename ValueT>
 Future<ValueT>::
 ~Future()
   {
-    switch(this->m_future_state.load()) {
+    switch(this->m_state.load()) {
       case future_state_empty:
         break;
 

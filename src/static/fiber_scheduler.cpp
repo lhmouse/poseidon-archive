@@ -189,7 +189,7 @@ thread_loop()
       auto& back = this->m_pq.back();
 
       // If the fiber has finished execution, delete it.
-      if(back->fiber->m_async_state.load() == async_state_finished) {
+      if(back->fiber->m_state.load() == async_state_finished) {
         POSEIDON_LOG_TRACE(("Deleting fiber `$1` (class `$2`)"), back->fiber, typeid(*(back->fiber)));
         back->fiber.reset();
         do_pool_stack(back->sched_inner->uc_stack);
@@ -222,7 +222,7 @@ thread_loop()
       // Otherwise, resume the fiber if it is not waiting for a future, or if the
       // future has been marked ready.
       shared_ptr<Abstract_Future> futr;
-      if(!elem && (!(futr = back->futr_opt.lock()) || (futr->m_future_state.load() != future_state_empty)))
+      if(!elem && (!(futr = back->futr_opt.lock()) || (futr->m_state.load() != future_state_empty)))
         elem = back;
 
       // Put the fiber back.
@@ -275,8 +275,8 @@ thread_loop()
           ROCKET_ASSERT(elec);
 
           // Invoke the fiber procedure.
-          ROCKET_ASSERT(elec->fiber->m_async_state.load() == async_state_pending);
-          elec->fiber->m_async_state.store(async_state_running);
+          ROCKET_ASSERT(elec->fiber->m_state.load() == async_state_pending);
+          elec->fiber->m_state.store(async_state_running);
           POSEIDON_LOG_TRACE(("Starting fiber `$1` (class `$2`)"), elec->fiber, typeid(*(elec->fiber)));
 
           try {
@@ -291,8 +291,8 @@ thread_loop()
           }
 
           POSEIDON_LOG_TRACE(("Exiting from fiber `$1` (class `$2`)"), elec->fiber, typeid(*(elec->fiber)));
-          ROCKET_ASSERT(elec->fiber->m_async_state.load() == async_state_running);
-          elec->fiber->m_async_state.store(async_state_finished);
+          ROCKET_ASSERT(elec->fiber->m_state.load() == async_state_running);
+          elec->fiber->m_state.store(async_state_finished);
 
           // Return to `m_sched_outer`.
           elec->async_time.store(self->clock());
@@ -463,7 +463,7 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
       future_lock.lock(futr_opt->m_mutex);
 
       // If it is not empty, don't block at all.
-      if(futr_opt->m_future_state.load() != future_state_empty)
+      if(futr_opt->m_state.load() != future_state_empty)
         return;
     }
 
@@ -491,8 +491,8 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     elem->fiber->do_abstract_fiber_on_suspended();
 
     // Suspend the current fiber...
-    ROCKET_ASSERT(elem->fiber->m_async_state.load() == async_state_running);
-    elem->fiber->m_async_state.store(async_state_suspended);
+    ROCKET_ASSERT(elem->fiber->m_state.load() == async_state_running);
+    elem->fiber->m_state.store(async_state_suspended);
     POSEIDON_LOG_TRACE(("Suspending fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
 
     do_start_switch_fiber(this->m_sched_asan_save, this->m_sched_outer);
@@ -501,8 +501,8 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
 
     // ... and return here.
     POSEIDON_LOG_TRACE(("Resumed fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
-    ROCKET_ASSERT(elem->fiber->m_async_state.load() == async_state_suspended);
-    elem->fiber->m_async_state.store(async_state_running);
+    ROCKET_ASSERT(elem->fiber->m_state.load() == async_state_suspended);
+    elem->fiber->m_state.store(async_state_running);
 
     // Disassociate the future, if any.
     elem->futr_opt.reset();

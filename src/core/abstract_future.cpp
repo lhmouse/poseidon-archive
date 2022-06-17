@@ -22,7 +22,7 @@ void
 Abstract_Future::
 do_abstract_future_check_value(const char* type, const exception_ptr* exptr) const
   {
-    switch(this->m_future_state.load()) {
+    switch(this->m_state.load()) {
       case future_state_empty:
         POSEIDON_THROW((
             "No value set",
