@@ -101,7 +101,7 @@ thread_loop()
     }
     catch(exception& stdex) {
       POSEIDON_LOG_ERROR((
-          "Unhandled exception from timer: $1",
+          "Unhandled exception thrown from timer: $1",
           "[exception class `$2`]",
           "[timer class `$3`]"),
           stdex.what(), typeid(stdex), typeid(*timer));
