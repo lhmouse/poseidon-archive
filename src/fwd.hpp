@@ -13,6 +13,8 @@
 #include <rocket/recursive_mutex.hpp>
 #include <rocket/condition_variable.hpp>
 #include <rocket/once_flag.hpp>
+#include <rocket/tinyfmt_str.hpp>
+#include <rocket/tinyfmt_file.hpp>
 #include <array>
 #include <vector>
 #include <deque>
@@ -94,6 +96,24 @@ using phsh_string = ::rocket::prehashed_string;
   struct __attribute__((__visibility__("hidden")))  \
       CLASS::MEMBER : CLASS##_##MEMBER { }  // no semicolon
 
+// Core types
+enum Async_State : uint8_t;
+enum Future_State : uint8_t;
+class Config_File;
+class Abstract_Timer;
+class Abstract_Future;
+template<typename ValueT> class Future;
+class Abstract_Fiber;
+class Abstract_Task;
+
+// Manager types and instances
+extern atomic_signal exit_signal;
+extern class Main_Config& main_config;
+extern class Async_Logger& async_logger;
+extern class Timer_Driver& timer_driver;
+extern class Fiber_Scheduler& fiber_scheduler;
+extern class Task_Executor& task_executor;
+
 // Log levels
 // Note each level has a hardcoded name and number.
 // Don't change their values or reorder them.
@@ -106,39 +126,6 @@ enum Log_Level : uint8_t
     log_level_debug  = 4,
     log_level_trace  = 5,
   };
-
-// Asynchronous function states
-enum Async_State : uint8_t
-  {
-    async_state_pending    = 0,
-    async_state_suspended  = 1,
-    async_state_running    = 2,
-    async_state_finished   = 3,
-  };
-
-// Future states
-enum Future_State : uint8_t
-  {
-    future_state_empty      = 0,
-    future_state_value      = 1,
-    future_state_exception  = 2,
-  };
-
-// Core classes
-class Config_File;
-class Abstract_Timer;
-class Abstract_Future;
-template<typename ValueT> class Future;
-class Abstract_Fiber;
-class Abstract_Task;
-
-// Manager classes
-extern atomic_signal exit_signal;
-extern class Main_Config& main_config;
-extern class Async_Logger& async_logger;
-extern class Timer_Driver& timer_driver;
-extern class Fiber_Scheduler& fiber_scheduler;
-extern class Task_Executor& task_executor;
 
 // Composes a string and submits it to the logger.
 // Note that in order to use these macros, you still have to include
