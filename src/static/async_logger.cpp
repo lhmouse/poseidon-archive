@@ -290,6 +290,31 @@ Async_Logger::
 
 void
 Async_Logger::
+reload(const Config_File& file)
+  {
+    // Parse new configuration.
+    vector<Level_Config> levels(6);
+    uint32_t level_mask = 0;
+
+    do_load_level_config(levels.at(log_level_trace), file, "trace");
+    do_load_level_config(levels.at(log_level_debug), file, "debug");
+    do_load_level_config(levels.at(log_level_info ), file, "info" );
+    do_load_level_config(levels.at(log_level_warn ), file, "warn" );
+    do_load_level_config(levels.at(log_level_error), file, "error");
+    do_load_level_config(levels.at(log_level_fatal), file, "fatal");
+
+    for(size_t k = 0;  k != levels.size();  ++k)
+      if((levels[k].fd != -1) || !levels[k].file.empty())
+        level_mask |= 1U << k;
+
+    // Set up new data.
+    plain_mutex::unique_lock lock(this->m_conf_mutex);
+    this->m_conf_levels.swap(levels);
+    this->m_conf_level_mask.store(level_mask);
+  }
+
+void
+Async_Logger::
 thread_loop()
   {
     // Get all pending elements.
@@ -316,31 +341,6 @@ thread_loop()
     this->m_io_queue.clear();
     io_sync_lock.unlock();
     ::sync();
-  }
-
-void
-Async_Logger::
-reload(const Config_File& file)
-  {
-    // Parse new configuration.
-    vector<Level_Config> levels(6);
-    uint32_t level_mask = 0;
-
-    do_load_level_config(levels.at(log_level_trace), file, "trace");
-    do_load_level_config(levels.at(log_level_debug), file, "debug");
-    do_load_level_config(levels.at(log_level_info ), file, "info" );
-    do_load_level_config(levels.at(log_level_warn ), file, "warn" );
-    do_load_level_config(levels.at(log_level_error), file, "error");
-    do_load_level_config(levels.at(log_level_fatal), file, "fatal");
-
-    for(size_t k = 0;  k != levels.size();  ++k)
-      if((levels[k].fd != -1) || !levels[k].file.empty())
-        level_mask |= 1U << k;
-
-    // Set up new data.
-    plain_mutex::unique_lock lock(this->m_conf_mutex);
-    this->m_conf_levels.swap(levels);
-    this->m_conf_level_mask.store(level_mask);
   }
 
 void

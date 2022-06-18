@@ -52,6 +52,15 @@ Timer_Driver::
   {
   }
 
+int64_t
+Timer_Driver::
+clock() noexcept
+  {
+    ::timespec ts;
+    ::clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1000000000LL + ts.tv_nsec;
+  }
+
 void
 Timer_Driver::
 thread_loop()
@@ -113,15 +122,6 @@ thread_loop()
 
     ROCKET_ASSERT(timer->m_state.load() == async_state_running);
     timer->m_state.store(next_state);
-  }
-
-int64_t
-Timer_Driver::
-clock() noexcept
-  {
-    ::timespec ts;
-    ::clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec * 1000000000LL + ts.tv_nsec;
   }
 
 void

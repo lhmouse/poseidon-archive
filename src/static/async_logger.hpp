@@ -48,16 +48,16 @@ class Async_Logger
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Async_Logger);
 
-    // Performs I/O operation.
-    // This function should be called by the logger thread repeatedly.
-    void
-    thread_loop();
-
     // Reloads configuration from 'main.conf'.
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     void
     reload(const Config_File& file);
+
+    // Performs I/O operation.
+    // This function should be called by the logger thread repeatedly.
+    void
+    thread_loop();
 
     // Checks whether a given level is enabled.
     // This function is thread-safe.

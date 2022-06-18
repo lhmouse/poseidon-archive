@@ -37,11 +37,6 @@ class Fiber_Scheduler
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Fiber_Scheduler);
 
-    // Schedules fibers.
-    // This function should be called by the fiber thread repeatedly.
-    void
-    thread_loop();
-
     // Gets the current time from a monotonic clock, in nanoseconds.
     // This function is thread-safe.
     static
@@ -53,6 +48,11 @@ class Fiber_Scheduler
     // This function is thread-safe.
     void
     reload(const Config_File& file);
+
+    // Schedules fibers.
+    // This function should be called by the fiber thread repeatedly.
+    void
+    thread_loop();
 
     // Returns the number of fibers that are being scheduled.
     // This function is thread-safe.

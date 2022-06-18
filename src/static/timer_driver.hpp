@@ -29,16 +29,16 @@ class Timer_Driver
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Timer_Driver);
 
-    // Schedules timers.
-    // This function should be called by the timer thread repeatedly.
-    void
-    thread_loop();
-
     // Gets the current time from a monotonic clock, in nanoseconds.
     // This function is thread-safe.
     static
     int64_t
     clock() noexcept;
+
+    // Schedules timers.
+    // This function should be called by the timer thread repeatedly.
+    void
+    thread_loop();
 
     // Inserts a timer. If a timer is inserted multiple times, operations other
     // than the last one are invalidated, which can be used to reset a timer.
