@@ -7,7 +7,6 @@
 #include "version.h"
 #include <asteria/fwd.hpp>
 #include <rocket/ascii_case.hpp>
-#include <rocket/linear_buffer.hpp>
 #include <rocket/atomic.hpp>
 #include <rocket/mutex.hpp>
 #include <rocket/recursive_mutex.hpp>
@@ -58,7 +57,6 @@ using ::std::static_pointer_cast;
 using ::std::dynamic_pointer_cast;
 using ::std::const_pointer_cast;
 
-using ::rocket::linear_buffer;
 using ::rocket::atomic;
 using ::rocket::atomic_relaxed;
 using ::rocket::atomic_acq_rel;
