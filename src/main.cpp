@@ -367,8 +367,8 @@ main(int argc, char** argv)
     do_set_working_directory();
     main_config.reload();
     async_logger.reload(main_config.copy());
-    POSEIDON_LOG_INFO(("Starting up: $1"), PACKAGE_STRING);
     fiber_scheduler.reload(main_config.copy());
+    POSEIDON_LOG_INFO(("Finished load configuration"));
 
     do_check_euid();
     do_check_ulimits();
