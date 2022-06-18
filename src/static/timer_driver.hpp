@@ -5,7 +5,6 @@
 #define POSEIDON_STATIC_TIMER_DRIVER_
 
 #include "../fwd.hpp"
-#include "../core/config_file.hpp"
 
 namespace poseidon {
 

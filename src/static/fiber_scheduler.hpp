@@ -5,7 +5,6 @@
 #define POSEIDON_STATIC_FIBER_SCHEDULER_
 
 #include "../fwd.hpp"
-#include "../core/config_file.hpp"
 #include <ucontext.h>  // ucontext_t
 
 namespace poseidon {
