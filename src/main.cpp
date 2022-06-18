@@ -261,8 +261,8 @@ do_write_pid_file()
       return;
 
     // Create the lock file and lock it in exclusive mode before overwriting.
-    ::rocket::unique_posix_fd pid_file(::close);
-    if(!pid_file.reset(::creat(pid_file_path.safe_c_str(), 0644)))
+    ::rocket::unique_posix_fd pid_file(::creat(pid_file_path.safe_c_str(), 0644));
+    if(!pid_file)
       POSEIDON_THROW((
           "Could not create PID file '$2'",
           "[`open()` failed: $1]"),

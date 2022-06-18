@@ -255,13 +255,13 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Queued_Message& 
 
     // Write text to streams. Errors are ignored.
     if(!lconf.file.empty()) {
-      ::rocket::unique_posix_fd ofd(::close);
-      if(ofd.reset(::open(lconf.file.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644)))
+      ::rocket::unique_posix_fd ofd(::open(lconf.file.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644));
+      if(ofd)
         do_write_loop(ofd, data);
       else
         ::fprintf(stderr,
             "WARNING: Could not open log file '%s' for appending: %m\n",
-             lconf.file.c_str());
+            lconf.file.c_str());
     }
 
     if(lconf.fd != -1)
