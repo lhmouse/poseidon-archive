@@ -44,7 +44,7 @@ Timer_Driver::
 Timer_Driver()
   {
     // Generate a random serial.
-    this->m_serial = (uint64_t) this->clock();
+    this->m_serial = (uint64_t) ::random();
   }
 
 Timer_Driver::

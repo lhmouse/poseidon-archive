@@ -359,6 +359,7 @@ main(int argc, char** argv)
     ::tzset();
     ::pthread_setname_np(::pthread_self(), PACKAGE);
     ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &::opterr);
+    ::srandom((unsigned) ::clock());
 
     // Note that this function shall not return in case of errors.
     do_parse_command_line(argc, argv);
