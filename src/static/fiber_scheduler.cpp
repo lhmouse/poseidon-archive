@@ -368,9 +368,8 @@ thread_loop()
           catch(exception& stdex) {
             POSEIDON_LOG_ERROR((
                 "Fiber exception: $1",
-                "[exception class `$2`]",
-                "[fiber class `$3`]"),
-                stdex.what(), typeid(stdex), typeid(*(elec->fiber)));
+                "[fiber class `$2`]"),
+                stdex, typeid(*(elec->fiber)));
           }
 
           POSEIDON_LOG_TRACE(("Exiting from fiber `$1` (class `$2`)"), elec->fiber, typeid(*(elec->fiber)));

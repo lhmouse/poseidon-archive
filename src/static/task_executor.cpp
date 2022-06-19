@@ -59,9 +59,8 @@ thread_loop()
     catch(exception& stdex) {
       POSEIDON_LOG_ERROR((
           "Unhandled exception thrown from asynchronous task: $1",
-          "[exception class `$2`]",
-          "[task class `$3`]"),
-          stdex.what(), typeid(stdex), typeid(*task));
+          "[task class `$2`]"),
+          stdex, typeid(*task));
     }
 
     ROCKET_ASSERT(task->m_state.load() == async_state_running);

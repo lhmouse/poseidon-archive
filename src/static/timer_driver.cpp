@@ -115,9 +115,8 @@ thread_loop()
     catch(exception& stdex) {
       POSEIDON_LOG_ERROR((
           "Unhandled exception thrown from timer: $1",
-          "[exception class `$2`]",
-          "[timer class `$3`]"),
-          stdex.what(), typeid(stdex), typeid(*timer));
+          "[timer class `$2`]"),
+          stdex, typeid(*timer));
     }
 
     ROCKET_ASSERT(timer->m_state.load() == async_state_running);
