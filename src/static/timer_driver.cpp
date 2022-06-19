@@ -90,16 +90,16 @@ thread_loop()
       this->m_pq.pop_back();
       return;
     }
-
-    if(elem.period != 0) {
+    else if(elem.period != 0) {
       // Update the next time point and insert the timer back.
       elem.next += elem.period;
       ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), timer_comparator);
       next_state = async_state_suspended;
     }
-    else
+    else {
+      // Delete the one-shot timer.
       this->m_pq.pop_back();
-
+    }
     plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     lock.unlock();
 
