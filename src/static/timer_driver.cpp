@@ -81,6 +81,7 @@ thread_loop()
       this->m_pq_avail.wait_until(lock, ts);
       return;
     }
+
     ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), timer_comparator);
     auto elem = ::std::move(this->m_pq.back());
     auto next_state = async_state_finished;
@@ -96,10 +97,9 @@ thread_loop()
       ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), timer_comparator);
       next_state = async_state_suspended;
     }
-    else {
-      // Delete the one-shot timer.
+    else
       this->m_pq.pop_back();
-    }
+
     plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     lock.unlock();
 

@@ -313,6 +313,7 @@ thread_loop()
       back->ready_since += warn_timeout;
       ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
     }
+
     if(!elem && signal)
       return;
 
