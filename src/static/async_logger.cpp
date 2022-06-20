@@ -255,7 +255,7 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Queued_Message& 
 
     // Write text to streams. Errors are ignored.
     if(!lconf.file.empty()) {
-      ::rocket::unique_posix_fd ofd(::open(lconf.file.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644));
+      unique_posix_fd ofd(::open(lconf.file.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644));
       if(ofd)
         do_write_loop(ofd, data);
       else

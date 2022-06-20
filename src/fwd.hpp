@@ -13,6 +13,10 @@
 #include <rocket/condition_variable.hpp>
 #include <rocket/once_flag.hpp>
 #include <rocket/linear_buffer.hpp>
+#include <rocket/tinyfmt.hpp>
+#include <rocket/unique_posix_fd.hpp>
+#include <rocket/unique_posix_file.hpp>
+#include <rocket/unique_posix_dir.hpp>
 #include <array>
 #include <vector>
 #include <deque>
@@ -74,6 +78,9 @@ using ::rocket::cow_u32string;
 using ::rocket::linear_buffer;
 using ::rocket::tinybuf;
 using ::rocket::tinyfmt;
+using ::rocket::unique_posix_fd;
+using ::rocket::unique_posix_file;
+using ::rocket::unique_posix_dir;
 
 using ::rocket::begin;
 using ::rocket::end;
