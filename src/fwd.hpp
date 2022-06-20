@@ -12,8 +12,7 @@
 #include <rocket/recursive_mutex.hpp>
 #include <rocket/condition_variable.hpp>
 #include <rocket/once_flag.hpp>
-#include <rocket/tinyfmt_str.hpp>
-#include <rocket/tinyfmt_file.hpp>
+#include <rocket/linear_buffer.hpp>
 #include <array>
 #include <vector>
 #include <deque>
@@ -72,10 +71,9 @@ using ::rocket::static_vector;
 using ::rocket::cow_string;
 using ::rocket::cow_u16string;
 using ::rocket::cow_u32string;
+using ::rocket::linear_buffer;
 using ::rocket::tinybuf;
 using ::rocket::tinyfmt;
-using ::rocket::tinyfmt_str;
-using ::rocket::tinyfmt_file;
 
 using ::rocket::begin;
 using ::rocket::end;
