@@ -62,7 +62,7 @@ class Socket_Address
       { return this->m_data;  }
 
     void*
-    data() noexcept
+    mut_data() noexcept
       { return this->m_data;  }
 
     constexpr
@@ -71,7 +71,7 @@ class Socket_Address
       { return &(this->m_addr);  }
 
     ::sockaddr*
-    addr() noexcept
+    mut_addr() noexcept
       { return &(this->m_addr);  }
 
     constexpr
@@ -80,7 +80,7 @@ class Socket_Address
       { return &(this->m_addr4);  }
 
     ::sockaddr_in*
-    addr4() noexcept
+    mut_addr4() noexcept
       { return &(this->m_addr4);  }
 
     constexpr
@@ -89,7 +89,7 @@ class Socket_Address
       { return &(this->m_addr6);  }
 
     ::sockaddr_in6*
-    addr6() noexcept
+    mut_addr6() noexcept
       { return &(this->m_addr6);  }
 
     constexpr
