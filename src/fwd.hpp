@@ -21,6 +21,7 @@
 #include <vector>
 #include <deque>
 #include <unordered_map>
+#include <string>
 
 namespace poseidon {
 namespace noadl = poseidon;
@@ -55,6 +56,7 @@ using ::std::array;
 using ::std::vector;
 using ::std::deque;
 using ::std::unordered_map;
+using ::std::string;
 
 using ::std::static_pointer_cast;
 using ::std::dynamic_pointer_cast;
