@@ -39,7 +39,6 @@ do_free_stack(::stack_t ss) noexcept
 ::stack_t
 do_alloc_stack(size_t stack_vm_size)
   {
-    // Validate arguments.
     if(stack_vm_size > 0x7FFF0000)
       POSEIDON_THROW(("Invalid stack size: $1"), stack_vm_size);
 
@@ -248,7 +247,6 @@ void
 Fiber_Scheduler::
 thread_loop()
   {
-    // Await a fiber.
     const int64_t now = this->clock();
     const int signal = exit_signal.load();
     shared_ptr<Queued_Fiber> elem;
@@ -260,10 +258,14 @@ thread_loop()
     lock.unlock();
 
     lock.lock(this->m_pq_mutex);
+
+    // Rebuild the heap when there is nothing to do.
+    // Note `async_time` may be overwritten by other threads at any time, so
+    // we have to copy it to somewhere safe.
     if(!this->m_pq.empty() && (now < this->m_pq.front()->ready_since)) {
-      // Note `async_time` may be overwritten by other threads at any time, so
-      // we have to copy it to somewhere safe.
-      ::rocket::for_each(this->m_pq, [&](auto& ptr) { ptr->ready_since = ptr->async_time.load();  });
+      for(const auto& ptr : this->m_pq)
+        ptr->ready_since = ptr->async_time.load();
+
       ::std::make_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
     }
 
@@ -413,7 +415,6 @@ void
 Fiber_Scheduler::
 insert(unique_ptr<Abstract_Fiber>&& fiber)
   {
-    // Validate arguments.
     if(!fiber)
       POSEIDON_THROW(("Null fiber pointer not valid"));
 

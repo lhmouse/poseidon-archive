@@ -65,7 +65,6 @@ void
 Timer_Driver::
 thread_loop()
   {
-    // Await an element.
     plain_mutex::unique_lock lock(this->m_pq_mutex);
     while(this->m_pq.empty())
       this->m_pq_avail.wait(lock);
@@ -75,9 +74,11 @@ thread_loop()
     if(delta > 0) {
       ::timespec ts;
       ::clock_gettime(CLOCK_REALTIME, &ts);
-      uint64_t value = (unsigned long) ts.tv_nsec + (uint64_t) delta;
-      ts.tv_sec += (time_t) (value / 1000000000ULL);
-      ts.tv_nsec = (long) (value % 1000000000ULL);
+
+      delta += ts.tv_nsec;
+      ts.tv_nsec = (long) ((uint64_t) delta % 1000000000ULL);
+      ts.tv_sec += (time_t) ((uint64_t) delta / 1000000000ULL);
+
       this->m_pq_avail.wait_until(lock, ts);
       return;
     }
@@ -127,7 +128,6 @@ void
 Timer_Driver::
 insert(const shared_ptr<Abstract_Timer>& timer, int64_t delay, int64_t period)
   {
-    // Validate arguments.
     if(!timer)
       POSEIDON_THROW(("Null timer pointer not valid"));
 

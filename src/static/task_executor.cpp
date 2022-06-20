@@ -33,7 +33,6 @@ void
 Task_Executor::
 thread_loop()
   {
-    // Await a task.
     plain_mutex::unique_lock lock(this->m_queue_mutex);
     while(this->m_queue.empty() && this->m_current.empty())
       this->m_queue_avail.wait(lock);
@@ -71,7 +70,6 @@ void
 Task_Executor::
 enqueue(const shared_ptr<Abstract_Task>& task)
   {
-    // Validate arguments.
     if(!task)
       POSEIDON_THROW(("Null task pointer not valid"));
 
