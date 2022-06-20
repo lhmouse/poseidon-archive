@@ -257,6 +257,10 @@ thread_loop()
     const int64_t fail_timeout = this->m_conf_fail_timeout * 1000000000LL;
     lock.unlock();
 
+    // Rebuild the heap when there is nothing to do. After the heap has been built,
+    // examine the top element with the minimum timestamp. Fibers whose timestamps
+    // have been exceeded should be resumed. When there is no fiber to schedule,
+    // sleep until one can be scheduled.
     lock.lock(this->m_pq_mutex);
 
     // Rebuild the heap when there is nothing to do.
@@ -316,21 +320,17 @@ thread_loop()
       ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
     }
 
-    if(!elem && signal)
-      return;
-
     plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     lock.unlock();
 
     // If no fiber can be scheduled, sleep for a while.
-    // The wait duration is capped to roughly 134 ms.
+    if(!elem && signal)
+      return;
+
     if(!elem) {
       ::timespec ts;
       ts.tv_sec = 0;
-      ts.tv_nsec = this->m_sched_wait_ns;
-      ts.tv_nsec <<= 1;
-      ts.tv_nsec |= 1;
-      ts.tv_nsec &= 0x7FFFFFF;
+      ts.tv_nsec = (this->m_sched_wait_ns * 2 + 1) & 0x7FFFFFF;  // ~134 ms
       this->m_sched_wait_ns = ts.tv_nsec;
       sched_lock.unlock();
 
