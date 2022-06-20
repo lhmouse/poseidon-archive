@@ -334,13 +334,14 @@ do_load_addons()
 
       POSEIDON_LOG_INFO(("Loading add-on: $1"), path);
 
-      if(::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_NODELETE) == nullptr)
+      if(::dlopen(path.safe_c_str(), RTLD_NOW | RTLD_NODELETE))
+        count ++;
+      else
         POSEIDON_LOG_ERROR((
             "Failed to load add-on: $1",
             "[`dlopen()` failed: $2]"),
             path, ::dlerror());
 
-      count ++;
       POSEIDON_LOG_INFO(("Finished loading add-on: $1"), path);
     }
 
