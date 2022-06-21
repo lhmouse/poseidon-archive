@@ -17,7 +17,7 @@ UDP_Server_Socket(const Socket_Address& baddr)
 
     if(::bind(this->fd(), baddr.addr(), baddr.ssize()) != 0)
       POSEIDON_THROW((
-          "Failed to bind socket onto `$4`",
+          "Failed to bind UDP socket onto `$4`",
           "[`bind()` failed: $3]"),
           this, typeid(*this), format_errno(), baddr);
 
