@@ -13,5 +13,8 @@ lib_libposeidon_example_tcp_client_la_SOURCES = %reldir%/example_tcp_client.cpp
 lib_LTLIBRARIES += lib/libposeidon_example_ssl_echo.la
 lib_libposeidon_example_ssl_echo_la_SOURCES = %reldir%/example_ssl_echo.cpp
 
+lib_LTLIBRARIES += lib/libposeidon_example_ssl_client.la
+lib_libposeidon_example_ssl_client_la_SOURCES = %reldir%/example_ssl_client.cpp
+
 lib_LTLIBRARIES += lib/libposeidon_example_udp_echo.la
 lib_libposeidon_example_udp_echo_la_SOURCES = %reldir%/example_udp_echo.cpp
