@@ -34,22 +34,22 @@ do_abstract_socket_on_readable()
     Socket_Address addr;
     ::socklen_t addrlen = (::socklen_t) addr.capacity();
 
-    char* data = this->m_io_read_queue.mut_end();
-    ::ssize_t nread = ::recvfrom(this->fd(), data, datalen, 0, addr.mut_addr(), &addrlen);
-
-    if(nread < 0) {
-      // Handle errors.
-      if((errno == EAGAIN) || (errno == EWOULDBLOCK))
-        return io_result_would_block;
-      else if(errno == EINTR)
-        return io_result_partial;
-      else
-        POSEIDON_THROW((
-            "Error reading UDP socket",
-            "[`recvfrom()` failed: $3]",
-            "[UDP socket `$1` (class `$2`)]"),
-            this, typeid(*this), format_errno());
+    ::ssize_t nread;
+    int err;
+    do {
+      nread = ::recvfrom(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
+      err = (nread < 0) ? errno : 0;
     }
+    while(err == EINTR);
+
+    if((err == EAGAIN) || (err == EWOULDBLOCK))
+      return io_result_would_block;
+    else if(err != 0)
+      POSEIDON_THROW((
+          "Error reading UDP socket",
+          "[`recvfrom()` failed: $3]",
+          "[UDP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno(err));
 
     // Accept this packet.
     this->m_io_read_queue.accept((size_t) nread);
