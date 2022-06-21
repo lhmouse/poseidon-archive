@@ -10,7 +10,7 @@
 namespace {
 using namespace poseidon;
 
-constexpr char bind[] = "0.0.0.0";
+constexpr char bind[] = "[::]";
 constexpr uint16_t port = 3807;
 
 struct Example_Server : UDP_Server_Socket
@@ -19,7 +19,7 @@ struct Example_Server : UDP_Server_Socket
     Example_Server()
       : UDP_Server_Socket(Socket_Address(bind, port))
       {
-        POSEIDON_LOG_WARN(("example UDP server listening: $1"), this->get_local_address());
+        POSEIDON_LOG_WARN(("example UDP server listening on `$1`"), this->get_local_address());
       }
 
     void
@@ -27,7 +27,7 @@ struct Example_Server : UDP_Server_Socket
       {
         cow_string str(data.begin(), data.end());
         data.clear();
-        POSEIDON_LOG_WARN(("example UDP server received: $1"), str);
+        POSEIDON_LOG_WARN(("example UDP server received from `$1`: $2"), addr, str);
         this->udp_send(addr, str);
       }
   };
