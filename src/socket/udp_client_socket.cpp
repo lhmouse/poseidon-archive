@@ -9,8 +9,8 @@
 namespace poseidon {
 
 UDP_Client_Socket::
-UDP_Client_Socket()
-  : UDP_Socket()
+UDP_Client_Socket(int family)
+  : UDP_Socket(family)
   {
   }
 

@@ -11,7 +11,7 @@ namespace poseidon {
 
 UDP_Server_Socket::
 UDP_Server_Socket(const Socket_Address& baddr)
-  : UDP_Socket()
+  : UDP_Socket(baddr.family())
   {
     int ival = 1;
     ::setsockopt(this->fd(), SOL_SOCKET, SO_REUSEADDR, &ival, sizeof(ival));

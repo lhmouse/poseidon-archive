@@ -10,8 +10,8 @@
 namespace poseidon {
 
 UDP_Socket::
-UDP_Socket()
-  : Abstract_Socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+UDP_Socket(int family)
+  : Abstract_Socket(family, SOCK_DGRAM, IPPROTO_UDP)
   {
   }
 

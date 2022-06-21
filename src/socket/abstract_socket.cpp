@@ -37,7 +37,7 @@ Abstract_Socket(int family, int type, int protocol)
     this->m_fd.reset(::socket(family, type | SOCK_NONBLOCK, protocol));
     if(!this->m_fd)
       POSEIDON_THROW((
-          "Could not create socket: family `$2`, domain `$3`, protocol `$4`",
+          "Could not create socket: family `$2`, type `$3`, protocol `$4`",
           "[`fcntl()` failed: $1]"),
           format_errno(), family, type, protocol);
   }

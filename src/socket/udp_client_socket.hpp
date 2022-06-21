@@ -17,8 +17,9 @@ class UDP_Client_Socket
 
   protected:
     // Creates a socket for sending data.
+    // The argument must be `AF_INET` (for IPv4) or `AF_INET6` (for IPv6).
     explicit
-    UDP_Client_Socket();
+    UDP_Client_Socket(int family);
 
   protected:
     // This function implements `Abstract_Socket`.

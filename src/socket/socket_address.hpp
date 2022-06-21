@@ -6,7 +6,7 @@
 
 #include "../fwd.hpp"
 #include "enums.hpp"
-#include <sys/socket.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 
 namespace poseidon {

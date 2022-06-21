@@ -34,7 +34,7 @@ class Abstract_Socket
 
     // Creates a new non-blocking socket.
     explicit
-    Abstract_Socket(int domain, int type, int protocol);
+    Abstract_Socket(int family, int type, int protocol);
 
   protected:
     // This callback is invoked by the network thread when the socket has

@@ -18,7 +18,7 @@ class UDP_Socket
   protected:
     // Creates a new non-blocking socket.
     explicit
-    UDP_Socket();
+    UDP_Socket(int family);
 
   protected:
     // These callbacks implement `Abstract_Socket`.
