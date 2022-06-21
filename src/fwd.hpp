@@ -117,13 +117,16 @@ enum Socket_State : uint8_t;
 enum IO_Result : uint8_t;
 class Socket_Address;
 class Abstract_Socket;
+class Listen_Socket;
+
 class UDP_Socket;
 class UDP_Server_Socket;
 class UDP_Client_Socket;
-class Listen_Socket;
+
 class TCP_Socket;
 class TCP_Server_Socket;
 class TCP_Client_Socket;
+
 class SSL_Socket;
 class SSL_Server_Socket;
 class SSL_Client_Socket;
