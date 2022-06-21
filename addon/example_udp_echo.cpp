@@ -2,7 +2,7 @@
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
 #include "../src/precompiled.ipp"
-#include "../src/socket/abstract_udp_server_socket.hpp"
+#include "../src/socket/udp_server_socket.hpp"
 #include "../src/static/network_driver.hpp"
 #include "../src/static/async_logger.hpp"
 #include "../src/utils.hpp"
@@ -13,26 +13,33 @@ using namespace poseidon;
 constexpr char bind[] = "0.0.0.0";
 constexpr uint16_t port = 3807;
 
-struct Example_Server : Abstract_UDP_Server_Socket
+struct Example_Server : UDP_Server_Socket
   {
     explicit
     Example_Server()
-      : Abstract_UDP_Server_Socket(bind, port)
+      : UDP_Server_Socket(Socket_Address(bind, port))
       {
-        POSEIDON_LOG_WARN("example UDP server listening: $1", this->get_local_address());
+        POSEIDON_LOG_WARN(("example UDP server listening: $1"), this->get_local_address());
       }
 
     void
-    do_socket_on_packet(const Socket_Address& addr, linear_buffer&& rqueue) override
+    do_on_udp_packet(Socket_Address&& addr, linear_buffer&& data) override
       {
-        cow_string str(rqueue.begin(), rqueue.end());
-        rqueue.clear();
-
-        POSEIDON_LOG_WARN("example UDP session received: $1", str);
-        this->do_socket_send(addr, str);
+        cow_string str(data.begin(), data.end());
+        data.clear();
+        POSEIDON_LOG_WARN(("example UDP server received: $1"), str);
+        this->udp_send(addr, str);
       }
   };
 
-const auto s_server = Network_Driver::insert(::rocket::make_unique<Example_Server>());
+shared_ptr<Example_Server>
+do_create_server()
+  {
+    auto server = ::std::make_shared<Example_Server>();
+    network_driver.insert(server);
+    return server;
+  }
+
+const auto server = do_create_server();
 
 }  // namespace
