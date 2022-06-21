@@ -22,7 +22,7 @@ TCP_Client_Socket(const Socket_Address& caddr)
     POSEIDON_LOG_INFO((
         "Establishing new connection to `$3`",
         "[TCP socket `$1` (class `$2`)]"),
-        this, typeid(*this), this->get_remote_address());
+        this, typeid(*this), caddr);
   }
 
 TCP_Client_Socket::
