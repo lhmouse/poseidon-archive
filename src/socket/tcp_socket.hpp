@@ -13,7 +13,8 @@ class TCP_Socket
   : public Abstract_Socket
   {
   private:
-    // This class adds no data member.
+    mutable once_flag m_peername_once;
+    mutable Socket_Address m_peername;
 
   protected:
     // Takes ownership of an existent socket.
@@ -49,6 +50,11 @@ class TCP_Socket
 
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(TCP_Socket);
+
+    // Gets the remote or connected address of this socket.
+    // This function is thread-safe.
+    const Socket_Address&
+    get_remote_address() const;
 
     // Enqueues some bytes for sending.
     // The return value merely indicates whether the attempt has succeeded. The

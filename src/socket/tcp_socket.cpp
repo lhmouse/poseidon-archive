@@ -19,6 +19,7 @@ TCP_Socket(int family)
   : Abstract_Socket(family, SOCK_STREAM, IPPROTO_TCP)
   {
   }
+
 TCP_Socket::
 ~TCP_Socket()
   {
@@ -42,6 +43,10 @@ do_abstract_socket_on_readable()
       err = (nread < 0) ? errno : 0;
     }
     while(err == EINTR);
+
+    // If `recv()` returned zero, the connection should be shut down.
+    if(datalen == 0)
+      return io_result_end_of_file;
 
     if((err == EAGAIN) || (err == EWOULDBLOCK))
       return io_result_would_block;
@@ -103,6 +108,26 @@ do_abstract_socket_on_exception(exception& stdex)
         "Aborting connection due to exception: $3",
         "[TCP socket `$1` (class `$2`)]"),
         this, typeid(*this), stdex);
+  }
+
+const Socket_Address&
+TCP_Socket::
+get_remote_address() const
+  {
+    // Get the socket name and cache it.
+    this->m_peername_once.call(
+      [this] {
+        ::socklen_t addrlen = (::socklen_t) this->m_peername.capacity();
+        if(::getpeername(this->fd(), this->m_peername.mut_addr(), &addrlen) != 0)
+          POSEIDON_THROW((
+              "Could not get local address of socket",
+              "[`getpeername()` failed: $1]"),
+              format_errno());
+
+        // Accept the address.
+        this->m_peername.set_size(addrlen);
+      });
+    return this->m_peername;
   }
 
 bool

@@ -58,13 +58,10 @@ do_abstract_socket_on_readable()
     const recursive_mutex::unique_lock io_lock(this->m_io_mutex);
 
     // Try getting a connection.
-    Socket_Address addr;
-    ::socklen_t addrlen = (::socklen_t) addr.capacity();
-
     unique_posix_fd fd;
     int err;
     do {
-      fd.reset(::accept4(this->fd(), addr.mut_addr(), &addrlen, SOCK_NONBLOCK));
+      fd.reset(::accept4(this->fd(), nullptr, nullptr, SOCK_NONBLOCK));
       err = (fd == -1) ? errno : 0;
     }
     while(err == EINTR);
@@ -79,8 +76,7 @@ do_abstract_socket_on_readable()
           this, typeid(*this), format_errno(err));
 
     // Create the session object.
-    addr.set_size(addrlen);
-    auto client = this->do_on_new_client_opt(::std::move(addr));
+    auto client = this->do_on_new_client_opt(::std::move(fd));
     if(!client)
       POSEIDON_THROW((
           "Null pointer returned from `do_on_new_client_opt()`",
