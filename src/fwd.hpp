@@ -157,7 +157,7 @@ enum Log_Level : uint8_t
 #define POSEIDON_LOG_GENERIC(LEVEL, TEMPLATE, ...)  \
   (::poseidon::async_logger.enabled(::poseidon::log_level_##LEVEL)  \
    &&  \
-   ([=](const char* f5zuNP3w) -> bool  \
+   ([&](const char* f5zuNP3w) -> bool  \
        __attribute__((__noinline__, __nothrow__, __cold__))  \
      {  \
        try {  \
