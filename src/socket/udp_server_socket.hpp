@@ -16,7 +16,7 @@ class UDP_Server_Socket
     // This class adds no data member.
 
   protected:
-    // Creates a socket that is bound on the given address.
+    // Creates a socket that is bound onto the given address.
     explicit
     UDP_Server_Socket(const Socket_Address& baddr);
 
