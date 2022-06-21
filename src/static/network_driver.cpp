@@ -172,9 +172,9 @@ thread_loop()
 
     // Process events on this socket.
     POSEIDON_LOG_TRACE((
-        "Processing socket `$1` (class `$2`): HUP = $3, ERR = $4, IN = $5, RDHUP = $6, OUT = $7"),
-        socket, typeid(*socket), !!(event.events & EPOLLHUP), !!(event.events & EPOLLERR),
-        !!(event.events & EPOLLIN), !!(event.events & EPOLLRDHUP), !!(event.events & EPOLLOUT));
+        "Processing socket `$1` (class `$2`): ET = $3, HUP = $4, ERR = $5, IN = $6, OUT = $7"),
+        socket, typeid(*socket), !!(event.events & EPOLLET), !!(event.events & EPOLLHUP),
+        !!(event.events & EPOLLERR), !!(event.events & EPOLLIN), !!(event.events & EPOLLOUT));
 
     if(event.events & (EPOLLHUP | EPOLLERR)) {
       // Get its error code, if an error has been reported.
@@ -279,8 +279,8 @@ insert(const shared_ptr<Abstract_Socket>& socket)
     // The socket will be deleted from an epoll automatically when it's closed,
     // so there is no need to remove it in case of an exception.
     plain_mutex::unique_lock lock(this->m_epoll_mutex);
-    do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_ADD, socket, EPOLLIN | EPOLLRDHUP);
-    do_epoll_ctl(this->m_epoll_et, EPOLL_CTL_ADD, socket, EPOLLIN | EPOLLRDHUP | EPOLLOUT | EPOLLET);
+    do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_ADD, socket, EPOLLIN);
+    do_epoll_ctl(this->m_epoll_et, EPOLL_CTL_ADD, socket, EPOLLIN | EPOLLOUT | EPOLLET);
     this->m_epoll_sockets[socket.get()] = socket;
   }
 
