@@ -25,7 +25,6 @@ struct Example_Timer : Abstract_Timer
       }
   };
 
-
 shared_ptr<Example_Timer>
 do_create_timer()
   {
