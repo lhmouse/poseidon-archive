@@ -87,8 +87,8 @@ do_abstract_socket_on_readable()
           "[TCP socket `$1` (class `$2`)]"),
           this, typeid(*this));
 
-    // FIXME: Get rid of this global reference.
-    network_driver.insert(client);
+    // Register this socket for polling.
+    this->m_io_driver->insert(client);
     return io_result_partial;
   }
 

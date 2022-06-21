@@ -168,6 +168,7 @@ thread_loop()
       do_epoll_ctl(this->m_epoll_et, EPOLL_CTL_DEL, socket, 0);
     }
     recursive_mutex::unique_lock io_lock(socket->m_io_mutex);
+    socket->m_io_driver = this;
     lock.unlock();
 
     // Process events on this socket.
@@ -265,6 +266,7 @@ thread_loop()
     }
 
     POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) I/O complete"), socket, typeid(*socket));
+    socket->m_io_driver = (Network_Driver*) 123456789;
   }
 
 void

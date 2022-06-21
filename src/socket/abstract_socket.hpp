@@ -23,6 +23,7 @@ class Abstract_Socket
 
   protected:
     mutable recursive_mutex m_io_mutex;
+    Network_Driver* m_io_driver;
     bool m_io_throttled = false;
     linear_buffer m_io_read_queue;
     linear_buffer m_io_write_queue;
