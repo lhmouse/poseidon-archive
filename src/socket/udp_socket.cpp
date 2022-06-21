@@ -82,25 +82,26 @@ do_abstract_socket_on_writable()
     ngot = this->m_io_write_queue.getn((char*) addr.mut_data(), addrlen);
     ROCKET_ASSERT(ngot == (uint32_t) addrlen);
 
-    // Send data, which should be removed from the send queue thereafter, no matter
-    // whether the operation succeeds or not.
-    const char* data = this->m_io_write_queue.begin();
-    ::ssize_t nwritten = ::sendto(this->fd(), data, datalen, 0, addr.addr(), addrlen);
+    ::ssize_t nwritten;
+    int err;
+    do {
+      nwritten = ::sendto(this->fd(), this->m_io_write_queue.begin(), datalen, 0, addr.addr(), addrlen);
+      err = (nwritten < 0) ? errno : 0;
+    }
+    while(err == EINTR);
+
+    // Remove data from the send queue, no matter whether the operation has
+    // succeeded or not.
     this->m_io_write_queue.discard(datalen);
 
-    if(nwritten < 0) {
-      // Handle errors.
-      if((errno == EAGAIN) || (errno == EWOULDBLOCK))
-        return io_result_would_block;
-      else if(errno == EINTR)
-        return io_result_partial;
-      else
-        POSEIDON_THROW((
-            "Error writing UDP socket",
-            "[`sendto()` failed: $3]",
-            "[UDP socket `$1` (class `$2`)]"),
-            this, typeid(*this), format_errno());
-    }
+    if((err == EAGAIN) || (err == EWOULDBLOCK))
+      return io_result_would_block;
+    else if(err != 0)
+      POSEIDON_THROW((
+          "Error writing UDP socket",
+          "[`sendto()` failed: $3]",
+          "[UDP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno(err));
 
     // Report that some data have been written anyway.
     return io_result_partial;
@@ -256,7 +257,8 @@ udp_send(const Socket_Address& addr, const char* data, size_t size)
     // Encode this packet.
     // This piece of code must match `do_abstract_socket_on_writable()`.
     ::socklen_t addrlen = addr.ssize();
-    this->m_io_write_queue.reserve(sizeof(addrlen) + sizeof(datalen) + (uint32_t) addrlen + datalen);
+    size_t queue_size = sizeof(addrlen) + sizeof(datalen) + (uint32_t) addrlen + datalen;
+    this->m_io_write_queue.reserve(queue_size);
 
     ::memcpy(this->m_io_write_queue.mut_end(), &addrlen, sizeof(addrlen));
     this->m_io_write_queue.accept(sizeof(addrlen));
@@ -270,8 +272,10 @@ udp_send(const Socket_Address& addr, const char* data, size_t size)
     ::memcpy(this->m_io_write_queue.mut_end(), data, datalen);
     this->m_io_write_queue.accept(datalen);
 
-    // Report that data have been enqueued. There is no guarantee that these data
-    // will arrive at the destination host, though.
+    // Try writing once. This is essential for the edge-triggered epoll to work
+    // reliably, because the level-triggered epoll does not check for `EPOLLOUT` by
+    // default. If the packet has been sent anyway, discard it from the send queue.
+    this->do_abstract_socket_on_writable();
     return true;
   }
 
