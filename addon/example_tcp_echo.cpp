@@ -1,5 +1,5 @@
 // This file is part of Poseidon.
-// Copyleft 2020, LH_Mouse. All wrongs reserved.
+// Copyleft 2022, LH_Mouse. All wrongs reserved.
 
 #include "../src/precompiled.ipp"
 #include "../src/socket/abstract_tcp_server_socket.hpp"
