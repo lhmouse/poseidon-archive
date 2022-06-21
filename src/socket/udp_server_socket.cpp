@@ -16,10 +16,15 @@ UDP_Server_Socket(const Socket_Address& baddr)
     ::setsockopt(this->fd(), SOL_SOCKET, SO_REUSEADDR, &ival, sizeof(ival));
 
     if(::bind(this->fd(), baddr.addr(), baddr.ssize()) != 0)
-        POSEIDON_THROW((
-            "Failed to bind socket onto `$4`",
-            "[`bind()` failed: $3]"),
-            this, typeid(*this), format_errno(), baddr);
+      POSEIDON_THROW((
+          "Failed to bind socket onto `$4`",
+          "[`bind()` failed: $3]"),
+          this, typeid(*this), format_errno(), baddr);
+
+    POSEIDON_LOG_INFO((
+        "UDP server started listening on `$3`",
+        "[UDP socket `$1` (class `$2`)]"),
+        this, typeid(*this), this->get_local_address());
   }
 
 UDP_Server_Socket::
@@ -32,9 +37,9 @@ UDP_Server_Socket::
 do_abstract_socket_on_closed(int err)
   {
     POSEIDON_LOG_INFO((
-        "UDP server socket closed: $3",
+        "UDP server stopped listening on `$3`: $4",
         "[UDP socket `$1` (class `$2`)]"),
-        this, typeid(*this), format_errno(err));
+        this, typeid(*this), this->get_local_address(), format_errno(err));
   }
 
 }  // namespace poseidon
