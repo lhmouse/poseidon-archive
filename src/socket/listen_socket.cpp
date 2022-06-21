@@ -1,0 +1,112 @@
+// This file is part of Poseidon.
+// Copyleft 2022, LH_Mouse. All wrongs reserved.
+
+#include "../precompiled.ipp"
+#include "listen_socket.hpp"
+#include "../static/async_logger.hpp"
+#include "../static/network_driver.hpp"
+#include "../utils.hpp"
+
+namespace poseidon {
+
+Listen_Socket::
+Listen_Socket(const Socket_Address& baddr)
+  : Abstract_Socket(baddr.family(), SOCK_STREAM, IPPROTO_TCP)
+  {
+    int ival = 1;
+    ::setsockopt(this->fd(), SOL_SOCKET, SO_REUSEADDR, &ival, sizeof(ival));
+
+    if(::bind(this->fd(), baddr.addr(), baddr.ssize()) != 0)
+      POSEIDON_THROW((
+          "Failed to bind TCP socket onto `$4`",
+          "[`bind()` failed: $3]",
+          "[TCP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno(), baddr);
+
+    if(::listen(this->fd(), SOMAXCONN) != 0)
+      POSEIDON_THROW((
+          "Failed to start listening on `$4`",
+          "[`listen()` failed: $3]",
+          "[TCP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno(), baddr);
+
+    POSEIDON_LOG_INFO((
+        "TCP server started listening on `$3`",
+        "[TCP socket `$1` (class `$2`)]"),
+        this, typeid(*this), this->get_local_address());
+  }
+
+Listen_Socket::
+~Listen_Socket()
+  {
+  }
+
+void
+Listen_Socket::
+do_abstract_socket_on_closed(int err)
+  {
+    POSEIDON_LOG_INFO((
+        "TCP server stopped listening on `$3`: $4",
+        "[TCP socket `$1` (class `$2`)]"),
+        this, typeid(*this), this->get_local_address(), format_errno(err));
+  }
+
+IO_Result
+Listen_Socket::
+do_abstract_socket_on_readable()
+  {
+    const recursive_mutex::unique_lock io_lock(this->m_io_mutex);
+
+    // Try getting a connection.
+    Socket_Address addr;
+    ::socklen_t addrlen = (::socklen_t) addr.capacity();
+
+    unique_posix_fd fd;
+    int err;
+    do {
+      fd.reset(::accept4(this->fd(), addr.mut_addr(), &addrlen, SOCK_NONBLOCK));
+      err = (fd == -1) ? errno : 0;
+    }
+    while(err == EINTR);
+
+    if((err == EAGAIN) || (err == EWOULDBLOCK))
+      return io_result_would_block;
+    else if(err != 0)
+      POSEIDON_THROW((
+          "Error accepting TCP connection",
+          "[`accept4()` failed: $3]",
+          "[TCP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno(err));
+
+    // Create the session object.
+    addr.set_size(addrlen);
+    auto client = this->do_on_new_client_opt(::std::move(addr));
+    if(!client)
+      POSEIDON_THROW((
+          "Null pointer returned from `do_on_new_client_opt()`",
+          "[TCP socket `$1` (class `$2`)]"),
+          this, typeid(*this));
+
+    // FIXME: Get rid of this global reference.
+    network_driver.insert(client);
+    return io_result_partial;
+  }
+
+IO_Result
+Listen_Socket::
+do_abstract_socket_on_writable()
+  {
+    return io_result_would_block;
+  }
+
+void
+Listen_Socket::
+do_abstract_socket_on_exception(exception& stdex)
+  {
+    POSEIDON_LOG_ERROR((
+        "Exception ignored: $3",
+        "[TCP socket `$1` (class `$2`)]"),
+        this, typeid(*this), stdex);
+  }
+
+}  // namespace poseidon
