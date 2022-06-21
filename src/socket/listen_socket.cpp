@@ -10,25 +10,25 @@
 namespace poseidon {
 
 Listen_Socket::
-Listen_Socket(const Socket_Address& baddr)
-  : Abstract_Socket(baddr.family(), SOCK_STREAM, IPPROTO_TCP)
+Listen_Socket(const Socket_Address& addr)
+  : Abstract_Socket(addr.family(), SOCK_STREAM, IPPROTO_TCP)
   {
     int ival = 1;
     ::setsockopt(this->fd(), SOL_SOCKET, SO_REUSEADDR, &ival, sizeof(ival));
 
-    if(::bind(this->fd(), baddr.addr(), baddr.ssize()) != 0)
+    if(::bind(this->fd(), addr.addr(), addr.ssize()) != 0)
       POSEIDON_THROW((
           "Failed to bind TCP socket onto `$4`",
           "[`bind()` failed: $3]",
           "[TCP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(), baddr);
+          this, typeid(*this), format_errno(), addr);
 
     if(::listen(this->fd(), SOMAXCONN) != 0)
       POSEIDON_THROW((
           "Failed to start listening on `$4`",
           "[`listen()` failed: $3]",
           "[TCP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(), baddr);
+          this, typeid(*this), format_errno(), addr);
 
     POSEIDON_LOG_INFO((
         "TCP server started listening on `$3`",

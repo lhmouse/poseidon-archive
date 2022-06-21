@@ -18,7 +18,7 @@ class TCP_Client_Socket
   protected:
     // Creates a socket that connects to the given address.
     explicit
-    TCP_Client_Socket(const Socket_Address& caddr);
+    TCP_Client_Socket(const Socket_Address& addr);
 
   protected:
     // This function implements `Abstract_Socket`.

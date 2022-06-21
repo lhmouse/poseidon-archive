@@ -9,20 +9,20 @@
 namespace poseidon {
 
 TCP_Client_Socket::
-TCP_Client_Socket(const Socket_Address& caddr)
-  : TCP_Socket(caddr.family())
+TCP_Client_Socket(const Socket_Address& addr)
+  : TCP_Socket(addr.family())
   {
-    if((::connect(this->fd(), caddr.addr(), caddr.ssize()) != 0) && (errno != EINPROGRESS))
+    if((::connect(this->fd(), addr.addr(), addr.ssize()) != 0) && (errno != EINPROGRESS))
       POSEIDON_THROW((
           "Failed to initiate TCP connection to `$4`",
           "[`connect()` failed: $3]",
           "[TCP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(), caddr);
+          this, typeid(*this), format_errno(), addr);
 
     POSEIDON_LOG_INFO((
         "Establishing new connection to `$3`",
         "[TCP socket `$1` (class `$2`)]"),
-        this, typeid(*this), caddr);
+        this, typeid(*this), addr);
   }
 
 TCP_Client_Socket::

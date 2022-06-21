@@ -18,7 +18,7 @@ class UDP_Server_Socket
   protected:
     // Creates a socket that is bound onto the given address.
     explicit
-    UDP_Server_Socket(const Socket_Address& baddr);
+    UDP_Server_Socket(const Socket_Address& addr);
 
   protected:
     // This function implements `Abstract_Socket`.

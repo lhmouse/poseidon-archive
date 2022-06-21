@@ -18,7 +18,7 @@ class Listen_Socket
   protected:
     // Creates a socket that is bound onto the given address.
     explicit
-    Listen_Socket(const Socket_Address& baddr);
+    Listen_Socket(const Socket_Address& addr);
 
   protected:
     // These callbacks implement `Abstract_Socket`.

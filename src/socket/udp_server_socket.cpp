@@ -9,18 +9,18 @@
 namespace poseidon {
 
 UDP_Server_Socket::
-UDP_Server_Socket(const Socket_Address& baddr)
-  : UDP_Socket(baddr.family())
+UDP_Server_Socket(const Socket_Address& addr)
+  : UDP_Socket(addr.family())
   {
     int ival = 1;
     ::setsockopt(this->fd(), SOL_SOCKET, SO_REUSEADDR, &ival, sizeof(ival));
 
-    if(::bind(this->fd(), baddr.addr(), baddr.ssize()) != 0)
+    if(::bind(this->fd(), addr.addr(), addr.ssize()) != 0)
       POSEIDON_THROW((
           "Failed to bind UDP socket onto `$4`",
           "[`bind()` failed: $3]",
           "[UDP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(), baddr);
+          this, typeid(*this), format_errno(), addr);
 
     POSEIDON_LOG_INFO((
         "UDP server started listening on `$3`",
