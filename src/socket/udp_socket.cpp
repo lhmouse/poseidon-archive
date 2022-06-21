@@ -37,6 +37,7 @@ do_abstract_socket_on_readable()
     int err;
     do {
       nread = ::recvfrom(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
+      datalen = (size_t) nread;
       err = (nread < 0) ? errno : 0;
     }
     while(err == EINTR);
@@ -51,7 +52,7 @@ do_abstract_socket_on_readable()
           this, typeid(*this), format_errno(err));
 
     // Accept this packet.
-    this->m_io_read_queue.accept((size_t) nread);
+    this->m_io_read_queue.accept(datalen);
     addr.set_size(addrlen);
     this->do_on_udp_packet(::std::move(addr), ::std::move(this->m_io_read_queue));
     return io_result_partial;
@@ -234,18 +235,18 @@ bool
 UDP_Socket::
 udp_send(const Socket_Address& addr, const char* data, size_t size)
   {
+    if(size && !data)
+      POSEIDON_THROW((
+          "Null data pointer",
+          "[UDP socket `$1` (class `$2`)]"),
+          this, typeid(*this));
+
     size_t datalen = size & 0xFFFFU;
     if(datalen != size)
       POSEIDON_THROW((
           "`$3` bytes is too large for a UDP packet",
           "[UDP socket `$1` (class `$2`)]"),
           this, typeid(*this), size);
-
-    if(datalen && !data)
-      POSEIDON_THROW((
-          "Null data pointer",
-          "[UDP socket `$1` (class `$2`)]"),
-          this, typeid(*this));
 
     // If this socket has been marked closed, fail immediately.
     if(this->socket_state() == socket_state_closed)
