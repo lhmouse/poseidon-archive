@@ -117,6 +117,9 @@ enum Socket_State : uint8_t;
 enum IO_Result : uint8_t;
 class Socket_Address;
 class Abstract_Socket;
+class UDP_Socket;
+class UDP_Server_Socket;
+class UDP_Client_Socket;
 
 // Manager types and instances
 extern atomic_signal exit_signal;
