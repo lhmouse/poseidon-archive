@@ -35,8 +35,8 @@ do_epoll_ctl(int epoll_fd, int op, const shared_ptr<Abstract_Socket>& socket, ui
     if((op == EPOLL_CTL_ADD) || (op == EPOLL_CTL_MOD))
       POSEIDON_LOG_TRACE((
           "Updated epoll flags for socket `$1` (class `$2`): ET = $3, IN = $4, OUT = $5"),
-          socket, typeid(*socket), (event.events / EPOLLET) & 1, (event.events / EPOLLIN) & 1,
-          (event.events / EPOLLOUT) & 1);
+          socket, typeid(*socket), (event.events / EPOLLET) & 1U, (event.events / EPOLLIN) & 1U,
+          (event.events / EPOLLOUT) & 1U);
   }
 
 }  // namespace
@@ -180,8 +180,8 @@ thread_loop()
     // Process events on this socket.
     POSEIDON_LOG_TRACE((
         "Processing socket `$1` (class `$2`): ET = $3, HUP = $4, ERR = $5, IN = $6, OUT = $7"),
-        socket, typeid(*socket), (event.events / EPOLLET) & 1, (event.events / EPOLLHUP) & 1,
-        (event.events / EPOLLERR) & 1, (event.events / EPOLLIN) & 1, (event.events / EPOLLOUT) & 1);
+        socket, typeid(*socket), (event.events / EPOLLET) & 1U, (event.events / EPOLLHUP) & 1U,
+        (event.events / EPOLLERR) & 1U, (event.events / EPOLLIN) & 1U, (event.events / EPOLLOUT) & 1U);
 
     if(event.events & (EPOLLHUP | EPOLLERR)) {
       // Get its error code, if an error has been reported.
