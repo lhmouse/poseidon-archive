@@ -4,6 +4,7 @@
 #include "../precompiled.ipp"
 #include "abstract_socket.hpp"
 #include "../utils.hpp"
+#include <sys/socket.h>
 #include <fcntl.h>
 
 namespace poseidon {

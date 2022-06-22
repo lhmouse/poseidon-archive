@@ -6,6 +6,7 @@
 #include "../static/async_logger.hpp"
 #include "../static/network_driver.hpp"
 #include "../utils.hpp"
+#include <sys/socket.h>
 
 namespace poseidon {
 

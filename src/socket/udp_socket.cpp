@@ -5,6 +5,7 @@
 #include "udp_socket.hpp"
 #include "../static/async_logger.hpp"
 #include "../utils.hpp"
+#include <sys/socket.h>
 
 namespace poseidon {
 
