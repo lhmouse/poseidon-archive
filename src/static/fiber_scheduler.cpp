@@ -189,7 +189,6 @@ reload(const Config_File& file)
             "[`getrlimit()` failed: $1]"),
             format_errno());
 
-      POSEIDON_LOG_DEBUG(("System stack size: $1 bytes"), rlim.rlim_cur);
       stack_vm_size = (int64_t) rlim.rlim_cur;
     }
 
