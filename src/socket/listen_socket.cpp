@@ -58,22 +58,25 @@ do_abstract_socket_on_readable()
     const recursive_mutex::unique_lock io_lock(this->m_io_mutex);
 
     // Try getting a connection.
-    unique_posix_fd fd;
-    int err;
-    do {
-      fd.reset(::accept4(this->fd(), nullptr, nullptr, SOCK_NONBLOCK));
-      err = (fd == -1) ? errno : 0;
-    }
-    while(err == EINTR);
+    unique_posix_fd fd(::accept4(this->fd(), nullptr, nullptr, SOCK_NONBLOCK));
+    if(!fd) {
+      switch(errno) {
+        case EINTR:
+          return io_result_interrupted;
 
-    if((err == EAGAIN) || (err == EWOULDBLOCK))
-      return io_result_would_block;
-    else if(err != 0)
+#if EWOULDBLOCK != EAGAIN
+        case EAGAIN:
+#endif
+        case EWOULDBLOCK:
+          return io_result_would_block;
+      }
+
       POSEIDON_THROW((
           "Error accepting TCP connection",
           "[`accept4()` failed: $3]",
           "[TCP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(err));
+          this, typeid(*this), format_errno());
+    }
 
     // Create the session object.
     auto client = this->do_on_new_client_opt(::std::move(fd));
@@ -83,7 +86,6 @@ do_abstract_socket_on_readable()
           "[TCP socket `$1` (class `$2`)]"),
           this, typeid(*this));
 
-    // Register this socket for polling.
     this->m_io_driver->insert(client);
     return io_result_partial;
   }

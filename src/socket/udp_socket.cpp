@@ -33,27 +33,31 @@ do_abstract_socket_on_readable()
     Socket_Address addr;
     ::socklen_t addrlen = (::socklen_t) addr.capacity();
 
-    ::ssize_t nread;
-    int err;
-    do {
-      nread = ::recvfrom(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
-      datalen = (size_t) nread;
-      err = (nread < 0) ? errno : 0;
-    }
-    while(err == EINTR);
+    ::ssize_t r = ::recvfrom(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
+    if(r < 0) {
+      switch(errno) {
+        case EINTR:
+          return io_result_interrupted;
 
-    if((err == EAGAIN) || (err == EWOULDBLOCK))
-      return io_result_would_block;
-    else if(err != 0)
+#if EWOULDBLOCK != EAGAIN
+        case EAGAIN:
+#endif
+        case EWOULDBLOCK:
+          return io_result_would_block;
+      }
+
       POSEIDON_THROW((
           "Error reading UDP socket",
           "[`recvfrom()` failed: $3]",
           "[UDP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(err));
+          this, typeid(*this), format_errno());
+    }
 
     // Accept this packet.
+    datalen = (size_t) r;
     this->m_io_read_queue.accept(datalen);
     addr.set_size(addrlen);
+
     this->do_on_udp_packet(::std::move(addr), ::std::move(this->m_io_read_queue));
     return io_result_partial;
   }
@@ -71,7 +75,7 @@ do_abstract_socket_on_writable()
     ::socklen_t addrlen;
     size_t datalen;
 
-    // Get a packet from the send queue.
+    // Get a packet from the write queue.
     // This piece of code must match `udp_send()`.
     size_t ngot = this->m_io_write_queue.getn((char*) &addrlen, sizeof(addrlen));
     ROCKET_ASSERT(ngot == sizeof(addrlen));
@@ -82,26 +86,28 @@ do_abstract_socket_on_writable()
     ngot = this->m_io_write_queue.getn((char*) addr.mut_data(), addrlen);
     ROCKET_ASSERT(ngot == (uint32_t) addrlen);
 
-    ::ssize_t nwritten;
-    int err;
-    do {
-      nwritten = ::sendto(this->fd(), this->m_io_write_queue.begin(), datalen, 0, addr.addr(), addrlen);
-      err = (nwritten < 0) ? errno : 0;
-    }
-    while(err == EINTR);
-
-    // Remove data from the send queue, no matter whether the operation has
-    // succeeded or not.
+    // In the case of other errors, data shall be removed from the write queue after
+    // the attempt to send, no matter whether the operation has succeeded or not.
+    ::ssize_t r = ::sendto(this->fd(), this->m_io_write_queue.begin(), datalen, 0, addr.addr(), addrlen);
     this->m_io_write_queue.discard(datalen);
+    if(r < 0) {
+      switch(errno) {
+        case EINTR:
+          return io_result_interrupted;
 
-    if((err == EAGAIN) || (err == EWOULDBLOCK))
-      return io_result_would_block;
-    else if(err != 0)
+#if EWOULDBLOCK != EAGAIN
+        case EAGAIN:
+#endif
+        case EWOULDBLOCK:
+          return io_result_would_block;
+      }
+
       POSEIDON_THROW((
           "Error writing UDP socket",
           "[`sendto()` failed: $3]",
           "[UDP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(err));
+          this, typeid(*this), format_errno());
+    }
 
     // Report that some data have been written anyway.
     return io_result_partial;
@@ -274,8 +280,8 @@ udp_send(const Socket_Address& addr, const char* data, size_t size)
 
     // Try writing once. This is essential for the edge-triggered epoll to work
     // reliably, because the level-triggered epoll does not check for `EPOLLOUT` by
-    // default. If the packet has been sent anyway, discard it from the send queue.
-    this->do_abstract_socket_on_writable();
+    // default. If the packet has been sent anyway, discard it from the write queue.
+    while(this->do_abstract_socket_on_writable() == io_result_interrupted);
     return true;
   }
 
