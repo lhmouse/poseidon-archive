@@ -17,7 +17,7 @@ Abstract_Socket(unique_posix_fd&& fd)
      POSEIDON_THROW(("Null socket handle not valid"));
 
    // Turn on non-blocking mode if it hasn't been enabled.
-   int fl_old = ::fcntl(this->m_fd, F_GETFL);
+   int fl_old = ::fcntl(this->fd(), F_GETFL);
    if(fl_old == -1)
      POSEIDON_THROW((
          "Could not get socket flags",
