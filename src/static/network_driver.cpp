@@ -31,6 +31,12 @@ do_epoll_ctl(int epoll_fd, int op, const shared_ptr<Abstract_Socket>& socket, ui
           "Could not add socket `$2` (class `$3`)",
           "[`epoll_ctl()` failed: $1]"),
           format_errno(), socket, typeid(*socket));
+
+    if((op == EPOLL_CTL_ADD) || (op == EPOLL_CTL_MOD))
+      POSEIDON_LOG_TRACE((
+          "Updated epoll flags for socket `$1` (class `$2`): ET = $3, IN = $4, OUT = $5"),
+          socket, typeid(*socket), (event.events / EPOLLET) & 1, (event.events / EPOLLIN) & 1,
+          (event.events / EPOLLOUT) & 1);
   }
 
 }  // namespace
@@ -68,7 +74,7 @@ reload(const Config_File& file)
     int64_t throttle_size = 1048576;
 
     // Read the event buffer size from configuration.
-    auto value = file.query("poll", "event_buffer_size");
+    auto value = file.query("network", "poll", "event_buffer_size");
     if(value.is_integer())
       event_buffer_size = value.as_integer();
     else if(!value.is_null())
@@ -84,7 +90,7 @@ reload(const Config_File& file)
           event_buffer_size, file.path());
 
     // Read the throttle size from configuration.
-    value = file.query("poll", "throttle_size");
+    value = file.query("network", "poll", "throttle_size");
     if(value.is_integer())
       throttle_size = value.as_integer();
     else if(!value.is_null())
@@ -135,13 +141,13 @@ thread_loop()
         if(ngot <= 0)
           return;
 
-        // We add `EPOLLET` by hand, as `::epoll_wait()` does not report it. This
-        // is necessary to tell where the events come from later.
+        // Because `::epoll_wait()` does not report `EPOLLET`, it has to be added
+        // by hand. This is necessary for telling where the events come from.
         for(uint32_t k = 0;  k < (uint32_t) ngot;  ++k)
           event_buffer[k].events |= EPOLLET;
       }
       this->m_events.accept(sizeof(::epoll_event) * (uint32_t) ngot);
-      POSEIDON_LOG_TRACE(("Collected `$1` socket events from epoll"), (uint32_t) ngot);
+      POSEIDON_LOG_TRACE(("Collected `$1` socket event(s) from epoll"), (uint32_t) ngot);
 
       this->m_events.getn((char*) &event, sizeof(event));
     }
@@ -174,8 +180,8 @@ thread_loop()
     // Process events on this socket.
     POSEIDON_LOG_TRACE((
         "Processing socket `$1` (class `$2`): ET = $3, HUP = $4, ERR = $5, IN = $6, OUT = $7"),
-        socket, typeid(*socket), !!(event.events & EPOLLET), !!(event.events & EPOLLHUP),
-        !!(event.events & EPOLLERR), !!(event.events & EPOLLIN), !!(event.events & EPOLLOUT));
+        socket, typeid(*socket), (event.events / EPOLLET) & 1, (event.events / EPOLLHUP) & 1,
+        (event.events / EPOLLERR) & 1, (event.events / EPOLLIN) & 1, (event.events / EPOLLOUT) & 1);
 
     if(event.events & (EPOLLHUP | EPOLLERR)) {
       // Get its error code, if an error has been reported.
@@ -225,7 +231,7 @@ thread_loop()
           socket->close();
 
         // If there are too many bytes pending, disable `EPOLLIN` notification.
-        if(socket->m_io_write_queue.size() >= throttle_size)
+        if(socket->m_io_write_queue.size() > throttle_size)
           do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_MOD, socket, EPOLLOUT);
       }
       catch(exception& stdex) {
@@ -252,7 +258,7 @@ thread_loop()
 
         // If this event came from the level-triggered epoll, and there are fewer
         // bytes pending, re-enable `EPOLLIN` notification.
-        if(!(event.events & EPOLLET) && (socket->m_io_write_queue.size() < throttle_size))
+        if(!(event.events & EPOLLET) && (socket->m_io_write_queue.size() <= throttle_size))
           do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_MOD, socket, EPOLLIN);
       }
       catch(exception& stdex) {
