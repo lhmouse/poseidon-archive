@@ -36,11 +36,13 @@ do_abstract_socket_on_readable()
     this->m_io_read_queue.reserve(0xFFFFU);
     size_t datalen = this->m_io_read_queue.capacity();
 
-    ::ssize_t r = ::recv(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0);
+    ::ssize_t r;
+  try_io:
+    r = ::recv(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0);
     if(r < 0) {
       switch(errno) {
         case EINTR:
-          return io_result_interrupted;
+          goto try_io;
 
 #if EWOULDBLOCK != EAGAIN
         case EAGAIN:
@@ -78,11 +80,13 @@ do_abstract_socket_on_writable()
 
     // Send some bytes from the write queue.
     size_t datalen = this->m_io_write_queue.size();
-    ::ssize_t r = ::send(this->fd(), this->m_io_write_queue.begin(), datalen, 0);
+    ::ssize_t r;
+  try_io:
+    r = ::send(this->fd(), this->m_io_write_queue.begin(), datalen, 0);
     if(r < 0) {
       switch(errno) {
         case EINTR:
-          return io_result_interrupted;
+          goto try_io;
 
 #if EWOULDBLOCK != EAGAIN
         case EAGAIN:
@@ -157,7 +161,7 @@ tcp_send(const char* data, size_t size)
     // Try writing once. This is essential for the edge-triggered epoll to work
     // reliably, because the level-triggered epoll does not check for `EPOLLOUT` by
     // default. If the packet has been sent anyway, discard it from the write queue.
-    while(this->do_abstract_socket_on_writable() == io_result_interrupted);
+    this->do_abstract_socket_on_writable();
     return true;
   }
 

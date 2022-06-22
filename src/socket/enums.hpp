@@ -33,9 +33,8 @@ enum Socket_State : uint8_t
 enum IO_Result : uint8_t
   {
     io_result_partial      = 0,
-    io_result_interrupted  = 1,
-    io_result_would_block  = 2,
-    io_result_end_of_file  = 3,
+    io_result_would_block  = 1,
+    io_result_end_of_file  = 2,
   };
 
 }  // namespace poseidon

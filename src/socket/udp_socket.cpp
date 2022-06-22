@@ -34,11 +34,13 @@ do_abstract_socket_on_readable()
     Socket_Address addr;
     ::socklen_t addrlen = (::socklen_t) addr.capacity();
 
-    ::ssize_t r = ::recvfrom(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
+    ::ssize_t r;
+  try_io:
+    r = ::recvfrom(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
     if(r < 0) {
       switch(errno) {
         case EINTR:
-          return io_result_interrupted;
+          goto try_io;
 
 #if EWOULDBLOCK != EAGAIN
         case EAGAIN:
@@ -89,12 +91,14 @@ do_abstract_socket_on_writable()
 
     // In the case of other errors, data shall be removed from the write queue after
     // the attempt to send, no matter whether the operation has succeeded or not.
-    ::ssize_t r = ::sendto(this->fd(), this->m_io_write_queue.begin(), datalen, 0, addr.addr(), addrlen);
+    ::ssize_t r;
+  try_io:
+    r = ::sendto(this->fd(), this->m_io_write_queue.begin(), datalen, 0, addr.addr(), addrlen);
     this->m_io_write_queue.discard(datalen);
     if(r < 0) {
       switch(errno) {
         case EINTR:
-          return io_result_interrupted;
+          goto try_io;
 
 #if EWOULDBLOCK != EAGAIN
         case EAGAIN:
@@ -282,7 +286,7 @@ udp_send(const Socket_Address& addr, const char* data, size_t size)
     // Try writing once. This is essential for the edge-triggered epoll to work
     // reliably, because the level-triggered epoll does not check for `EPOLLOUT` by
     // default. If the packet has been sent anyway, discard it from the write queue.
-    while(this->do_abstract_socket_on_writable() == io_result_interrupted);
+    this->do_abstract_socket_on_writable();
     return true;
   }
 

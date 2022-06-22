@@ -59,11 +59,13 @@ do_abstract_socket_on_readable()
     const recursive_mutex::unique_lock io_lock(this->m_io_mutex);
 
     // Try getting a connection.
-    unique_posix_fd fd(::accept4(this->fd(), nullptr, nullptr, SOCK_NONBLOCK));
+    unique_posix_fd fd;
+  try_io:
+    fd.reset(::accept4(this->fd(), nullptr, nullptr, SOCK_NONBLOCK));
     if(!fd) {
       switch(errno) {
         case EINTR:
-          return io_result_interrupted;
+          goto try_io;
 
 #if EWOULDBLOCK != EAGAIN
         case EAGAIN:
