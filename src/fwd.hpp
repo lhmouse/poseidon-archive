@@ -118,6 +118,8 @@ enum IO_Result : uint8_t;
 class Socket_Address;
 class Abstract_Socket;
 class Listen_Socket;
+class SSL_ptr;
+class SSL_CTX_ptr;
 
 class UDP_Socket;
 class UDP_Server_Socket;

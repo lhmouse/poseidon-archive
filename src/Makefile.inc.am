@@ -29,6 +29,8 @@ include_poseidon_socket_HEADERS =  \
   %reldir%/socket/udp_server_socket.hpp  \
   %reldir%/socket/udp_client_socket.hpp  \
   %reldir%/socket/listen_socket.hpp  \
+  %reldir%/socket/ssl_ptr.hpp  \
+  %reldir%/socket/ssl_ctx_ptr.hpp  \
   %reldir%/socket/tcp_socket.hpp  \
   %reldir%/socket/tcp_server_socket.hpp  \
   %reldir%/socket/tcp_client_socket.hpp  \
