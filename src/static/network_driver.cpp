@@ -8,6 +8,8 @@
 #include "../core/config_file.hpp"
 #include "../utils.hpp"
 #include <sys/epoll.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 namespace poseidon {
 namespace {
@@ -65,6 +67,34 @@ Network_Driver::
   {
   }
 
+SSL_CTX_ptr
+Network_Driver::
+default_server_ssl_ctx() const
+  {
+    plain_mutex::unique_lock lock(this->m_conf_mutex);
+
+    if(!this->m_server_ssl_ctx)
+      POSEIDON_LOG_WARN((
+          "Server SSL context unavailable",
+          "[certificate not configured in 'main.conf']"));
+
+    return this->m_server_ssl_ctx;
+  }
+
+SSL_CTX_ptr
+Network_Driver::
+default_client_ssl_ctx() const
+  {
+    plain_mutex::unique_lock lock(this->m_conf_mutex);
+
+    if(!this->m_client_ssl_ctx)
+      POSEIDON_LOG_WARN((
+          "Client SSL context unavailable",
+          "[no configuration loaded]"));
+
+    return this->m_client_ssl_ctx;
+  }
+
 void
 Network_Driver::
 reload(const Config_File& file)
@@ -72,6 +102,12 @@ reload(const Config_File& file)
     // Parse new configuration. Default ones are defined here.
     int64_t event_buffer_size = 1024;
     int64_t throttle_size = 1048576;
+    cow_string default_certificate;
+    cow_string default_private_key;
+    cow_string trusted_ca_path;
+
+    SSL_CTX_ptr server_ssl_ctx;
+    SSL_CTX_ptr client_ssl_ctx;
 
     // Read the event buffer size from configuration.
     auto value = file.query("network", "poll", "event_buffer_size");
@@ -79,13 +115,13 @@ reload(const Config_File& file)
       event_buffer_size = value.as_integer();
     else if(!value.is_null())
       POSEIDON_LOG_WARN((
-          "Ignoring `poll.event_buffer_size`: expecting an `integer`, got `$1`",
+          "Ignoring `network.poll.event_buffer_size`: expecting an `integer`, got `$1`",
           "[in configuration file '$2']"),
           value, file.path());
 
     if((event_buffer_size < 0x10) || (event_buffer_size > 0x7FFFF0))
       POSEIDON_THROW((
-          "`poll.event_buffer_size` value `$1` out of range",
+          "`network.poll.event_buffer_size` value `$1` out of range",
           "[in configuration file '$2']"),
           event_buffer_size, file.path());
 
@@ -95,20 +131,138 @@ reload(const Config_File& file)
       throttle_size = value.as_integer();
     else if(!value.is_null())
       POSEIDON_LOG_WARN((
-          "Ignoring `poll.throttle_size`: expecting an `integer`, got `$1`",
+          "Ignoring `network.poll.throttle_size`: expecting an `integer`, got `$1`",
           "[in configuration file '$2']"),
           value, file.path());
 
     if((throttle_size < 0x100) || (throttle_size > 0x7FFFFFF0))
       POSEIDON_THROW((
-          "`poll.throttle_size` value `$1` out of range",
+          "`network.poll.throttle_size` value `$1` out of range",
           "[in configuration file '$2']"),
           throttle_size, file.path());
+
+    // Get the path to the default server certificate and private key.
+    value = file.query("network", "ssl", "default_certificate");
+    if(value.is_string())
+      default_certificate = value.as_string();
+    else if(!value.is_null())
+      POSEIDON_LOG_WARN((
+          "Ignoring `network.ssl.default_certificate`: expecting a `string`, got `$1`",
+          "[in configuration file '$2']"),
+          value, file.path());
+
+    value = file.query("network", "ssl", "default_private_key");
+    if(value.is_string())
+      default_private_key = value.as_string();
+    else if(!value.is_null())
+      POSEIDON_LOG_WARN((
+          "Ignoring `network.ssl.default_private_key`: expecting a `string`, got `$1`",
+          "[in configuration file '$2']"),
+          value, file.path());
+
+    // Check for configuration errors.
+    if(!default_certificate.empty() && default_private_key.empty())
+      POSEIDON_THROW((
+          "`network.ssl.default_private_key` missing",
+          "[in configuration file '$1']"),
+          file.path());
+
+    if(default_certificate.empty() && !default_private_key.empty())
+      POSEIDON_THROW((
+          "`network.ssl.default_private_key` missing",
+          "[in configuration file '$1']"),
+          file.path());
+
+    if(!default_certificate.empty() && !default_private_key.empty()) {
+      // Create the server context.
+      server_ssl_ctx.reset(::SSL_CTX_new(::TLS_server_method()));
+      if(!server_ssl_ctx)
+        POSEIDON_THROW((
+            "Could not allocate server SSL context",
+            "[`SSL_CTX_new()` failed]: $1"),
+            ::ERR_reason_error_string(::ERR_peek_error()));
+
+      // Load the certificate and private key.
+      if(!::SSL_CTX_use_certificate_chain_file(server_ssl_ctx, default_certificate.safe_c_str()))
+        POSEIDON_THROW((
+            "Could not load default server SSL certificate file '$3'",
+            "[`SSL_CTX_use_certificate_chain_file()` failed: $1]",
+            "[in configuration file '$2']"),
+            ::ERR_reason_error_string(::ERR_peek_error()), file.path(), default_certificate);
+
+      if(!::SSL_CTX_use_PrivateKey_file(server_ssl_ctx, default_private_key.safe_c_str(), SSL_FILETYPE_PEM))
+        POSEIDON_THROW((
+            "Could not load default server SSL private key file '$3'",
+            "[`SSL_CTX_use_PrivateKey_file()` failed: $1]",
+            "[in configuration file '$2']"),
+            ::ERR_reason_error_string(::ERR_peek_error()), file.path(), default_private_key);
+
+      if(!::SSL_CTX_check_private_key(server_ssl_ctx))
+        POSEIDON_THROW((
+            "Error validating default server SSL certificate '$3' and SSL private key '$4'",
+            "[`SSL_CTX_check_private_key()` failed: $1]",
+            "[in configuration file '$2']"),
+            ::ERR_reason_error_string(::ERR_peek_error()), file.path(), default_certificate, default_private_key);
+
+      ::SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, nullptr);
+    }
+
+    // Get the path to trusted CA certificates.
+    value = file.query("network", "ssl", "trusted_ca_path");
+    if(value.is_string())
+      trusted_ca_path = value.as_string();
+    else if(!value.is_null())
+      POSEIDON_LOG_WARN((
+          "Ignoring `network.ssl.trusted_ca_path`: expecting a `string`, got `$1`",
+          "[in configuration file '$2']"),
+          value, file.path());
+
+    // Create the client context, always.
+    client_ssl_ctx.reset(::SSL_CTX_new(::TLS_client_method()));
+    if(!client_ssl_ctx)
+      POSEIDON_THROW((
+          "Could not allocate client SSL context: $1",
+          "[`SSL_CTX_new()` failed]"),
+          ::ERR_reason_error_string(::ERR_peek_error()));
+
+    if(!trusted_ca_path.empty()) {
+      // Load trusted CA certificates from the given directory.
+      if(!::SSL_CTX_load_verify_locations(client_ssl_ctx, nullptr, trusted_ca_path.safe_c_str()))
+        POSEIDON_THROW((
+            "Could not set path to trusted CA certificates",
+            "[`SSL_CTX_load_verify_locations()` failed: $1]",
+            "[in configuration file '$2']"),
+            ::ERR_reason_error_string(::ERR_peek_error()), file.path());
+
+      // Use the hostname as the context.
+      char hostname[SSL_MAX_SID_CTX_LENGTH] = { };
+      ::gethostname(hostname, sizeof(hostname));
+
+      if(!::SSL_CTX_set_session_id_context(client_ssl_ctx, (unsigned char*) hostname, sizeof(hostname)))
+        POSEIDON_THROW((
+            "Could not set SSL session ID context",
+            "[`SSL_set_session_id_context()` failed: $1]",
+            "[in configuration file '$2']"),
+            ::ERR_reason_error_string(::ERR_peek_error()), file.path());
+
+      ::SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_PEER, nullptr);
+    }
+    else {
+      POSEIDON_LOG_WARN((
+          "CA certificate validation has been disabled. This configuration is not "
+          "recommended for production use.",
+          "Set `network.ssl.trusted_ca_path` in '$1' to enable it."),
+          file.path());
+
+      ::SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_NONE, nullptr);
+    }
 
     // Set up new data.
     plain_mutex::unique_lock lock(this->m_conf_mutex);
     this->m_event_buffer_size = (uint32_t) event_buffer_size;
     this->m_throttle_size = (uint32_t) throttle_size;
+    this->m_server_ssl_ctx.swap(server_ssl_ctx);
+    this->m_client_ssl_ctx.swap(client_ssl_ctx);
   }
 
 void
