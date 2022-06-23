@@ -5,6 +5,7 @@
 #include "ssl_socket.hpp"
 #include "../static/async_logger.hpp"
 #include "../utils.hpp"
+#include <sys/socket.h>
 
 namespace poseidon {
 
@@ -35,30 +36,35 @@ do_abstract_socket_on_readable()
     this->m_io_read_queue.reserve(0xFFFFU);
     size_t datalen = this->m_io_read_queue.capacity();
 
-    ::ssize_t nread;
-    int err;
-    do {
-      nread = ::recv(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0);
-      datalen = (size_t) nread;
-      err = (nread < 0) ? errno : 0;
-    }
-    while(err == EINTR);
+    ::ssize_t r;
+  try_io:
+    r = ::recv(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0);
+    if(r < 0) {
+      switch(errno) {
+        case EINTR:
+          goto try_io;
 
-    // If `recv()` returned zero, the connection should be shut down.
-    if(datalen == 0)
-      return io_result_end_of_file;
+#if EWOULDBLOCK != EAGAIN
+        case EAGAIN:
+#endif
+        case EWOULDBLOCK:
+          return io_result_would_block;
+      }
 
-    if((err == EAGAIN) || (err == EWOULDBLOCK))
-      return io_result_would_block;
-    else if(err != 0)
       POSEIDON_THROW((
           "Error reading SSL socket",
           "[`recv()` failed: $3]",
           "[SSL socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(err));
+          this, typeid(*this), format_errno());
+    }
+
+    if(r == 0)
+      return io_result_end_of_file;
 
     // Accept these data.
+    datalen = (size_t) r;
     this->m_io_read_queue.accept(datalen);
+
     this->do_on_ssl_stream(this->m_io_read_queue);
     return io_result_partial;
   }
@@ -72,28 +78,31 @@ do_abstract_socket_on_writable()
     if(this->m_io_write_queue.empty())
       return io_result_partial;
 
-    // Send some bytes from the send queue.
+    // Send some bytes from the write queue.
     size_t datalen = this->m_io_write_queue.size();
+    ::ssize_t r;
+  try_io:
+    r = ::send(this->fd(), this->m_io_write_queue.begin(), datalen, 0);
+    if(r < 0) {
+      switch(errno) {
+        case EINTR:
+          goto try_io;
 
-    ::ssize_t nwritten;
-    int err;
-    do {
-      nwritten = ::send(this->fd(), this->m_io_write_queue.begin(), datalen, 0);
-      datalen = (size_t) nwritten;
-      err = (nwritten < 0) ? errno : 0;
-    }
-    while(err == EINTR);
+#if EWOULDBLOCK != EAGAIN
+        case EAGAIN:
+#endif
+        case EWOULDBLOCK:
+          return io_result_would_block;
+      }
 
-    if((err == EAGAIN) || (err == EWOULDBLOCK))
-      return io_result_would_block;
-    else if(err != 0)
       POSEIDON_THROW((
           "Error writing SSL socket",
           "[`send()` failed: $3]",
           "[SSL socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(err));
+          this, typeid(*this), format_errno());
+    }
 
-    // Remove sent bytes from the send queue.
+    // Remove sent bytes from the write queue.
     this->m_io_write_queue.discard(datalen);
     return io_result_partial;
   }
@@ -151,7 +160,7 @@ ssl_send(const char* data, size_t size)
 
     // Try writing once. This is essential for the edge-triggered epoll to work
     // reliably, because the level-triggered epoll does not check for `EPOLLOUT` by
-    // default. If the packet has been sent anyway, discard it from the send queue.
+    // default. If the packet has been sent anyway, discard it from the write queue.
     this->do_abstract_socket_on_writable();
     return true;
   }
