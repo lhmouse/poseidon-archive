@@ -180,8 +180,8 @@ reload(const Config_File& file)
           "[in configuration file '$2']"),
           value, file.path());
 
-    // If no value or zero is specified, use the system's stack size.
     if(stack_vm_size == 0) {
+      // If no value or zero is specified, use the system's stack size.
       ::rlimit rlim;
       if(::getrlimit(RLIMIT_STACK, &rlim) != 0)
         POSEIDON_THROW((
