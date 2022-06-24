@@ -9,8 +9,8 @@
 namespace poseidon {
 
 SSL_Client_Socket::
-SSL_Client_Socket(const Socket_Address& addr)
-  : SSL_Socket(addr.family())
+SSL_Client_Socket(const Socket_Address& addr, const SSL_CTX_ptr& ssl_ctx)
+  : SSL_Socket(addr.family(), ssl_ctx)
   {
     if((::connect(this->fd(), addr.addr(), addr.ssize()) != 0) && (errno != EINPROGRESS))
       POSEIDON_THROW((

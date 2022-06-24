@@ -17,8 +17,8 @@ constexpr uint16_t port = 3808;
 struct Example_Session : SSL_Server_Socket
   {
     explicit
-    Example_Session(unique_posix_fd&& fd)
-      : SSL_Server_Socket(::std::move(fd))
+    Example_Session(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
+      : SSL_Server_Socket(::std::move(fd), ssl_ctx)
       {
       }
 
@@ -46,7 +46,10 @@ struct Example_Server : Listen_Socket
     shared_ptr<Abstract_Socket>
     do_on_new_client_opt(unique_posix_fd&& fd) override
       {
-        this->m_client = ::std::make_shared<Example_Session>(::std::move(fd));
+        recursive_mutex::unique_lock io_lock;
+        auto& driver = this->do_abstract_socket_lock_driver(io_lock);
+
+        this->m_client = ::std::make_shared<Example_Session>(::std::move(fd), driver.default_server_ssl_ctx());
         POSEIDON_LOG_WARN(("example SSL server accepted connection from `$1`"), this->m_client->get_remote_address());
         return this->m_client;
       }

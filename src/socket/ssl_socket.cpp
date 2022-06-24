@@ -10,14 +10,14 @@
 namespace poseidon {
 
 SSL_Socket::
-SSL_Socket(unique_posix_fd&& fd)
-  : Abstract_Socket(::std::move(fd))
+SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
+  : Abstract_Socket(::std::move(fd)), m_ssl_ctx(ssl_ctx)
   {
   }
 
 SSL_Socket::
-SSL_Socket(int family)
-  : Abstract_Socket(family, SOCK_STREAM, IPPROTO_TCP)
+SSL_Socket(int family, const SSL_CTX_ptr& ssl_ctx)
+  : Abstract_Socket(family, SOCK_STREAM, IPPROTO_TCP), m_ssl_ctx(ssl_ctx)
   {
   }
 

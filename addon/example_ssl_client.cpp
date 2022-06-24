@@ -17,7 +17,7 @@ struct Example_Session : SSL_Client_Socket
   {
     explicit
     Example_Session()
-      : SSL_Client_Socket(Socket_Address(conn, port))
+      : SSL_Client_Socket(Socket_Address(conn, port), network_driver.default_client_ssl_ctx())
       {
         static constexpr char data[] =
             "GET / HTTP/1.1\r\n"

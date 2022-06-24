@@ -9,8 +9,8 @@
 namespace poseidon {
 
 SSL_Server_Socket::
-SSL_Server_Socket(unique_posix_fd&& fd)
-  : SSL_Socket(::std::move(fd))
+SSL_Server_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
+  : SSL_Socket(::std::move(fd), ssl_ctx)
   {
     POSEIDON_LOG_INFO((
         "New client connected from `$3`",

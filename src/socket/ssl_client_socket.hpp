@@ -18,7 +18,7 @@ class SSL_Client_Socket
   protected:
     // Creates a socket that connects to the given address.
     explicit
-    SSL_Client_Socket(const Socket_Address& addr);
+    SSL_Client_Socket(const Socket_Address& addr, const SSL_CTX_ptr& ssl_ctx);
 
   protected:
     // This function implements `Abstract_Socket`.

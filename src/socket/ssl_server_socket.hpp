@@ -18,7 +18,7 @@ class SSL_Server_Socket
   protected:
     // Accepts a connected socket.
     explicit
-    SSL_Server_Socket(unique_posix_fd&& fd);
+    SSL_Server_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx);
 
   protected:
     // This function implements `Abstract_Socket`.
