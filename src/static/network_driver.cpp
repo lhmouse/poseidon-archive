@@ -34,7 +34,7 @@ do_epoll_ctl(int epoll_fd, int op, const shared_ptr<Abstract_Socket>& socket, ui
           "[`epoll_ctl()` failed: $1]"),
           format_errno(), socket, typeid(*socket));
 
-    if(op != EPOLL_CTL_DEL)
+    if((op == EPOLL_CTL_ADD) || (op == EPOLL_CTL_MOD))
       POSEIDON_LOG_TRACE((
           "Updated epoll flags for socket `$1` (class `$2`): ET = $3, IN = $4, OUT = $5"),
           socket, typeid(*socket), (event.events / EPOLLET) & 1U, (event.events / EPOLLIN) & 1U,
@@ -442,7 +442,7 @@ insert(const shared_ptr<Abstract_Socket>& socket)
     // so there is no need to remove it in case of an exception.
     plain_mutex::unique_lock lock(this->m_epoll_mutex);
     do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_ADD, socket, EPOLLIN);
-    do_epoll_ctl(this->m_epoll_et, EPOLL_CTL_ADD, socket, EPOLLOUT | EPOLLET);
+    do_epoll_ctl(this->m_epoll_et, EPOLL_CTL_ADD, socket, EPOLLIN | EPOLLOUT | EPOLLET);
     this->m_epoll_sockets[socket.get()] = socket;
   }
 
