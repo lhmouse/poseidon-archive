@@ -68,6 +68,9 @@ class UDP_Socket
     udp_send(const Socket_Address& addr, const char* data, size_t size);
 
     bool
+    udp_send(const Socket_Address& addr, const linear_buffer& data);
+
+    bool
     udp_send(const Socket_Address& addr, const cow_string& data);
 
     bool

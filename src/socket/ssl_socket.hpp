@@ -76,6 +76,9 @@ class SSL_Socket
     ssl_send(const char* data, size_t size);
 
     bool
+    ssl_send(const linear_buffer& data);
+
+    bool
     ssl_send(const cow_string& data);
 
     bool

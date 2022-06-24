@@ -64,6 +64,9 @@ class TCP_Socket
     tcp_send(const char* data, size_t size);
 
     bool
+    tcp_send(const linear_buffer& data);
+
+    bool
     tcp_send(const cow_string& data);
 
     bool
