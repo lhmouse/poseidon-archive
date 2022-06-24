@@ -58,6 +58,11 @@ class SSL_Socket
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(SSL_Socket);
 
+    // Gets the SSL structure.
+    ::SSL*
+    ssl() const noexcept
+      { return this->m_ssl.get();  }
+
     // Gets the remote or connected address of this socket.
     // This function is thread-safe.
     const Socket_Address&
