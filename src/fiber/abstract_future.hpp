@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_CORE_ABSTRACT_FUTURE_
-#define POSEIDON_CORE_ABSTRACT_FUTURE_
+#ifndef POSEIDON_FIBER_ABSTRACT_FUTURE_
+#define POSEIDON_FIBER_ABSTRACT_FUTURE_
 
 #include "../fwd.hpp"
 #include "enums.hpp"

@@ -2,10 +2,10 @@
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
 #include "../src/precompiled.ipp"
-#include "../src/core/abstract_fiber.hpp"
-#include "../src/core/future.hpp"
-#include "../src/static/fiber_scheduler.hpp"
+#include "../src/fiber/abstract_fiber.hpp"
+#include "../src/fiber/future.hpp"
 #include "../src/core/abstract_timer.hpp"
+#include "../src/static/fiber_scheduler.hpp"
 #include "../src/static/timer_driver.hpp"
 #include "../src/static/async_logger.hpp"
 #include "../src/utils.hpp"

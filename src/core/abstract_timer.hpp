@@ -5,7 +5,6 @@
 #define POSEIDON_CORE_ABSTRACT_TIMER_
 
 #include "../fwd.hpp"
-#include "enums.hpp"
 
 namespace poseidon {
 

@@ -1,11 +1,10 @@
 // This file is part of Poseidon.
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_CORE_ABSTRACT_FIBER_
-#define POSEIDON_CORE_ABSTRACT_FIBER_
+#ifndef POSEIDON_FIBER_ABSTRACT_FIBER_
+#define POSEIDON_FIBER_ABSTRACT_FIBER_
 
 #include "../fwd.hpp"
-#include "enums.hpp"
 
 namespace poseidon {
 

@@ -102,14 +102,15 @@ using phsh_string = ::rocket::prehashed_string;
       CLASS::MEMBER : CLASS##_##MEMBER { }  // no semicolon
 
 // Core types
-enum Async_State : uint8_t;
-enum Future_State : uint8_t;
 class Config_File;
 class Abstract_Timer;
+class Abstract_Task;
+
+// Fiber types
+enum Future_State : uint8_t;
 class Abstract_Future;
 template<typename ValueT> class Future;
 class Abstract_Fiber;
-class Abstract_Task;
 
 // Socket types
 enum Socket_Address_Class : uint8_t;
@@ -141,6 +142,15 @@ extern class Timer_Driver& timer_driver;
 extern class Fiber_Scheduler& fiber_scheduler;
 extern class Task_Executor& task_executor;
 extern class Network_Driver& network_driver;
+
+// Asynchronous object states
+enum Async_State : uint8_t
+  {
+    async_state_pending    = 0,
+    async_state_suspended  = 1,
+    async_state_running    = 2,
+    async_state_finished   = 3,
+  };
 
 // Log levels
 // Note each level has a hardcoded name and number.

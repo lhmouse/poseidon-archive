@@ -5,8 +5,8 @@
 #include "fiber_scheduler.hpp"
 #include "async_logger.hpp"
 #include "../core/config_file.hpp"
-#include "../core/abstract_fiber.hpp"
-#include "../core/abstract_future.hpp"
+#include "../fiber/abstract_fiber.hpp"
+#include "../fiber/abstract_future.hpp"
 #include "../utils.hpp"
 #include <time.h>  // clock_gettime()
 #include <sys/resource.h>  // getrlimit()
