@@ -21,7 +21,6 @@ class Abstract_Socket
     mutable once_flag m_sockname_once;
     mutable Socket_Address m_sockname;
 
-  protected:
     mutable recursive_mutex m_io_mutex;
     Network_Driver* m_io_driver;
     bool m_io_throttled = false;
@@ -38,6 +37,32 @@ class Abstract_Socket
     Abstract_Socket(int family, int type, int protocol);
 
   protected:
+     // Gets the network driver instance inside the callbacks hereafter.
+     // If this function is called elsewhere, the behavior is undefined.
+     Network_Driver&
+     do_abstract_socket_lock_driver(recursive_mutex::unique_lock& lock) const noexcept
+       {
+         lock.lock(this->m_io_mutex);
+         ROCKET_ASSERT(this->m_io_driver);
+         return *(this->m_io_driver);
+       }
+
+     // Gets the read (receive) queue.
+     linear_buffer&
+     do_abstract_socket_lock_read_queue(recursive_mutex::unique_lock& lock) noexcept
+       {
+         lock.lock(this->m_io_mutex);
+         return this->m_io_read_queue;
+       }
+
+     // Gets the write (send) queue.
+     linear_buffer&
+     do_abstract_socket_lock_write_queue(recursive_mutex::unique_lock& lock) noexcept
+       {
+         lock.lock(this->m_io_mutex);
+         return this->m_io_write_queue;
+       }
+
     // This callback is invoked by the network thread when the socket has
     // been closed, and is intended to be overriden by derived classes.
     // The argument is zero for normal closure, or an error number in the

@@ -24,19 +24,20 @@ IO_Result
 UDP_Socket::
 do_abstract_socket_on_readable()
   {
-    const recursive_mutex::unique_lock io_lock(this->m_io_mutex);
+    recursive_mutex::unique_lock io_lock;
+    auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
 
     // Try getting a packet from this socket.
-    this->m_io_read_queue.clear();
-    this->m_io_read_queue.reserve(0xFFFFU);
-    size_t datalen = this->m_io_read_queue.capacity();
+    queue.clear();
+    queue.reserve(0xFFFFU);
+    size_t datalen = queue.capacity();
 
     Socket_Address addr;
     ::socklen_t addrlen = (::socklen_t) addr.capacity();
 
     ::ssize_t r;
   try_io:
-    r = ::recvfrom(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
+    r = ::recvfrom(this->fd(), queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
     if(r < 0) {
       switch(errno) {
         case EINTR:
@@ -58,10 +59,10 @@ do_abstract_socket_on_readable()
 
     // Accept this packet.
     datalen = (size_t) r;
-    this->m_io_read_queue.accept(datalen);
+    queue.accept(datalen);
     addr.set_size(addrlen);
 
-    this->do_on_udp_packet(::std::move(addr), ::std::move(this->m_io_read_queue));
+    this->do_on_udp_packet(::std::move(addr), ::std::move(queue));
     return io_result_partial;
   }
 
@@ -69,9 +70,10 @@ IO_Result
 UDP_Socket::
 do_abstract_socket_on_writable()
   {
-    const recursive_mutex::unique_lock io_lock(this->m_io_mutex);
+    recursive_mutex::unique_lock io_lock;
+    auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
 
-    if(this->m_io_write_queue.empty())
+    if(queue.empty())
       return io_result_partial;
 
     Socket_Address addr;
@@ -80,21 +82,21 @@ do_abstract_socket_on_writable()
 
     // Get a packet from the write queue.
     // This piece of code must match `udp_send()`.
-    size_t ngot = this->m_io_write_queue.getn((char*) &addrlen, sizeof(addrlen));
+    size_t ngot = queue.getn((char*) &addrlen, sizeof(addrlen));
     ROCKET_ASSERT(ngot == sizeof(addrlen));
 
-    ngot = this->m_io_write_queue.getn((char*) &datalen, sizeof(datalen));
+    ngot = queue.getn((char*) &datalen, sizeof(datalen));
     ROCKET_ASSERT(ngot == sizeof(datalen));
 
-    ngot = this->m_io_write_queue.getn((char*) addr.mut_data(), addrlen);
+    ngot = queue.getn((char*) addr.mut_data(), addrlen);
     ROCKET_ASSERT(ngot == (uint32_t) addrlen);
 
     // In the case of other errors, data shall be removed from the write queue after
     // the attempt to send, no matter whether the operation has succeeded or not.
     ::ssize_t r;
   try_io:
-    r = ::sendto(this->fd(), this->m_io_write_queue.begin(), datalen, 0, addr.addr(), addrlen);
-    this->m_io_write_queue.discard(datalen);
+    r = ::sendto(this->fd(), queue.begin(), datalen, 0, addr.addr(), addrlen);
+    queue.discard(datalen);
     if(r < 0) {
       switch(errno) {
         case EINTR:
@@ -263,25 +265,26 @@ udp_send(const Socket_Address& addr, const char* data, size_t size)
     if(this->socket_state() == socket_state_closed)
       return false;
 
-    const recursive_mutex::unique_lock io_lock(this->m_io_mutex);
+    recursive_mutex::unique_lock io_lock;
+    auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
 
     // Encode this packet.
     // This piece of code must match `do_abstract_socket_on_writable()`.
     ::socklen_t addrlen = addr.ssize();
     size_t queue_size = sizeof(addrlen) + sizeof(datalen) + (uint32_t) addrlen + datalen;
-    this->m_io_write_queue.reserve(queue_size);
+    queue.reserve(queue_size);
 
-    ::memcpy(this->m_io_write_queue.mut_end(), &addrlen, sizeof(addrlen));
-    this->m_io_write_queue.accept(sizeof(addrlen));
+    ::memcpy(queue.mut_end(), &addrlen, sizeof(addrlen));
+    queue.accept(sizeof(addrlen));
 
-    ::memcpy(this->m_io_write_queue.mut_end(), &datalen, sizeof(datalen));
-    this->m_io_write_queue.accept(sizeof(datalen));
+    ::memcpy(queue.mut_end(), &datalen, sizeof(datalen));
+    queue.accept(sizeof(datalen));
 
-    ::memcpy(this->m_io_write_queue.mut_end(), addr.data(), (uint32_t) addrlen);
-    this->m_io_write_queue.accept((uint32_t) addrlen);
+    ::memcpy(queue.mut_end(), addr.data(), (uint32_t) addrlen);
+    queue.accept((uint32_t) addrlen);
 
-    ::memcpy(this->m_io_write_queue.mut_end(), data, datalen);
-    this->m_io_write_queue.accept(datalen);
+    ::memcpy(queue.mut_end(), data, datalen);
+    queue.accept(datalen);
 
     // Try writing once. This is essential for the edge-triggered epoll to work
     // reliably, because the level-triggered epoll does not check for `EPOLLOUT` by

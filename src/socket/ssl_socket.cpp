@@ -30,15 +30,16 @@ IO_Result
 SSL_Socket::
 do_abstract_socket_on_readable()
   {
-    const recursive_mutex::unique_lock io_lock(this->m_io_mutex);
+    recursive_mutex::unique_lock io_lock;
+    auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
 
     // Try getting some bytes from this socket.
-    this->m_io_read_queue.reserve(0xFFFFU);
-    size_t datalen = this->m_io_read_queue.capacity();
+    queue.reserve(0xFFFFU);
+    size_t datalen = queue.capacity();
 
     ::ssize_t r;
   try_io:
-    r = ::recv(this->fd(), this->m_io_read_queue.mut_end(), datalen, 0);
+    r = ::recv(this->fd(), queue.mut_end(), datalen, 0);
     if(r < 0) {
       switch(errno) {
         case EINTR:
@@ -63,9 +64,9 @@ do_abstract_socket_on_readable()
 
     // Accept these data.
     datalen = (size_t) r;
-    this->m_io_read_queue.accept(datalen);
+    queue.accept(datalen);
 
-    this->do_on_ssl_stream(this->m_io_read_queue);
+    this->do_on_ssl_stream(queue);
     return io_result_partial;
   }
 
@@ -73,16 +74,17 @@ IO_Result
 SSL_Socket::
 do_abstract_socket_on_writable()
   {
-    const recursive_mutex::unique_lock io_lock(this->m_io_mutex);
+    recursive_mutex::unique_lock io_lock;
+    auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
 
-    if(this->m_io_write_queue.empty())
+    if(queue.empty())
       return io_result_partial;
 
     // Send some bytes from the write queue.
-    size_t datalen = this->m_io_write_queue.size();
+    size_t datalen = queue.size();
     ::ssize_t r;
   try_io:
-    r = ::send(this->fd(), this->m_io_write_queue.begin(), datalen, 0);
+    r = ::send(this->fd(), queue.begin(), datalen, 0);
     if(r < 0) {
       switch(errno) {
         case EINTR:
@@ -103,7 +105,7 @@ do_abstract_socket_on_writable()
     }
 
     // Remove sent bytes from the write queue.
-    this->m_io_write_queue.discard(datalen);
+    queue.discard(datalen);
     return io_result_partial;
   }
 
@@ -153,10 +155,11 @@ ssl_send(const char* data, size_t size)
     if(this->socket_state() == socket_state_closed)
       return false;
 
-    const recursive_mutex::unique_lock io_lock(this->m_io_mutex);
+    recursive_mutex::unique_lock io_lock;
+    auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
 
     // Append data for sending.
-    this->m_io_write_queue.putn(data, size);
+    queue.putn(data, size);
 
     // Try writing once. This is essential for the edge-triggered epoll to work
     // reliably, because the level-triggered epoll does not check for `EPOLLOUT` by

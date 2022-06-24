@@ -56,7 +56,8 @@ IO_Result
 Listen_Socket::
 do_abstract_socket_on_readable()
   {
-    const recursive_mutex::unique_lock io_lock(this->m_io_mutex);
+    recursive_mutex::unique_lock io_lock;
+    auto& driver = this->do_abstract_socket_lock_driver(io_lock);
 
     // Try getting a connection.
     unique_posix_fd fd;
@@ -89,7 +90,7 @@ do_abstract_socket_on_readable()
           "[TCP socket `$1` (class `$2`)]"),
           this, typeid(*this));
 
-    this->m_io_driver->insert(client);
+    driver.insert(client);
     return io_result_partial;
   }
 
