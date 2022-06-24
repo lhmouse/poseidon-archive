@@ -28,16 +28,18 @@ do_abstract_socket_on_readable()
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
 
     // Try getting a packet from this socket.
+    Socket_Address addr;
+    ::socklen_t addrlen;
     queue.clear();
     queue.reserve(0xFFFFU);
-    size_t datalen = queue.capacity();
+    size_t datalen;
 
-    Socket_Address addr;
-    ::socklen_t addrlen = (::socklen_t) addr.capacity();
-
-    ::ssize_t r;
   try_io:
-    r = ::recvfrom(this->fd(), queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
+    addrlen = addr.capacity();
+    datalen = queue.capacity();
+    ::ssize_t r = ::recvfrom(this->fd(), queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
+    datalen = (size_t) r;
+
     if(r < 0) {
       switch(errno) {
         case EINTR:
@@ -58,9 +60,8 @@ do_abstract_socket_on_readable()
     }
 
     // Accept this packet.
-    datalen = (size_t) r;
-    queue.accept(datalen);
     addr.set_size(addrlen);
+    queue.accept(datalen);
 
     this->do_on_udp_packet(::std::move(addr), ::std::move(queue));
     return io_result_partial;
@@ -80,27 +81,23 @@ do_abstract_socket_on_writable()
     ::socklen_t addrlen;
     size_t datalen;
 
-    // Get a packet from the write queue.
+    // Get a packet from the write queue. In the case of other errors, data shall
+    // be removed from the write queue after the attempt to send, no matter whether
+    // the operation has succeeded or not.
     // This piece of code must match `udp_send()`.
     size_t ngot = queue.getn((char*) &addrlen, sizeof(addrlen));
     ROCKET_ASSERT(ngot == sizeof(addrlen));
-
     ngot = queue.getn((char*) &datalen, sizeof(datalen));
     ROCKET_ASSERT(ngot == sizeof(datalen));
-
     ngot = queue.getn((char*) addr.mut_data(), addrlen);
     ROCKET_ASSERT(ngot == (uint32_t) addrlen);
-
-    // In the case of other errors, data shall be removed from the write queue after
-    // the attempt to send, no matter whether the operation has succeeded or not.
-    ::ssize_t r;
-  try_io:
-    r = ::sendto(this->fd(), queue.begin(), datalen, 0, addr.addr(), addrlen);
+    ::ssize_t r = ::sendto(this->fd(), queue.begin(), datalen, 0, addr.addr(), addrlen);
     queue.discard(datalen);
+
     if(r < 0) {
       switch(errno) {
         case EINTR:
-          goto try_io;
+          return io_result_partial;
 
 #if EWOULDBLOCK != EAGAIN
         case EAGAIN:
@@ -276,10 +273,8 @@ udp_send(const Socket_Address& addr, const char* data, size_t size)
 
     ::memcpy(queue.mut_end(), &addrlen, sizeof(addrlen));
     queue.accept(sizeof(addrlen));
-
     ::memcpy(queue.mut_end(), &datalen, sizeof(datalen));
     queue.accept(sizeof(datalen));
-
     ::memcpy(queue.mut_end(), addr.data(), (uint32_t) addrlen);
     queue.accept((uint32_t) addrlen);
 

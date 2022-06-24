@@ -35,11 +35,13 @@ do_abstract_socket_on_readable()
 
     // Try getting some bytes from this socket.
     queue.reserve(0xFFFFU);
-    size_t datalen = queue.capacity();
+    size_t datalen;
 
-    ::ssize_t r;
   try_io:
-    r = ::recv(this->fd(), queue.mut_end(), datalen, 0);
+    datalen = queue.capacity();
+    ::ssize_t r = ::recv(this->fd(), queue.mut_end(), datalen, 0);
+    datalen = (size_t) r;
+
     if(r < 0) {
       switch(errno) {
         case EINTR:
@@ -63,7 +65,6 @@ do_abstract_socket_on_readable()
       return io_result_end_of_file;
 
     // Accept these data.
-    datalen = (size_t) r;
     queue.accept(datalen);
 
     this->do_on_tcp_stream(queue);
@@ -81,11 +82,13 @@ do_abstract_socket_on_writable()
       return io_result_partial;
 
     // Send some bytes from the write queue.
-    size_t datalen = queue.size();
+    size_t datalen;
 
-    ::ssize_t r;
   try_io:
-    r = ::send(this->fd(), queue.begin(), datalen, 0);
+    datalen = queue.size();
+    ::ssize_t r = ::send(this->fd(), queue.begin(), datalen, 0);
+    datalen = (size_t) r;
+
     if(r < 0) {
       switch(errno) {
         case EINTR:
