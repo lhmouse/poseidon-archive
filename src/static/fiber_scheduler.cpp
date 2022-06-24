@@ -390,6 +390,7 @@ thread_loop()
     }
 
     // Resume this fiber...
+    elem->fiber->m_scheduler = this;
     this->m_sched_self_opt = elem;
     POSEIDON_LOG_TRACE(("Resuming fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
 
@@ -399,6 +400,7 @@ thread_loop()
 
     // ... and return here.
     POSEIDON_LOG_TRACE(("Suspended fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
+    elem->fiber->m_scheduler = nullptr;
     this->m_sched_self_opt.reset();
   }
 
@@ -419,7 +421,6 @@ insert(unique_ptr<Abstract_Fiber>&& fiber)
 
     // Create the management node.
     auto elem = ::std::make_shared<Queued_Fiber>();
-    fiber->m_scheduler = this;
     elem->fiber = ::std::move(fiber);
     const int64_t now = this->clock();
     elem->async_time.store(now);

@@ -22,6 +22,15 @@ class Abstract_Fiber
     Abstract_Fiber() noexcept;
 
   protected:
+     // Gets the scheduler instance inside the callbacks hereafter.
+     // If this function is called elsewhere, the behavior is undefined.
+     Fiber_Scheduler&
+     do_abstract_fiber_scheduler() const noexcept
+       {
+         ROCKET_ASSERT(this->m_scheduler);
+         return *(this->m_scheduler);
+       }
+
     // This callback is invoked by the fiber scheduler and is intended to be
     // overriden by derived classes.
     virtual
