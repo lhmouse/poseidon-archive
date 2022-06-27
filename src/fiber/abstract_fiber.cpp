@@ -35,13 +35,13 @@ do_abstract_fiber_on_resumed()
 
 void
 Abstract_Fiber::
-yield(const shared_ptr<Abstract_Future>& futr_opt) const
+yield(const shared_ptr<Abstract_Future>& futr_opt, int64_t fail_timeout_override) const
   {
     if(!this->m_scheduler)
       POSEIDON_THROW(("Fiber not yieldable unless assigned to a scheduler"));
 
     // Check that we are yielding within the current fiber.
-    this->m_scheduler->checked_yield(this, futr_opt, 0);
+    this->m_scheduler->checked_yield(this, futr_opt, fail_timeout_override);
   }
 
 }  // namespace poseidon
