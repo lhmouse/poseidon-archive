@@ -14,7 +14,7 @@ class Abstract_Timer
     friend class Timer_Driver;
 
     atomic_relaxed<Async_State> m_state = { async_state_pending };
-    atomic_relaxed<uint64_t> m_count = { 0 };
+    atomic_relaxed<int64_t> m_count = { 0 };
     uint64_t m_serial;  // used by timer driver
 
   protected:
@@ -40,7 +40,7 @@ class Abstract_Timer
       { return this->m_state.load();  }
 
     // Gets the number of times that this timer has been triggered.
-    uint64_t
+    int64_t
     count() const noexcept
       { return this->m_count.load();  }
   };
