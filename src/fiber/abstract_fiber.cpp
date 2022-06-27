@@ -41,7 +41,7 @@ yield(const shared_ptr<Abstract_Future>& futr_opt) const
       POSEIDON_THROW(("Fiber not yieldable unless assigned to a scheduler"));
 
     // Check that we are yielding within the current fiber.
-    this->m_scheduler->checked_yield(this, futr_opt);
+    this->m_scheduler->checked_yield(this, futr_opt, 0);
   }
 
 }  // namespace poseidon

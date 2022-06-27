@@ -96,6 +96,7 @@ struct Queued_Fiber
     weak_ptr<Abstract_Future> futr_opt;
     int64_t yield_since;
     int64_t ready_since;
+    int64_t fail_timeout;
     ::ucontext_t sched_inner[1];
   };
 
@@ -286,21 +287,22 @@ thread_loop()
       }
 
       // Print some messages if the fiber has been suspended for too long.
-      if(now - back->yield_since >= fail_timeout) {
+      if((back->fail_timeout == 0) && (now - back->yield_since >= warn_timeout))
+        POSEIDON_LOG_WARN((
+            "Fiber `$1` (class `$2`) has been suspended for `$3` ms"),
+            back->fiber, typeid(*(back->fiber)),
+            (uint64_t) (now - back->yield_since) / 1000000ULL);
+
+      if((back->fail_timeout == 0) && (now - back->yield_since >= fail_timeout))
         POSEIDON_LOG_ERROR((
             "Fiber `$1` (class `$2`) has been suspended for `$3` ms",
             "This circumstance looks permanent. Please check for deadlocks."),
             back->fiber, typeid(*(back->fiber)),
             (uint64_t) (now - back->yield_since) / 1000000ULL);
 
-        // This fiber should be resumed now.
+      // If the deadline has been exceeded, proceed anyway.
+      if(now - back->yield_since >= (back->fail_timeout ? back->fail_timeout : fail_timeout))
         elem = back;
-      }
-      else if(now - back->yield_since >= warn_timeout)
-        POSEIDON_LOG_WARN((
-            "Fiber `$1` (class `$2`) has been suspended for `$3` ms"),
-            back->fiber, typeid(*(back->fiber)),
-            (uint64_t) (now - back->yield_since) / 1000000ULL);
 
       // If an exit signal is pending, all fibers should be resumed. The current
       // process should exit thereafter.
@@ -420,9 +422,9 @@ insert(unique_ptr<Abstract_Fiber>&& fiber)
       POSEIDON_THROW(("Null fiber pointer not valid"));
 
     // Create the management node.
+    const int64_t now = this->clock();
     auto elem = ::std::make_shared<Queued_Fiber>();
     elem->fiber = ::std::move(fiber);
-    const int64_t now = this->clock();
     elem->async_time.store(now);
     elem->yield_since = now;
     elem->ready_since = now;
@@ -449,7 +451,7 @@ self_opt() const noexcept
 
 void
 Fiber_Scheduler::
-checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& futr_opt)
+checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& futr_opt, int64_t fail_timeout_override)
   {
     // Get the current fiber.
     auto elem = this->m_sched_self_opt.lock();
@@ -479,6 +481,7 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     elem->async_time.store(now + ::std::min(warn_timeout, fail_timeout));
     elem->futr_opt = futr_opt;
     elem->yield_since = now;
+    elem->fail_timeout = fail_timeout_override;
 
     if(futr_opt) {
       // Attach this fiber to the wait queue of the future.
