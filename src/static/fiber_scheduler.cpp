@@ -301,7 +301,11 @@ thread_loop()
             (uint64_t) (now - back->yield_since) / 1000000ULL);
 
       // If the deadline has been exceeded, proceed anyway.
-      if(now - back->yield_since >= (back->fail_timeout_override ? back->fail_timeout_override : fail_timeout))
+      int64_t real_fail_timeout = back->fail_timeout_override;
+      if(real_fail_timeout <= 0)
+        real_fail_timeout = fail_timeout;
+
+      if(now - back->yield_since >= real_fail_timeout)
         elem = back;
 
       // If an exit signal is pending, all fibers should be resumed. The current
@@ -477,8 +481,12 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     const int64_t fail_timeout = this->m_conf_fail_timeout * 1000000000LL;
     lock.unlock();
 
+    int64_t real_check_timeout = fail_timeout_override;
+    if(real_check_timeout <= 0)
+      real_check_timeout = ::std::min(warn_timeout, fail_timeout);
+
     const int64_t now = this->clock();
-    elem->async_time.store(now + ::std::min(warn_timeout, fail_timeout));
+    elem->async_time.store(now + real_check_timeout);
     elem->futr_opt = futr_opt;
     elem->yield_since = now;
     elem->fail_timeout_override = fail_timeout_override;
