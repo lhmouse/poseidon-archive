@@ -22,6 +22,7 @@ include_poseidon_fiber_HEADERS =  \
   %reldir%/fiber/abstract_future.hpp  \
   %reldir%/fiber/future.hpp  \
   %reldir%/fiber/abstract_fiber.hpp  \
+  %reldir%/fiber/timer_fiber.hpp  \
   ${END}
 
 include_poseidon_socketdir = ${includedir}/poseidon/socket
@@ -64,6 +65,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/core/abstract_task.cpp  \
   %reldir%/fiber/abstract_future.cpp  \
   %reldir%/fiber/abstract_fiber.cpp  \
+  %reldir%/fiber/timer_fiber.cpp  \
   %reldir%/socket/socket_address.cpp  \
   %reldir%/socket/abstract_socket.cpp  \
   %reldir%/socket/udp_socket.cpp  \

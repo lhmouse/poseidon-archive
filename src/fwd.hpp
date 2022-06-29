@@ -112,6 +112,8 @@ class Abstract_Future;
 template<typename ValueT> class Future;
 class Abstract_Fiber;
 
+class Timer_Fiber;
+
 // Socket types
 enum Socket_Address_Class : uint8_t;
 enum Socket_State : uint8_t;
