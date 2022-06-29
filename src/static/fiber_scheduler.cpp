@@ -96,7 +96,7 @@ struct Queued_Fiber
     weak_ptr<Abstract_Future> futr_opt;
     int64_t yield_since;
     int64_t ready_since;
-    int64_t fail_timeout;
+    int64_t fail_timeout_override;
     ::ucontext_t sched_inner[1];
   };
 
@@ -287,13 +287,13 @@ thread_loop()
       }
 
       // Print some messages if the fiber has been suspended for too long.
-      if((back->fail_timeout == 0) && (now - back->yield_since >= warn_timeout))
+      if((back->fail_timeout_override == 0) && (now - back->yield_since >= warn_timeout))
         POSEIDON_LOG_WARN((
             "Fiber `$1` (class `$2`) has been suspended for `$3` ms"),
             back->fiber, typeid(*(back->fiber)),
             (uint64_t) (now - back->yield_since) / 1000000ULL);
 
-      if((back->fail_timeout == 0) && (now - back->yield_since >= fail_timeout))
+      if((back->fail_timeout_override == 0) && (now - back->yield_since >= fail_timeout))
         POSEIDON_LOG_ERROR((
             "Fiber `$1` (class `$2`) has been suspended for `$3` ms",
             "This circumstance looks permanent. Please check for deadlocks."),
@@ -301,7 +301,7 @@ thread_loop()
             (uint64_t) (now - back->yield_since) / 1000000ULL);
 
       // If the deadline has been exceeded, proceed anyway.
-      if(now - back->yield_since >= (back->fail_timeout ? back->fail_timeout : fail_timeout))
+      if(now - back->yield_since >= (back->fail_timeout_override ? back->fail_timeout_override : fail_timeout))
         elem = back;
 
       // If an exit signal is pending, all fibers should be resumed. The current
@@ -481,7 +481,7 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     elem->async_time.store(now + ::std::min(warn_timeout, fail_timeout));
     elem->futr_opt = futr_opt;
     elem->yield_since = now;
-    elem->fail_timeout = fail_timeout_override;
+    elem->fail_timeout_override = fail_timeout_override;
 
     if(futr_opt) {
       // Attach this fiber to the wait queue of the future.
