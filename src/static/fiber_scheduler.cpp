@@ -306,13 +306,13 @@ thread_loop()
 
       // If an exit signal is pending, all fibers should be resumed. The current
       // process should exit thereafter.
-      if(!elem && signal)
+      if(signal != 0)
         elem = back;
 
       // Otherwise, resume the fiber if it is not waiting for a future, or if the
       // future has been marked ready.
-      shared_ptr<Abstract_Future> futr;
-      if(!elem && (!(futr = back->futr_opt.lock()) || (futr->m_state.load() != future_state_empty)))
+      auto futr = back->futr_opt.lock();
+      if(!futr || (futr->m_state.load() != future_state_empty))
         elem = back;
 
       // Put the fiber back.
