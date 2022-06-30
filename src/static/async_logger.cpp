@@ -14,8 +14,8 @@ namespace {
 struct Level_Config
   {
     char tag[8] = "";
-    int fd = -1;
     cow_string color;
+    int stdio = -1;
     cow_string file;
     bool trivial = false;
   };
@@ -64,70 +64,54 @@ do_load_level_config(Level_Config& lconf, const Config_File& file, const char* n
     for(size_t k = 0;  (k < 5) && name[k];  ++k)
       lconf.tag[k + 1] = ::rocket::ascii_to_upper(name[k]);
 
-    // Read level settings.
-    cow_string stream;
-    int color = -1;
-
-    auto value = file.query("logger", "levels", name, "stream");
+    // Read the color code sequence of the level.
+    auto value = file.query("logger", name, "color");
     if(value.is_string())
-      stream = value.as_string();
+      lconf.color = value.as_string();
     else if(!value.is_null())
       POSEIDON_LOG_WARN((
-          "Ignoring `logger.levels.$1.stream`: expecting a `string`, got `$2`",
+          "Ignoring `logger.$1.color`: expecting a `string`, got `$2`",
           "[in configuration file '$3']"),
           name, value, file.path());
 
-    if(!stream.empty()) {
-      // Set special streams.
-      if(stream == ::rocket::sref("stdout"))
-        lconf.fd = STDOUT_FILENO;
-      else if(stream == ::rocket::sref("stderr"))
-        lconf.fd = STDERR_FILENO;
+    // Read the output standard stream.
+    cow_string str;
+    value = file.query("logger", name, "stdio");
+    if(value.is_string())
+      str = value.as_string();
+    else if(!value.is_null())
+      POSEIDON_LOG_WARN((
+          "Ignoring `logger.$1.stdio`: expecting a `string`, got `$2`",
+          "[in configuration file '$3']"),
+          name, value, file.path());
 
-      // Read color settings of the stream. If no explicit `true` or `false` is
-      // given, color is enabled if the file descriptor denotes a terminal.
-      value = file.query("logger", "streams", stream, "color");
-      if(value.is_boolean())
-        color = value.as_boolean();
-      else if(!value.is_null())
-        POSEIDON_LOG_WARN((
-            "Ignoring `logger.streams.$1.color`: expecting a `boolean`, got `$2`",
-            "[in configuration file '$3']"),
-            stream, value, file.path());
+    if(str == "stdout")
+      lconf.stdio = STDOUT_FILENO;
+    else if(str == "stderr")
+      lconf.stdio = STDERR_FILENO;
+    else
+      POSEIDON_LOG_WARN((
+          "Ignoring `logger.$1.stdio`: invalid standard stream name `$2`",
+          "[in configuration file '$3']"),
+          name, str, file.path());
 
-      if(color < 0)
-        color = (lconf.fd != -1) && ::isatty(lconf.fd);
-
-      if(color) {
-        // Read the color code sequence of the level.
-        value = file.query("logger", "levels", name, "color");
-        if(value.is_string())
-          lconf.color = value.as_string();
-        else if(!value.is_null())
-          POSEIDON_LOG_WARN((
-              "Ignoring `logger.levels.$1.color`: expecting a `string`, got `$2`",
-              "[in configuration file '$3']"),
-              name, value, file.path());
-      }
-
-      // Read the output file path.
-      value = file.query("logger", "streams", stream, "file");
-      if(value.is_string())
-        lconf.file = value.as_string();
-      else if(!value.is_null())
-        POSEIDON_LOG_WARN((
-            "Ignoring `logger.streams.$1.file`: expecting a `string`, got `$2`",
-            "[in configuration file '$3']"),
-            stream, value, file.path());
-    }
+    // Read the output file path.
+    value = file.query("logger", name, "file");
+    if(value.is_string())
+      lconf.file = value.as_string();
+    else if(!value.is_null())
+      POSEIDON_LOG_WARN((
+          "Ignoring `logger.$1.file`: expecting a `string`, got `$2`",
+          "[in configuration file '$3']"),
+          name, value, file.path());
 
     // Read verbosity settings.
-    value = file.query("logger", "levels", name, "trivial");
+    value = file.query("logger", name, "trivial");
     if(value.is_boolean())
       lconf.trivial = value.as_boolean();
     else if(!value.is_null())
       POSEIDON_LOG_WARN((
-          "Ignoring `logger.levels.$1.trivial`: expecting a `boolean`, got `$2`",
+          "Ignoring `logger.$1.trivial`: expecting a `boolean`, got `$2`",
           "[in configuration file '$3']"),
           name, value, file.path());
   }
@@ -264,8 +248,8 @@ do_write_nothrow(const Level_Config& lconf, const Async_Logger::Queued_Message& 
             lconf.file.c_str());
     }
 
-    if(lconf.fd != -1)
-      do_write_loop(lconf.fd, data);
+    if(lconf.stdio != -1)
+      do_write_loop(lconf.stdio, data);
   }
   catch(exception& stdex) {
     ::fprintf(stderr,
@@ -304,7 +288,7 @@ reload(const Config_File& file)
     do_load_level_config(levels.at(log_level_fatal), file, "fatal");
 
     for(size_t k = 0;  k != levels.size();  ++k)
-      if((levels[k].fd != -1) || !levels[k].file.empty())
+      if((levels[k].stdio != -1) || !levels[k].file.empty())
         level_mask |= 1U << k;
 
     // Set up new data.
