@@ -6,6 +6,7 @@
 #include "../static/async_logger.hpp"
 #include "../utils.hpp"
 #include <sys/socket.h>
+#include <netinet/tcp.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
@@ -15,6 +16,7 @@ SSL_Socket::
 SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
   : Abstract_Socket(::std::move(fd)), m_ssl_ctx(ssl_ctx)
   {
+    // Create the SSL structure.
     if(!this->m_ssl_ctx)
       POSEIDON_THROW((
           "Null SSL context pointer not valid",
@@ -37,12 +39,17 @@ SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
           this, typeid(*this), ::ERR_reason_error_string(::ERR_peek_error()));
 
     ::SSL_set_accept_state(this->ssl());
+
+    // Use `TCP_NODELAY`. Errors are ignored.
+    int ival = 1;
+    ::setsockopt(this->fd(), IPPROTO_TCP, TCP_NODELAY, &ival, sizeof(ival));
   }
 
 SSL_Socket::
 SSL_Socket(int family, const SSL_CTX_ptr& ssl_ctx)
   : Abstract_Socket(family, SOCK_STREAM, IPPROTO_TCP), m_ssl_ctx(ssl_ctx)
   {
+    // Create the SSL structure.
     if(!this->m_ssl_ctx)
       POSEIDON_THROW((
           "Null SSL context pointer not valid",
@@ -65,6 +72,10 @@ SSL_Socket(int family, const SSL_CTX_ptr& ssl_ctx)
           this, typeid(*this), ::ERR_reason_error_string(::ERR_peek_error()));
 
     ::SSL_set_connect_state(this->ssl());
+
+    // Use `TCP_NODELAY`. Errors are ignored.
+    int ival = 1;
+    ::setsockopt(this->fd(), IPPROTO_TCP, TCP_NODELAY, &ival, sizeof(ival));
   }
 
 SSL_Socket::

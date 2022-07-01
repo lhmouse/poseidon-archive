@@ -6,6 +6,7 @@
 #include "../static/async_logger.hpp"
 #include "../utils.hpp"
 #include <sys/socket.h>
+#include <netinet/tcp.h>
 
 namespace poseidon {
 
@@ -13,12 +14,18 @@ TCP_Socket::
 TCP_Socket(unique_posix_fd&& fd)
   : Abstract_Socket(::std::move(fd))
   {
+    // Use `TCP_NODELAY`. Errors are ignored.
+    int ival = 1;
+    ::setsockopt(this->fd(), IPPROTO_TCP, TCP_NODELAY, &ival, sizeof(ival));
   }
 
 TCP_Socket::
 TCP_Socket(int family)
   : Abstract_Socket(family, SOCK_STREAM, IPPROTO_TCP)
   {
+    // Use `TCP_NODELAY`. Errors are ignored.
+    int ival = 1;
+    ::setsockopt(this->fd(), IPPROTO_TCP, TCP_NODELAY, &ival, sizeof(ival));
   }
 
 TCP_Socket::
