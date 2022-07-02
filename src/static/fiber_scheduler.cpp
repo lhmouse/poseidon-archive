@@ -95,7 +95,7 @@ struct Queued_Fiber
 
     weak_ptr<Abstract_Future> futr_opt;
     int64_t yield_since;
-    int64_t ready_since;
+    int64_t check_time;
     int64_t fail_timeout_override;
     ::ucontext_t sched_inner[1];
   };
@@ -105,15 +105,15 @@ struct Fiber_Comparator
     // We have to build a minheap here.
     bool
     operator()(const shared_ptr<Queued_Fiber>& lhs, const shared_ptr<Queued_Fiber>& rhs) noexcept
-      { return lhs->ready_since > rhs->ready_since;  }
+      { return lhs->check_time > rhs->check_time;  }
 
     bool
     operator()(const shared_ptr<Queued_Fiber>& lhs, int64_t rhs) noexcept
-      { return lhs->ready_since > rhs;  }
+      { return lhs->check_time > rhs;  }
 
     bool
     operator()(int64_t lhs, const shared_ptr<Queued_Fiber>& rhs) noexcept
-      { return lhs > rhs->ready_since;  }
+      { return lhs > rhs->check_time;  }
   }
   constexpr fiber_comparator;
 
@@ -257,23 +257,11 @@ thread_loop()
     const int64_t fail_timeout = this->m_conf_fail_timeout * 1000000000LL;
     lock.unlock();
 
-    // Rebuild the heap when there is nothing to do. After the heap has been built,
-    // examine the top element with the minimum timestamp. Fibers whose timestamps
+    // Examine the top element with the minimum timestamp. Fibers whose timestamps
     // have been exceeded should be resumed. When there is no fiber to schedule,
     // sleep until one can be scheduled.
     lock.lock(this->m_pq_mutex);
-
-    // Rebuild the heap when there is nothing to do.
-    // Note `async_time` may be overwritten by other threads at any time, so
-    // we have to copy it to somewhere safe.
-    if(!this->m_pq.empty() && (now < this->m_pq.front()->ready_since)) {
-      for(const auto& ptr : this->m_pq)
-        ptr->ready_since = ptr->async_time.load();
-
-      ::std::make_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
-    }
-
-    while(!elem && !this->m_pq.empty() && ((this->m_pq.front()->ready_since <= now) || signal)) {
+    while(!elem && !this->m_pq.empty() && ((this->m_pq.front()->check_time <= now) || signal)) {
       ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
       auto& back = this->m_pq.back();
 
@@ -300,17 +288,16 @@ thread_loop()
             back->fiber, typeid(*(back->fiber)),
             (uint64_t) (now - back->yield_since) / 1000000ULL);
 
+      // If an exit signal is pending, resume all fibers.
+      if(signal)
+        elem = back;
+
       // If the deadline has been exceeded, proceed anyway.
       int64_t real_fail_timeout = back->fail_timeout_override;
       if(real_fail_timeout <= 0)
         real_fail_timeout = fail_timeout;
 
       if(now - back->yield_since >= real_fail_timeout)
-        elem = back;
-
-      // If an exit signal is pending, all fibers should be resumed. The current
-      // process should exit thereafter.
-      if(signal != 0)
         elem = back;
 
       // Otherwise, resume the fiber if it is not waiting for a future, or if the
@@ -321,17 +308,27 @@ thread_loop()
 
       // Put the fiber back.
       back->async_time.xadd(warn_timeout);
-      back->ready_since += warn_timeout;
+      back->check_time += warn_timeout;
       ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
+    }
+
+    // Rebuild the heap when there is nothing to do.
+    // Note `async_time` may be overwritten by other threads at any time, so
+    // we have to copy it to somewhere safe.
+    if(!elem) {
+      ::rocket::for_each(this->m_pq, [](const auto& ptr) { ptr->check_time = ptr->async_time.load();  });
+      ::std::make_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
+      POSEIDON_LOG_TRACE(("Rebuilt heap for fiber scheduler: size = $1"), this->m_pq.size());
     }
 
     plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     lock.unlock();
 
-    // If no fiber can be scheduled, sleep for a while.
+    // If an exit signal is pending and all fibers have finished execution, exit.
     if(!elem && signal)
       return;
 
+    // If no fiber can be scheduled, sleep for a while.
     if(!elem) {
       ::timespec ts;
       ts.tv_sec = 0;
@@ -431,7 +428,7 @@ insert(unique_ptr<Abstract_Fiber>&& fiber)
     elem->fiber = ::std::move(fiber);
     elem->async_time.store(now);
     elem->yield_since = now;
-    elem->ready_since = now;
+    elem->check_time = now;
 
     // Insert it.
     plain_mutex::unique_lock lock(this->m_pq_mutex);
