@@ -84,23 +84,24 @@ thread_loop()
     }
 
     ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), timer_comparator);
-    auto elem = ::std::move(this->m_pq.back());
-    auto next_state = async_state_finished;
-    auto timer = elem.timer.lock();
-    if(!timer || (elem.serial != timer->m_serial)) {
+    auto timer = this->m_pq.back().timer.lock();
+    Async_State next_state;
+    if(!timer || (this->m_pq.back().serial != timer->m_serial)) {
       // If the element has been invalidated, delete it.
       this->m_pq.pop_back();
       return;
     }
-    else if(elem.period != 0) {
+    else if(this->m_pq.back().period != 0) {
       // Update the next time point and insert the timer back.
-      elem.next += elem.period;
+      this->m_pq.back().next += this->m_pq.back().period;
       ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), timer_comparator);
       next_state = async_state_suspended;
     }
-    else
+    else {
+      // Delete the one-shot timer.
       this->m_pq.pop_back();
-
+      next_state = async_state_finished;
+    }
     plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     lock.unlock();
 
