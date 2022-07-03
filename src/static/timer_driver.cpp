@@ -69,7 +69,9 @@ thread_loop()
     while(this->m_pq.empty())
       this->m_pq_avail.wait(lock);
 
+    ROCKET_ASSERT(this->m_pq.front().next > 0);
     const int64_t now = this->clock();
+
     int64_t delta = this->m_pq.front().next - now;
     if(delta > 0) {
       ::timespec ts;
