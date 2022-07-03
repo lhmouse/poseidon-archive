@@ -247,108 +247,121 @@ void
 Fiber_Scheduler::
 thread_loop()
   {
-    const int64_t now = this->clock();
-    const int signal = exit_signal.load();
-    shared_ptr<Queued_Fiber> elem;
-
     plain_mutex::unique_lock lock(this->m_conf_mutex);
     const size_t stack_vm_size = this->m_conf_stack_vm_size;
     const int64_t warn_timeout = this->m_conf_warn_timeout * 1000000000LL;
     const int64_t fail_timeout = this->m_conf_fail_timeout * 1000000000LL;
     lock.unlock();
 
-    // Examine the top element with the minimum timestamp. Fibers whose timestamps
-    // have been exceeded should be resumed. When there is no fiber to schedule,
-    // sleep until one can be scheduled.
-    lock.lock(this->m_pq_mutex);
-    while(!elem && !this->m_pq.empty() && ((this->m_pq.front()->check_time <= now) || signal)) {
-      ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
-      auto& back = this->m_pq.back();
-      ROCKET_ASSERT(back->yield_time > 0);
-      ROCKET_ASSERT(back->check_time > 0);
+    const int64_t now = this->clock();
+    const int signal = exit_signal.load();
 
-      // If the fiber has finished execution, delete it.
-      if(back->fiber->m_state.load() == async_state_finished) {
-        POSEIDON_LOG_TRACE(("Deleting fiber `$1` (class `$2`)"), back->fiber, typeid(*(back->fiber)));
-        back->fiber.reset();
-        do_pool_stack(back->sched_inner->uc_stack);
-        this->m_pq.pop_back();
-        continue;
+    lock.lock(this->m_pq_mutex);
+    if(this->m_pq.empty() && signal)
+      return;
+
+    // When no signal is pending, wait until a fiber can be scheduled.
+    if(!signal) {
+      int64_t delta = INT_MAX;
+      if(!this->m_pq.empty()) {
+        delta = this->m_pq.front()->check_time - now;
+        if(delta > 0) {
+          // Rebuild the heap when there is nothing to do.
+          // Note `async_time` may be overwritten by other threads at any time, so
+          // we have to copy it somewhere safe.
+          for(const auto& elem : this->m_pq)
+            elem->check_time = elem->async_time.load();
+
+          ::std::make_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
+          POSEIDON_LOG_TRACE(("Rebuilt heap for fiber scheduler: size = $1"), this->m_pq.size());
+          delta = this->m_pq.front()->check_time - now;
+        }
       }
 
-      // Print some messages if the fiber has been suspended for too long.
-      if((back->fail_timeout_override == 0) && (now - back->yield_time >= warn_timeout))
-        POSEIDON_LOG_WARN((
-            "Fiber `$1` (class `$2`) has been suspended for `$3` ms"),
-            back->fiber, typeid(*(back->fiber)),
-            (uint64_t) (now - back->yield_time) / 1000000ULL);
+      if(delta > 0) {
+        // Calculate the time to wait, using binary exponential backoff.
+        delta = ::rocket::min(delta, this->m_pq_wait_ns * 2 + 1, 200000000LL);
+        this->m_pq_wait_ns = delta;
+        lock.unlock();
 
-      if((back->fail_timeout_override == 0) && (now - back->yield_time >= fail_timeout))
-        POSEIDON_LOG_ERROR((
-            "Fiber `$1` (class `$2`) has been suspended for `$3` ms",
-            "This circumstance looks permanent. Please check for deadlocks."),
-            back->fiber, typeid(*(back->fiber)),
-            (uint64_t) (now - back->yield_time) / 1000000ULL);
+        ::timespec ts;
+        ts.tv_sec = 0;
+        ts.tv_nsec = (long) delta;
+        ::nanosleep(&ts, nullptr);
+        return;
+      }
 
-      // If an exit signal is pending, resume all fibers.
-      if(signal)
-        elem = back;
-
-      // If the deadline has been exceeded, proceed anyway.
-      int64_t real_fail_timeout;
-      if(back->fail_timeout_override <= 0)
-        real_fail_timeout = fail_timeout;  // use default
-      else
-        real_fail_timeout = back->fail_timeout_override;
-
-      if(now - back->yield_time >= real_fail_timeout)
-        elem = back;
-
-      // Otherwise, resume the fiber if it is not waiting for a future, or if the
-      // future has been marked ready.
-      auto futr = back->futr_opt.lock();
-      if(!futr || (futr->m_state.load() != future_state_empty))
-        elem = back;
-
-      // Put the fiber back.
-      back->async_time.xadd(warn_timeout);
-      back->check_time += warn_timeout;
-      ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
+      this->m_pq_wait_ns = 0;
     }
 
-    // Rebuild the heap when there is nothing to do.
-    // Note `async_time` may be overwritten by other threads at any time, so
-    // we have to copy it to somewhere safe.
-    if(!elem) {
-      ::rocket::for_each(this->m_pq, [](const auto& ptr) { ptr->check_time = ptr->async_time.load();  });
-      ::std::make_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
-      POSEIDON_LOG_TRACE(("Rebuilt heap for fiber scheduler: size = $1"), this->m_pq.size());
+    ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
+    auto elem = this->m_pq.back();
+    ROCKET_ASSERT(elem->yield_time > 0);
+    ROCKET_ASSERT(elem->check_time > 0);
+
+    if(elem->fiber->m_state.load() == async_state_finished) {
+      // Delete the fiber.
+      this->m_pq.pop_back();
+      lock.unlock();
+
+      POSEIDON_LOG_TRACE(("Deleting fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
+      elem->fiber.reset();
+      do_pool_stack(elem->sched_inner->uc_stack);
+      return;
     }
+
+    // Put the fiber back.
+    elem->async_time.xadd(warn_timeout);
+    elem->check_time += warn_timeout;
+    ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
 
     plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
+    elem->fiber->m_scheduler = this;
     lock.unlock();
 
-    // If an exit signal is pending and all fibers have finished execution, exit.
-    if(!elem && signal)
-      return;
+    if((elem->fail_timeout_override == 0) && (now - elem->yield_time >= warn_timeout))
+      POSEIDON_LOG_WARN((
+          "Fiber `$1` (class `$2`) has been suspended for `$3` ms"),
+          elem->fiber, typeid(*(elem->fiber)),
+          (uint64_t) (now - elem->yield_time) / 1000000ULL);
 
-    // If no fiber can be scheduled, sleep for a while.
-    if(!elem) {
-      ::timespec ts;
-      ts.tv_sec = 0;
-      ts.tv_nsec = (this->m_sched_wait_ns * 2 + 1) & 0x7FFFFFF;  // ~134 ms
-      this->m_sched_wait_ns = ts.tv_nsec;
-      sched_lock.unlock();
+    if((elem->fail_timeout_override == 0) && (now - elem->yield_time >= fail_timeout))
+      POSEIDON_LOG_ERROR((
+          "Fiber `$1` (class `$2`) has been suspended for `$3` ms",
+          "This circumstance looks permanent. Please check for deadlocks."),
+          elem->fiber, typeid(*(elem->fiber)),
+          (uint64_t) (now - elem->yield_time) / 1000000ULL);
 
-      ::nanosleep(&ts, nullptr);
-      return;
+    // Process this fiber.
+    POSEIDON_LOG_TRACE((
+        "Processing fiber `$1` (class `$2`): state = $3"),
+        elem->fiber, typeid(*(elem->fiber)), elem->fiber->m_state.load());
+
+    {
+      // If an exit signal is pending, all fibers shall be resumed. The process
+      //  will exit after all fibers complete execution.
+      if(signal)
+        goto resume_fiber;
+
+      // If the fail timeout has been exceeded, the fiber shall be resumed anyway.
+      int64_t real_fail_timeout;
+      if(elem->fail_timeout_override <= 0)
+        real_fail_timeout = fail_timeout;  // use default
+      else
+        real_fail_timeout = elem->fail_timeout_override;
+
+      if(now - elem->yield_time >= real_fail_timeout)
+        goto resume_fiber;
+
+      // If the fiber is not waiting for a future, or if the future has become
+      // ready, the fiber shall be resumed.
+      auto futr = elem->futr_opt.lock();
+      if(!futr || (futr->m_state.load() != future_state_empty))
+        goto resume_fiber;
     }
+    return;
 
-    // Reset sleep timeout.
-    this->m_sched_wait_ns = 0;
-
-    // Now we execute this fiber.
-    // If the fiber has not got a stack, allocate one.
+  resume_fiber:
     if(!elem->sched_inner->uc_stack.ss_sp) {
       POSEIDON_LOG_TRACE(("Initializing fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
       ::getcontext(elem->sched_inner);
@@ -397,7 +410,6 @@ thread_loop()
     }
 
     // Resume this fiber...
-    elem->fiber->m_scheduler = this;
     this->m_sched_self_opt = elem;
     POSEIDON_LOG_TRACE(("Resuming fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
 
@@ -407,8 +419,9 @@ thread_loop()
 
     // ... and return here.
     POSEIDON_LOG_TRACE(("Suspended fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
-    elem->fiber->m_scheduler = nullptr;
     this->m_sched_self_opt.reset();
+
+    elem->fiber->m_scheduler = nullptr;
   }
 
 size_t
