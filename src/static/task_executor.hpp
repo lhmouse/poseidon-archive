@@ -15,9 +15,8 @@ class Task_Executor
   private:
     mutable plain_mutex m_queue_mutex;
     condition_variable m_queue_avail;
-    struct Queued_Task;
-    vector<Queued_Task> m_queue;
-    vector<Queued_Task> m_current;
+    vector<weak_ptr<Abstract_Task>> m_queue_buffer;
+    size_t m_queue_offset = 0;
 
   public:
     // Creates an empty task executor.
@@ -27,7 +26,7 @@ class Task_Executor
   public:
     ASTERIA_NONCOPYABLE_DESTRUCTOR(Task_Executor);
 
-    // Pops and executes tasks.
+    // Pops and executes a task.
     // This function should be called by the task thread repeatedly.
     void
     thread_loop();

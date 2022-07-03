@@ -8,16 +8,6 @@
 #include "../utils.hpp"
 
 namespace poseidon {
-namespace {
-
-struct Queued_Task
-  {
-    weak_ptr<Abstract_Task> task;
-  };
-
-}  // namespace
-
-POSEIDON_HIDDEN_STRUCT(Task_Executor, Queued_Task);
 
 Task_Executor::
 Task_Executor()
@@ -34,16 +24,18 @@ Task_Executor::
 thread_loop()
   {
     plain_mutex::unique_lock lock(this->m_queue_mutex);
-    while(this->m_queue.empty() && this->m_current.empty())
+    while(this->m_queue_offset == this->m_queue_buffer.size())
       this->m_queue_avail.wait(lock);
 
-    if(this->m_current.empty())
-      this->m_current.swap(this->m_queue);
-
-    auto elem = ::std::move(this->m_current.back());
+    auto task = this->m_queue_buffer[this->m_queue_offset].lock();
+    this->m_queue_offset ++;
+    if(this->m_queue_offset == this->m_queue_buffer.size()) {
+      POSEIDON_LOG_TRACE(("Clearing task queue: size = $1"), this->m_queue_buffer.size());
+      this->m_queue_buffer.clear();
+      this->m_queue_offset = 0;
+    }
     lock.unlock();
 
-    auto task = elem.task.lock();
     if(!task)
       return;
 
@@ -73,13 +65,9 @@ enqueue(const shared_ptr<Abstract_Task>& task)
     if(!task)
       POSEIDON_THROW(("Null task pointer not valid"));
 
-    // Initialize the element to insert.
-    Queued_Task elem;
-    elem.task = task;
-
     // Insert the task.
     plain_mutex::unique_lock lock(this->m_queue_mutex);
-    this->m_queue.emplace_back(::std::move(elem));
+    this->m_queue_buffer.emplace_back(task);
     this->m_queue_avail.notify_one();
 
   }
