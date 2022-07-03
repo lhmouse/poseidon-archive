@@ -291,6 +291,9 @@ reload(const Config_File& file)
       if((levels[k].stdio != -1) || !levels[k].file.empty())
         level_mask |= 1U << k;
 
+    if(level_mask == 0)
+      ::fprintf(stderr, "WARNING: Logger disabled\n");
+
     // Set up new data.
     plain_mutex::unique_lock lock(this->m_conf_mutex);
     this->m_conf_levels.swap(levels);
