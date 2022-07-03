@@ -264,6 +264,8 @@ thread_loop()
     while(!elem && !this->m_pq.empty() && ((this->m_pq.front()->check_time <= now) || signal)) {
       ::std::pop_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
       auto& back = this->m_pq.back();
+      ROCKET_ASSERT(back->yield_time > 0);
+      ROCKET_ASSERT(back->check_time > 0);
 
       // If the fiber has finished execution, delete it.
       if(back->fiber->m_state.load() == async_state_finished) {
@@ -293,9 +295,11 @@ thread_loop()
         elem = back;
 
       // If the deadline has been exceeded, proceed anyway.
-      int64_t real_fail_timeout = back->fail_timeout_override;
-      if(real_fail_timeout <= 0)
-        real_fail_timeout = fail_timeout;
+      int64_t real_fail_timeout;
+      if(back->fail_timeout_override <= 0)
+        real_fail_timeout = fail_timeout;  // use default
+      else
+        real_fail_timeout = back->fail_timeout_override;
 
       if(now - back->yield_time >= real_fail_timeout)
         elem = back;
@@ -422,8 +426,9 @@ insert(unique_ptr<Abstract_Fiber>&& fiber)
     if(!fiber)
       POSEIDON_THROW(("Null fiber pointer not valid"));
 
-    // Create the management node.
     const int64_t now = this->clock();
+
+    // Create the management node.
     auto elem = ::std::make_shared<Queued_Fiber>();
     elem->fiber = ::std::move(fiber);
     elem->async_time.store(now);
@@ -462,6 +467,8 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     if(elem->fiber.get() != current)
       POSEIDON_THROW(("Cannot yield execution outside the current fiber"));
 
+    const int64_t now = this->clock();
+
     // If a future is given, lock it, in order to prevent race conditions.
     plain_mutex::unique_lock future_lock;
     if(futr_opt) {
@@ -478,13 +485,15 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     const int64_t fail_timeout = this->m_conf_fail_timeout * 1000000000LL;
     lock.unlock();
 
-    int64_t real_check_timeout = fail_timeout_override;
-    if(real_check_timeout <= 0)
-      real_check_timeout = ::std::min(warn_timeout, fail_timeout);
+    int64_t real_check_timeout;
+    if(fail_timeout_override <= 0)
+      real_check_timeout = ::rocket::min(warn_timeout, fail_timeout);  // use default
+    else
+      real_check_timeout = ::rocket::min(fail_timeout_override, 0x7F000000'00000000LL - now);
 
-    const int64_t now = this->clock();
     elem->async_time.store(now + real_check_timeout);
     elem->futr_opt = futr_opt;
+    elem->check_time = now + real_check_timeout;
     elem->yield_time = now;
     elem->fail_timeout_override = fail_timeout_override;
 
