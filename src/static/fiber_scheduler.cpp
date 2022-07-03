@@ -94,7 +94,7 @@ struct Queued_Fiber
     atomic_relaxed<int64_t> async_time;  // this might get modified at any time
 
     weak_ptr<Abstract_Future> futr_opt;
-    int64_t yield_since;
+    int64_t yield_time;
     int64_t check_time;
     int64_t fail_timeout_override;
     ::ucontext_t sched_inner[1];
@@ -275,18 +275,18 @@ thread_loop()
       }
 
       // Print some messages if the fiber has been suspended for too long.
-      if((back->fail_timeout_override == 0) && (now - back->yield_since >= warn_timeout))
+      if((back->fail_timeout_override == 0) && (now - back->yield_time >= warn_timeout))
         POSEIDON_LOG_WARN((
             "Fiber `$1` (class `$2`) has been suspended for `$3` ms"),
             back->fiber, typeid(*(back->fiber)),
-            (uint64_t) (now - back->yield_since) / 1000000ULL);
+            (uint64_t) (now - back->yield_time) / 1000000ULL);
 
-      if((back->fail_timeout_override == 0) && (now - back->yield_since >= fail_timeout))
+      if((back->fail_timeout_override == 0) && (now - back->yield_time >= fail_timeout))
         POSEIDON_LOG_ERROR((
             "Fiber `$1` (class `$2`) has been suspended for `$3` ms",
             "This circumstance looks permanent. Please check for deadlocks."),
             back->fiber, typeid(*(back->fiber)),
-            (uint64_t) (now - back->yield_since) / 1000000ULL);
+            (uint64_t) (now - back->yield_time) / 1000000ULL);
 
       // If an exit signal is pending, resume all fibers.
       if(signal)
@@ -297,7 +297,7 @@ thread_loop()
       if(real_fail_timeout <= 0)
         real_fail_timeout = fail_timeout;
 
-      if(now - back->yield_since >= real_fail_timeout)
+      if(now - back->yield_time >= real_fail_timeout)
         elem = back;
 
       // Otherwise, resume the fiber if it is not waiting for a future, or if the
@@ -427,7 +427,7 @@ insert(unique_ptr<Abstract_Fiber>&& fiber)
     auto elem = ::std::make_shared<Queued_Fiber>();
     elem->fiber = ::std::move(fiber);
     elem->async_time.store(now);
-    elem->yield_since = now;
+    elem->yield_time = now;
     elem->check_time = now;
 
     // Insert it.
@@ -485,7 +485,7 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     const int64_t now = this->clock();
     elem->async_time.store(now + real_check_timeout);
     elem->futr_opt = futr_opt;
-    elem->yield_since = now;
+    elem->yield_time = now;
     elem->fail_timeout_override = fail_timeout_override;
 
     if(futr_opt) {
