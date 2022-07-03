@@ -506,7 +506,6 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
 
     elem->async_time.store(now + real_check_timeout);
     elem->futr_opt = futr_opt;
-    elem->check_time = now + real_check_timeout;
     elem->yield_time = now;
     elem->fail_timeout_override = fail_timeout_override;
 
@@ -519,7 +518,6 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
       // Typically, zero is written so the fiber can be resumed immediately.
       future_lock.unlock();
     }
-
     elem->fiber->do_abstract_fiber_on_suspended();
 
     // Suspend the current fiber...
