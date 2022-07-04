@@ -117,7 +117,7 @@ do_abstract_socket_on_readable()
           // Send a close_notify alert, but don't wait for its response. If the
           // alert cannot be sent, ignore the error and force shutdown anyway.
           ssl_err = ::SSL_shutdown(this->ssl());
-          POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, result = $2"), this->get_remote_address(), ssl_err);
+          POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, alert_received = $2"), this->get_remote_address(), ssl_err == 1);
           ::shutdown(this->fd(), SHUT_RDWR);
           return;
 
