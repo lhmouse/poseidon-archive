@@ -63,20 +63,15 @@ class SSL_Socket
     ssl() const noexcept
       { return this->m_ssl.get();  }
 
-    // Shuts the socket down gracefully.
+    // Gets the remote or connected address of this socket.
     // This function is thread-safe.
-    bool
-    shut_down() noexcept;
+    const Socket_Address&
+    get_remote_address() const;
 
     // Shuts the socket down abnormally, discarding any pending data.
     // This function is thread-safe.
     bool
     quick_shut_down() noexcept;
-
-    // Gets the remote or connected address of this socket.
-    // This function is thread-safe.
-    const Socket_Address&
-    get_remote_address() const;
 
     // Enqueues some bytes for sending.
     // The return value merely indicates whether the attempt has succeeded. The
@@ -93,6 +88,11 @@ class SSL_Socket
 
     bool
     ssl_send(const string& data);
+
+    // Shuts the socket down gracefully.
+    // This function is thread-safe.
+    bool
+    ssl_shut_down() noexcept;
   };
 
 }  // namespace poseidon

@@ -204,27 +204,6 @@ do_abstract_socket_on_exception(exception& stdex)
         this, typeid(*this), stdex);
   }
 
-bool
-SSL_Socket::
-shut_down() noexcept
-  {
-    ::SSL_shutdown(this->ssl());
-
-    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
-  }
-
-bool
-SSL_Socket::
-quick_shut_down() noexcept
-  {
-    ::linger lng;
-    lng.l_onoff = 1;
-    lng.l_linger = 0;
-    ::setsockopt(this->fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
-
-    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
-  }
-
 const Socket_Address&
 SSL_Socket::
 get_remote_address() const
@@ -243,6 +222,17 @@ get_remote_address() const
         this->m_peername.set_size(addrlen);
       });
     return this->m_peername;
+  }
+
+bool
+SSL_Socket::
+quick_shut_down() noexcept
+  {
+    ::linger lng;
+    lng.l_onoff = 1;
+    lng.l_linger = 0;
+    ::setsockopt(this->fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
+    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
   }
 
 bool
@@ -291,6 +281,14 @@ SSL_Socket::
 ssl_send(const string& data)
   {
     return this->ssl_send(data.data(), data.size());
+  }
+
+bool
+SSL_Socket::
+ssl_shut_down() noexcept
+  {
+    ::SSL_shutdown(this->ssl());
+    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
   }
 
 }  // namespace poseidon

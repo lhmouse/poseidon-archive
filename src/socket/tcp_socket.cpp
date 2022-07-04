@@ -133,25 +133,6 @@ do_abstract_socket_on_exception(exception& stdex)
         this, typeid(*this), stdex);
   }
 
-bool
-TCP_Socket::
-shut_down() noexcept
-  {
-    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
-  }
-
-bool
-TCP_Socket::
-quick_shut_down() noexcept
-  {
-    ::linger lng;
-    lng.l_onoff = 1;
-    lng.l_linger = 0;
-    ::setsockopt(this->fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
-
-    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
-  }
-
 const Socket_Address&
 TCP_Socket::
 get_remote_address() const
@@ -170,6 +151,17 @@ get_remote_address() const
         this->m_peername.set_size(addrlen);
       });
     return this->m_peername;
+  }
+
+bool
+TCP_Socket::
+quick_shut_down() noexcept
+  {
+    ::linger lng;
+    lng.l_onoff = 1;
+    lng.l_linger = 0;
+    ::setsockopt(this->fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
+    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
   }
 
 bool
@@ -218,6 +210,13 @@ TCP_Socket::
 tcp_send(const string& data)
   {
     return this->tcp_send(data.data(), data.size());
+  }
+
+bool
+TCP_Socket::
+tcp_shut_down() noexcept
+  {
+    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
   }
 
 }  // namespace poseidon
