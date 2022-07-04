@@ -107,16 +107,6 @@ class Abstract_Socket
     socket_state() const noexcept
       { return this->m_state.load();  }
 
-    // Shuts the socket down gracefully.
-    // This function is thread-safe.
-    bool
-    close() noexcept;
-
-    // Shuts the socket down abnormally, discarding any pending data.
-    // This function is thread-safe.
-    bool
-    abort() noexcept;
-
     // Gets the local or bound address of this socket.
     // This function is thread-safe.
     const Socket_Address&

@@ -47,30 +47,6 @@ Abstract_Socket::
   {
   }
 
-bool
-Abstract_Socket::
-close() noexcept
-  {
-    // Perform normal shutdown.
-    int err = ::shutdown(this->fd(), SHUT_RDWR);
-    this->m_state.store(socket_state_closed);
-    return err == 0;
-  }
-
-bool
-Abstract_Socket::
-abort() noexcept
-  {
-    // Discard pending data. Errors are ignored.
-    ::linger lng;
-    lng.l_onoff = 1;
-    lng.l_linger = 0;
-    ::setsockopt(this->fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
-
-    // Perform normal shutdown.
-    return this->close();
-  }
-
 const Socket_Address&
 Abstract_Socket::
 get_local_address() const

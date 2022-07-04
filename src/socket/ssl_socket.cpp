@@ -196,12 +196,33 @@ void
 SSL_Socket::
 do_abstract_socket_on_exception(exception& stdex)
   {
-    this->abort();
+    this->quick_shut_down();
 
     POSEIDON_LOG_WARN((
-        "Aborting connection due to exception: $3",
+        "SSL connection terminated due to exception: $3",
         "[SSL socket `$1` (class `$2`)]"),
         this, typeid(*this), stdex);
+  }
+
+bool
+SSL_Socket::
+shut_down() noexcept
+  {
+    ::SSL_shutdown(this->ssl());
+
+    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
+  }
+
+bool
+SSL_Socket::
+quick_shut_down() noexcept
+  {
+    ::linger lng;
+    lng.l_onoff = 1;
+    lng.l_linger = 0;
+    ::setsockopt(this->fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
+
+    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
   }
 
 const Socket_Address&
