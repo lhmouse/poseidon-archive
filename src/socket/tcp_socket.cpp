@@ -49,6 +49,13 @@ do_abstract_socket_on_readable()
     ::ssize_t r = ::recv(this->fd(), queue.mut_end(), datalen, 0);
     datalen = (size_t) r;
 
+    if(r == 0) {
+      // Shut the connection down. Semi-open connections are not supported.
+      POSEIDON_LOG_INFO(("Closing TCP connection: remote = $1"), this->get_remote_address());
+      ::shutdown(this->fd(), SHUT_RDWR);
+      return;
+    }
+
     if(r < 0) {
       switch(errno) {
         case EINTR:
@@ -66,12 +73,6 @@ do_abstract_socket_on_readable()
           "[`recv()` failed: $3]",
           "[TCP socket `$1` (class `$2`)]"),
           this, typeid(*this), format_errno());
-    }
-
-    if(r == 0) {
-      ::shutdown(this->fd(), SHUT_RDWR);
-      POSEIDON_LOG_INFO(("Shut down TCP connection: remote = $1"), this->get_remote_address());
-      return;
     }
 
     // Accept these data.
