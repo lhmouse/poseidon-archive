@@ -20,17 +20,9 @@ do_epoll_ctl(int epoll_fd, int op, const shared_ptr<Abstract_Socket>& socket, ui
     struct ::epoll_event event;
     event.events = events;
     event.data.ptr = socket.get();
-
-    int r = ::epoll_ctl(epoll_fd, op, socket->fd(), &event);
-    if(r != 0)
+    if(::epoll_ctl(epoll_fd, op, socket->fd(), &event) != 0)
       POSEIDON_LOG_ERROR((
           "Could not modify socket `$2` (class `$3`)",
-          "[`epoll_ctl()` failed: $1]"),
-          format_errno(), socket, typeid(*socket));
-
-    if((r != 0) && (op == EPOLL_CTL_ADD))
-      POSEIDON_THROW((
-          "Could not add socket `$2` (class `$3`)",
           "[`epoll_ctl()` failed: $1]"),
           format_errno(), socket, typeid(*socket));
 
