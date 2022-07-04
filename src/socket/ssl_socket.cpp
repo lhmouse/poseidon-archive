@@ -98,6 +98,8 @@ do_abstract_socket_on_readable()
     datalen = queue.capacity();
     if(!::SSL_read_ex(this->ssl(), queue.mut_end(), datalen, &datalen)) {
       int ssl_err = ::SSL_get_error(this->ssl(), 0);
+      if(((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) && (errno == EINTR))
+        goto try_io;
 
 #ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
       // OpenSSL 3.0: EOF received without an SSL shutdown notification.
@@ -111,19 +113,17 @@ do_abstract_socket_on_readable()
 
       switch(ssl_err) {
         case SSL_ERROR_ZERO_RETURN:
-          ::SSL_shutdown(this->ssl());
+          // Shut the connection down. Semi-open connections are not supported.
+          // Send a close_notify alert, but don't wait for its response. If the
+          // alert cannot be sent, ignore the error and force shutdown anyway.
+          ssl_err = ::SSL_shutdown(this->ssl());
+          POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, result = $2"), this->get_remote_address(), ssl_err);
           ::shutdown(this->fd(), SHUT_RDWR);
-          POSEIDON_LOG_INFO(("Shut down SSL connection: remote = $1"), this->get_remote_address());
           return;
 
         case SSL_ERROR_WANT_READ:
         case SSL_ERROR_WANT_WRITE:
-        case SSL_ERROR_WANT_CONNECT:
-        case SSL_ERROR_WANT_ACCEPT:
-          if(errno == EINTR)
-            goto try_io;
-          else
-            return;
+          return;
 
         case SSL_ERROR_SYSCALL:
           POSEIDON_THROW((
@@ -165,19 +165,13 @@ do_abstract_socket_on_writable()
     datalen = queue.size();
     if(!::SSL_write_ex(this->ssl(), queue.begin(), datalen, &datalen)) {
       int ssl_err = ::SSL_get_error(this->ssl(), 0);
+      if(((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) && (errno == EINTR))
+        goto try_io;
 
       switch(ssl_err) {
-        case SSL_ERROR_ZERO_RETURN:
-          return;
-
         case SSL_ERROR_WANT_READ:
         case SSL_ERROR_WANT_WRITE:
-        case SSL_ERROR_WANT_CONNECT:
-        case SSL_ERROR_WANT_ACCEPT:
-          if(errno == EINTR)
-            goto try_io;
-          else
-            return;
+          return;
 
         case SSL_ERROR_SYSCALL:
           POSEIDON_THROW((
