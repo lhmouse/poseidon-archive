@@ -28,11 +28,11 @@ class TCP_Socket
   protected:
     // These callbacks implement `Abstract_Socket`.
     virtual
-    IO_Result
+    void
     do_abstract_socket_on_readable() override;
 
     virtual
-    IO_Result
+    void
     do_abstract_socket_on_writable() override;
 
     virtual

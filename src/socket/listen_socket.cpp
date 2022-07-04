@@ -52,7 +52,7 @@ do_abstract_socket_on_closed(int err)
         this, typeid(*this), this->get_local_address(), format_errno(err));
   }
 
-IO_Result
+void
 Listen_Socket::
 do_abstract_socket_on_readable()
   {
@@ -72,7 +72,7 @@ do_abstract_socket_on_readable()
         case EAGAIN:
 #endif
         case EWOULDBLOCK:
-          return io_result_would_block;
+          return;
       }
 
       POSEIDON_THROW((
@@ -91,14 +91,12 @@ do_abstract_socket_on_readable()
           this, typeid(*this));
 
     driver.insert(client);
-    return io_result_partial;
   }
 
-IO_Result
+void
 Listen_Socket::
 do_abstract_socket_on_writable()
   {
-    return io_result_would_block;
   }
 
 void

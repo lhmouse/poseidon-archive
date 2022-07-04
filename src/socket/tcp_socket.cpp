@@ -33,7 +33,7 @@ TCP_Socket::
   {
   }
 
-IO_Result
+void
 TCP_Socket::
 do_abstract_socket_on_readable()
   {
@@ -58,7 +58,7 @@ do_abstract_socket_on_readable()
         case EAGAIN:
 #endif
         case EWOULDBLOCK:
-          return io_result_would_block;
+          return;
       }
 
       POSEIDON_THROW((
@@ -68,17 +68,18 @@ do_abstract_socket_on_readable()
           this, typeid(*this), format_errno());
     }
 
-    if(r == 0)
-      return io_result_end_of_file;
+    if(r == 0) {
+      ::shutdown(this->fd(), SHUT_RDWR);
+      POSEIDON_LOG_INFO(("Shut down TCP connection: remote = $1"), this->get_remote_address());
+      return;
+    }
 
     // Accept these data.
     queue.accept(datalen);
-
     this->do_on_tcp_stream(queue);
-    return io_result_partial;
   }
 
-IO_Result
+void
 TCP_Socket::
 do_abstract_socket_on_writable()
   {
@@ -86,7 +87,7 @@ do_abstract_socket_on_writable()
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
 
     if(queue.empty())
-      return io_result_partial;
+      return;
 
     // Send some bytes from the write queue.
     size_t datalen;
@@ -105,7 +106,7 @@ do_abstract_socket_on_writable()
         case EAGAIN:
 #endif
         case EWOULDBLOCK:
-          return io_result_would_block;
+          return;
       }
 
       POSEIDON_THROW((
@@ -117,7 +118,6 @@ do_abstract_socket_on_writable()
 
     // Remove sent bytes from the write queue.
     queue.discard(datalen);
-    return io_result_partial;
   }
 
 void

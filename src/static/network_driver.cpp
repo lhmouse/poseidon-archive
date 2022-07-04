@@ -378,15 +378,7 @@ thread_loop()
       socket->m_state.store(socket_state_established);
 
       try {
-        // Perform I/O operation. If the peer host has closed the connection,
-        // shut it down completely.
-        auto io_res = socket->do_abstract_socket_on_readable();
-        if(io_res == io_result_end_of_file)
-          socket->close();
-
-        // If there are too many bytes pending, disable `EPOLLIN` notification.
-        if(socket->m_io_write_queue.size() > throttle_size)
-          do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_MOD, socket, EPOLLOUT);
+        socket->do_abstract_socket_on_readable();
       }
       catch(exception& stdex) {
         POSEIDON_LOG_ERROR((
@@ -396,6 +388,10 @@ thread_loop()
 
         socket->do_abstract_socket_on_exception(stdex);
       }
+
+      // If there are too many bytes pending, disable `EPOLLIN` notification.
+      if(socket->m_io_write_queue.size() >= throttle_size)
+        do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_MOD, socket, EPOLLOUT);
     }
 
     if(event.events & EPOLLOUT) {
@@ -404,16 +400,7 @@ thread_loop()
       socket->m_state.store(socket_state_established);
 
       try {
-        // Perform I/O operation. If no more data should be sent, shut it down
-        // completely.
-        auto io_res = socket->do_abstract_socket_on_writable();
-        if(io_res == io_result_end_of_file)
-          socket->close();
-
-        // If this event came from the level-triggered epoll, and there are fewer
-        // bytes pending, re-enable `EPOLLIN` notification.
-        if(!(event.events & EPOLLET) && (socket->m_io_write_queue.size() <= throttle_size))
-          do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_MOD, socket, EPOLLIN);
+        socket->do_abstract_socket_on_writable();
       }
       catch(exception& stdex) {
         POSEIDON_LOG_ERROR((
@@ -423,6 +410,11 @@ thread_loop()
 
         socket->do_abstract_socket_on_exception(stdex);
       }
+
+      // If this event came from the level-triggered epoll, and there are fewer
+      // bytes pending, re-enable `EPOLLIN` notification.
+      if(!(event.events & EPOLLET) && (socket->m_io_write_queue.size() < throttle_size))
+        do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_MOD, socket, EPOLLIN);
     }
 
     POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) I/O complete"), socket, typeid(*socket));

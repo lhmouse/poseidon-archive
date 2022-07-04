@@ -20,7 +20,7 @@ UDP_Socket::
   {
   }
 
-IO_Result
+void
 UDP_Socket::
 do_abstract_socket_on_readable()
   {
@@ -49,7 +49,7 @@ do_abstract_socket_on_readable()
         case EAGAIN:
 #endif
         case EWOULDBLOCK:
-          return io_result_would_block;
+          return;
       }
 
       POSEIDON_THROW((
@@ -62,12 +62,10 @@ do_abstract_socket_on_readable()
     // Accept this packet.
     addr.set_size(addrlen);
     queue.accept(datalen);
-
     this->do_on_udp_packet(::std::move(addr), ::std::move(queue));
-    return io_result_partial;
   }
 
-IO_Result
+void
 UDP_Socket::
 do_abstract_socket_on_writable()
   {
@@ -75,7 +73,7 @@ do_abstract_socket_on_writable()
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
 
     if(queue.empty())
-      return io_result_partial;
+      return;
 
     Socket_Address addr;
     ::socklen_t addrlen;
@@ -97,13 +95,13 @@ do_abstract_socket_on_writable()
     if(r < 0) {
       switch(errno) {
         case EINTR:
-          return io_result_partial;
+          return;
 
 #if EWOULDBLOCK != EAGAIN
         case EAGAIN:
 #endif
         case EWOULDBLOCK:
-          return io_result_would_block;
+          return;
       }
 
       POSEIDON_THROW((
@@ -114,7 +112,7 @@ do_abstract_socket_on_writable()
     }
 
     // Report that some data have been written anyway.
-    return io_result_partial;
+    (void) datalen;
   }
 
 void

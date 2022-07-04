@@ -83,7 +83,7 @@ SSL_Socket::
   {
   }
 
-IO_Result
+void
 SSL_Socket::
 do_abstract_socket_on_readable()
   {
@@ -100,7 +100,10 @@ do_abstract_socket_on_readable()
       int ssl_err = ::SSL_get_error(this->ssl(), 0);
       switch(ssl_err) {
         case SSL_ERROR_ZERO_RETURN:
-          return io_result_end_of_file;
+          ::SSL_shutdown(this->ssl());
+          ::shutdown(this->fd(), SHUT_RDWR);
+          POSEIDON_LOG_INFO(("Shut down SSL connection: remote = $1"), this->get_remote_address());
+          return;
 
         case SSL_ERROR_WANT_READ:
         case SSL_ERROR_WANT_WRITE:
@@ -109,12 +112,13 @@ do_abstract_socket_on_readable()
           if(errno == EINTR)
             goto try_io;
 
-          return io_result_would_block;
+          // `EAGAIN`, etc.
+          return;
 
         case SSL_ERROR_SYSCALL:
           // OpenSSL 1.1: EOF received without an SSL shutdown notification.
           if(errno == 0)
-            return io_result_end_of_file;
+            return;
 
           POSEIDON_THROW((
               "Error reading SSL socket",
@@ -126,7 +130,7 @@ do_abstract_socket_on_readable()
           // OpenSSL 3.0: EOF received without an SSL shutdown notification.
 #ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
           if(ERR_GET_REASON(::ERR_peek_error()) == SSL_R_UNEXPECTED_EOF_WHILE_READING)
-            return io_result_end_of_file;
+            return;
 #endif
           break;
       }
@@ -139,16 +143,14 @@ do_abstract_socket_on_readable()
     }
 
     if(datalen == 0)
-      return io_result_partial;
+      return;
 
     // Accept these data.
     queue.accept(datalen);
-
     this->do_on_ssl_stream(queue);
-    return io_result_partial;
   }
 
-IO_Result
+void
 SSL_Socket::
 do_abstract_socket_on_writable()
   {
@@ -156,7 +158,7 @@ do_abstract_socket_on_writable()
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
 
     if(queue.empty())
-      return io_result_partial;
+      return;
 
     // Send some bytes from the write queue.
     size_t datalen;
@@ -167,7 +169,7 @@ do_abstract_socket_on_writable()
       int ssl_err = ::SSL_get_error(this->ssl(), 0);
       switch(ssl_err) {
         case SSL_ERROR_ZERO_RETURN:
-          return io_result_end_of_file;
+          return;
 
         case SSL_ERROR_WANT_READ:
         case SSL_ERROR_WANT_WRITE:
@@ -176,13 +178,10 @@ do_abstract_socket_on_writable()
           if(errno == EINTR)
             goto try_io;
 
-          return io_result_would_block;
+          // `EAGAIN`, etc.
+          return;
 
         case SSL_ERROR_SYSCALL:
-          // OpenSSL 1.1: EOF received without an SSL shutdown notification.
-          if(errno == 0)
-            return io_result_end_of_file;
-
           POSEIDON_THROW((
               "Error writing SSL socket",
               "[syscall failure: $3]",
@@ -199,7 +198,6 @@ do_abstract_socket_on_writable()
 
     // Remove sent bytes from the write queue.
     queue.discard(datalen);
-    return io_result_partial;
   }
 
 void

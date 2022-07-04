@@ -75,14 +75,14 @@ class Abstract_Socket
     // This callback is invoked by the network thread when incoming data are
     // available, and is intended to be overriden by derived classes.
     virtual
-    IO_Result
+    void
     do_abstract_socket_on_readable()
       = 0;
 
     // This callback is invoked by the network thread when outgoing data are
     // possible, and is intended to be overriden by derived classes.
     virtual
-    IO_Result
+    void
     do_abstract_socket_on_writable()
       = 0;
 

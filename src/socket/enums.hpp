@@ -29,14 +29,6 @@ enum Socket_State : uint8_t
     socket_state_closed       = 4,
   };
 
-// Socket I/O results
-enum IO_Result : uint8_t
-  {
-    io_result_partial      = 0,
-    io_result_would_block  = 1,
-    io_result_end_of_file  = 2,
-  };
-
 }  // namespace poseidon
 
 #endif
