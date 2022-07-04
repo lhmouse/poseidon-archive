@@ -98,6 +98,17 @@ do_abstract_socket_on_readable()
     datalen = queue.capacity();
     if(!::SSL_read_ex(this->ssl(), queue.mut_end(), datalen, &datalen)) {
       int ssl_err = ::SSL_get_error(this->ssl(), 0);
+
+#ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
+      // OpenSSL 3.0: EOF received without an SSL shutdown notification.
+      if((ssl_err == SSL_ERROR_SSL) && (ERR_GET_REASON(::ERR_peek_error()) == SSL_R_UNEXPECTED_EOF_WHILE_READING))
+        ssl_err = SSL_ERROR_ZERO_RETURN;
+#else
+      // OpenSSL 1.1: EOF received without an SSL shutdown notification.
+      if((ssl_err == SSL_ERROR_SYSCALL) && (errno == 0))
+        ssl_err = SSL_ERROR_ZERO_RETURN;
+#endif  // SSL_R_UNEXPECTED_EOF_WHILE_READING
+
       switch(ssl_err) {
         case SSL_ERROR_ZERO_RETURN:
           ::SSL_shutdown(this->ssl());
@@ -111,28 +122,15 @@ do_abstract_socket_on_readable()
         case SSL_ERROR_WANT_ACCEPT:
           if(errno == EINTR)
             goto try_io;
-
-          // `EAGAIN`, etc.
-          return;
-
-        case SSL_ERROR_SYSCALL:
-          // OpenSSL 1.1: EOF received without an SSL shutdown notification.
-          if(errno == 0)
+          else
             return;
 
+        case SSL_ERROR_SYSCALL:
           POSEIDON_THROW((
               "Error reading SSL socket",
               "[syscall failure: $3]",
               "[SSL socket `$1` (class `$2`)]"),
               this, typeid(*this), format_errno());
-
-        case SSL_ERROR_SSL:
-          // OpenSSL 3.0: EOF received without an SSL shutdown notification.
-#ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
-          if(ERR_GET_REASON(::ERR_peek_error()) == SSL_R_UNEXPECTED_EOF_WHILE_READING)
-            return;
-#endif
-          break;
       }
 
       POSEIDON_THROW((
@@ -167,6 +165,7 @@ do_abstract_socket_on_writable()
     datalen = queue.size();
     if(!::SSL_write_ex(this->ssl(), queue.begin(), datalen, &datalen)) {
       int ssl_err = ::SSL_get_error(this->ssl(), 0);
+
       switch(ssl_err) {
         case SSL_ERROR_ZERO_RETURN:
           return;
@@ -177,9 +176,8 @@ do_abstract_socket_on_writable()
         case SSL_ERROR_WANT_ACCEPT:
           if(errno == EINTR)
             goto try_io;
-
-          // `EAGAIN`, etc.
-          return;
+          else
+            return;
 
         case SSL_ERROR_SYSCALL:
           POSEIDON_THROW((
