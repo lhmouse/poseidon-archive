@@ -101,15 +101,15 @@ do_abstract_socket_on_readable()
       if(((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) && (errno == EINTR))
         goto try_io;
 
-#ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
-      // OpenSSL 3.0: EOF received without an SSL shutdown notification.
-      if((ssl_err == SSL_ERROR_SSL) && (ERR_GET_REASON(::ERR_peek_error()) == SSL_R_UNEXPECTED_EOF_WHILE_READING))
-        ssl_err = SSL_ERROR_ZERO_RETURN;
-#else
-      // OpenSSL 1.1: EOF received without an SSL shutdown notification.
+      // OpenSSL 1.1: EOF received without an SSL shutdown alert.
       if((ssl_err == SSL_ERROR_SYSCALL) && (errno == 0))
         ssl_err = SSL_ERROR_ZERO_RETURN;
-#endif  // SSL_R_UNEXPECTED_EOF_WHILE_READING
+
+#ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
+      // OpenSSL 3.0: EOF received without an SSL shutdown alert.
+      if((ssl_err == SSL_ERROR_SSL) && (ERR_GET_REASON(::ERR_peek_error()) == SSL_R_UNEXPECTED_EOF_WHILE_READING))
+        ssl_err = SSL_ERROR_ZERO_RETURN;
+#endif  // OpenSSL 3.0
 
       switch(ssl_err) {
         case SSL_ERROR_ZERO_RETURN:
