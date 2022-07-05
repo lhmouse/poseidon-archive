@@ -20,11 +20,20 @@ do_epoll_ctl(int epoll_fd, int op, const shared_ptr<Abstract_Socket>& socket, ui
     struct ::epoll_event event;
     event.events = events;
     event.data.ptr = socket.get();
-    if(::epoll_ctl(epoll_fd, op, socket->fd(), &event) != 0)
+    if(::epoll_ctl(epoll_fd, op, socket->fd(), &event) != 0) {
+      // When adding a socket, if the operation has failed, an exception shall be
+      // thrown. For the other operations, errors are ignored.
+      if(op == EPOLL_CTL_ADD)
+        POSEIDON_THROW((
+            "Could not add socket `$2` (class `$3`)",
+            "[`epoll_ctl()` failed: $1]"),
+            format_errno(), socket, typeid(*socket));
+
       POSEIDON_LOG_ERROR((
           "Could not modify socket `$2` (class `$3`)",
           "[`epoll_ctl()` failed: $1]"),
           format_errno(), socket, typeid(*socket));
+    }
 
     if((op == EPOLL_CTL_ADD) || (op == EPOLL_CTL_MOD))
       POSEIDON_LOG_TRACE((
