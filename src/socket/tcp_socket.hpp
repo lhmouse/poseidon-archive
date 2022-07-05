@@ -56,11 +56,6 @@ class TCP_Socket
     const Socket_Address&
     get_remote_address() const;
 
-    // Shuts the socket down abnormally, discarding any pending data.
-    // This function is thread-safe.
-    bool
-    quick_shut_down() noexcept;
-
     // Enqueues some bytes for sending.
     // The return value merely indicates whether the attempt has succeeded. The
     // bytes may or may never arrive at the destination host.

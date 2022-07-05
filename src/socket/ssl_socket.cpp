@@ -226,17 +226,6 @@ get_remote_address() const
 
 bool
 SSL_Socket::
-quick_shut_down() noexcept
-  {
-    ::linger lng;
-    lng.l_onoff = 1;
-    lng.l_linger = 0;
-    ::setsockopt(this->fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
-    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
-  }
-
-bool
-SSL_Socket::
 ssl_send(const char* data, size_t size)
   {
     if(size && !data)

@@ -111,6 +111,12 @@ class Abstract_Socket
     // This function is thread-safe.
     const Socket_Address&
     get_local_address() const;
+
+    // Shuts the socket down without sending any protocol-specific closure
+    // notifications.
+    // This function is thread-safe.
+    bool
+    quick_shut_down() noexcept;
   };
 
 }  // namespace poseidon
