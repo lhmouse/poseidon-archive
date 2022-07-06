@@ -21,16 +21,16 @@ Abstract_Fiber::
 
 void
 Abstract_Fiber::
-do_abstract_fiber_on_suspended()
+do_abstract_fiber_on_resumed()
   {
-    POSEIDON_LOG_DEBUG(("Suspending fiber `$1` (class `$2`)"), this, typeid(*this));
+    POSEIDON_LOG_DEBUG(("Resuming fiber `$1` (class `$2`)"), this, typeid(*this));
   }
 
 void
 Abstract_Fiber::
-do_abstract_fiber_on_resumed()
+do_abstract_fiber_on_suspended()
   {
-    POSEIDON_LOG_DEBUG(("Resuming fiber `$1` (class `$2`)"), this, typeid(*this));
+    POSEIDON_LOG_DEBUG(("Suspending fiber `$1` (class `$2`)"), this, typeid(*this));
   }
 
 void

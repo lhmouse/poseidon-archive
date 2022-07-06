@@ -376,10 +376,19 @@ thread_loop()
           ::memcpy(&self, args, sizeof(self));
 
           do_finish_switch_fiber(self->m_sched_asan_save);
-          auto elec = self->m_sched_self_opt.lock();
+          const auto elec = self->m_sched_self_opt.lock();
           ROCKET_ASSERT(elec);
 
-          // Invoke the fiber procedure.
+          try {
+            elec->fiber->do_abstract_fiber_on_resumed();
+          }
+          catch(exception& stdex) {
+            POSEIDON_LOG_ERROR((
+                "Fiber exception: $1",
+                "[fiber class `$2`]"),
+                stdex, typeid(*(elec->fiber)));
+          }
+
           ROCKET_ASSERT(elec->fiber->m_state.load() == async_state_pending);
           elec->fiber->m_state.store(async_state_running);
           POSEIDON_LOG_TRACE(("Starting fiber `$1` (class `$2`)"), elec->fiber, typeid(*(elec->fiber)));
@@ -394,13 +403,23 @@ thread_loop()
                 stdex, typeid(*(elec->fiber)));
           }
 
-          POSEIDON_LOG_TRACE(("Exiting from fiber `$1` (class `$2`)"), elec->fiber, typeid(*(elec->fiber)));
+          POSEIDON_LOG_TRACE(("Exited from fiber `$1` (class `$2`)"), elec->fiber, typeid(*(elec->fiber)));
           ROCKET_ASSERT(elec->fiber->m_state.load() == async_state_running);
           elec->fiber->m_state.store(async_state_finished);
 
+          try {
+            elec->fiber->do_abstract_fiber_on_suspended();
+          }
+          catch(exception& stdex) {
+            POSEIDON_LOG_ERROR((
+                "Fiber exception: $1",
+                "[fiber class `$2`]"),
+                stdex, typeid(*(elec->fiber)));
+          }
+
           // Return to `m_sched_outer`.
           elec->async_time.store(self->clock());
-          do_start_switch_fiber(self->m_sched_asan_save, self->m_sched_outer);
+          do_start_switch_fiber(self->m_sched_asan_save, elec->sched_inner->uc_link);
         };
 
       int args[2];
