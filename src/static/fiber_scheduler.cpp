@@ -337,31 +337,36 @@ thread_loop()
         "Processing fiber `$1` (class `$2`): state = $3"),
         elem->fiber, typeid(*(elem->fiber)), elem->fiber->m_state.load());
 
-    {
-      // If an exit signal is pending, all fibers shall be resumed. The process
-      //  will exit after all fibers complete execution.
-      if(signal)
-        goto resume_fiber;
+    switch(0) {
+      default:
+        // If an exit signal is pending, all fibers shall be resumed. The process
+        //  will exit after all fibers complete execution.
+        if(signal)
+          break;
 
-      // If the fail timeout has been exceeded, the fiber shall be resumed anyway.
-      int64_t real_fail_timeout;
-      if(elem->fail_timeout_override <= 0)
-        real_fail_timeout = fail_timeout;  // use default
-      else
-        real_fail_timeout = elem->fail_timeout_override;
+        // If the fail timeout has been exceeded, the fiber shall be resumed anyway.
+        int64_t real_fail_timeout;
+        if(elem->fail_timeout_override <= 0)
+          real_fail_timeout = fail_timeout;  // use default
+        else
+          real_fail_timeout = elem->fail_timeout_override;
 
-      if(now - elem->yield_time >= real_fail_timeout)
-        goto resume_fiber;
+        if(now - elem->yield_time >= real_fail_timeout)
+          break;
 
-      // If the fiber is not waiting for a future, or if the future has become
-      // ready, the fiber shall be resumed.
-      auto futr = elem->futr_opt.lock();
-      if(!futr || (futr->m_state.load() != future_state_empty))
-        goto resume_fiber;
+        // If the fiber is not waiting for a future, or if the future has become
+        // ready, the fiber shall be resumed.
+        auto futr = elem->futr_opt.lock();
+        if(!futr)
+          break;
+
+        if(futr->m_state.load() != future_state_empty)
+          break;
+
+        // Keep it suspended.
+        return;
     }
-    return;
 
-  resume_fiber:
     if(!elem->sched_inner->uc_stack.ss_sp) {
       POSEIDON_LOG_TRACE(("Initializing fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
       ::getcontext(elem->sched_inner);
