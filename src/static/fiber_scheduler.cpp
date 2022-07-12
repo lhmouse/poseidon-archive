@@ -319,6 +319,19 @@ thread_loop()
     elem->fiber->m_scheduler = this;
     lock.unlock();
 
+    // Process this fiber.
+    POSEIDON_LOG_TRACE((
+        "Processing fiber `$1` (class `$2`): state = $3"),
+        elem->fiber, typeid(*(elem->fiber)), elem->fiber->m_state.load());
+
+    auto futr = elem->futr_opt.lock();
+
+    int64_t real_fail_timeout;
+    if(elem->fail_timeout_override <= 0)
+      real_fail_timeout = fail_timeout;  // use default
+    else
+      real_fail_timeout = elem->fail_timeout_override;
+
     if((elem->fail_timeout_override == 0) && (now - elem->yield_time >= warn_timeout))
       POSEIDON_LOG_WARN((
           "Fiber `$1` (class `$2`) has been suspended for `$3` ms"),
@@ -332,40 +345,13 @@ thread_loop()
           elem->fiber, typeid(*(elem->fiber)),
           (uint64_t) (now - elem->yield_time) / 1000000ULL);
 
-    // Process this fiber.
-    POSEIDON_LOG_TRACE((
-        "Processing fiber `$1` (class `$2`): state = $3"),
-        elem->fiber, typeid(*(elem->fiber)), elem->fiber->m_state.load());
-
-    switch(0) {
-      default:
-        // If an exit signal is pending, all fibers shall be resumed. The process
-        //  will exit after all fibers complete execution.
-        if(signal)
-          break;
-
-        // If the fail timeout has been exceeded, the fiber shall be resumed anyway.
-        int64_t real_fail_timeout;
-        if(elem->fail_timeout_override <= 0)
-          real_fail_timeout = fail_timeout;  // use default
-        else
-          real_fail_timeout = elem->fail_timeout_override;
-
-        if(now - elem->yield_time >= real_fail_timeout)
-          break;
-
-        // If the fiber is not waiting for a future, or if the future has become
-        // ready, the fiber shall be resumed.
-        auto futr = elem->futr_opt.lock();
-        if(!futr)
-          break;
-
-        if(futr->m_state.load() != future_state_empty)
-          break;
-
-        // Keep it suspended.
-        return;
-    }
+    // 1. If the fail timeout has been exceeded, the fiber shall be resumed anyway.
+    // 2. If an exit signal is pending, all fibers shall be resumed. The process
+    //    will exit after all fibers complete execution.
+    // 3. If the fiber is not waiting for a future, or if the future has become
+    //    ready, the fiber shall be resumed.
+    if((now - elem->yield_time < real_fail_timeout) && !signal && futr && (futr->m_state.load() == future_state_empty))
+      return;
 
     if(!elem->sched_inner->uc_stack.ss_sp) {
       POSEIDON_LOG_TRACE(("Initializing fiber `$1` (class `$2`)"), elem->fiber, typeid(*(elem->fiber)));
