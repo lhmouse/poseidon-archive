@@ -350,7 +350,7 @@ thread_loop()
     //    will exit after all fibers complete execution.
     // 3. If the fiber is not waiting for a future, or if the future has become
     //    ready, the fiber shall be resumed.
-    if((now - elem->yield_time < real_fail_timeout) && !signal && futr && (futr->m_state.load() == future_state_empty))
+    if((now - elem->yield_time < real_fail_timeout) && !signal && futr && futr->empty())
       return;
 
     if(!elem->sched_inner->uc_stack.ss_sp) {
@@ -490,23 +490,22 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     if(elem->fiber.get() != current)
       POSEIDON_THROW(("Cannot yield execution outside the current fiber"));
 
-    const int64_t now = this->clock();
-
     // If a future is given, lock it, in order to prevent race conditions.
     plain_mutex::unique_lock future_lock;
-    if(futr_opt) {
+    if(futr_opt)
       future_lock.lock(futr_opt->m_mutex);
 
-      // If it is not empty, don't block at all.
-      if(futr_opt->m_state.load() != future_state_empty)
-        return;
-    }
+    // If the future is not empty, don't block at all.
+    if(futr_opt && !futr_opt->empty())
+      return;
 
     // Set the first timeout value.
     plain_mutex::unique_lock lock(this->m_conf_mutex);
     const int64_t warn_timeout = this->m_conf_warn_timeout * 1000000000LL;
     const int64_t fail_timeout = this->m_conf_fail_timeout * 1000000000LL;
     lock.unlock();
+
+    const int64_t now = this->clock();
 
     int64_t real_check_timeout;
     if(fail_timeout_override <= 0)
@@ -519,15 +518,13 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     elem->yield_time = now;
     elem->fail_timeout_override = fail_timeout_override;
 
-    if(futr_opt) {
-      // Attach this fiber to the wait queue of the future.
-      shared_ptr<atomic_relaxed<int64_t>> timep(elem, &(elem->async_time));
-      futr_opt->m_waiters.emplace_back(::std::move(timep));
+    // Attach this fiber to the wait queue of the future.
+    // Other threads may update the `async_time` field to affect scheduling.
+    // Typically, zero is written so the fiber can be resumed immediately.
+    if(futr_opt)
+      futr_opt->m_waiters.emplace_back(shared_ptr<atomic_relaxed<int64_t>>(elem, &(elem->async_time)));
 
-      // Other threads may update the `async_time` field to affect scheduling.
-      // Typically, zero is written so the fiber can be resumed immediately.
-      future_lock.unlock();
-    }
+    future_lock.unlock();
     elem->fiber->do_abstract_fiber_on_suspended();
 
     // Suspend the current fiber...
