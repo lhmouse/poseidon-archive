@@ -123,9 +123,8 @@ do_start_switch_fiber(void*& save, const ::ucontext_t* uctx) noexcept
   {
 #ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
     ::__sanitizer_start_switch_fiber(&save, uctx->uc_stack.ss_sp, uctx->uc_stack.ss_size);
-#else
+#endif
     (void) save, (void) uctx;
-#endif  // POSEIDON_ENABLE_ADDRESS_SANITIZER
   }
 
 inline
@@ -134,9 +133,8 @@ do_finish_switch_fiber(void* save) noexcept
   {
 #ifdef POSEIDON_ENABLE_ADDRESS_SANITIZER
     ::__sanitizer_finish_switch_fiber(save, nullptr, nullptr);
-#else
+#endif
     (void) save;
-#endif  // POSEIDON_ENABLE_ADDRESS_SANITIZER
   }
 
 }  // namespace
@@ -436,7 +434,7 @@ thread_loop()
 
 size_t
 Fiber_Scheduler::
-count() const noexcept
+size() const noexcept
   {
     plain_mutex::unique_lock lock(this->m_pq_mutex);
     return this->m_pq.size();

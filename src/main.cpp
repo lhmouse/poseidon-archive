@@ -383,7 +383,7 @@ main(int argc, char** argv)
     POSEIDON_LOG_INFO(("Startup complete: $1"), PACKAGE_STRING);
 
     // Schedule fibers until a signal has been received and the scheduler is empty.
-    while(fiber_scheduler.count() || !exit_signal.load())
+    while(fiber_scheduler.size() || !exit_signal.load())
       fiber_scheduler.thread_loop();
 
     uint32_t sig = (uint32_t) exit_signal.load();

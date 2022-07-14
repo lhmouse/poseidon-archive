@@ -58,7 +58,7 @@ class Fiber_Scheduler
     // This function is thread-safe.
     ROCKET_PURE
     size_t
-    count() const noexcept;
+    size() const noexcept;
 
     // Inserts a fiber. The scheduler will take ownership of this fiber.
     // This function is thread-safe.
