@@ -98,18 +98,12 @@ do_abstract_socket_on_readable()
     datalen = queue.capacity();
     if(!::SSL_read_ex(this->ssl(), queue.mut_end(), datalen, &datalen)) {
       int ssl_err = ::SSL_get_error(this->ssl(), 0);
-      if(((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) && (errno == EINTR))
+      if(is_any_ofssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
         goto try_io;
 
       // OpenSSL 1.1: EOF received without an SSL shutdown alert.
       if((ssl_err == SSL_ERROR_SYSCALL) && (errno == 0))
         ssl_err = SSL_ERROR_ZERO_RETURN;
-
-#ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
-      // OpenSSL 3.0: EOF received without an SSL shutdown alert.
-      if((ssl_err == SSL_ERROR_SSL) && (ERR_GET_REASON(::ERR_peek_error()) == SSL_R_UNEXPECTED_EOF_WHILE_READING))
-        ssl_err = SSL_ERROR_ZERO_RETURN;
-#endif  // OpenSSL 3.0
 
       switch(ssl_err) {
         case SSL_ERROR_ZERO_RETURN:
@@ -123,6 +117,14 @@ do_abstract_socket_on_readable()
 
         case SSL_ERROR_WANT_READ:
         case SSL_ERROR_WANT_WRITE:
+          return;
+
+        case SSL_ERROR_SSL:
+          // Shut the connection down due to an irrecoverable error, such as
+          // when the peer requested SSLv3, or when the SSL connection was not
+          // shut down properly.
+          POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, reason = $2"), this->get_remote_address(), ::ERR_reason_error_string(::ERR_peek_error()));
+          ::shutdown(this->fd(), SHUT_RDWR);
           return;
 
         case SSL_ERROR_SYSCALL:
@@ -165,12 +167,20 @@ do_abstract_socket_on_writable()
     datalen = queue.size();
     if(!::SSL_write_ex(this->ssl(), queue.begin(), datalen, &datalen)) {
       int ssl_err = ::SSL_get_error(this->ssl(), 0);
-      if(((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) && (errno == EINTR))
+      if(is_any_ofssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
         goto try_io;
 
       switch(ssl_err) {
         case SSL_ERROR_WANT_READ:
         case SSL_ERROR_WANT_WRITE:
+          return;
+
+        case SSL_ERROR_SSL:
+          // Shut the connection down due to an irrecoverable error, such as
+          // when the peer requested SSLv3, or when the SSL connection was not
+          // shut down properly.
+          POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, reason = $2"), this->get_remote_address(), ::ERR_reason_error_string(::ERR_peek_error()));
+          ::shutdown(this->fd(), SHUT_RDWR);
           return;
 
         case SSL_ERROR_SYSCALL:
