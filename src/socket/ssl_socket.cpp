@@ -3,6 +3,7 @@
 
 #include "../precompiled.ipp"
 #include "ssl_socket.hpp"
+#include "ssl_ctx_ptr.hpp"
 #include "../static/async_logger.hpp"
 #include "../utils.hpp"
 #include <sys/socket.h>
@@ -14,16 +15,16 @@ namespace poseidon {
 
 SSL_Socket::
 SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
-  : Abstract_Socket(::std::move(fd)), m_ssl_ctx(ssl_ctx)
+  : Abstract_Socket(::std::move(fd))
   {
     // Create the SSL structure.
-    if(!this->m_ssl_ctx)
+    if(!ssl_ctx)
       POSEIDON_THROW((
           "Null SSL context pointer not valid",
           "[SSL socket `$1` (class `$2`)]"),
           this, typeid(*this));
 
-    this->m_ssl.reset(::SSL_new(this->m_ssl_ctx));
+    this->m_ssl.reset(::SSL_new(ssl_ctx));
     if(!this->m_ssl)
       POSEIDON_THROW((
           "Could not allocate server SSL structure",
@@ -47,16 +48,16 @@ SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
 
 SSL_Socket::
 SSL_Socket(int family, const SSL_CTX_ptr& ssl_ctx)
-  : Abstract_Socket(family, SOCK_STREAM, IPPROTO_TCP), m_ssl_ctx(ssl_ctx)
+  : Abstract_Socket(family, SOCK_STREAM, IPPROTO_TCP)
   {
     // Create the SSL structure.
-    if(!this->m_ssl_ctx)
+    if(!ssl_ctx)
       POSEIDON_THROW((
           "Null SSL context pointer not valid",
           "[SSL socket `$1` (class `$2`)]"),
           this, typeid(*this));
 
-    this->m_ssl.reset(::SSL_new(this->m_ssl_ctx));
+    this->m_ssl.reset(::SSL_new(ssl_ctx));
     if(!this->m_ssl)
       POSEIDON_THROW((
           "Could not allocate client SSL structure",

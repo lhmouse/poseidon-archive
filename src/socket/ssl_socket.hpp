@@ -6,7 +6,6 @@
 
 #include "../fwd.hpp"
 #include "abstract_socket.hpp"
-#include "ssl_ctx_ptr.hpp"
 #include "ssl_ptr.hpp"
 
 namespace poseidon {
@@ -15,7 +14,6 @@ class SSL_Socket
   : public Abstract_Socket
   {
   private:
-    SSL_CTX_ptr m_ssl_ctx;
     SSL_ptr m_ssl;
 
     mutable once_flag m_peername_once;
