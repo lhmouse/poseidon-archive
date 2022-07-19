@@ -79,11 +79,11 @@ do_classify_ipv6(const ::in6_addr* addr) noexcept
 
     // ::ffff:0:0/96: IPv4-mapped
     if(do_match_subnet(addr, 16, {0,0,0,0,0,0,0,0,0,0,0xFF,0xFF,0,0,0,0}, 96))
-      return do_classify_ipv4((const ::in_addr*) ((const unsigned char*) addr + 12));
+      return do_classify_ipv4((const ::in_addr*) ((const char*) addr + 12));
 
     // 64:ff9b::/96: IPv4 to IPv6
     if(do_match_subnet(addr, 16, {0,0x64,0xFF,0x9B,0,0,0,0,0,0,0,0,0,0,0,0}, 96))
-      return do_classify_ipv4((const ::in_addr*) ((const unsigned char*) addr + 12));
+      return do_classify_ipv4((const ::in_addr*) ((const char*) addr + 12));
 
     // 64:ff9b:1::/48: Local-Use IPv4/IPv6
     if(do_match_subnet(addr, 16, {0,0x64,0xFF,0x9B,1,0,0,0,0,0,0,0,0,0,0,0}, 48))
@@ -99,7 +99,7 @@ do_classify_ipv6(const ::in6_addr* addr) noexcept
 
     // 2002::/16: 6to4
     if(do_match_subnet(addr, 16, {0x20,0x02,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 16))
-      return do_classify_ipv4((const ::in_addr*) ((const unsigned char*) addr + 2));
+      return do_classify_ipv4((const ::in_addr*) ((const char*) addr + 2));
 
     // fc00::/7: Unique Local Unicast
     if(do_match_subnet(addr, 16, {0xFC,0x00,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 7))
@@ -118,12 +118,6 @@ do_classify_ipv6(const ::in6_addr* addr) noexcept
   }
 
 }  // namespace
-
-Socket_Address::
-Socket_Address(const char* host, uint16_t port)
-  {
-    this->parse(host, port);
-  }
 
 Socket_Address::
 Socket_Address(const cow_string& host, uint16_t port)
@@ -152,7 +146,7 @@ tinyfmt&
 Socket_Address::
 print(tinyfmt& fmt) const
   {
-    char sbuf[64];
+    char sbuf[128];
     const char* host;
     uint32_t port;
 
@@ -192,15 +186,17 @@ format() const
 
 Socket_Address&
 Socket_Address::
-parse(const char* host, uint16_t port)
+parse(const cow_string& host, uint16_t port)
   {
-    size_t pos;
+    if(host.empty())
+      POSEIDON_THROW(("Empty address string not valid"));
+
     unsigned char addrbuf[16];
     char sbuf[128];
 
-    if(host[0] != '[') {
+    if((host.front() >= '0') && (host.front() <= '9')) {
       // Assume IPv4.
-      if(::inet_pton(AF_INET, host, addrbuf) != 1)
+      if(::inet_pton(AF_INET, host.safe_c_str(), addrbuf) != 1)
         POSEIDON_THROW((
             "Invalid IPv4 address: `$1`",
             "[`inet_ntop()` failed: $2]"),
@@ -214,14 +210,21 @@ parse(const char* host, uint16_t port)
       return *this;
     }
 
-    pos = ::strlen(host) - 1;
-    if((host[pos] == ']') && (pos <= sizeof(sbuf))) {
+    if((host.front() == '[') && (host.back() == ']')) {
       // Unbracket the host string.
-      ::memcpy(sbuf, host + 1, pos - 1);
-      *(sbuf + pos - 1) = 0;
+      cow_string ub_host;
+      size_t len = host.size() - 2;
+      if(len < sizeof(sbuf)) {
+        // Use the static buffer.
+        ::memcpy(sbuf, host.data() + 1, len);
+        sbuf[len] = 0;
+        ub_host = ::rocket::sref(sbuf, len);
+      }
+      else
+        ub_host.assign(host.begin() + 1, host.end() - 1);
 
       // Try parsing it as IPv6.
-      if(::inet_pton(AF_INET6, sbuf, addrbuf) != 1)
+      if(::inet_pton(AF_INET6, ub_host.c_str(), addrbuf) != 1)
         POSEIDON_THROW((
             "Invalid IPv6 address: `$1`",
             "[`inet_ntop()` failed: $2]"),
@@ -240,13 +243,6 @@ parse(const char* host, uint16_t port)
     POSEIDON_THROW((
         "Unrecognizable address string: `$1`"),
         host);
-  }
-
-Socket_Address&
-Socket_Address::
-parse(const cow_string& host, uint16_t port)
-  {
-    return this->parse(host.safe_c_str(), port);
   }
 
 }  // namespace poseidon

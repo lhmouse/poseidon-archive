@@ -38,7 +38,7 @@ struct Example_Server : Listen_Socket
 
     explicit
     Example_Server()
-      : Listen_Socket(Socket_Address(bind, port))
+      : Listen_Socket(Socket_Address(::rocket::sref(bind), port))
       {
         POSEIDON_LOG_WARN(("example TCP server listening on `$1`"), this->get_local_address());
       }

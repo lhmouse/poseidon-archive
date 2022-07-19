@@ -33,9 +33,6 @@ class Socket_Address
 
     // Parses an address from a string.
     explicit
-    Socket_Address(const char* host, uint16_t port);
-
-    explicit
     Socket_Address(const cow_string& host, uint16_t port);
 
   public:
@@ -147,9 +144,6 @@ class Socket_Address
     // Parses an address from a string, which may be either IPv4 or IPv6.
     // In case of failure, an exception is thrown, and the contents of this
     // object are unchanged.
-    Socket_Address&
-    parse(const char* host, uint16_t port);
-
     Socket_Address&
     parse(const cow_string& host, uint16_t port);
   };

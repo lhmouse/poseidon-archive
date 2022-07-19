@@ -17,7 +17,7 @@ struct Example_Session : TCP_Client_Socket
   {
     explicit
     Example_Session()
-      : TCP_Client_Socket(Socket_Address(conn, port))
+      : TCP_Client_Socket(Socket_Address(::rocket::sref(conn), port))
       {
         static constexpr char data[] =
             "GET / HTTP/1.1\r\n"
