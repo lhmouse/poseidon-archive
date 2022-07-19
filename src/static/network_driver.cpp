@@ -205,6 +205,16 @@ reload(const Config_File& file)
             "[in configuration file '$2']"),
             ::ERR_reason_error_string(::ERR_peek_error()), file.path(), default_certificate, default_private_key);
 
+      unsigned char sid_ctx[SSL_MAX_SID_CTX_LENGTH] = { };
+      ::gethostname((char*) sid_ctx, sizeof(sid_ctx));
+
+      if(!::SSL_CTX_set_session_id_context(server_ssl_ctx, sid_ctx, sizeof(sid_ctx)))
+        POSEIDON_THROW((
+            "Could not set SSL session ID context",
+            "[`SSL_set_session_id_context()` failed: $1]",
+            "[in configuration file '$2']"),
+            ::ERR_reason_error_string(::ERR_peek_error()), file.path());
+
       ::SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, nullptr);
     }
 
@@ -241,17 +251,6 @@ reload(const Config_File& file)
         POSEIDON_THROW((
             "Could not set path to trusted CA certificates",
             "[`SSL_CTX_load_verify_locations()` failed: $1]",
-            "[in configuration file '$2']"),
-            ::ERR_reason_error_string(::ERR_peek_error()), file.path());
-
-      // Use the hostname as the context.
-      char hostname[SSL_MAX_SID_CTX_LENGTH] = { };
-      ::gethostname(hostname, sizeof(hostname));
-
-      if(!::SSL_CTX_set_session_id_context(client_ssl_ctx, (unsigned char*) hostname, sizeof(hostname)))
-        POSEIDON_THROW((
-            "Could not set SSL session ID context",
-            "[`SSL_set_session_id_context()` failed: $1]",
             "[in configuration file '$2']"),
             ::ERR_reason_error_string(::ERR_peek_error()), file.path());
 
