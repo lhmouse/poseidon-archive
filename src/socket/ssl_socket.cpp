@@ -98,7 +98,7 @@ do_abstract_socket_on_readable()
     datalen = queue.capacity();
     if(!::SSL_read_ex(this->ssl(), queue.mut_end(), datalen, &datalen)) {
       int ssl_err = ::SSL_get_error(this->ssl(), 0);
-      if(is_any_ofssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
+      if(is_any_of(ssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
         goto try_io;
 
       // OpenSSL 1.1: EOF received without an SSL shutdown alert.
@@ -167,7 +167,7 @@ do_abstract_socket_on_writable()
     datalen = queue.size();
     if(!::SSL_write_ex(this->ssl(), queue.begin(), datalen, &datalen)) {
       int ssl_err = ::SSL_get_error(this->ssl(), 0);
-      if(is_any_ofssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
+      if(is_any_of(ssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
         goto try_io;
 
       switch(ssl_err) {
