@@ -103,16 +103,19 @@ using phsh_string = ::rocket::prehashed_string;
 
 // Core types
 class Config_File;
+
+// Timer types
 class Abstract_Timer;
-class Abstract_Task;
 
 // Fiber types
 enum Future_State : uint8_t;
 class Abstract_Future;
 template<typename ValueT> class Future;
 class Abstract_Fiber;
-
 class Timer_Fiber;
+
+// Asynchronous task types
+class Abstract_Task;
 
 // Socket types
 enum Socket_Address_Class : uint8_t;

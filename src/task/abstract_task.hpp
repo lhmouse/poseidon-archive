@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_CORE_ABSTRACT_TASK_
-#define POSEIDON_CORE_ABSTRACT_TASK_
+#ifndef POSEIDON_TASK_ABSTRACT_TASK_
+#define POSEIDON_TASK_ABSTRACT_TASK_
 
 #include "../fwd.hpp"
 

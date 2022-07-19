@@ -4,7 +4,7 @@
 #include "../src/precompiled.ipp"
 #include "../src/fiber/abstract_fiber.hpp"
 #include "../src/fiber/future.hpp"
-#include "../src/core/abstract_timer.hpp"
+#include "../src/timer/abstract_timer.hpp"
 #include "../src/static/fiber_scheduler.hpp"
 #include "../src/static/timer_driver.hpp"
 #include "../src/static/async_logger.hpp"

@@ -2,7 +2,7 @@
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
 #include "../src/precompiled.ipp"
-#include "../src/core/abstract_timer.hpp"
+#include "../src/timer/abstract_timer.hpp"
 #include "../src/static/timer_driver.hpp"
 #include "../src/static/async_logger.hpp"
 #include "../src/utils.hpp"
