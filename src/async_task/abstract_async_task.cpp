@@ -2,17 +2,17 @@
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.ipp"
-#include "abstract_task.hpp"
+#include "abstract_async_task.hpp"
 
 namespace poseidon {
 
-Abstract_Task::
-Abstract_Task() noexcept
+Abstract_Async_Task::
+Abstract_Async_Task() noexcept
   {
   }
 
-Abstract_Task::
-~Abstract_Task()
+Abstract_Async_Task::
+~Abstract_Async_Task()
   {
   }
 

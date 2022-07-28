@@ -10,21 +10,21 @@ namespace poseidon {
 
 // This class buffers tasks and execute them asynchronously.
 // Objects of this class are recommended to be static.
-class Task_Executor
+class Async_Task_Executor
   {
   private:
     mutable plain_mutex m_queue_mutex;
     condition_variable m_queue_avail;
-    vector<weak_ptr<Abstract_Task>> m_queue_buffer;
+    vector<weak_ptr<Abstract_Async_Task>> m_queue_buffer;
     size_t m_queue_offset = 0;
 
   public:
     // Creates an empty task executor.
     explicit
-    Task_Executor();
+    Async_Task_Executor();
 
   public:
-    ASTERIA_NONCOPYABLE_DESTRUCTOR(Task_Executor);
+    ASTERIA_NONCOPYABLE_DESTRUCTOR(Async_Task_Executor);
 
     // Pops and executes a task.
     // This function should be called by the task thread repeatedly.
@@ -35,7 +35,7 @@ class Task_Executor
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     void
-    enqueue(const shared_ptr<Abstract_Task>& task);
+    enqueue(const shared_ptr<Abstract_Async_Task>& task);
   };
 
 }  // namespace poseidon

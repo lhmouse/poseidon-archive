@@ -8,17 +8,17 @@
 
 namespace poseidon {
 
-class Abstract_Task
+class Abstract_Async_Task
   {
   private:
-    friend class Task_Executor;
+    friend class Async_Task_Executor;
 
     atomic_relaxed<Async_State> m_state = { async_state_pending };
 
   protected:
     // Constructs an asynchronous task.
     explicit
-    Abstract_Task() noexcept;
+    Abstract_Async_Task() noexcept;
 
   protected:
     // This callback is invoked by the task executor thread and is intended to
@@ -29,7 +29,7 @@ class Abstract_Task
       = 0;
 
   public:
-    ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Task);
+    ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Async_Task);
 
     // Gets the schedule state.
     Async_State

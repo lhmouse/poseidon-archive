@@ -2,25 +2,25 @@
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
 #include "../precompiled.ipp"
-#include "task_executor.hpp"
+#include "async_task_executor.hpp"
 #include "async_logger.hpp"
-#include "../task/abstract_task.hpp"
+#include "../async_task/abstract_async_task.hpp"
 #include "../utils.hpp"
 
 namespace poseidon {
 
-Task_Executor::
-Task_Executor()
+Async_Task_Executor::
+Async_Task_Executor()
   {
   }
 
-Task_Executor::
-~Task_Executor()
+Async_Task_Executor::
+~Async_Task_Executor()
   {
   }
 
 void
-Task_Executor::
+Async_Task_Executor::
 thread_loop()
   {
     plain_mutex::unique_lock lock(this->m_queue_mutex);
@@ -59,8 +59,8 @@ thread_loop()
   }
 
 void
-Task_Executor::
-enqueue(const shared_ptr<Abstract_Task>& task)
+Async_Task_Executor::
+enqueue(const shared_ptr<Abstract_Async_Task>& task)
   {
     if(!task)
       POSEIDON_THROW(("Null task pointer not valid"));

@@ -28,9 +28,9 @@ include_poseidon_fiber_HEADERS =  \
   %reldir%/fiber/timer_fiber.hpp  \
   ${END}
 
-include_poseidon_taskdir = ${includedir}/poseidon/task
-include_poseidon_task_HEADERS =  \
-  %reldir%/task/abstract_task.hpp  \
+include_poseidon_async_taskdir = ${includedir}/poseidon/async_task
+include_poseidon_async_task_HEADERS =  \
+  %reldir%/async_task/abstract_async_task.hpp  \
   ${END}
 
 include_poseidon_socketdir = ${includedir}/poseidon/socket
@@ -58,7 +58,7 @@ include_poseidon_static_HEADERS =  \
   %reldir%/static/async_logger.hpp  \
   %reldir%/static/timer_driver.hpp  \
   %reldir%/static/fiber_scheduler.hpp  \
-  %reldir%/static/task_executor.hpp  \
+  %reldir%/static/async_task_executor.hpp  \
   %reldir%/static/network_driver.hpp  \
   ${END}
 
@@ -73,7 +73,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/fiber/abstract_future.cpp  \
   %reldir%/fiber/abstract_fiber.cpp  \
   %reldir%/fiber/timer_fiber.cpp  \
-  %reldir%/task/abstract_task.cpp  \
+  %reldir%/async_task/abstract_async_task.cpp  \
   %reldir%/socket/socket_address.cpp  \
   %reldir%/socket/abstract_socket.cpp  \
   %reldir%/socket/udp_socket.cpp  \
@@ -90,7 +90,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \
   %reldir%/static/fiber_scheduler.cpp  \
-  %reldir%/static/task_executor.cpp  \
+  %reldir%/static/async_task_executor.cpp  \
   %reldir%/static/network_driver.cpp  \
   ${END}
 
