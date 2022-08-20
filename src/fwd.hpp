@@ -110,7 +110,7 @@ class Abstract_Timer;
 // Fiber types
 enum Future_State : uint8_t;
 class Abstract_Future;
-template<typename ValueT> class Future;
+template<typename ValueT> class future;
 class Abstract_Fiber;
 class Timer_Fiber;
 

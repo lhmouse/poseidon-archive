@@ -12,7 +12,7 @@ namespace poseidon {
 class Abstract_Future
   {
   private:
-    template<typename> friend class Future;;
+    template<typename> friend class future;;
     friend class Fiber_Scheduler;
 
     mutable plain_mutex m_mutex;

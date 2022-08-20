@@ -8,7 +8,7 @@
 
 namespace poseidon {
 
-// Future states
+// future states
 enum Future_State : uint8_t
   {
     future_state_empty      = 0,

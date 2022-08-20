@@ -16,11 +16,11 @@ using namespace poseidon;
 struct Future_Timer : Abstract_Timer
   {
     int64_t value;
-    shared_ptr<Future<int>> futr;
+    shared_ptr<future<int>> futr;
 
     explicit
     Future_Timer(int64_t x)
-      : value(x), futr(::std::make_shared<Future<int>>())
+      : value(x), futr(::std::make_shared<future<int>>())
       {
         POSEIDON_LOG_FATAL(("new timer `$1`"), this);
       }

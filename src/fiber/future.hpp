@@ -10,7 +10,7 @@
 namespace poseidon {
 
 template<typename ValueT>
-class Future
+class future
   : public Abstract_Future
   {
     using value_type       = ValueT;
@@ -30,10 +30,10 @@ class Future
   public:
     // Constructs an empty future.
     explicit
-    Future() noexcept;
+    future() noexcept;
 
   public:
-    ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Future);
+    ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(future);
 
     // Gets the value if one has been set, or throws an exception otherwise.
     const_reference
@@ -94,14 +94,14 @@ class Future
   };
 
 template<typename ValueT>
-Future<ValueT>::
-Future() noexcept
+future<ValueT>::
+future() noexcept
   {
   }
 
 template<typename ValueT>
-Future<ValueT>::
-~Future()
+future<ValueT>::
+~future()
   {
     switch(this->m_state.load()) {
       case future_state_empty:

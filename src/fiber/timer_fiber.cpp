@@ -21,7 +21,7 @@ struct Tick
 struct Tick_Queue
   {
     mutable plain_mutex mutex;
-    shared_ptr<Future<void>> queue_cond;
+    shared_ptr<future<void>> queue_cond;
     linear_buffer queue;
   };
 
@@ -75,7 +75,7 @@ do_abstract_fiber_on_execution()
   {
     while(auto queue = this->m_queue) {
       Tick tick;
-      shared_ptr<Future<void>> queue_cond;
+      shared_ptr<future<void>> queue_cond;
 
       // Wait for an element.
       plain_mutex::unique_lock lock(queue->mutex);
@@ -90,7 +90,7 @@ do_abstract_fiber_on_execution()
       }
       else {
         // Start waiting.
-        queue_cond = ::std::make_shared<Future<void>>();
+        queue_cond = ::std::make_shared<future<void>>();
         queue->queue_cond = queue_cond;
       }
       lock.unlock();
