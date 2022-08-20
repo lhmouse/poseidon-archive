@@ -12,6 +12,7 @@ include_poseidon_details_HEADERS =  \
 include_poseidon_coredir = ${includedir}/poseidon/core
 include_poseidon_core_HEADERS =  \
   %reldir%/core/config_file.hpp  \
+  %reldir%/core/charbuf_256.hpp  \
   ${END}
 
 include_poseidon_timerdir = ${includedir}/poseidon/timer
