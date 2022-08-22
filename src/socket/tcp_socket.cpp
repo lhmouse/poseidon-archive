@@ -17,11 +17,6 @@ TCP_Socket(unique_posix_fd&& fd)
     // Use `TCP_NODELAY`. Errors are ignored.
     int ival = 1;
     ::setsockopt(this->fd(), IPPROTO_TCP, TCP_NODELAY, &ival, sizeof(ival));
-
-    POSEIDON_LOG_INFO((
-        "Accepted TCP connection from `$3`",
-        "[TCP socket `$1` (class `$2`)]"),
-        this, typeid(*this), this->get_remote_address());
   }
 
 TCP_Socket::
@@ -38,11 +33,6 @@ TCP_Socket(const Socket_Address& addr)
           "[`connect()` failed: $3]",
           "[TCP socket `$1` (class `$2`)]"),
           this, typeid(*this), format_errno(), addr);
-
-    POSEIDON_LOG_INFO((
-        "Establishing new TCP connection to `$3`",
-        "[TCP socket `$1` (class `$2`)]"),
-        this, typeid(*this), addr);
   }
 
 TCP_Socket::
@@ -68,10 +58,9 @@ do_abstract_socket_on_readable()
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
 
     // Try getting some bytes from this socket.
-    queue.reserve(0xFFFFU);
     size_t datalen;
-
   try_io:
+    queue.reserve(0xFFFFU);
     datalen = queue.capacity();
     ::ssize_t r = ::recv(this->fd(), queue.mut_end(), datalen, 0);
     datalen = (size_t) r;
@@ -114,15 +103,13 @@ do_abstract_socket_on_writable()
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
 
-    if(queue.empty())
-      return;
-
     // Send some bytes from the write queue.
     size_t datalen;
-
   try_io:
     datalen = queue.size();
-    ::ssize_t r = ::send(this->fd(), queue.begin(), datalen, 0);
+    ::ssize_t r = 0;
+    if(datalen != 0)
+      r = ::send(this->fd(), queue.begin(), datalen, 0);
     datalen = (size_t) r;
 
     if(r < 0) {
@@ -146,6 +133,10 @@ do_abstract_socket_on_writable()
 
     // Remove sent bytes from the write queue.
     queue.discard(datalen);
+
+    // Deliver the establishment notification.
+    if(ROCKET_UNEXPECT(this->do_set_established()))
+      this->do_on_tcp_established();
   }
 
 void
@@ -158,6 +149,16 @@ do_abstract_socket_on_exception(exception& stdex)
         "TCP connection terminated due to exception: $3",
         "[TCP socket `$1` (class `$2`)]"),
         this, typeid(*this), stdex);
+  }
+
+void
+TCP_Socket::
+do_on_tcp_established()
+  {
+    POSEIDON_LOG_INFO((
+        "TCP connection to `$3` established",
+        "[TCP socket `$1` (class `$2`)]"),
+        this, typeid(*this), this->get_remote_address());
   }
 
 const Socket_Address&

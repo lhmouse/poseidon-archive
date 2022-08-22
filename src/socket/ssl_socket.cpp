@@ -43,11 +43,6 @@ SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
     // Use `TCP_NODELAY`. Errors are ignored.
     int ival = 1;
     ::setsockopt(this->fd(), IPPROTO_TCP, TCP_NODELAY, &ival, sizeof(ival));
-
-    POSEIDON_LOG_INFO((
-        "Accepted SSL connection from `$3`",
-        "[SSL socket `$1` (class `$2`)]"),
-        this, typeid(*this), this->get_remote_address());
   }
 
 SSL_Socket::
@@ -87,11 +82,6 @@ SSL_Socket(const Socket_Address& addr, const SSL_CTX_ptr& ssl_ctx)
           "[`connect()` failed: $3]",
           "[SSL socket `$1` (class `$2`)]"),
           this, typeid(*this), format_errno(), addr);
-
-    POSEIDON_LOG_INFO((
-        "Establishing new SSL connection to `$3`",
-        "[TCP socket `$1` (class `$2`)]"),
-        this, typeid(*this), addr);
   }
 
 SSL_Socket::
@@ -117,10 +107,9 @@ do_abstract_socket_on_readable()
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
 
     // Try getting some bytes from this socket.
-    queue.reserve(0xFFFFU);
     size_t datalen;
-
   try_io:
+    queue.reserve(0xFFFFU);
     datalen = queue.capacity();
     if(!::SSL_read_ex(this->ssl(), queue.mut_end(), datalen, &datalen)) {
       int ssl_err = ::SSL_get_error(this->ssl(), 0);
@@ -168,9 +157,6 @@ do_abstract_socket_on_readable()
           this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
     }
 
-    if(datalen == 0)
-      return;
-
     // Accept these data.
     queue.accept(datalen);
     this->do_on_ssl_stream(queue);
@@ -183,12 +169,8 @@ do_abstract_socket_on_writable()
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
 
-    if(queue.empty())
-      return;
-
     // Send some bytes from the write queue.
     size_t datalen;
-
   try_io:
     datalen = queue.size();
     if(!::SSL_write_ex(this->ssl(), queue.begin(), datalen, &datalen)) {
@@ -226,6 +208,10 @@ do_abstract_socket_on_writable()
 
     // Remove sent bytes from the write queue.
     queue.discard(datalen);
+
+    // Deliver the establishment notification.
+    if(ROCKET_UNEXPECT(this->do_set_established()))
+      this->do_on_ssl_established();
   }
 
 void
@@ -238,6 +224,16 @@ do_abstract_socket_on_exception(exception& stdex)
         "SSL connection terminated due to exception: $3",
         "[SSL socket `$1` (class `$2`)]"),
         this, typeid(*this), stdex);
+  }
+
+void
+SSL_Socket::
+do_on_ssl_established()
+  {
+    POSEIDON_LOG_INFO((
+        "SSL connection to `$3` established",
+        "[SSL socket `$1` (class `$2`)]"),
+        this, typeid(*this), this->get_remote_address());
   }
 
 const Socket_Address&

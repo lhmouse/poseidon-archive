@@ -63,6 +63,17 @@ class Abstract_Socket
         return this->m_io_write_queue;
       }
 
+    // Sets the socket state to `socket_state_established`. For an outgoing
+    // stream socket or a datagram socket, such a state change indicates
+    // success of initialization of the socket.
+    bool
+    do_set_established() noexcept
+      {
+        Socket_State cmp = socket_state_connecting;
+        bool updated = this->m_state.cmpxchg(cmp, socket_state_established);
+        return updated;
+      }
+
     // This callback is invoked by the network thread when the socket has
     // been closed, and is intended to be overriden by derived classes.
     // The argument is zero for normal closure, or an error number in the

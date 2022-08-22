@@ -45,6 +45,14 @@ class TCP_Socket
     void
     do_abstract_socket_on_exception(exception& stdex) override;
 
+    // This callback is invoked by the network thread when an outgoing (from
+    // client) full-duplex connection has been established. It is not called for
+    // incoming connections.
+    // The default implemention merely prints a message.
+    virtual
+    void
+    do_on_tcp_established();
+
     // This callback is invoked by the network thread when some bytes have been
     // received, and is intended to be overriden by derived classes.
     // The argument contains all data that have been accumulated so far. Callees
