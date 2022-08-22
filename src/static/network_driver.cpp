@@ -338,6 +338,9 @@ thread_loop()
         (event.events / EPOLLERR) & 1U, (event.events / EPOLLIN) & 1U, (event.events / EPOLLOUT) & 1U);
 
     if(event.events & (EPOLLHUP | EPOLLERR)) {
+      // Say so...
+      socket->m_state.store(socket_state_closed);
+
       // Get its error code, if an error has been reported.
       int err = 0;
       if(event.events & EPOLLERR) {
@@ -348,8 +351,6 @@ thread_loop()
 
       // Deliver the closure notification.
       POSEIDON_LOG_DEBUG(("Socket `$1` (class `$2`) closed: $3"), socket, typeid(*socket), format_errno(err));
-      socket->m_state.store(socket_state_closed);
-
       try {
         socket->do_abstract_socket_on_closed(err);
       }
@@ -375,8 +376,6 @@ thread_loop()
     if(event.events & EPOLLIN) {
       // Deliver the readability notification.
       POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) readable"), socket, typeid(*socket));
-      socket->m_state.store(socket_state_established);
-
       try {
         socket->do_abstract_socket_on_readable();
       }
@@ -397,8 +396,6 @@ thread_loop()
     if(event.events & EPOLLOUT) {
       // Deliver the writability notification.
       POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) writable"), socket, typeid(*socket));
-      socket->m_state.store(socket_state_established);
-
       try {
         socket->do_abstract_socket_on_writable();
       }

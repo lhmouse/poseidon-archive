@@ -44,6 +44,13 @@ class UDP_Socket
     void
     do_abstract_socket_on_exception(exception& stdex) override;
 
+    // This callback is invoked by the network thread when a port has been opened
+    // and incoming packets are possible.
+    // The default implemention merely prints a message.
+    virtual
+    void
+    do_on_udp_opened();
+
     // This callback is invoked by the network thread when a packet has been
     // received, and is intended to be overriden by derived classes.
     // These arguments compose a complete packet. The `data` object may be reused

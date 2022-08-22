@@ -61,11 +61,10 @@ do_abstract_socket_on_readable()
     // Try getting a packet from this socket.
     Socket_Address addr;
     ::socklen_t addrlen;
+    size_t datalen;
+  try_io:
     queue.clear();
     queue.reserve(0xFFFFU);
-    size_t datalen;
-
-  try_io:
     addrlen = addr.capacity();
     datalen = queue.capacity();
     ::ssize_t r = ::recvfrom(this->fd(), queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
@@ -103,25 +102,26 @@ do_abstract_socket_on_writable()
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
 
-    if(queue.empty())
-      return;
-
-    Socket_Address addr;
-    ::socklen_t addrlen;
-    size_t datalen;
-
     // Get a packet from the write queue. In the case of other errors, data shall
     // be removed from the write queue after the attempt to send, no matter whether
     // the operation has succeeded or not.
     // This piece of code must match `udp_send()`.
+    Socket_Address addr;
+    ::socklen_t addrlen;
+    size_t datalen;
+
     size_t ngot = queue.getn((char*) &addrlen, sizeof(addrlen));
-    ROCKET_ASSERT(ngot == sizeof(addrlen));
-    ngot = queue.getn((char*) &datalen, sizeof(datalen));
-    ROCKET_ASSERT(ngot == sizeof(datalen));
-    ngot = queue.getn((char*) addr.mut_data(), addrlen);
-    ROCKET_ASSERT(ngot == (uint32_t) addrlen);
-    ::ssize_t r = ::sendto(this->fd(), queue.begin(), datalen, 0, addr.addr(), addrlen);
-    queue.discard(datalen);
+    ::ssize_t r = 0;
+    if(ngot != 0) {
+      ROCKET_ASSERT(ngot == sizeof(addrlen));
+      ngot = queue.getn((char*) &datalen, sizeof(datalen));
+      ROCKET_ASSERT(ngot == sizeof(datalen));
+      ngot = queue.getn((char*) addr.mut_data(), addrlen);
+      ROCKET_ASSERT(ngot == (uint32_t) addrlen);
+      r = ::sendto(this->fd(), queue.begin(), datalen, 0, addr.addr(), addrlen);
+      queue.discard(datalen);
+    }
+    datalen = (size_t) r;
 
     if(r < 0) {
       switch(errno) {
@@ -144,6 +144,10 @@ do_abstract_socket_on_writable()
 
     // Report that some data have been written anyway.
     (void) datalen;
+
+    // Deliver the establishment notification.
+    if(ROCKET_UNEXPECT(this->do_set_established()))
+      this->do_on_udp_opened();
   }
 
 void
@@ -154,6 +158,16 @@ do_abstract_socket_on_exception(exception& stdex)
         "Ignoring exception: $3",
         "[UDP socket `$1` (class `$2`)]"),
         this, typeid(*this), stdex);
+  }
+
+void
+UDP_Socket::
+do_on_udp_opened()
+  {
+    POSEIDON_LOG_INFO((
+        "UDP socket on `$3` opened",
+        "[UDP socket `$1` (class `$2`)]"),
+        this, typeid(*this), this->get_local_address());
   }
 
 void

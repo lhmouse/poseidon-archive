@@ -108,8 +108,9 @@ do_abstract_socket_on_writable()
   try_io:
     datalen = queue.size();
     ::ssize_t r = 0;
-    if(datalen != 0)
+    if(datalen != 0) {
       r = ::send(this->fd(), queue.begin(), datalen, 0);
+    }
     datalen = (size_t) r;
 
     if(r < 0) {
