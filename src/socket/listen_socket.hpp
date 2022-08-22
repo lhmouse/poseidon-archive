@@ -44,7 +44,7 @@ class Listen_Socket
     // should return a pointer to a socket object, constructed from the given FD.
     virtual
     shared_ptr<Abstract_Socket>
-    do_on_new_client_opt(unique_posix_fd&& fd)
+    do_on_listen_new_client_opt(unique_posix_fd&& fd)
       = 0;
 
   public:

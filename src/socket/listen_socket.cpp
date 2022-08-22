@@ -84,7 +84,7 @@ do_abstract_socket_on_readable()
     }
 
     // Create the session object.
-    auto client = this->do_on_new_client_opt(::std::move(fd));
+    auto client = this->do_on_listen_new_client_opt(::std::move(fd));
     if(!client)
       POSEIDON_THROW((
           "Null pointer returned from `do_on_new_client_opt()`",

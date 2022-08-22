@@ -44,7 +44,7 @@ struct Example_Server : Listen_Socket
       }
 
     shared_ptr<Abstract_Socket>
-    do_on_new_client_opt(unique_posix_fd&& fd) override
+    do_on_listen_new_client_opt(unique_posix_fd&& fd) override
       {
         recursive_mutex::unique_lock io_lock;
         auto& driver = this->do_abstract_socket_lock_driver(io_lock);
