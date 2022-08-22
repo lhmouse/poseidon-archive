@@ -183,6 +183,7 @@ enum Log_Level : uint8_t
                (::asteria::make_string_template TEMPLATE), ##__VA_ARGS__);  \
          }  \
          catch(::std::exception& xSG022wB) {  \
+           iQw3Zbsf.level = ::poseidon::log_level_error;  \
            iQw3Zbsf.text = ::asteria::format_string(  \
                "Failed to compose log message: $1", xSG022wB);  \
          }  \
