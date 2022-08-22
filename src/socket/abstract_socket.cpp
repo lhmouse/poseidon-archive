@@ -28,6 +28,8 @@ Abstract_Socket(unique_posix_fd&& fd)
    int fl_new = fl_old | O_NONBLOCK;
    if(fl_new != fl_old)
      ::fcntl(this->fd(), F_SETFL, fl_new);
+
+    this->m_state.store(socket_state_accepted);
   }
 
 Abstract_Socket::
@@ -40,6 +42,8 @@ Abstract_Socket(int family, int type, int protocol)
           "Could not create socket: family `$2`, type `$3`, protocol `$4`",
           "[`fcntl()` failed: $1]"),
           format_errno(), family, type, protocol);
+
+    this->m_state.store(socket_state_connecting);
   }
 
 Abstract_Socket::

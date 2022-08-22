@@ -39,6 +39,7 @@ SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
           "[SSL socket `$1` (class `$2`)]"),
           this, typeid(*this), ::ERR_reason_error_string(::ERR_peek_error()));
 
+    ROCKET_ASSERT(this->socket_state() == socket_state_accepted);
     ::SSL_set_accept_state(this->ssl());
 
     // Use `TCP_NODELAY`. Errors are ignored.
@@ -72,6 +73,7 @@ SSL_Socket(int family, const SSL_CTX_ptr& ssl_ctx)
           "[SSL socket `$1` (class `$2`)]"),
           this, typeid(*this), ::ERR_reason_error_string(::ERR_peek_error()));
 
+    ROCKET_ASSERT(this->socket_state() == socket_state_connecting);
     ::SSL_set_connect_state(this->ssl());
 
     // Use `TCP_NODELAY`. Errors are ignored.
