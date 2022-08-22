@@ -29,7 +29,7 @@ Abstract_Socket(unique_posix_fd&& fd)
    if(fl_new != fl_old)
      ::fcntl(this->fd(), F_SETFL, fl_new);
 
-    this->m_state.store(socket_state_accepted);
+    this->m_state.store(socket_state_established);
   }
 
 Abstract_Socket::
