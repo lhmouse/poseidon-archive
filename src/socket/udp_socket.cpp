@@ -10,6 +10,27 @@
 namespace poseidon {
 
 UDP_Socket::
+UDP_Socket(const Socket_Address& addr)
+  : Abstract_Socket(addr.family(), SOCK_DGRAM, IPPROTO_UDP)
+  {
+    // Use `SO_REUSEADDR`. Errors are ignored.
+    int ival = 1;
+    ::setsockopt(this->fd(), SOL_SOCKET, SO_REUSEADDR, &ival, sizeof(ival));
+
+    if(::bind(this->fd(), addr.addr(), addr.ssize()) != 0)
+      POSEIDON_THROW((
+          "Failed to bind UDP socket onto `$4`",
+          "[`bind()` failed: $3]",
+          "[UDP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno(), addr);
+
+    POSEIDON_LOG_INFO((
+        "UDP server started listening on `$3`",
+        "[UDP socket `$1` (class `$2`)]"),
+        this, typeid(*this), this->get_local_address());
+  }
+
+UDP_Socket::
 UDP_Socket(int family)
   : Abstract_Socket(family, SOCK_DGRAM, IPPROTO_UDP)
   {
@@ -18,6 +39,16 @@ UDP_Socket(int family)
 UDP_Socket::
 ~UDP_Socket()
   {
+  }
+
+void
+UDP_Socket::
+do_abstract_socket_on_closed(int err)
+  {
+    POSEIDON_LOG_INFO((
+        "UDP socket on `$3` closed: $4",
+        "[UDP socket `$1` (class `$2`)]"),
+        this, typeid(*this), this->get_local_address(), format_errno(err));
   }
 
 void

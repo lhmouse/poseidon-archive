@@ -16,6 +16,7 @@ class Listen_Socket
     // This class adds no data member.
 
   protected:
+    // Server-side constructor:
     // Creates a socket that is bound onto the given address.
     explicit
     Listen_Socket(const Socket_Address& addr);

@@ -127,18 +127,9 @@ class Abstract_Socket;
 class Listen_Socket;
 class SSL_ptr;
 class SSL_CTX_ptr;
-
 class UDP_Socket;
-class UDP_Server_Socket;
-class UDP_Client_Socket;
-
 class TCP_Socket;
-class TCP_Server_Socket;
-class TCP_Client_Socket;
-
 class SSL_Socket;
-class SSL_Server_Socket;
-class SSL_Client_Socket;
 
 // Manager types and instances
 extern atomic_signal exit_signal;

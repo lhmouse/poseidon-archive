@@ -3,7 +3,7 @@
 
 #include "../src/precompiled.ipp"
 #include "../src/socket/listen_socket.hpp"
-#include "../src/socket/tcp_server_socket.hpp"
+#include "../src/socket/tcp_socket.hpp"
 #include "../src/static/network_driver.hpp"
 #include "../src/static/async_logger.hpp"
 #include "../src/utils.hpp"
@@ -14,11 +14,11 @@ using namespace poseidon;
 constexpr char bind[] = "[::]";
 constexpr uint16_t port = 3809;
 
-struct Example_Session : TCP_Server_Socket
+struct Example_Session : TCP_Socket
   {
     explicit
     Example_Session(unique_posix_fd&& fd)
-      : TCP_Server_Socket(::std::move(fd))
+      : TCP_Socket(::std::move(fd))
       {
       }
 

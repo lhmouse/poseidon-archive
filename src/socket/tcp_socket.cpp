@@ -17,20 +17,47 @@ TCP_Socket(unique_posix_fd&& fd)
     // Use `TCP_NODELAY`. Errors are ignored.
     int ival = 1;
     ::setsockopt(this->fd(), IPPROTO_TCP, TCP_NODELAY, &ival, sizeof(ival));
+
+    POSEIDON_LOG_INFO((
+        "Accepted TCP connection from `$3`",
+        "[TCP socket `$1` (class `$2`)]"),
+        this, typeid(*this), this->get_remote_address());
   }
 
 TCP_Socket::
-TCP_Socket(int family)
-  : Abstract_Socket(family, SOCK_STREAM, IPPROTO_TCP)
+TCP_Socket(const Socket_Address& addr)
+  : Abstract_Socket(addr.family(), SOCK_STREAM, IPPROTO_TCP)
   {
     // Use `TCP_NODELAY`. Errors are ignored.
     int ival = 1;
     ::setsockopt(this->fd(), IPPROTO_TCP, TCP_NODELAY, &ival, sizeof(ival));
+
+    if((::connect(this->fd(), addr.addr(), addr.ssize()) != 0) && (errno != EINPROGRESS))
+      POSEIDON_THROW((
+          "Failed to initiate TCP connection to `$4`",
+          "[`connect()` failed: $3]",
+          "[TCP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno(), addr);
+
+    POSEIDON_LOG_INFO((
+        "Establishing new TCP connection to `$3`",
+        "[TCP socket `$1` (class `$2`)]"),
+        this, typeid(*this), addr);
   }
 
 TCP_Socket::
 ~TCP_Socket()
   {
+  }
+
+void
+TCP_Socket::
+do_abstract_socket_on_closed(int err)
+  {
+    POSEIDON_LOG_INFO((
+        "TCP connection to `$3` closed: $4",
+        "[TCP socket `$1` (class `$2`)]"),
+        this, typeid(*this), this->get_remote_address(), format_errno(err));
   }
 
 void

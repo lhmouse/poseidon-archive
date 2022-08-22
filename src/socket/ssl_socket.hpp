@@ -20,18 +20,22 @@ class SSL_Socket
     mutable Socket_Address m_peername;
 
   protected:
-    // Takes ownership of an existent socket.
-    // The SSL structure is initialized in server mode (accept state).
+    // Server-side constructor:
+    // Takes ownership of an accepted socket.
     explicit
     SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx);
 
-    // Creates a new non-blocking socket.
-    // The SSL structure is initialized in client mode (connect state).
+    // Client-side constructor:
+    // Creates a new non-blocking socket to the target host.
     explicit
-    SSL_Socket(int family, const SSL_CTX_ptr& ssl_ctx);
+    SSL_Socket(const Socket_Address& addr, const SSL_CTX_ptr& ssl_ctx);
 
   protected:
     // These callbacks implement `Abstract_Socket`.
+    virtual
+    void
+    do_abstract_socket_on_closed(int err) override;
+
     virtual
     void
     do_abstract_socket_on_readable() override;

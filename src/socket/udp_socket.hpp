@@ -16,12 +16,22 @@ class UDP_Socket
     // This class adds no data member.
 
   protected:
-    // Creates a new non-blocking socket.
+    // Server-side constructor:
+    // Creates a socket that is bound onto the given address.
+    explicit
+    UDP_Socket(const Socket_Address& addr);
+
+    // Client-side constructor:
+    // Creates a socket that is bound onto a random address.
     explicit
     UDP_Socket(int family);
 
   protected:
     // These callbacks implement `Abstract_Socket`.
+    virtual
+    void
+    do_abstract_socket_on_closed(int err) override;
+
     virtual
     void
     do_abstract_socket_on_readable() override;

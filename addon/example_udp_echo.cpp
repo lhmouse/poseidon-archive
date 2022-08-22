@@ -2,7 +2,7 @@
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
 #include "../src/precompiled.ipp"
-#include "../src/socket/udp_server_socket.hpp"
+#include "../src/socket/udp_socket.hpp"
 #include "../src/static/network_driver.hpp"
 #include "../src/static/async_logger.hpp"
 #include "../src/utils.hpp"
@@ -13,11 +13,11 @@ using namespace poseidon;
 constexpr char bind[] = "[::]";
 constexpr uint16_t port = 3807;
 
-struct Example_Server : UDP_Server_Socket
+struct Example_Server : UDP_Socket
   {
     explicit
     Example_Server()
-      : UDP_Server_Socket(Socket_Address(::rocket::sref(bind), port))
+      : UDP_Socket(Socket_Address(::rocket::sref(bind), port))
       {
         POSEIDON_LOG_WARN(("example UDP server listening on `$1`"), this->get_local_address());
       }

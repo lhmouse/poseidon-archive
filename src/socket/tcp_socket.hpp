@@ -17,16 +17,22 @@ class TCP_Socket
     mutable Socket_Address m_peername;
 
   protected:
-    // Takes ownership of an existent socket.
+    // Server-side constructor:
+    // Takes ownership of an accepted socket.
     explicit
     TCP_Socket(unique_posix_fd&& fd);
 
-    // Creates a new non-blocking socket.
+    // Client-side constructor:
+    // Creates a new non-blocking socket to the target host.
     explicit
-    TCP_Socket(int family);
+    TCP_Socket(const Socket_Address& addr);
 
   protected:
     // These callbacks implement `Abstract_Socket`.
+    virtual
+    void
+    do_abstract_socket_on_closed(int err) override;
+
     virtual
     void
     do_abstract_socket_on_readable() override;
