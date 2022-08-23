@@ -139,7 +139,7 @@ do_abstract_socket_on_writable()
 
     // Deliver the establishment notification.
     if(ROCKET_UNEXPECT(this->do_set_established()))
-      this->do_on_tcp_established();
+      this->do_on_tcp_connected();
   }
 
 void
@@ -156,7 +156,7 @@ do_abstract_socket_on_exception(exception& stdex)
 
 void
 TCP_Socket::
-do_on_tcp_established()
+do_on_tcp_connected()
   {
     POSEIDON_LOG_INFO((
         "TCP connection to `$3` established",

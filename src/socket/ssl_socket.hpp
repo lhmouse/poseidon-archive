@@ -59,7 +59,7 @@ class SSL_Socket
     // The default implemention merely prints a message.
     virtual
     void
-    do_on_ssl_established();
+    do_on_ssl_connected();
 
     // This callback is invoked by the network thread when some bytes have been
     // received, and is intended to be overriden by derived classes.
@@ -117,7 +117,7 @@ class SSL_Socket
     // Gets the protocol that has been selected by ALPN.
     // For a server-side socket, this string equals the result of a previous
     // `do_on_ssl_alpn_request()` callback. For a client-side socket, this
-    // string is only available since the `do_on_ssl_established()` callback.
+    // string is only available since the `do_on_ssl_connected()` callback.
     // If no ALPN protocol has been selected, an empty string is returned.
     const cow_string&
     get_alpn_protocol() const noexcept

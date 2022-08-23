@@ -54,7 +54,7 @@ class TCP_Socket
     // The default implemention merely prints a message.
     virtual
     void
-    do_on_tcp_established();
+    do_on_tcp_connected();
 
     // This callback is invoked by the network thread when some bytes have been
     // received, and is intended to be overriden by derived classes.

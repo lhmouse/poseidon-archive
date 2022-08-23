@@ -278,7 +278,7 @@ do_abstract_socket_on_writable()
       this->m_alpn_proto.assign((const char*) outp, outn);
 
       // Deliver the establishment notification.
-      this->do_on_ssl_established();
+      this->do_on_ssl_connected();
     }
   }
 
@@ -296,7 +296,7 @@ do_abstract_socket_on_exception(exception& stdex)
 
 void
 SSL_Socket::
-do_on_ssl_established()
+do_on_ssl_connected()
   {
     POSEIDON_LOG_INFO((
         "SSL connection to `$3` established",
