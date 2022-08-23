@@ -13,6 +13,8 @@ class TCP_Socket
   : public Abstract_Socket
   {
   private:
+    friend class Network_Driver;
+
     mutable atomic_acq_rel<bool> m_peername_ready;
     mutable plain_mutex m_peername_mutex;
     mutable cow_string m_peername;

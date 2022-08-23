@@ -13,7 +13,7 @@ class Listen_Socket
   : public Abstract_Socket
   {
   private:
-    // This class adds no data member.
+    friend class Network_Driver;
 
   protected:
     // Server-side constructor:

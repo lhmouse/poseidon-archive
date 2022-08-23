@@ -15,6 +15,8 @@ class SSL_Socket
   : public Abstract_Socket
   {
   private:
+    friend class Network_Driver;
+
     SSL_ptr m_ssl;
 
     mutable atomic_acq_rel<bool> m_peername_ready;
