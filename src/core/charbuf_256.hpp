@@ -15,11 +15,28 @@ class charbuf_256
     char m_data[256];
 
   public:
-    // Initializes a null-terminated string of zero characters.
+    // Constructs a null-terminated string of zero characters.
     explicit
     charbuf_256() noexcept
       {
         this->m_data[0] = 0;
+      }
+
+    // Constructs a null-terminated string.
+    // This constructor is not explicit as it doesn't allocate memory.
+    charbuf_256(const char* str_opt)
+      {
+        const char* str = str_opt;
+        if(!str)
+          str = "";
+
+        size_t len = ::std::strlen(str);
+        if(len >= 256)
+          ::rocket::sprintf_and_throw<::std::length_error>(
+              "charbuf_256: string `%s` (length `%lld`) too long",
+              str, (long long) len);
+
+        ::std::memcpy(this->m_data, str, len + 1);
       }
 
   public:
