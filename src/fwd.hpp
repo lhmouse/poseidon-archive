@@ -11,7 +11,6 @@
 #include <rocket/mutex.hpp>
 #include <rocket/recursive_mutex.hpp>
 #include <rocket/condition_variable.hpp>
-#include <rocket/once_flag.hpp>
 #include <rocket/linear_buffer.hpp>
 #include <rocket/tinyfmt.hpp>
 #include <rocket/unique_posix_fd.hpp>
@@ -70,7 +69,6 @@ using atomic_signal = ::rocket::atomic_relaxed<int>;
 using plain_mutex = ::rocket::mutex;
 using ::rocket::recursive_mutex;
 using ::rocket::condition_variable;
-using ::rocket::once_flag;
 using ::rocket::cow_vector;
 using ::rocket::cow_hashmap;
 using ::rocket::static_vector;

@@ -288,23 +288,24 @@ do_on_ssl_established()
         this, typeid(*this), this->get_remote_address());
   }
 
-const Socket_Address&
+const cow_string&
 SSL_Socket::
 get_remote_address() const
   {
-    // Get the socket name and cache it.
-    this->m_peername_once.call(
-      [this] {
-        ::socklen_t addrlen = (::socklen_t) this->m_peername.capacity();
-        if(::getpeername(this->fd(), this->m_peername.mut_addr(), &addrlen) != 0)
-          POSEIDON_THROW((
-              "Could not get local address of socket",
-              "[`getpeername()` failed: $1]"),
-              format_errno());
+    if(!this->m_peername_ready.load()) {
+      plain_mutex::unique_lock lock(this->m_peername_mutex);
 
-        // Accept the address.
-        this->m_peername.set_size(addrlen);
-      });
+      // Try getting the address.
+      Socket_Address addr;
+      ::socklen_t addrlen = (::socklen_t) addr.capacity();
+      if(::getpeername(this->fd(), addr.mut_addr(), &addrlen) != 0)
+        return this->m_peername = format_string("(error: $1)", format_errno());
+
+      // Cache the result.
+      addr.set_size(addrlen);
+      this->m_peername = addr.format();
+      this->m_peername_ready.store(true);
+    }
     return this->m_peername;
   }
 

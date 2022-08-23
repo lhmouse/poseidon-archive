@@ -13,8 +13,9 @@ class TCP_Socket
   : public Abstract_Socket
   {
   private:
-    mutable once_flag m_peername_once;
-    mutable Socket_Address m_peername;
+    mutable atomic_acq_rel<bool> m_peername_ready;
+    mutable plain_mutex m_peername_mutex;
+    mutable cow_string m_peername;
 
   protected:
     // Server-side constructor:
@@ -65,9 +66,10 @@ class TCP_Socket
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(TCP_Socket);
 
-    // Gets the remote or connected address of this socket.
-    // This function is thread-safe.
-    const Socket_Address&
+    // Gets the remote or connected address of this socket as a human-readable
+    // string. In case of errors, a string with information about the error is
+    // returned instead.
+    const cow_string&
     get_remote_address() const;
 
     // Enqueues some bytes for sending.

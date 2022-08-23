@@ -51,23 +51,24 @@ Abstract_Socket::
   {
   }
 
-const Socket_Address&
+const cow_string&
 Abstract_Socket::
 get_local_address() const
   {
-    // Get the socket name and cache it.
-    this->m_sockname_once.call(
-      [this] {
-        ::socklen_t addrlen = (::socklen_t) this->m_sockname.capacity();
-        if(::getsockname(this->fd(), this->m_sockname.mut_addr(), &addrlen) != 0)
-          POSEIDON_THROW((
-              "Could not get local address of socket",
-              "[`getsockname()` failed: $1]"),
-              format_errno());
+    if(!this->m_sockname_ready.load()) {
+      plain_mutex::unique_lock lock(this->m_sockname_mutex);
 
-        // Accept the address.
-        this->m_sockname.set_size(addrlen);
-      });
+      // Try getting the address.
+      Socket_Address addr;
+      ::socklen_t addrlen = (::socklen_t) addr.capacity();
+      if(::getsockname(this->fd(), addr.mut_addr(), &addrlen) != 0)
+        return this->m_sockname = format_string("(error: $1)", format_errno());
+
+      // Cache the result.
+      addr.set_size(addrlen);
+      this->m_sockname = addr.format();
+      this->m_sockname_ready.store(true);
+    }
     return this->m_sockname;
   }
 
