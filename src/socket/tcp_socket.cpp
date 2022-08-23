@@ -64,15 +64,17 @@ do_abstract_socket_on_readable()
   try_io:
     queue.reserve(0xFFFFU);
     r = ::recv(this->fd(), queue.mut_end(), queue.capacity(), 0);
-
     if(r == 0) {
       // Shut the connection down. Semi-open connections are not supported.
       POSEIDON_LOG_INFO(("Closing TCP connection: remote = $1"), this->get_remote_address());
       ::shutdown(this->fd(), SHUT_RDWR);
       return;
     }
-
-    if(r < 0) {
+    else if(r > 0) {
+      // success
+      queue.accept((size_t) r);
+    }
+    else {
       switch(errno) {
         case EINTR:
           goto try_io;
@@ -91,8 +93,6 @@ do_abstract_socket_on_readable()
           this, typeid(*this), format_errno());
     }
 
-    // Accept these data.
-    queue.accept((size_t) r);
     this->do_on_tcp_stream(queue);
   }
 
@@ -107,13 +107,15 @@ do_abstract_socket_on_writable()
     // Send some bytes from the write queue.
   try_io:
     r = 0;
-    if(!queue.empty())
+    if(!queue.empty()) {
+      // This syscall can be skipped if there are no data to send.
       r = ::send(this->fd(), queue.begin(), queue.size(), 0);
-
-    if(r > 0)
+    }
+    if(r >= 0) {
+      // success
       queue.discard((size_t) r);
-
-    if(r < 0) {
+    }
+    else {
       switch(errno) {
         case EINTR:
           goto try_io;

@@ -32,9 +32,9 @@ SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
           "[SSL socket `$1` (class `$2`)]"),
           this, typeid(*this), ::ERR_reason_error_string(::ERR_peek_error()));
 
-    ::SSL_set_accept_state(this->ssl());
+    ::SSL_set_accept_state(this->m_ssl);
 
-    if(!::SSL_set_fd(this->ssl(), this->fd()))
+    if(!::SSL_set_fd(this->m_ssl, this->fd()))
       POSEIDON_THROW((
           "Could not allocate SSL BIO for incoming connection",
           "[`SSL_set_fd()` failed: $3]",
@@ -65,9 +65,9 @@ SSL_Socket(const Socket_Address& addr, const SSL_CTX_ptr& ssl_ctx)
           "[SSL socket `$1` (class `$2`)]"),
           this, typeid(*this), ::ERR_reason_error_string(::ERR_peek_error()));
 
-    ::SSL_set_connect_state(this->ssl());
+    ::SSL_set_connect_state(this->m_ssl);
 
-    if(!::SSL_set_fd(this->ssl(), this->fd()))
+    if(!::SSL_set_fd(this->m_ssl, this->fd()))
       POSEIDON_THROW((
           "Could not allocate SSL BIO for outgoing connection",
           "[`SSL_set_fd()` failed: $3]",
@@ -171,10 +171,16 @@ do_abstract_socket_on_readable()
     // Try getting some bytes from this socket.
   try_io:
     queue.reserve(0xFFFFU);
-    r = ::SSL_read_ex(this->ssl(), queue.mut_end(), queue.capacity(), &datalen);
+    r = ::SSL_read_ex(this->m_ssl, queue.mut_end(), queue.capacity(), &datalen);
+    if(r != 0) {
+      // success
+      queue.accept(datalen);
 
-    if(r == 0) {
-      int ssl_err = ::SSL_get_error(this->ssl(), r);
+      if(::SSL_has_pending(this->m_ssl))
+        goto try_io;
+    }
+    else {
+      int ssl_err = ::SSL_get_error(this->m_ssl, r);
       if(is_any_of(ssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
         goto try_io;
 
@@ -187,7 +193,7 @@ do_abstract_socket_on_readable()
           // Shut the connection down. Semi-open connections are not supported.
           // Send a close_notify alert, but don't wait for its response. If the
           // alert cannot be sent, ignore the error and force shutdown anyway.
-          ssl_err = ::SSL_shutdown(this->ssl());
+          ssl_err = ::SSL_shutdown(this->m_ssl);
           POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, alert_received = $2"), this->get_remote_address(), ssl_err == 1);
           ::shutdown(this->fd(), SHUT_RDWR);
           return;
@@ -219,8 +225,6 @@ do_abstract_socket_on_readable()
           this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
     }
 
-    // Accept these data.
-    queue.accept(datalen);
     this->do_on_ssl_stream(queue);
   }
 
@@ -235,13 +239,13 @@ do_abstract_socket_on_writable()
 
     // Send some bytes from the write queue.
   try_io:
-    r = ::SSL_write_ex(this->ssl(), queue.begin(), queue.size(), &datalen);
-
-    if(r != 0)
+    r = ::SSL_write_ex(this->m_ssl, queue.begin(), queue.size(), &datalen);
+    if(r != 0) {
+      // success
       queue.discard(datalen);
-
-    if(r == 0) {
-      int ssl_err = ::SSL_get_error(this->ssl(), r);
+    }
+    else {
+      int ssl_err = ::SSL_get_error(this->m_ssl, r);
       if(is_any_of(ssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
         goto try_io;
 
@@ -381,7 +385,7 @@ bool
 SSL_Socket::
 ssl_shut_down() noexcept
   {
-    ::SSL_shutdown(this->ssl());
+    ::SSL_shutdown(this->m_ssl);
     return ::shutdown(this->fd(), SHUT_RDWR) == 0;
   }
 

@@ -59,18 +59,21 @@ do_abstract_socket_on_readable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
-    Socket_Address addr;
-    ::socklen_t addrlen;
     ::ssize_t r;
 
     // Try getting a packet from this socket.
   try_io:
     queue.clear();
     queue.reserve(0xFFFFU);
-    addrlen = addr.capacity();
+    Socket_Address addr;
+    ::socklen_t addrlen = addr.capacity();
     r = ::recvfrom(this->fd(), queue.mut_end(), queue.capacity(), 0, addr.mut_addr(), &addrlen);
-
-    if(r < 0) {
+    if(r >= 0) {
+      // success
+      addr.set_size(addrlen);
+      queue.accept((size_t) r);
+    }
+    else {
       switch(errno) {
         case EINTR:
           goto try_io;
@@ -89,9 +92,6 @@ do_abstract_socket_on_readable()
           this, typeid(*this), format_errno());
     }
 
-    // Accept this packet.
-    addr.set_size(addrlen);
-    queue.accept((size_t) r);
     this->do_on_udp_packet(::std::move(addr), ::std::move(queue));
   }
 
@@ -101,17 +101,18 @@ do_abstract_socket_on_writable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
-    Socket_Address addr;
-    ::socklen_t addrlen;
-    size_t datalen;
     ::ssize_t r;
 
     // Get a packet from the write queue. In the case of other errors, data shall
     // be removed from the write queue after the attempt to send, no matter whether
     // the operation has succeeded or not.
-    // This piece of code must match `udp_send()`.
     r = 0;
     if(!queue.empty()) {
+      // This piece of code must match `udp_send()`.
+      Socket_Address addr;
+      ::socklen_t addrlen;
+      size_t datalen;
+
       size_t ngot = queue.getn((char*) &addrlen, sizeof(addrlen));
       ROCKET_ASSERT(ngot == sizeof(addrlen));
       ngot = queue.getn((char*) &datalen, sizeof(datalen));
@@ -122,7 +123,6 @@ do_abstract_socket_on_writable()
       r = ::sendto(this->fd(), queue.begin(), datalen, 0, addr.addr(), addrlen);
       queue.discard(datalen);
     }
-
     if(r < 0) {
       switch(errno) {
         case EINTR:
