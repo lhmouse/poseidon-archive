@@ -107,11 +107,11 @@ do_abstract_socket_on_writable()
     // Send some bytes from the write queue.
   try_io:
     r = 0;
-    if(!queue.empty()) {
+    if(!queue.empty())
       r = ::send(this->fd(), queue.begin(), queue.size(), 0);
-      if(r > 0)
-        queue.discard((size_t) r);
-    }
+
+    if(r > 0)
+      queue.discard((size_t) r);
 
     if(r < 0) {
       switch(errno) {

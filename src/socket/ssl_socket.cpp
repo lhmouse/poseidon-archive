@@ -165,14 +165,17 @@ do_abstract_socket_on_readable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
+    size_t datalen;
+    int r;
 
     // Try getting some bytes from this socket.
-    size_t datalen;
   try_io:
     queue.reserve(0xFFFFU);
     datalen = queue.capacity();
-    if(!::SSL_read_ex(this->ssl(), queue.mut_end(), datalen, &datalen)) {
-      int ssl_err = ::SSL_get_error(this->ssl(), 0);
+    r = ::SSL_read_ex(this->ssl(), queue.mut_end(), datalen, &datalen);
+
+    if(r == 0) {
+      int ssl_err = ::SSL_get_error(this->ssl(), r);
       if(is_any_of(ssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
         goto try_io;
 
@@ -228,13 +231,19 @@ do_abstract_socket_on_writable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
+    size_t datalen;
+    int r;
 
     // Send some bytes from the write queue.
-    size_t datalen;
   try_io:
     datalen = queue.size();
-    if(!::SSL_write_ex(this->ssl(), queue.begin(), datalen, &datalen)) {
-      int ssl_err = ::SSL_get_error(this->ssl(), 0);
+    r = ::SSL_write_ex(this->ssl(), queue.begin(), datalen, &datalen);
+
+    if(r != 0)
+      queue.discard(datalen);
+
+    if(r == 0) {
+      int ssl_err = ::SSL_get_error(this->ssl(), r);
       if(is_any_of(ssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
         goto try_io;
 
@@ -265,9 +274,6 @@ do_abstract_socket_on_writable()
           "[SSL socket `$1` (class `$2`)]"),
           this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
     }
-
-    // Remove sent bytes from the write queue.
-    queue.discard(datalen);
 
     if(ROCKET_UNEXPECT(this->do_set_established())) {
       // Get the ALPN response, if any.

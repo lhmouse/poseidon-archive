@@ -59,18 +59,15 @@ do_abstract_socket_on_readable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
+    ::ssize_t r;
 
     // Try getting a packet from this socket.
-    Socket_Address addr;
-    ::socklen_t addrlen;
-    size_t datalen;
   try_io:
     queue.clear();
     queue.reserve(0xFFFFU);
-    addrlen = addr.capacity();
-    datalen = queue.capacity();
-    ::ssize_t r = ::recvfrom(this->fd(), queue.mut_end(), datalen, 0, addr.mut_addr(), &addrlen);
-    datalen = (size_t) r;
+    Socket_Address addr;
+    ::socklen_t addrlen = addr.capacity();
+    r = ::recvfrom(this->fd(), queue.mut_end(), queue.capacity(), 0, addr.mut_addr(), &addrlen);
 
     if(r < 0) {
       switch(errno) {
@@ -93,7 +90,7 @@ do_abstract_socket_on_readable()
 
     // Accept this packet.
     addr.set_size(addrlen);
-    queue.accept(datalen);
+    queue.accept((size_t) r);
     this->do_on_udp_packet(::std::move(addr), ::std::move(queue));
   }
 
@@ -103,27 +100,29 @@ do_abstract_socket_on_writable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
+    ::ssize_t r;
 
     // Get a packet from the write queue. In the case of other errors, data shall
     // be removed from the write queue after the attempt to send, no matter whether
     // the operation has succeeded or not.
     // This piece of code must match `udp_send()`.
-    Socket_Address addr;
-    ::socklen_t addrlen;
-    size_t datalen;
+    r = 0;
+    if(!queue.empty()) {
+      size_t ngot;
+      Socket_Address addr;
+      ::socklen_t addrlen;
+      size_t datalen;
 
-    size_t ngot = queue.getn((char*) &addrlen, sizeof(addrlen));
-    ::ssize_t r = 0;
-    if(ngot != 0) {
+      ngot = queue.getn((char*) &addrlen, sizeof(addrlen));
       ROCKET_ASSERT(ngot == sizeof(addrlen));
       ngot = queue.getn((char*) &datalen, sizeof(datalen));
       ROCKET_ASSERT(ngot == sizeof(datalen));
       ngot = queue.getn((char*) addr.mut_data(), addrlen);
       ROCKET_ASSERT(ngot == (uint32_t) addrlen);
+
       r = ::sendto(this->fd(), queue.begin(), datalen, 0, addr.addr(), addrlen);
       queue.discard(datalen);
     }
-    datalen = (size_t) r;
 
     if(r < 0) {
       switch(errno) {
@@ -144,12 +143,10 @@ do_abstract_socket_on_writable()
           this, typeid(*this), format_errno());
     }
 
-    // Report that some data have been written anyway.
-    (void) datalen;
-
-    // Deliver the establishment notification.
-    if(ROCKET_UNEXPECT(this->do_set_established()))
+    if(ROCKET_UNEXPECT(this->do_set_established())) {
+      // Deliver the establishment notification.
       this->do_on_udp_opened();
+    }
   }
 
 void
