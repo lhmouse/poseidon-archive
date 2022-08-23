@@ -58,14 +58,12 @@ do_abstract_socket_on_readable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
+    ::ssize_t r;
 
     // Try getting some bytes from this socket.
-    size_t datalen;
   try_io:
     queue.reserve(0xFFFFU);
-    datalen = queue.capacity();
-    ::ssize_t r = ::recv(this->fd(), queue.mut_end(), datalen, 0);
-    datalen = (size_t) r;
+    r = ::recv(this->fd(), queue.mut_end(), queue.capacity(), 0);
 
     if(r == 0) {
       // Shut the connection down. Semi-open connections are not supported.
@@ -94,7 +92,7 @@ do_abstract_socket_on_readable()
     }
 
     // Accept these data.
-    queue.accept(datalen);
+    queue.accept((size_t) r);
     this->do_on_tcp_stream(queue);
   }
 
@@ -104,16 +102,16 @@ do_abstract_socket_on_writable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
+    ::ssize_t r;
 
     // Send some bytes from the write queue.
-    size_t datalen;
   try_io:
-    datalen = queue.size();
-    ::ssize_t r = 0;
-    if(datalen != 0) {
-      r = ::send(this->fd(), queue.begin(), datalen, 0);
+    r = 0;
+    if(!queue.empty()) {
+      r = ::send(this->fd(), queue.begin(), queue.size(), 0);
+      if(r > 0)
+        queue.discard((size_t) r);
     }
-    datalen = (size_t) r;
 
     if(r < 0) {
       switch(errno) {
@@ -134,12 +132,10 @@ do_abstract_socket_on_writable()
           this, typeid(*this), format_errno());
     }
 
-    // Remove sent bytes from the write queue.
-    queue.discard(datalen);
-
-    // Deliver the establishment notification.
-    if(ROCKET_UNEXPECT(this->do_set_established()))
+    if(ROCKET_UNEXPECT(this->do_set_established())) {
+      // Deliver the establishment notification.
       this->do_on_tcp_connected();
+    }
   }
 
 void
