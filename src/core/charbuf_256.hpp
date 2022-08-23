@@ -22,41 +22,41 @@ class charbuf_256
         this->m_data[0] = 0;
       }
 
-   public:
-     // Swaps two buffers.
-     charbuf_256&
-     swap(charbuf_256& other) noexcept
-       {
-         char temp[256];
-         ::std::memcpy(temp, other.m_data, sizeof(temp));
-         ::std::memcpy(other.m_data, this->m_data, sizeof(temp));
-         ::std::memcpy(this->m_data, temp, sizeof(temp));
-         return *this;
-       }
+  public:
+    // Swaps two buffers.
+    charbuf_256&
+    swap(charbuf_256& other) noexcept
+      {
+        char temp[256];
+        ::std::memcpy(temp, other.m_data, sizeof(temp));
+        ::std::memcpy(other.m_data, this->m_data, sizeof(temp));
+        ::std::memcpy(this->m_data, temp, sizeof(temp));
+        return *this;
+      }
 
-     // Performs 3-way comparison of two buffers.
-     int
-     compare(const charbuf_256& other) const noexcept
-       {
-         return ::std::strcmp(this->m_data, other.m_data);
-       }
+    // Performs 3-way comparison of two buffers.
+    int
+    compare(const charbuf_256& other) const noexcept
+      {
+        return ::std::strcmp(this->m_data, other.m_data);
+      }
 
-     int
-     compare(const char* other) const noexcept
-       {
-         return ::std::strcmp(this->m_data, other);
-       }
+    int
+    compare(const char* other) const noexcept
+      {
+        return ::std::strcmp(this->m_data, other);
+      }
 
-     // Returns a pointer to internal storage so a buffer can be passed as
-     // an argument for `char*`.
-     constexpr operator
-     const char*() const noexcept
-       { return this->m_data;  }
+    // Returns a pointer to internal storage so a buffer can be passed as
+    // an argument for `char*`.
+    constexpr operator
+    const char*() const noexcept
+      { return this->m_data;  }
 
-     operator
-     char*() noexcept
-       { return this->m_data;  }
-   };
+    operator
+    char*() noexcept
+      { return this->m_data;  }
+  };
 
 inline
 void
