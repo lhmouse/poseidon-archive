@@ -81,30 +81,26 @@ class Abstract_Socket
     // case of an error.
     virtual
     void
-    do_abstract_socket_on_closed(int err)
-      = 0;
+    do_abstract_socket_on_closed(int err) = 0;
 
     // This callback is invoked by the network thread when incoming data are
     // available, and is intended to be overriden by derived classes.
     virtual
     void
-    do_abstract_socket_on_readable()
-      = 0;
+    do_abstract_socket_on_readable() = 0;
 
     // This callback is invoked by the network thread when outgoing data are
     // possible, and is intended to be overriden by derived classes.
     virtual
     void
-    do_abstract_socket_on_writable()
-      = 0;
+    do_abstract_socket_on_writable() = 0;
 
     // This callback is invoked by the network thread after an exception has
     // been thrown and caught from `do_abstract_socket_on_readable()` and
     // `do_abstract_socket_on_writable()` callbacks.
     virtual
     void
-    do_abstract_socket_on_exception(exception& stdex)
-      = 0;
+    do_abstract_socket_on_exception(exception& stdex) = 0;
 
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Socket);

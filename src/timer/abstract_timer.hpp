@@ -28,8 +28,7 @@ class Abstract_Timer
     // system startup.
     virtual
     void
-    do_abstract_timer_on_tick(int64_t now)
-      = 0;
+    do_abstract_timer_on_tick(int64_t now) = 0;
 
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Timer);

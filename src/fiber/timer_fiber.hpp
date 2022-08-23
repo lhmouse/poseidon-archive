@@ -37,8 +37,7 @@ class Timer_Fiber
     // has been generated for this timer, both measured by the timer thread.
     virtual
     void
-    do_on_timer(int64_t now, int64_t count)
-      = 0;
+    do_on_timer(int64_t now, int64_t count) = 0;
 
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Timer_Fiber);

@@ -57,8 +57,7 @@ class UDP_Socket
     // for subsequent packets.
     virtual
     void
-    do_on_udp_packet(Socket_Address&& addr, linear_buffer&& data)
-      = 0;
+    do_on_udp_packet(Socket_Address&& addr, linear_buffer&& data) = 0;
 
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(UDP_Socket);

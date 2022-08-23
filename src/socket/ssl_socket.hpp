@@ -64,8 +64,7 @@ class SSL_Socket
     // should remove processed bytes.
     virtual
     void
-    do_on_ssl_stream(linear_buffer& data)
-      = 0;
+    do_on_ssl_stream(linear_buffer& data) = 0;
 
     // Prepares a list of protocols that will be sent to the server for
     // Application-Layer Protocol Negotiation (ALPN). This is meaningful only on

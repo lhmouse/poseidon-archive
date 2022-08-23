@@ -25,8 +25,7 @@ class Abstract_Async_Task
     // be overriden by derived classes.
     virtual
     void
-    do_abstract_task_on_execution()
-      = 0;
+    do_abstract_task_on_execution() = 0;
 
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Async_Task);

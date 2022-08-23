@@ -60,8 +60,7 @@ class TCP_Socket
     // should remove processed bytes.
     virtual
     void
-    do_on_tcp_stream(linear_buffer& data)
-      = 0;
+    do_on_tcp_stream(linear_buffer& data) = 0;
 
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(TCP_Socket);
