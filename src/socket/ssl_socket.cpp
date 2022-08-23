@@ -93,6 +93,56 @@ SSL_Socket::
 
 void
 SSL_Socket::
+do_ssl_alpn_request(const charbuf_256* protos_opt, size_t protos_size)
+  {
+    // Generate the list of protocols in wire format.
+    linear_buffer pbuf;
+
+    for(size_t k = 0;  k != protos_size;  ++k) {
+      const char* str = protos_opt[k];
+
+      // Empty protocol names are ignored.
+      size_t len = ::strlen(str);
+      if(len == 0)
+        continue;
+
+      ROCKET_ASSERT(len <= 255);
+      pbuf.putc((char) len);
+      pbuf.putn(str, len);
+      POSEIDON_LOG_TRACE(("Requesting ALPN protocol: $1"), str);
+    }
+
+    if(::SSL_set_alpn_protos(this->m_ssl, (const uint8_t*) pbuf.data(), (uint32_t) pbuf.size()) != 0)
+      POSEIDON_THROW((
+          "Failed to set ALPN protocol list",
+          "[`SSL_set_alpn_protos()` failed]",
+          "[SSL socket `$1` (class `$2`)]"),
+          this, typeid(*this));
+  }
+
+void
+SSL_Socket::
+do_ssl_alpn_request(const cow_vector<charbuf_256>& protos)
+  {
+    this->do_ssl_alpn_request(protos.data(), protos.size());
+  }
+
+void
+SSL_Socket::
+do_ssl_alpn_request(initializer_list<charbuf_256> protos)
+  {
+    this->do_ssl_alpn_request(protos.begin(), protos.size());
+  }
+
+void
+SSL_Socket::
+do_ssl_alpn_request(const charbuf_256& proto)
+  {
+    this->do_ssl_alpn_request(&proto, 1);
+  }
+
+void
+SSL_Socket::
 do_abstract_socket_on_closed(int err)
   {
     POSEIDON_LOG_INFO((

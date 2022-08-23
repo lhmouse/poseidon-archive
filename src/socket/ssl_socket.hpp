@@ -7,6 +7,7 @@
 #include "../fwd.hpp"
 #include "abstract_socket.hpp"
 #include "ssl_ptr.hpp"
+#include "../core/charbuf_256.hpp"
 
 namespace poseidon {
 
@@ -64,6 +65,24 @@ class SSL_Socket
     void
     do_on_ssl_stream(linear_buffer& data)
       = 0;
+
+    // Prepares a list of protocols that will be sent to the server for
+    // Application-Layer Protocol Negotiation (ALPN). This is meaningful only on
+    // a client-side socket. If ALPN is desired, this function shall be called
+    // before adding this socket into a network driver.
+    // The argument is the list of names of protocols that will be sent. Empty
+    // protocol names are ignored. If the list is empty, ALPN is not requested.
+    void
+    do_ssl_alpn_request(const charbuf_256* protos_opt, size_t protos_size);
+
+    void
+    do_ssl_alpn_request(const cow_vector<charbuf_256>& protos);
+
+    void
+    do_ssl_alpn_request(initializer_list<charbuf_256> protos);
+
+    void
+    do_ssl_alpn_request(const charbuf_256& proto);
 
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(SSL_Socket);
