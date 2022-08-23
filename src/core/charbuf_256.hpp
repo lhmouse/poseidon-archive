@@ -16,7 +16,7 @@ class charbuf_256
 
   public:
     // Constructs a null-terminated string of zero characters.
-    explicit
+    // This constructor is not explicit as it doesn't allocate memory.
     charbuf_256() noexcept
       {
         this->m_data[0] = 0;
@@ -80,6 +80,13 @@ void
 swap(charbuf_256& lhs, charbuf_256& rhs) noexcept
   {
     lhs.swap(rhs);
+  }
+
+inline
+tinyfmt&
+operator<<(tinyfmt& fmt, const charbuf_256& cbuf)
+  {
+    return fmt << (const char*) cbuf;
   }
 
 inline
