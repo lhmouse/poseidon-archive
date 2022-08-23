@@ -96,7 +96,7 @@ SSL_Socket::
 do_on_ssl_alpn_request(cow_vector<charbuf_256>&& protos)
   {
     (void) protos;
-    return {};
+    return { };
   }
 
 void
