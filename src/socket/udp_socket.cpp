@@ -59,14 +59,15 @@ do_abstract_socket_on_readable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
+    Socket_Address addr;
+    ::socklen_t addrlen;
     ::ssize_t r;
 
     // Try getting a packet from this socket.
   try_io:
     queue.clear();
     queue.reserve(0xFFFFU);
-    Socket_Address addr;
-    ::socklen_t addrlen = addr.capacity();
+    addrlen = addr.capacity();
     r = ::recvfrom(this->fd(), queue.mut_end(), queue.capacity(), 0, addr.mut_addr(), &addrlen);
 
     if(r < 0) {
@@ -100,6 +101,9 @@ do_abstract_socket_on_writable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
+    Socket_Address addr;
+    ::socklen_t addrlen;
+    size_t datalen;
     ::ssize_t r;
 
     // Get a packet from the write queue. In the case of other errors, data shall
@@ -108,12 +112,7 @@ do_abstract_socket_on_writable()
     // This piece of code must match `udp_send()`.
     r = 0;
     if(!queue.empty()) {
-      size_t ngot;
-      Socket_Address addr;
-      ::socklen_t addrlen;
-      size_t datalen;
-
-      ngot = queue.getn((char*) &addrlen, sizeof(addrlen));
+      size_t ngot = queue.getn((char*) &addrlen, sizeof(addrlen));
       ROCKET_ASSERT(ngot == sizeof(addrlen));
       ngot = queue.getn((char*) &datalen, sizeof(datalen));
       ROCKET_ASSERT(ngot == sizeof(datalen));

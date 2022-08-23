@@ -171,8 +171,7 @@ do_abstract_socket_on_readable()
     // Try getting some bytes from this socket.
   try_io:
     queue.reserve(0xFFFFU);
-    datalen = queue.capacity();
-    r = ::SSL_read_ex(this->ssl(), queue.mut_end(), datalen, &datalen);
+    r = ::SSL_read_ex(this->ssl(), queue.mut_end(), queue.capacity(), &datalen);
 
     if(r == 0) {
       int ssl_err = ::SSL_get_error(this->ssl(), r);
@@ -236,8 +235,7 @@ do_abstract_socket_on_writable()
 
     // Send some bytes from the write queue.
   try_io:
-    datalen = queue.size();
-    r = ::SSL_write_ex(this->ssl(), queue.begin(), datalen, &datalen);
+    r = ::SSL_write_ex(this->ssl(), queue.begin(), queue.size(), &datalen);
 
     if(r != 0)
       queue.discard(datalen);
