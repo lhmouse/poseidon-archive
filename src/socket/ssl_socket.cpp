@@ -91,6 +91,14 @@ SSL_Socket::
   {
   }
 
+charbuf_256
+SSL_Socket::
+do_on_ssl_alpn_request(cow_vector<charbuf_256>&& protos)
+  {
+    (void) protos;
+    return {};
+  }
+
 void
 SSL_Socket::
 do_ssl_alpn_request(const charbuf_256* protos_opt, size_t protos_size)
@@ -261,9 +269,17 @@ do_abstract_socket_on_writable()
     // Remove sent bytes from the write queue.
     queue.discard(datalen);
 
-    // Deliver the establishment notification.
-    if(ROCKET_UNEXPECT(this->do_set_established()))
+    if(ROCKET_UNEXPECT(this->do_set_established())) {
+      // Get the ALPN response, if any.
+      const uint8_t* outp;
+      unsigned outn;
+      ::SSL_get0_alpn_selected(this->m_ssl, &outp, &outn);
+
+      this->m_alpn_proto.assign((const char*) outp, outn);
+
+      // Deliver the establishment notification.
       this->do_on_ssl_established();
+    }
   }
 
 void

@@ -18,6 +18,7 @@ class SSL_Socket
     friend class Network_Driver;
 
     SSL_ptr m_ssl;
+    cow_string m_alpn_proto;
 
     mutable atomic_acq_rel<bool> m_peername_ready;
     mutable plain_mutex m_peername_mutex;
@@ -68,10 +69,23 @@ class SSL_Socket
     void
     do_on_ssl_stream(linear_buffer& data) = 0;
 
+    // Server-side ALPN support:
+    // This callback is invoked by the network thread when ALPN has been
+    // requested by the client. This function should return the name of protocol
+    // being selected. If an empty string is returned, no ALPN protocol will be
+    // selected.
+    // The argument is a list of names of protocols that have been sent by the
+    // client.
+    // The default implemention returns an empty string.
+    virtual
+    charbuf_256
+    do_on_ssl_alpn_request(cow_vector<charbuf_256>&& protos);
+
+    // Client-side ALPN support:
     // Prepares a list of protocols that will be sent to the server for
-    // Application-Layer Protocol Negotiation (ALPN). This is meaningful only on
-    // a client-side socket. If ALPN is desired, this function shall be called
-    // before adding this socket into a network driver.
+    // Application-Layer Protocol Negotiation (ALPN). If ALPN is desired, this
+    // function shall be called before this socket is assigned to a network
+    // driver.
     // The argument is the list of names of protocols that will be sent. Empty
     // protocol names are ignored. If the list is empty, ALPN is not requested.
     void
@@ -99,6 +113,15 @@ class SSL_Socket
     // returned instead.
     const cow_string&
     get_remote_address() const;
+
+    // Gets the protocol that has been selected by ALPN.
+    // For a server-side socket, this string equals the result of a previous
+    // `do_on_ssl_alpn_request()` callback. For a client-side socket, this
+    // string is only available since the `do_on_ssl_established()` callback.
+    // If no ALPN protocol has been selected, an empty string is returned.
+    const cow_string&
+    get_alpn_protocol() const noexcept
+      { return this->m_alpn_proto;  }
 
     // Enqueues some bytes for sending.
     // The return value merely indicates whether the attempt has succeeded. The

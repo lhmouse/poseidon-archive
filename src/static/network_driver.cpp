@@ -5,6 +5,7 @@
 #include "network_driver.hpp"
 #include "async_logger.hpp"
 #include "../socket/abstract_socket.hpp"
+#include "../socket/ssl_socket.hpp"
 #include "../core/config_file.hpp"
 #include "../utils.hpp"
 #include <sys/epoll.h>
@@ -276,6 +277,7 @@ thread_loop()
     plain_mutex::unique_lock lock(this->m_conf_mutex);
     const size_t event_buffer_size = this->m_event_buffer_size;
     const size_t throttle_size = this->m_throttle_size;
+    const auto server_ssl_ctx = this->m_server_ssl_ctx;
     lock.unlock();
 
     // Get an event from the event queue. If the queue has been exhausted, reload
@@ -373,6 +375,62 @@ thread_loop()
       return;
     }
 
+    SSL_Socket* ssl_sock = nullptr;
+    if(server_ssl_ctx)
+      ssl_sock = dynamic_cast<SSL_Socket*>(socket.get());
+
+    if(ssl_sock) {
+      // Set the ALPN callback.
+      auto alpn_callback = +[](::SSL*, const uint8_t** outp, uint8_t* outn, const uint8_t* inp,
+                               unsigned inn, void* arg) -> int
+        {
+          auto rsock = static_cast<SSL_Socket*>(arg);
+          POSEIDON_LOG_DEBUG(("Socket `$1` (class `$2`) ALPN callback"), rsock, typeid(*rsock));
+          try {
+            // Parse the client request.
+            cow_vector<charbuf_256> alpn_req;
+            auto bp = inp;
+            const auto ep = inp + inn;
+
+            while(bp != ep) {
+              size_t len = *bp;
+              ++ bp;
+              if((size_t) (ep - bp) < len)
+                return SSL_TLSEXT_ERR_ALERT_FATAL;  // malformed
+
+              char* str = alpn_req.emplace_back();
+              ::std::memcpy(str, bp, len);
+              str[len] = 0;
+              bp += len;
+              POSEIDON_LOG_TRACE(("Received ALPN protocol: $1"), str);
+            }
+
+            charbuf_256 alpn_resp = rsock->do_on_ssl_alpn_request(::std::move(alpn_req));
+            rsock->m_alpn_proto.assign(alpn_resp);
+
+            if(!rsock->m_alpn_proto.empty()) {
+              // Use this protocol.
+              *outp = (const uint8_t*) rsock->m_alpn_proto.data();
+              *outn = (uint8_t) rsock->m_alpn_proto.size();
+
+              POSEIDON_LOG_TRACE(("Responding ALPN protocol: $1"), rsock->m_alpn_proto);
+              return SSL_TLSEXT_ERR_OK;
+            }
+          }
+          catch(exception& stdex) {
+            POSEIDON_LOG_ERROR((
+                "Unhandled exception thrown from socket ALPN callback: $1",
+                "[socket class `$2`]"),
+                stdex, typeid(*rsock));
+          }
+
+          // Select no protocol.
+          return SSL_TLSEXT_ERR_NOACK;
+        };
+
+      ::SSL_CTX_set_alpn_select_cb(server_ssl_ctx, alpn_callback, ssl_sock);
+    }
+
     if(event.events & EPOLLIN) {
       // Deliver the readability notification.
       POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) readable"), socket, typeid(*socket));
@@ -413,6 +471,9 @@ thread_loop()
       if(!(event.events & EPOLLET) && (socket->m_io_write_queue.size() < throttle_size))
         do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_MOD, socket, EPOLLIN);
     }
+
+    if(ssl_sock)
+      ::SSL_CTX_set_alpn_select_cb(server_ssl_ctx, nullptr, nullptr);
 
     POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) I/O complete"), socket, typeid(*socket));
     socket->m_io_driver = (Network_Driver*) 123456789;
