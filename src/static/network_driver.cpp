@@ -381,8 +381,8 @@ thread_loop()
                                unsigned inn, void* arg) -> int
         {
           // Verify the socket.
-          // These errors shouldn't happen unless we have messed things up e.g. when
-          // `arg` is a dangling pointer.
+          // These errors shouldn't happen unless we have really messed things up
+          // e.g. when `arg` is a dangling pointer.
           auto rsock = dynamic_cast<SSL_Socket*>(static_cast<SSL_Socket*>(arg));
           if(!rsock)
             return SSL_TLSEXT_ERR_ALERT_FATAL;
