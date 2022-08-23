@@ -12,7 +12,8 @@ namespace poseidon {
 
 TCP_Socket::
 TCP_Socket(unique_posix_fd&& fd)
-  : Abstract_Socket(::std::move(fd))
+  :
+    Abstract_Socket(::std::move(fd))
   {
     // Use `TCP_NODELAY`. Errors are ignored.
     int ival = 1;
@@ -21,7 +22,8 @@ TCP_Socket(unique_posix_fd&& fd)
 
 TCP_Socket::
 TCP_Socket(const Socket_Address& addr)
-  : Abstract_Socket(addr.family(), SOCK_STREAM, IPPROTO_TCP)
+  :
+    Abstract_Socket(addr.family(), SOCK_STREAM, IPPROTO_TCP)
   {
     // Use `TCP_NODELAY`. Errors are ignored.
     int ival = 1;

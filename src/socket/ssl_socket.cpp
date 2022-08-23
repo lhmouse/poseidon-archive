@@ -15,7 +15,8 @@ namespace poseidon {
 
 SSL_Socket::
 SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
-  : Abstract_Socket(::std::move(fd))
+  :
+    Abstract_Socket(::std::move(fd))
   {
     // Create the SSL structure.
     if(!ssl_ctx)
@@ -47,7 +48,8 @@ SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
 
 SSL_Socket::
 SSL_Socket(const Socket_Address& addr, const SSL_CTX_ptr& ssl_ctx)
-  : Abstract_Socket(addr.family(), SOCK_STREAM, IPPROTO_TCP)
+  :
+    Abstract_Socket(addr.family(), SOCK_STREAM, IPPROTO_TCP)
   {
     // Create the SSL structure.
     if(!ssl_ctx)

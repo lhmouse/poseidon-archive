@@ -11,7 +11,8 @@ namespace poseidon {
 
 UDP_Socket::
 UDP_Socket(const Socket_Address& addr)
-  : Abstract_Socket(addr.family(), SOCK_DGRAM, IPPROTO_UDP)
+  :
+    Abstract_Socket(addr.family(), SOCK_DGRAM, IPPROTO_UDP)
   {
     // Use `SO_REUSEADDR`. Errors are ignored.
     int ival = 1;
@@ -32,7 +33,8 @@ UDP_Socket(const Socket_Address& addr)
 
 UDP_Socket::
 UDP_Socket(int family)
-  : Abstract_Socket(family, SOCK_DGRAM, IPPROTO_UDP)
+  :
+    Abstract_Socket(family, SOCK_DGRAM, IPPROTO_UDP)
   {
   }
 

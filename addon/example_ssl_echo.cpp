@@ -18,7 +18,8 @@ struct Example_Session : SSL_Socket
   {
     explicit
     Example_Session(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
-      : SSL_Socket(::std::move(fd), ssl_ctx)
+      :
+        SSL_Socket(::std::move(fd), ssl_ctx)
       {
       }
 
@@ -38,7 +39,8 @@ struct Example_Server : Listen_Socket
 
     explicit
     Example_Server()
-      : Listen_Socket(Socket_Address(::rocket::sref(bind), port))
+      :
+        Listen_Socket(Socket_Address(::rocket::sref(bind), port))
       {
         POSEIDON_LOG_WARN(("example SSL server listening on `$1`"), this->get_local_address());
       }

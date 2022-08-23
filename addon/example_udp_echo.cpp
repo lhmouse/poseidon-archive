@@ -17,7 +17,8 @@ struct Example_Server : UDP_Socket
   {
     explicit
     Example_Server()
-      : UDP_Socket(Socket_Address(::rocket::sref(bind), port))
+      :
+        UDP_Socket(Socket_Address(::rocket::sref(bind), port))
       {
         POSEIDON_LOG_WARN(("example UDP server listening on `$1`"), this->get_local_address());
       }

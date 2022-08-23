@@ -14,7 +14,8 @@ struct Example_Fiber : Timer_Fiber
   {
     explicit
     Example_Fiber()
-      : Timer_Fiber(timer_driver, 5000000000LL, 1500000000LL)
+      :
+        Timer_Fiber(timer_driver, 5000000000LL, 1500000000LL)
       {
         POSEIDON_LOG_FATAL(("new timer fiber `$1`"), this);
       }

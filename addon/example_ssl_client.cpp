@@ -17,7 +17,8 @@ struct Example_Session : SSL_Socket
   {
     explicit
     Example_Session()
-      : SSL_Socket(Socket_Address(::rocket::sref(conn), port), network_driver.default_client_ssl_ctx())
+      :
+        SSL_Socket(Socket_Address(::rocket::sref(conn), port), network_driver.default_client_ssl_ctx())
       {
         static constexpr char data[] =
             "GET / HTTP/1.1\r\n"
