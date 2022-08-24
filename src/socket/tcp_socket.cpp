@@ -13,6 +13,7 @@ namespace poseidon {
 TCP_Socket::
 TCP_Socket(unique_posix_fd&& fd)
   :
+    // Create a new non-blocking socket.
     Abstract_Socket(::std::move(fd))
   {
     // Use `TCP_NODELAY`. Errors are ignored.
@@ -23,6 +24,7 @@ TCP_Socket(unique_posix_fd&& fd)
 TCP_Socket::
 TCP_Socket(const Socket_Address& addr)
   :
+    // Take ownership of an existent socket.
     Abstract_Socket(addr.family(), SOCK_STREAM, IPPROTO_TCP)
   {
     // Use `TCP_NODELAY`. Errors are ignored.

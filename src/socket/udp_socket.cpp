@@ -12,6 +12,7 @@ namespace poseidon {
 UDP_Socket::
 UDP_Socket(const Socket_Address& addr)
   :
+    // Create a new non-blocking socket.
     Abstract_Socket(addr.family(), SOCK_DGRAM, IPPROTO_UDP)
   {
     // Use `SO_REUSEADDR`. Errors are ignored.
@@ -34,6 +35,7 @@ UDP_Socket(const Socket_Address& addr)
 UDP_Socket::
 UDP_Socket(int family)
   :
+    // Create a new non-blocking socket.
     Abstract_Socket(family, SOCK_DGRAM, IPPROTO_UDP)
   {
   }

@@ -16,9 +16,10 @@ namespace poseidon {
 SSL_Socket::
 SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
   :
+    // Take ownership of an existent socket.
     Abstract_Socket(::std::move(fd))
   {
-    // Create the SSL structure.
+    // Create an SSL structure in server mode.
     if(!ssl_ctx)
       POSEIDON_THROW((
           "Null SSL context pointer not valid",
@@ -49,9 +50,10 @@ SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
 SSL_Socket::
 SSL_Socket(const Socket_Address& addr, const SSL_CTX_ptr& ssl_ctx)
   :
+    // Create a new non-blocking socket.
     Abstract_Socket(addr.family(), SOCK_STREAM, IPPROTO_TCP)
   {
-    // Create the SSL structure.
+    // Create an SSL structure in client mode.
     if(!ssl_ctx)
       POSEIDON_THROW((
           "Null SSL context pointer not valid",

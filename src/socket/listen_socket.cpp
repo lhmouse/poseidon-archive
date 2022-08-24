@@ -13,6 +13,7 @@ namespace poseidon {
 Listen_Socket::
 Listen_Socket(const Socket_Address& addr)
   :
+    // Create a new non-blocking socket.
     Abstract_Socket(addr.family(), SOCK_STREAM, IPPROTO_TCP)
   {
     // Use `SO_REUSEADDR`. Errors are ignored.
