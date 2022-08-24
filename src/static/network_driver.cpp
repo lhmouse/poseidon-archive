@@ -48,18 +48,9 @@ do_epoll_ctl(int epoll_fd, int op, const shared_ptr<Abstract_Socket>& socket, ui
 Network_Driver::
 Network_Driver()
   {
-    // Allocate epoll objects.
-    this->m_epoll_lt.reset(::epoll_create1(0));
-    if(!this->m_epoll_lt)
+    if(!this->m_epoll.reset(::epoll_create1(0)))
       POSEIDON_THROW((
-          "Failed to allocate epoll descriptor (LT)",
-          "[`epoll_create1()` failed: $1]"),
-          format_errno());
-
-    this->m_epoll_et.reset(::epoll_create1(0));
-    if(!this->m_epoll_et)
-      POSEIDON_THROW((
-          "Failed to allocate epoll descriptor (ET)",
+          "Could not create epoll object",
           "[`epoll_create1()` failed: $1]"),
           format_errno());
   }
@@ -290,18 +281,10 @@ thread_loop()
       this->m_events.reserve(sizeof(::epoll_event) * event_buffer_size);
       ::epoll_event* const event_buffer = (::epoll_event*) this->m_events.end();
 
-      int ngot = ::epoll_wait(this->m_epoll_lt, event_buffer, (int) event_buffer_size, 0);
-      if(ngot <= 0) {
-        // Collect events from the edge-triggered epoll.
-        ngot = ::epoll_wait(this->m_epoll_et, event_buffer, (int) event_buffer_size, 5000);
-        if(ngot <= 0)
-          return;
+      int ngot = ::epoll_wait(this->m_epoll, event_buffer, (int) event_buffer_size, 0);
+      if(ngot <= 0)
+        return;
 
-        // Because `::epoll_wait()` does not report `EPOLLET`, it has to be added
-        // by hand. This is necessary for telling where the events come from.
-        for(uint32_t k = 0;  k < (uint32_t) ngot;  ++k)
-          event_buffer[k].events |= EPOLLET;
-      }
       this->m_events.accept(sizeof(::epoll_event) * (uint32_t) ngot);
       POSEIDON_LOG_TRACE(("Collected `$1` socket event(s) from epoll"), (uint32_t) ngot);
 
@@ -326,8 +309,7 @@ thread_loop()
       // Remove the socket due to an error, or an end-of-file condition.
       POSEIDON_LOG_TRACE(("Removing closed socket `$1` (class `$2`)"), socket, typeid(*socket));
       this->m_epoll_sockets.erase(socket_it);
-      do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_DEL, socket, 0);
-      do_epoll_ctl(this->m_epoll_et, EPOLL_CTL_DEL, socket, 0);
+      do_epoll_ctl(this->m_epoll, EPOLL_CTL_DEL, socket, 0);
     }
     plain_mutex::unique_lock io_lock(socket->m_io_mutex);
     socket->m_io_driver = this;
@@ -335,9 +317,9 @@ thread_loop()
 
     // Process events on this socket.
     POSEIDON_LOG_TRACE((
-        "Processing socket `$1` (class `$2`): ET = $3, HUP = $4, ERR = $5, IN = $6, OUT = $7"),
-        socket, typeid(*socket), (event.events / EPOLLET) & 1U, (event.events / EPOLLHUP) & 1U,
-        (event.events / EPOLLERR) & 1U, (event.events / EPOLLIN) & 1U, (event.events / EPOLLOUT) & 1U);
+        "Processing socket `$1` (class `$2`): HUP = $3, ERR = $4, IN = $5, OUT = $6"),
+        socket, typeid(*socket), (event.events / EPOLLHUP) & 1U, (event.events / EPOLLERR) & 1U,
+        (event.events / EPOLLIN) & 1U, (event.events / EPOLLOUT) & 1U);
 
     if(event.events & (EPOLLHUP | EPOLLERR)) {
       // Say so...
@@ -452,8 +434,9 @@ thread_loop()
       }
 
       // If there are too many bytes pending, disable `EPOLLIN` notification.
+      // The socket is set to write-only, level-triggered mode.
       if(socket->m_io_write_queue.size() >= throttle_size)
-        do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_MOD, socket, EPOLLOUT);
+        do_epoll_ctl(this->m_epoll, EPOLL_CTL_MOD, socket, EPOLLOUT);
     }
 
     if(event.events & EPOLLOUT) {
@@ -474,7 +457,7 @@ thread_loop()
       // If this event came from the level-triggered epoll, and there are fewer
       // bytes pending, re-enable `EPOLLIN` notification.
       if(!(event.events & EPOLLET) && (socket->m_io_write_queue.size() < throttle_size))
-        do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_MOD, socket, EPOLLIN);
+        do_epoll_ctl(this->m_epoll, EPOLL_CTL_MOD, socket, EPOLLIN | EPOLLOUT | EPOLLET);
     }
 
     if(server_ssl_ctx)
@@ -496,8 +479,7 @@ insert(const shared_ptr<Abstract_Socket>& socket)
     // The socket will be deleted from an epoll automatically when it's closed,
     // so there is no need to remove it in case of an exception.
     plain_mutex::unique_lock lock(this->m_epoll_mutex);
-    do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_ADD, socket, EPOLLIN);
-    do_epoll_ctl(this->m_epoll_et, EPOLL_CTL_ADD, socket, EPOLLIN | EPOLLOUT | EPOLLET);
+    do_epoll_ctl(this->m_epoll, EPOLL_CTL_ADD, socket, EPOLLIN | EPOLLOUT | EPOLLET);
     this->m_epoll_sockets[socket.get()] = socket;
   }
 

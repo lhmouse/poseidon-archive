@@ -203,8 +203,7 @@ tcp_send(const char* data, size_t size)
 
     // Append data to the write queue.
     // If there were no pending data, try writing once. This is essential for
-    // the edge-triggered epoll to work reliably, because the level-triggered
-    // epoll does not check for `EPOLLOUT` by default.
+    // the edge-triggered epoll to work reliably.
     queue.putn(data, size);
     if(ROCKET_EXPECT(queue.size() != size))
       return true;

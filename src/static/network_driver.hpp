@@ -14,8 +14,7 @@ namespace poseidon {
 class Network_Driver
   {
   private:
-    unique_posix_fd m_epoll_lt;
-    unique_posix_fd m_epoll_et;
+    unique_posix_fd m_epoll;
 
     mutable plain_mutex m_conf_mutex;
     uint32_t m_event_buffer_size = 0;
