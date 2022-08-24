@@ -288,7 +288,7 @@ bool
 UDP_Socket::
 udp_send(const Socket_Address& addr, const char* data, size_t size)
   {
-    if(size && !data)
+    if((data == nullptr) && (size != 0))
       POSEIDON_THROW((
           "Null data pointer",
           "[UDP socket `$1` (class `$2`)]"),

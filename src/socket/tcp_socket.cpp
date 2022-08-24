@@ -189,7 +189,7 @@ bool
 TCP_Socket::
 tcp_send(const char* data, size_t size)
   {
-    if(size && !data)
+    if((data == nullptr) && (size != 0))
       POSEIDON_THROW((
           "Null data pointer",
           "[TCP socket `$1` (class `$2`)]"),
