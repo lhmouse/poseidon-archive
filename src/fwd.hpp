@@ -172,27 +172,26 @@ enum Log_Level : uint8_t
      {  \
        try {  \
          ::poseidon::Async_Logger::Queued_Message iQw3Zbsf;  \
-         iQw3Zbsf.level = ::poseidon::log_level_##LEVEL;  \
+         \
          iQw3Zbsf.file = __FILE__;  \
          iQw3Zbsf.line = __LINE__;  \
          iQw3Zbsf.func = f5zuNP3w;  \
+         \
          try {  \
-           iQw3Zbsf.text = ::asteria::format_string(  \
-               (::asteria::make_string_template TEMPLATE), ##__VA_ARGS__);  \
+           iQw3Zbsf.level = ::poseidon::log_level_##LEVEL;  \
+           ::asteria::format(iQw3Zbsf.text, (::asteria::make_string_template TEMPLATE), ##__VA_ARGS__);  \
          }  \
          catch(::std::exception& xSG022wB) {  \
            iQw3Zbsf.level = ::poseidon::log_level_error;  \
-           iQw3Zbsf.text = ::asteria::format_string(  \
-               "Failed to compose log message: $1", xSG022wB);  \
+           ::asteria::format(iQw3Zbsf.text, "Failed to compose log message: $1", xSG022wB);  \
          }  \
          ::poseidon::async_logger.enqueue(::std::move(iQw3Zbsf));  \
          \
-         if(iQw3Zbsf.level <= ::poseidon::log_level_error)  \
+         if(ROCKET_UNEXPECT(iQw3Zbsf.level <= ::poseidon::log_level_error))  \
            ::poseidon::async_logger.synchronize();  \
        }  \
        catch(::std::exception& aJHPhv84) {  \
-         ::fprintf(stderr,  \
-             "%s: Error writing log:\n  %s\n", f5zuNP3w, aJHPhv84.what());  \
+         ::fprintf(stderr, "%s: Error writing log:\n  %s\n", f5zuNP3w, aJHPhv84.what());  \
        }  \
        return true;  \
      }  \

@@ -325,7 +325,7 @@ get_remote_address() const
       Socket_Address addr;
       ::socklen_t addrlen = (::socklen_t) addr.capacity();
       if(::getpeername(this->fd(), addr.mut_addr(), &addrlen) != 0)
-        return this->m_peername = format_string("(error: $1)", format_errno());
+        return format(this->m_peername, "(unknown address: $1)", format_errno());
 
       // Cache the result.
       addr.set_size(addrlen);

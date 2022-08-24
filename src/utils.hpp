@@ -16,6 +16,7 @@ using ::rocket::is_none_of;
 using ::rocket::all_of;
 using ::rocket::any_of;
 using ::rocket::none_of;
+using ::asteria::format;
 using ::asteria::format_string;
 using ::asteria::weaken_enum;
 using ::asteria::generate_random_seed;

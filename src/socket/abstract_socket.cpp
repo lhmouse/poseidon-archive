@@ -62,7 +62,7 @@ get_local_address() const
       Socket_Address addr;
       ::socklen_t addrlen = (::socklen_t) addr.capacity();
       if(::getsockname(this->fd(), addr.mut_addr(), &addrlen) != 0)
-        return this->m_sockname = format_string("(error: $1)", format_errno());
+        return format(this->m_sockname, "(unknown address: $1)", format_errno());
 
       // Cache the result.
       addr.set_size(addrlen);
