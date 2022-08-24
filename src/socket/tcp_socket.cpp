@@ -58,88 +58,86 @@ void
 TCP_Socket::
 do_abstract_socket_on_readable()
   {
-    recursive_mutex::unique_lock io_lock;
+    plain_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
-    ::ssize_t r;
+    ::ssize_t io_result = 0;
 
-    // Try getting some bytes from this socket.
-  try_io:
-    queue.reserve(0xFFFFU);
-    r = ::recv(this->fd(), queue.mut_end(), queue.capacity(), 0);
-    if(r == 0) {
-      // Shut the connection down. Semi-open connections are not supported.
-      POSEIDON_LOG_INFO(("Closing TCP connection: remote = $1"), this->get_remote_address());
-      ::shutdown(this->fd(), SHUT_RDWR);
-      return;
-    }
-    else if(r > 0) {
-      // success
-      queue.accept((size_t) r);
-    }
-    else {
-      switch(errno) {
-        case EINTR:
-          goto try_io;
+    for(;;) {
+      // Read bytes and append them to `queue`.
+      queue.reserve(0xFFFFU);
+      io_result = ::recv(this->fd(), queue.mut_end(), queue.capacity(), 0);
 
-#if EWOULDBLOCK != EAGAIN
-        case EAGAIN:
-#endif
-        case EWOULDBLOCK:
-          return;
+      if(io_result < 0) {
+        if(errno == EINTR)
+          continue;
+
+        if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+          break;
+
+        POSEIDON_THROW((
+            "Error reading TCP socket",
+            "[`recv()` failed: $3]",
+            "[TCP socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno());
       }
 
-      POSEIDON_THROW((
-          "Error reading TCP socket",
-          "[`recv()` failed: $3]",
-          "[TCP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno());
+      if(io_result == 0)
+        break;
+
+      // Accept incoming data.
+      queue.accept((size_t) io_result);
     }
 
     this->do_on_tcp_stream(queue);
+
+    if(io_result != 0)
+      return;
+
+    // If the end of stream has been reached, shut the connection down anyway.
+    // Half-open connections are not supported.
+    POSEIDON_LOG_INFO(("Closing TCP connection: remote = $1"), this->get_remote_address());
+    ::shutdown(this->fd(), SHUT_RDWR);
   }
 
 void
 TCP_Socket::
 do_abstract_socket_on_writable()
   {
-    recursive_mutex::unique_lock io_lock;
+    plain_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
-    ::ssize_t r;
+    ::ssize_t io_result = 0;
 
-    // Send some bytes from the write queue.
-  try_io:
-    r = 0;
-    if(!queue.empty()) {
-      // This syscall can be skipped if there are no data to send.
-      r = ::send(this->fd(), queue.begin(), queue.size(), 0);
-    }
-    if(r >= 0) {
-      // success
-      queue.discard((size_t) r);
-    }
-    else {
-      switch(errno) {
-        case EINTR:
-          goto try_io;
+    for(;;) {
+      // Write bytes from `queue` and remove those written.
+      if(queue.size() == 0)
+        break;
 
-#if EWOULDBLOCK != EAGAIN
-        case EAGAIN:
-#endif
-        case EWOULDBLOCK:
-          return;
+      io_result = ::send(this->fd(), queue.begin(), queue.size(), 0);
+
+      if(io_result < 0) {
+        if(errno == EINTR)
+          continue;
+
+        if((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EPIPE))
+          break;
+
+        POSEIDON_THROW((
+            "Error writing TCP socket",
+            "[`send()` failed: $3]",
+            "[TCP socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno());
       }
 
-      POSEIDON_THROW((
-          "Error writing TCP socket",
-          "[`send()` failed: $3]",
-          "[TCP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno());
+      // Discard data that have been sent.
+      queue.discard((size_t) io_result);
     }
 
-    if(ROCKET_UNEXPECT(this->do_set_established())) {
-      // Deliver the establishment notification.
-      this->do_on_tcp_connected();
-    }
+    if(!this->do_set_established())
+      return;
+
+    // Deliver the establishment notification.
+    POSEIDON_LOG_DEBUG(("Established TCP connection: remote = $1"), this->get_remote_address());
+    this->do_on_tcp_connected();
   }
 
 void
@@ -199,16 +197,42 @@ tcp_send(const char* data, size_t size)
     if(this->socket_state() == socket_state_closed)
       return false;
 
-    recursive_mutex::unique_lock io_lock;
+    plain_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
+    ::ssize_t io_result = 0;
 
-    // Append data for sending.
+    // Append data to the write queue.
+    // If there were no pending data, try writing once. This is essential for
+    // the edge-triggered epoll to work reliably, because the level-triggered
+    // epoll does not check for `EPOLLOUT` by default.
     queue.putn(data, size);
+    if(ROCKET_EXPECT(queue.size() != size))
+      return true;
 
-    // Try writing once. This is essential for the edge-triggered epoll to work
-    // reliably, because the level-triggered epoll does not check for `EPOLLOUT` by
-    // default. If the packet has been sent anyway, discard it from the write queue.
-    this->do_abstract_socket_on_writable();
+    for(;;) {
+      // Write bytes from `queue` and remove those written.
+      if(queue.size() == 0)
+        break;
+
+      io_result = ::send(this->fd(), queue.begin(), queue.size(), 0);
+
+      if(io_result < 0) {
+        if(errno == EINTR)
+          continue;
+
+        if((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EPIPE))
+          break;
+
+        POSEIDON_THROW((
+            "Error writing TCP socket",
+            "[`send()` failed: $3]",
+            "[TCP socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno());
+      }
+
+      // Discard data that have been sent.
+      queue.discard((size_t) io_result);
+    }
     return true;
   }
 

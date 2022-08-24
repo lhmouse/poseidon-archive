@@ -165,131 +165,116 @@ void
 SSL_Socket::
 do_abstract_socket_on_readable()
   {
-    recursive_mutex::unique_lock io_lock;
+    plain_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
-    size_t datalen;
-    int r;
+    int ssl_err = 0;
 
-    // Try getting some bytes from this socket.
-  try_io:
-    queue.reserve(0xFFFFU);
-    r = ::SSL_read_ex(this->ssl(), queue.mut_end(), queue.capacity(), &datalen);
-    if(r != 0) {
-      // success
-      queue.accept(datalen);
+    for(;;) {
+      // Read bytes and append them to `queue`.
+      queue.reserve(0xFFFFU);
+      ssl_err = 0;
+      size_t datalen;
+      int ret = ::SSL_read_ex(this->ssl(), queue.mut_end(), queue.capacity(), &datalen);
 
-      if(::SSL_has_pending(this->ssl()))
-        goto try_io;
-    }
-    else {
-      int ssl_err = ::SSL_get_error(this->ssl(), r);
-      if(is_any_of(ssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
-        goto try_io;
+      if(ret == 0) {
+        ssl_err = ::SSL_get_error(this->ssl(), ret);
 
-      // OpenSSL 1.1: EOF received without an SSL shutdown alert.
-      if((ssl_err == SSL_ERROR_SYSCALL) && (errno == 0))
-        ssl_err = SSL_ERROR_ZERO_RETURN;
+        // OpenSSL 1.1: EOF received without an SSL shutdown alert
+        if((ssl_err == SSL_ERROR_SYSCALL) && (errno == 0))
+          ssl_err = SSL_ERROR_ZERO_RETURN;
 
-      switch(ssl_err) {
-        case SSL_ERROR_ZERO_RETURN:
-          // Shut the connection down. Semi-open connections are not supported.
-          // Send a close_notify alert, but don't wait for its response. If the
-          // alert cannot be sent, ignore the error and force shutdown anyway.
-          ssl_err = ::SSL_shutdown(this->ssl());
-          POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, alert_received = $2"), this->get_remote_address(), ssl_err == 1);
-          ::shutdown(this->fd(), SHUT_RDWR);
-          return;
+        if(ssl_err == SSL_ERROR_ZERO_RETURN)
+          break;
 
-        case SSL_ERROR_WANT_READ:
-        case SSL_ERROR_WANT_WRITE:
-          return;
+        if(((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) && (errno == EINTR))
+          continue;
 
-        case SSL_ERROR_SSL:
-          // Shut the connection down due to an irrecoverable error, such as
-          // when the peer requested SSLv3, or when the SSL connection was not
-          // shut down properly.
-          POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, reason = $2"), this->get_remote_address(), ::ERR_reason_error_string(::ERR_peek_error()));
-          ::shutdown(this->fd(), SHUT_RDWR);
-          return;
+        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE) || (ssl_err == SSL_ERROR_SSL))
+          break;
 
-        case SSL_ERROR_SYSCALL:
+        if(ssl_err == SSL_ERROR_SYSCALL)
           POSEIDON_THROW((
               "Error reading SSL socket",
               "[syscall failure: $3]",
               "[SSL socket `$1` (class `$2`)]"),
               this, typeid(*this), format_errno());
+
+        POSEIDON_THROW((
+            "Error reading SSL socket",
+            "[`SSL_read_ex()` failed: SSL error `$3`: $4]",
+            "[SSL socket `$1` (class `$2`)]"),
+            this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
       }
 
-      POSEIDON_THROW((
-          "Error reading SSL socket",
-          "[`SSL_read_ex()` failed: SSL error `$3`: $4]",
-          "[SSL socket `$1` (class `$2`)]"),
-          this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
+      // Accept incoming data.
+      queue.accept(datalen);
     }
 
     this->do_on_ssl_stream(queue);
+
+    if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
+      return;
+
+    // If the end of stream has been reached, shut the connection down anyway.
+    // Half-open connections are not supported.
+    const char* reason = "graceful closure";
+    if(ssl_err == SSL_ERROR_SSL)
+      reason = ::ERR_reason_error_string(::ERR_peek_error());
+
+    POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, reason = $2)"), this->get_remote_address(), reason);
+    ::shutdown(this->fd(), SHUT_RDWR);
   }
 
 void
 SSL_Socket::
 do_abstract_socket_on_writable()
   {
-    recursive_mutex::unique_lock io_lock;
+    plain_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
-    size_t datalen;
-    int r;
+    int ssl_err = 0;
 
-    // Send some bytes from the write queue.
-  try_io:
-    r = ::SSL_write_ex(this->ssl(), queue.begin(), queue.size(), &datalen);
-    if(r != 0) {
-      // success
-      queue.discard(datalen);
-    }
-    else {
-      int ssl_err = ::SSL_get_error(this->ssl(), r);
-      if(is_any_of(ssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
-        goto try_io;
+    for(;;) {
+      // Write bytes from `queue` and remove those written.
+      if(queue.size() == 0)
+        break;
 
-      switch(ssl_err) {
-        case SSL_ERROR_WANT_READ:
-        case SSL_ERROR_WANT_WRITE:
-          return;
+      ssl_err = 0;
+      size_t datalen;
+      int ret = ::SSL_write_ex(this->ssl(), queue.begin(), queue.size(), &datalen);
 
-        case SSL_ERROR_SSL:
-          // Shut the connection down due to an irrecoverable error, such as
-          // when the peer requested SSLv3, or when the SSL connection was not
-          // shut down properly.
-          POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, reason = $2"), this->get_remote_address(), ::ERR_reason_error_string(::ERR_peek_error()));
-          ::shutdown(this->fd(), SHUT_RDWR);
-          return;
+      if(ret == 0) {
+        ssl_err = ::SSL_get_error(this->ssl(), ret);
 
-        case SSL_ERROR_SYSCALL:
+        if(((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) && (errno == EINTR))
+          continue;
+
+        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE) || (ssl_err == SSL_ERROR_SSL))
+          break;
+
+        if(ssl_err == SSL_ERROR_SYSCALL)
           POSEIDON_THROW((
               "Error writing SSL socket",
               "[syscall failure: $3]",
               "[SSL socket `$1` (class `$2`)]"),
               this, typeid(*this), format_errno());
+
+        POSEIDON_THROW((
+            "Error writing SSL socket",
+            "[`SSL_write_ex()` failed: SSL error `$3`: $4]",
+            "[SSL socket `$1` (class `$2`)]"),
+            this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
       }
 
-      POSEIDON_THROW((
-          "Error writing SSL socket",
-          "[`SSL_write_ex()` failed: SSL error `$3`: $4]",
-          "[SSL socket `$1` (class `$2`)]"),
-          this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
+      // Discard data that have been sent.
+      queue.discard(datalen);
     }
 
-    if(ROCKET_UNEXPECT(this->do_set_established())) {
-      // Get the ALPN response, if any.
-      const uint8_t* outp;
-      unsigned outn;
-      ::SSL_get0_alpn_selected(this->ssl(), &outp, &outn);
+    if(!this->do_set_established())
+      return;
 
-      this->m_alpn_proto.assign((const char*) outp, outn);
-
-      // Deliver the establishment notification.
-      this->do_on_ssl_connected();
-    }
+    // Deliver the establishment notification.
+    POSEIDON_LOG_DEBUG(("Established SSL connection: remote = $1"), this->get_remote_address());
+    this->do_on_ssl_connected();
   }
 
 void
@@ -349,16 +334,53 @@ ssl_send(const char* data, size_t size)
     if(this->socket_state() == socket_state_closed)
       return false;
 
-    recursive_mutex::unique_lock io_lock;
+    plain_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
+    int ssl_err = 0;
 
-    // Append data for sending.
+    // Append data to the write queue.
+    // If there were no pending data, try writing once. This is essential for
+    // the edge-triggered epoll to work reliably, because the level-triggered
+    // epoll does not check for `EPOLLOUT` by default.
     queue.putn(data, size);
+    if(ROCKET_EXPECT(queue.size() != size))
+      return true;
 
-    // Try writing once. This is essential for the edge-triggered epoll to work
-    // reliably, because the level-triggered epoll does not check for `EPOLLOUT` by
-    // default. If the packet has been sent anyway, discard it from the write queue.
-    this->do_abstract_socket_on_writable();
+    for(;;) {
+      // Write bytes from `queue` and remove those written.
+      if(queue.size() == 0)
+        break;
+
+      ssl_err = 0;
+      size_t datalen;
+      int ret = ::SSL_write_ex(this->ssl(), queue.begin(), queue.size(), &datalen);
+
+      if(ret == 0) {
+        ssl_err = ::SSL_get_error(this->ssl(), ret);
+
+        if(((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) && (errno == EINTR))
+          continue;
+
+        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE) || (ssl_err == SSL_ERROR_SSL))
+          break;
+
+        if(ssl_err == SSL_ERROR_SYSCALL)
+          POSEIDON_THROW((
+              "Error writing SSL socket",
+              "[syscall failure: $3]",
+              "[SSL socket `$1` (class `$2`)]"),
+              this, typeid(*this), format_errno());
+
+        POSEIDON_THROW((
+            "Error writing SSL socket",
+            "[`SSL_write_ex()` failed: SSL error `$3`: $4]",
+            "[SSL socket `$1` (class `$2`)]"),
+            this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
+      }
+
+      // Discard data that have been sent.
+      queue.discard(datalen);
+    }
     return true;
   }
 

@@ -59,95 +59,88 @@ void
 UDP_Socket::
 do_abstract_socket_on_readable()
   {
-    recursive_mutex::unique_lock io_lock;
+    plain_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
-    ::ssize_t r;
+    ::ssize_t io_result = 0;
 
-    // Try getting a packet from this socket.
-  try_io:
-    queue.clear();
-    queue.reserve(0xFFFFU);
-    Socket_Address addr;
-    ::socklen_t addrlen = addr.capacity();
-    r = ::recvfrom(this->fd(), queue.mut_end(), queue.capacity(), 0, addr.mut_addr(), &addrlen);
-    if(r >= 0) {
-      // success
-      addr.set_size(addrlen);
-      queue.accept((size_t) r);
-    }
-    else {
-      switch(errno) {
-        case EINTR:
-          goto try_io;
+    for(;;) {
+      // Try getting a packet.
+      queue.clear();
+      queue.reserve(0xFFFFU);
+      Socket_Address addr;
+      ::socklen_t addrlen = addr.capacity();
+      io_result = ::recvfrom(this->fd(), queue.mut_end(), queue.capacity(), 0, addr.mut_addr(), &addrlen);
 
-#if EWOULDBLOCK != EAGAIN
-        case EAGAIN:
-#endif
-        case EWOULDBLOCK:
-          return;
+      if(io_result < 0) {
+        if(errno == EINTR)
+          continue;
+
+        if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+          break;
+
+        POSEIDON_THROW((
+            "Error reading UDP socket",
+             "[`recvfrom()` failed: $3]",
+            "[UDP socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno());
       }
 
-      POSEIDON_THROW((
-          "Error reading UDP socket",
-          "[`recvfrom()` failed: $3]",
-          "[UDP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno());
+      // Accept this incoming packet.
+      addr.set_size(addrlen);
+      queue.accept((size_t) io_result);
+      this->do_on_udp_packet(::std::move(addr), ::std::move(queue));
     }
-
-    this->do_on_udp_packet(::std::move(addr), ::std::move(queue));
   }
 
 void
 UDP_Socket::
 do_abstract_socket_on_writable()
   {
-    recursive_mutex::unique_lock io_lock;
+    plain_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
-    ::ssize_t r;
+    ::ssize_t io_result = 0;
 
-    // Get a packet from the write queue. In the case of other errors, data shall
-    // be removed from the write queue after the attempt to send, no matter whether
-    // the operation has succeeded or not.
-    r = 0;
-    if(!queue.empty()) {
-      // This piece of code must match `udp_send()`.
+    for(;;) {
+      // Get a packet from the write queue. In case of errors, no attempt is made
+      // to re-send failed packets.
+      if(queue.size() == 0)
+        break;
+
       Socket_Address addr;
-      ::socklen_t addrlen;
-      size_t datalen;
+      uint16_t addrlen;
+      uint16_t datalen;
 
+      // This must match `udp_send()`.
       size_t ngot = queue.getn((char*) &addrlen, sizeof(addrlen));
       ROCKET_ASSERT(ngot == sizeof(addrlen));
       ngot = queue.getn((char*) &datalen, sizeof(datalen));
       ROCKET_ASSERT(ngot == sizeof(datalen));
       ngot = queue.getn((char*) addr.mut_data(), addrlen);
-      ROCKET_ASSERT(ngot == (uint32_t) addrlen);
-
-      r = ::sendto(this->fd(), queue.begin(), datalen, 0, addr.addr(), addrlen);
+      ROCKET_ASSERT(ngot == addrlen);
+      io_result = ::sendto(this->fd(), queue.begin(), datalen, 0, addr.addr(), addrlen);
       queue.discard(datalen);
-    }
-    if(r < 0) {
-      switch(errno) {
-        case EINTR:
-          return;
 
-#if EWOULDBLOCK != EAGAIN
-        case EAGAIN:
-#endif
-        case EWOULDBLOCK:
-          return;
+      if(io_result < 0) {
+        if(errno == EINTR)
+          continue;
+
+        if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+          break;
+
+        POSEIDON_THROW((
+            "Error writing UDP socket",
+            "[`sendto()` failed: $3]",
+            "[UDP socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno());
       }
-
-      POSEIDON_THROW((
-          "Error writing UDP socket",
-          "[`sendto()` failed: $3]",
-          "[UDP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno());
     }
 
-    if(ROCKET_UNEXPECT(this->do_set_established())) {
-      // Deliver the establishment notification.
-      this->do_on_udp_opened();
-    }
+    if(!this->do_set_established())
+      return;
+
+    // Deliver the establishment notification.
+    POSEIDON_LOG_DEBUG(("Opened UDP port: local = $1"), this->get_local_address());
+    this->do_on_udp_opened();
   }
 
 void
@@ -294,7 +287,9 @@ udp_send(const Socket_Address& addr, const char* data, size_t size)
           "[UDP socket `$1` (class `$2`)]"),
           this, typeid(*this));
 
-    size_t datalen = size & 0xFFFFU;
+    uint16_t addrlen = (uint16_t) addr.size();
+    uint16_t datalen = (uint16_t) size;
+
     if(datalen != size)
       POSEIDON_THROW((
           "`$3` bytes is too large for a UDP packet",
@@ -305,29 +300,30 @@ udp_send(const Socket_Address& addr, const char* data, size_t size)
     if(this->socket_state() == socket_state_closed)
       return false;
 
-    recursive_mutex::unique_lock io_lock;
+    plain_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
+    ::ssize_t io_result = 0;
 
-    // Encode this packet.
-    // This piece of code must match `do_abstract_socket_on_writable()`.
-    ::socklen_t addrlen = addr.ssize();
-    size_t queue_size = sizeof(addrlen) + sizeof(datalen) + (uint32_t) addrlen + datalen;
-    queue.reserve(queue_size);
+    // Try sending the packet immediately. This is valid because UDP packets
+    // can be transmitted out of order.
+    io_result = ::sendto(this->fd(), data, size, 0, addr.addr(), addrlen);
+    if(io_result >= 0)
+      return true;
 
-    ::memcpy(queue.mut_end(), &addrlen, sizeof(addrlen));
-    queue.accept(sizeof(addrlen));
-    ::memcpy(queue.mut_end(), &datalen, sizeof(datalen));
-    queue.accept(sizeof(datalen));
-    ::memcpy(queue.mut_end(), addr.data(), (uint32_t) addrlen);
-    queue.accept((uint32_t) addrlen);
+    if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+      // Append data to the write queue.
+      queue.reserve(sizeof(addrlen) + sizeof(datalen) + addrlen + datalen);
 
-    ::memcpy(queue.mut_end(), data, datalen);
-    queue.accept(datalen);
-
-    // Try writing once. This is essential for the edge-triggered epoll to work
-    // reliably, because the level-triggered epoll does not check for `EPOLLOUT` by
-    // default. If the packet has been sent anyway, discard it from the write queue.
-    this->do_abstract_socket_on_writable();
+      // This must match `do_abstract_socket_on_writable()`.
+      ::memcpy(queue.mut_end(), &addrlen, sizeof(addrlen));
+      queue.accept(sizeof(addrlen));
+      ::memcpy(queue.mut_end(), &datalen, sizeof(datalen));
+      queue.accept(sizeof(datalen));
+      ::memcpy(queue.mut_end(), addr.data(), addrlen);
+      queue.accept(addrlen);
+      ::memcpy(queue.mut_end(), data, datalen);
+      queue.accept(datalen);
+    }
     return true;
   }
 

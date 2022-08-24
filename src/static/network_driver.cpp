@@ -329,7 +329,7 @@ thread_loop()
       do_epoll_ctl(this->m_epoll_lt, EPOLL_CTL_DEL, socket, 0);
       do_epoll_ctl(this->m_epoll_et, EPOLL_CTL_DEL, socket, 0);
     }
-    recursive_mutex::unique_lock io_lock(socket->m_io_mutex);
+    plain_mutex::unique_lock io_lock(socket->m_io_mutex);
     socket->m_io_driver = this;
     lock.unlock();
 

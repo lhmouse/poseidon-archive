@@ -24,19 +24,19 @@ Listen_Socket(const Socket_Address& addr)
       POSEIDON_THROW((
           "Failed to bind TCP socket onto `$4`",
           "[`bind()` failed: $3]",
-          "[TCP socket `$1` (class `$2`)]"),
+          "[TCP listen socket `$1` (class `$2`)]"),
           this, typeid(*this), format_errno(), addr);
 
     if(::listen(this->fd(), SOMAXCONN) != 0)
       POSEIDON_THROW((
           "Failed to start listening on `$4`",
           "[`listen()` failed: $3]",
-          "[TCP socket `$1` (class `$2`)]"),
+          "[TCP listen socket `$1` (class `$2`)]"),
           this, typeid(*this), format_errno(), addr);
 
     POSEIDON_LOG_INFO((
         "TCP server started listening on `$3`",
-        "[TCP socket `$1` (class `$2`)]"),
+        "[TCP listen socket `$1` (class `$2`)]"),
         this, typeid(*this), this->get_local_address());
   }
 
@@ -51,7 +51,7 @@ do_abstract_socket_on_closed(int err)
   {
     POSEIDON_LOG_INFO((
         "TCP server stopped listening on `$3`: $4",
-        "[TCP socket `$1` (class `$2`)]"),
+        "[TCP listen socket `$1` (class `$2`)]"),
         this, typeid(*this), this->get_local_address(), format_errno(err));
   }
 
@@ -59,41 +59,44 @@ void
 Listen_Socket::
 do_abstract_socket_on_readable()
   {
-    recursive_mutex::unique_lock io_lock;
+    plain_mutex::unique_lock io_lock;
     auto& driver = this->do_abstract_socket_lock_driver(io_lock);
 
-    // Try getting a connection.
-    unique_posix_fd fd;
-  try_io:
-    fd.reset(::accept4(this->fd(), nullptr, nullptr, SOCK_NONBLOCK));
-    if(!fd) {
-      switch(errno) {
-        case EINTR:
-          goto try_io;
+    for(;;) {
+      // Try getting a connection.
+      Socket_Address addr;
+      ::socklen_t addrlen = addr.capacity();
+      unique_posix_fd fd(::accept4(this->fd(), addr.mut_addr(), &addrlen, SOCK_NONBLOCK));
 
-#if EWOULDBLOCK != EAGAIN
-        case EAGAIN:
-#endif
-        case EWOULDBLOCK:
-          return;
+      if(!fd) {
+        if(errno == EINTR)
+          continue;
+
+        if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+          break;
+
+        POSEIDON_THROW((
+            "Error accepting TCP connection",
+            "[`accept4()` failed: $3]",
+            "[TCP listen socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno());
       }
 
-      POSEIDON_THROW((
-          "Error accepting TCP connection",
-          "[`accept4()` failed: $3]",
-          "[TCP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno());
+      // Accept the client socket. If a null pointer is returned, the accepted
+      // socket will be closed immediately.
+      addr.set_size(addrlen);
+      auto client = this->do_on_listen_new_client_opt(::std::move(fd));
+      if(!client)
+        continue;
+
+      POSEIDON_LOG_INFO((
+          "Accepted new TCP connection from `$5`",
+          "[TCP client socket `$3` (class `$4`)]",
+          "[TCP listen socket `$1` (class `$2`)]"),
+          this, typeid(*this), client, typeid(*client), addr);
+
+      driver.insert(client);
     }
-
-    // Create the session object.
-    auto client = this->do_on_listen_new_client_opt(::std::move(fd));
-    if(!client)
-      POSEIDON_THROW((
-          "Null pointer returned from `do_on_new_client_opt()`",
-          "[TCP socket `$1` (class `$2`)]"),
-          this, typeid(*this));
-
-    driver.insert(client);
   }
 
 void
@@ -108,7 +111,7 @@ do_abstract_socket_on_exception(exception& stdex)
   {
     POSEIDON_LOG_WARN((
         "Ignoring exception: $3",
-        "[TCP socket `$1` (class `$2`)]"),
+        "[TCP listen socket `$1` (class `$2`)]"),
         this, typeid(*this), stdex);
   }
 
