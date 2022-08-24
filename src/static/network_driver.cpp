@@ -272,10 +272,7 @@ thread_loop()
     lock.unlock();
 
     // Get an event from the event queue. If the queue has been exhausted, reload
-    // some from epolls. The level-triggered epoll indicates purely incoming data,
-    // while the edge-triggered epoll indicates both incoming and outgoing data.
-    // When there is no event pending, the network thread should only wait for the
-    // level-triggered epoll.
+    // some from the epoll.
     lock.lock(this->m_event_mutex);
     if(this->m_events.getn((char*) &event, sizeof(event)) == 0) {
       this->m_events.reserve(sizeof(::epoll_event) * event_buffer_size);
@@ -432,11 +429,6 @@ thread_loop()
 
         socket->do_abstract_socket_on_exception(stdex);
       }
-
-      // If there are too many bytes pending, disable `EPOLLIN` notification.
-      // The socket is set to write-only, level-triggered mode.
-      if(socket->m_io_write_queue.size() >= throttle_size)
-        do_epoll_ctl(this->m_epoll, EPOLL_CTL_MOD, socket, EPOLLOUT);
     }
 
     if(event.events & EPOLLOUT) {
@@ -453,10 +445,17 @@ thread_loop()
 
         socket->do_abstract_socket_on_exception(stdex);
       }
+    }
 
-      // If this event came from the level-triggered epoll, and there are fewer
-      // bytes pending, re-enable `EPOLLIN` notification.
-      if(!(event.events & EPOLLET) && (socket->m_io_write_queue.size() < throttle_size))
+    bool throttled = socket->m_io_write_queue.size() > throttle_size;
+    if(throttled != socket->m_io_throttled) {
+      // If there are too many bytes pending, disable `EPOLLIN` notification.
+      // The socket will be set to write-only, level-triggered mode.
+      socket->m_io_throttled = throttled;
+
+      if(throttled)
+        do_epoll_ctl(this->m_epoll, EPOLL_CTL_MOD, socket, EPOLLOUT);
+      else
         do_epoll_ctl(this->m_epoll, EPOLL_CTL_MOD, socket, EPOLLIN | EPOLLOUT | EPOLLET);
     }
 
