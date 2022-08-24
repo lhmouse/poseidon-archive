@@ -387,7 +387,7 @@ thread_loop()
           if(!rsock)
             return SSL_TLSEXT_ERR_ALERT_FATAL;
 
-          if(rsock->m_ssl.get() != ssl)
+          if(rsock->ssl() != ssl)
             return SSL_TLSEXT_ERR_ALERT_FATAL;
 
           // Process an ALPN request.

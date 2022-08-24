@@ -32,9 +32,9 @@ SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
           "[SSL socket `$1` (class `$2`)]"),
           this, typeid(*this), ::ERR_reason_error_string(::ERR_peek_error()));
 
-    ::SSL_set_accept_state(this->m_ssl);
+    ::SSL_set_accept_state(this->ssl());
 
-    if(!::SSL_set_fd(this->m_ssl, this->fd()))
+    if(!::SSL_set_fd(this->ssl(), this->fd()))
       POSEIDON_THROW((
           "Could not allocate SSL BIO for incoming connection",
           "[`SSL_set_fd()` failed: $3]",
@@ -65,9 +65,9 @@ SSL_Socket(const Socket_Address& addr, const SSL_CTX_ptr& ssl_ctx)
           "[SSL socket `$1` (class `$2`)]"),
           this, typeid(*this), ::ERR_reason_error_string(::ERR_peek_error()));
 
-    ::SSL_set_connect_state(this->m_ssl);
+    ::SSL_set_connect_state(this->ssl());
 
-    if(!::SSL_set_fd(this->m_ssl, this->fd()))
+    if(!::SSL_set_fd(this->ssl(), this->fd()))
       POSEIDON_THROW((
           "Could not allocate SSL BIO for outgoing connection",
           "[`SSL_set_fd()` failed: $3]",
@@ -120,7 +120,7 @@ do_ssl_alpn_request(const charbuf_256* protos_opt, size_t protos_size)
       POSEIDON_LOG_TRACE(("Requesting ALPN protocol: $1"), str);
     }
 
-    if(::SSL_set_alpn_protos(this->m_ssl, (const uint8_t*) pbuf.data(), (uint32_t) pbuf.size()) != 0)
+    if(::SSL_set_alpn_protos(this->ssl(), (const uint8_t*) pbuf.data(), (uint32_t) pbuf.size()) != 0)
       POSEIDON_THROW((
           "Failed to set ALPN protocol list",
           "[`SSL_set_alpn_protos()` failed]",
@@ -171,16 +171,16 @@ do_abstract_socket_on_readable()
     // Try getting some bytes from this socket.
   try_io:
     queue.reserve(0xFFFFU);
-    r = ::SSL_read_ex(this->m_ssl, queue.mut_end(), queue.capacity(), &datalen);
+    r = ::SSL_read_ex(this->ssl(), queue.mut_end(), queue.capacity(), &datalen);
     if(r != 0) {
       // success
       queue.accept(datalen);
 
-      if(::SSL_has_pending(this->m_ssl))
+      if(::SSL_has_pending(this->ssl()))
         goto try_io;
     }
     else {
-      int ssl_err = ::SSL_get_error(this->m_ssl, r);
+      int ssl_err = ::SSL_get_error(this->ssl(), r);
       if(is_any_of(ssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
         goto try_io;
 
@@ -193,7 +193,7 @@ do_abstract_socket_on_readable()
           // Shut the connection down. Semi-open connections are not supported.
           // Send a close_notify alert, but don't wait for its response. If the
           // alert cannot be sent, ignore the error and force shutdown anyway.
-          ssl_err = ::SSL_shutdown(this->m_ssl);
+          ssl_err = ::SSL_shutdown(this->ssl());
           POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, alert_received = $2"), this->get_remote_address(), ssl_err == 1);
           ::shutdown(this->fd(), SHUT_RDWR);
           return;
@@ -239,13 +239,13 @@ do_abstract_socket_on_writable()
 
     // Send some bytes from the write queue.
   try_io:
-    r = ::SSL_write_ex(this->m_ssl, queue.begin(), queue.size(), &datalen);
+    r = ::SSL_write_ex(this->ssl(), queue.begin(), queue.size(), &datalen);
     if(r != 0) {
       // success
       queue.discard(datalen);
     }
     else {
-      int ssl_err = ::SSL_get_error(this->m_ssl, r);
+      int ssl_err = ::SSL_get_error(this->ssl(), r);
       if(is_any_of(ssl_err, { SSL_ERROR_WANT_READ, SSL_ERROR_WANT_WRITE }) && (errno == EINTR))
         goto try_io;
 
@@ -281,7 +281,7 @@ do_abstract_socket_on_writable()
       // Get the ALPN response, if any.
       const uint8_t* outp;
       unsigned outn;
-      ::SSL_get0_alpn_selected(this->m_ssl, &outp, &outn);
+      ::SSL_get0_alpn_selected(this->ssl(), &outp, &outn);
 
       this->m_alpn_proto.assign((const char*) outp, outn);
 
@@ -385,7 +385,7 @@ bool
 SSL_Socket::
 ssl_shut_down() noexcept
   {
-    ::SSL_shutdown(this->m_ssl);
+    ::SSL_shutdown(this->ssl());
     return ::shutdown(this->fd(), SHUT_RDWR) == 0;
   }
 
