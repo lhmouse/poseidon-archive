@@ -278,12 +278,12 @@ thread_loop()
       this->m_events.reserve(sizeof(::epoll_event) * event_buffer_size);
       ::epoll_event* const event_buffer = (::epoll_event*) this->m_events.end();
 
-      int ngot = ::epoll_wait(this->m_epoll, event_buffer, (int) event_buffer_size, 0);
-      if(ngot <= 0)
+      int nevents = ::epoll_wait(this->m_epoll, event_buffer, (int) event_buffer_size, 5000);
+      if(nevents <= 0)
         return;
 
-      this->m_events.accept(sizeof(::epoll_event) * (uint32_t) ngot);
-      POSEIDON_LOG_TRACE(("Collected `$1` socket event(s) from epoll"), (uint32_t) ngot);
+      this->m_events.accept(sizeof(::epoll_event) * (uint32_t) nevents);
+      POSEIDON_LOG_TRACE(("Collected `$1` socket event(s) from epoll"), (uint32_t) nevents);
 
       this->m_events.getn((char*) &event, sizeof(event));
     }
