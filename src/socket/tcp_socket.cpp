@@ -118,7 +118,7 @@ do_abstract_socket_on_writable()
         if(errno == EINTR)
           continue;
 
-        if((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EPIPE))
+        if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 
         POSEIDON_THROW((
@@ -219,7 +219,7 @@ tcp_send(const char* data, size_t size)
         if(errno == EINTR)
           continue;
 
-        if((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EPIPE))
+        if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 
         POSEIDON_THROW((
