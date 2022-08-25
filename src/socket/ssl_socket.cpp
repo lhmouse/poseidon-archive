@@ -183,14 +183,22 @@ do_abstract_socket_on_readable()
         if((ssl_err == SSL_ERROR_SYSCALL) && (errno == 0))
           ssl_err = SSL_ERROR_ZERO_RETURN;
 
+#ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
+        // OpenSSL 3.0: EOF received without an SSL shutdown alert
+        if((ssl_err == SSL_ERROR_SSL) && (ERR_GET_REASON(::ERR_peek_error()) == SSL_R_UNEXPECTED_EOF_WHILE_READING))
+          ssl_err = SSL_ERROR_ZERO_RETURN;
+#endif  // OpenSSL 3.0
+
         if(ssl_err == SSL_ERROR_ZERO_RETURN)
           break;
 
-        if(((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) && (errno == EINTR))
-          continue;
+        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) {
+          if(errno == EINTR)
+            continue;
 
-        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE) || (ssl_err == SSL_ERROR_SSL))
-          break;
+          if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+            break;
+        }
 
         if(ssl_err == SSL_ERROR_SYSCALL)
           POSEIDON_THROW((
@@ -217,11 +225,8 @@ do_abstract_socket_on_readable()
 
     // If the end of stream has been reached, shut the connection down anyway.
     // Half-open connections are not supported.
-    const char* reason = "graceful closure";
-    if(ssl_err == SSL_ERROR_SSL)
-      reason = ::ERR_reason_error_string(::ERR_peek_error());
-
-    POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, reason = $2)"), this->get_remote_address(), reason);
+    bool alerted = ::SSL_shutdown(this->ssl()) == 1;
+    POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, alerted = $2"), this->get_remote_address(), alerted);
     ::shutdown(this->fd(), SHUT_RDWR);
   }
 
@@ -245,11 +250,13 @@ do_abstract_socket_on_writable()
       if(ret == 0) {
         ssl_err = ::SSL_get_error(this->ssl(), ret);
 
-        if(((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) && (errno == EINTR))
-          continue;
+        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) {
+          if(errno == EINTR)
+            continue;
 
-        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE) || (ssl_err == SSL_ERROR_SSL))
-          break;
+          if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+            break;
+        }
 
         if(ssl_err == SSL_ERROR_SYSCALL)
           POSEIDON_THROW((
@@ -357,11 +364,13 @@ ssl_send(const char* data, size_t size)
       if(ret == 0) {
         ssl_err = ::SSL_get_error(this->ssl(), ret);
 
-        if(((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) && (errno == EINTR))
-          continue;
+        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) {
+          if(errno == EINTR)
+            continue;
 
-        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE) || (ssl_err == SSL_ERROR_SSL))
-          break;
+          if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+            break;
+        }
 
         if(ssl_err == SSL_ERROR_SYSCALL)
           POSEIDON_THROW((
