@@ -313,7 +313,7 @@ thread_loop()
     elem->check_time += warn_timeout;
     ::std::push_heap(this->m_pq.begin(), this->m_pq.end(), fiber_comparator);
 
-    plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
+    recursive_mutex::unique_lock sched_lock(this->m_sched_mutex);
     elem->fiber->m_scheduler = this;
     lock.unlock();
 
@@ -467,7 +467,8 @@ Fiber_Scheduler::
 self_opt() const noexcept
   {
     // Get the current fiber.
-    // For efficiency reasons, this function performs no locking at all.
+    recursive_mutex::unique_lock sched_lock(this->m_sched_mutex);
+
     auto elem = this->m_sched_self_opt.lock();
     if(!elem)
       return nullptr;
@@ -481,6 +482,8 @@ Fiber_Scheduler::
 checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& futr_opt, int64_t fail_timeout_override)
   {
     // Get the current fiber.
+    recursive_mutex::unique_lock sched_lock(this->m_sched_mutex);
+
     auto elem = this->m_sched_self_opt.lock();
     if(!elem)
       POSEIDON_THROW(("Cannot yield execution outside a fiber"));

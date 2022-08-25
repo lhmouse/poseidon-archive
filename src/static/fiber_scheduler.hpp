@@ -24,7 +24,7 @@ class Fiber_Scheduler
     vector<shared_ptr<Queued_Fiber>> m_pq;
     long m_pq_wait_ns = 0;
 
-    mutable plain_mutex m_sched_mutex;
+    mutable recursive_mutex m_sched_mutex;
     weak_ptr<Queued_Fiber> m_sched_self_opt;
     void* m_sched_asan_save;  // private data for address sanitizer
     ::ucontext_t m_sched_outer[1];  // yield target

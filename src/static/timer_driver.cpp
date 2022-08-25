@@ -104,7 +104,6 @@ thread_loop()
       this->m_pq.pop_back();
       next_state = async_state_finished;
     }
-    plain_mutex::unique_lock sched_lock(this->m_sched_mutex);
     lock.unlock();
 
     // Execute it.
