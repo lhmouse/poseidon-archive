@@ -179,15 +179,13 @@ do_abstract_socket_on_readable()
       if(ret == 0) {
         ssl_err = ::SSL_get_error(this->ssl(), ret);
 
-        // OpenSSL 1.1: EOF received without an SSL shutdown alert
+        // Check for EOF without a shutdown alert.
+#if !defined(SSL_R_UNEXPECTED_EOF_WHILE_READING)
         if((ssl_err == SSL_ERROR_SYSCALL) && (errno == 0))
-          ssl_err = SSL_ERROR_ZERO_RETURN;
-
-#ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
-        // OpenSSL 3.0: EOF received without an SSL shutdown alert
+#else
         if((ssl_err == SSL_ERROR_SSL) && (ERR_GET_REASON(::ERR_peek_error()) == SSL_R_UNEXPECTED_EOF_WHILE_READING))
+#endif
           ssl_err = SSL_ERROR_ZERO_RETURN;
-#endif  // OpenSSL 3.0
 
         if(ssl_err == SSL_ERROR_ZERO_RETURN)
           break;
