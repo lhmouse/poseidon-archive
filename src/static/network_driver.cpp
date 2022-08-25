@@ -231,8 +231,8 @@ reload(const Config_File& file)
     if(trusted_ca_path.empty()) {
       POSEIDON_LOG_WARN((
           "CA certificate validation has been disabled. This configuration is not "
-          "recommended for production use.",
-          "Set `network.ssl.trusted_ca_path` in '$1' to enable it."),
+          "recommended for production use. Set `network.ssl.trusted_ca_path` in '$1' "
+          "to enable it."),
           file.path());
 
       ::SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_NONE, nullptr);

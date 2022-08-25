@@ -214,12 +214,11 @@ do_check_euid()
 
     if(!permit_root_startup && (::geteuid() == 0))
       POSEIDON_THROW((
-          "Please do not start this program as root.",
-          "If you insist, you may set `general.permit_root_startup` in `$1` "
-          "to `true` to bypass this check. Note that starting as root should be "
-          "considered insecure. An unprivileged user should have been created "
-          "for this service.",
-          "You have been warned."),
+          "Please do not start this program as root. If you insist, you may "
+          "set `general.permit_root_startup` in `$1` to `true` to bypass this "
+          "check. Note that starting as root should be considered insecure. An "
+          "unprivileged user should have been created for this service. You "
+          "have been warned."),
           conf.path());
   }
 
@@ -290,14 +289,14 @@ do_check_ulimits()
     ::rlimit rlim;
     if((::getrlimit(RLIMIT_CORE, &rlim) == 0) && (rlim.rlim_cur <= 0))
       POSEIDON_LOG_WARN((
-          "Core dumps are disabled. We highly suggest you enable them in case of crashes.",
-          "See `/etc/security/limits.conf` for details."));
+          "Core dumps are disabled. We highly suggest you enable them in case "
+          "of crashes. See `/etc/security/limits.conf` for details."));
 
     if((::getrlimit(RLIMIT_NOFILE, &rlim) == 0) && (rlim.rlim_cur <= 10'000))
       POSEIDON_LOG_WARN((
-          "The limit of number of open files (which is `$1`) is too low.",
-          "This might result in denial of service when there are too many simultaneous "
-          "network connections. We suggest you set it to least 10,000 for production use.",
+          "The limit of number of open files (which is `$1`) is too low. This "
+          "might result in denial of service when there are too many simultaneous "
+          "connections. We suggest you set it to least `10000` for production use. "
           "See `/etc/security/limits.conf` for details."),
           rlim.rlim_cur);
   }
