@@ -22,7 +22,7 @@ class Abstract_Socket
     mutable plain_mutex m_sockname_mutex;
     mutable cow_string m_sockname;
 
-    mutable plain_mutex m_io_mutex;
+    mutable recursive_mutex m_io_mutex;
     Network_Driver* m_io_driver;
     bool m_io_throttled = false;
     linear_buffer m_io_read_queue;
@@ -41,7 +41,7 @@ class Abstract_Socket
     // Gets the network driver instance inside the callbacks hereafter.
     // If this function is called elsewhere, the behavior is undefined.
     Network_Driver&
-    do_abstract_socket_lock_driver(plain_mutex::unique_lock& lock) const noexcept
+    do_abstract_socket_lock_driver(recursive_mutex::unique_lock& lock) const noexcept
       {
         lock.lock(this->m_io_mutex);
         ROCKET_ASSERT(this->m_io_driver);
@@ -50,7 +50,7 @@ class Abstract_Socket
 
     // Gets the read (receive) queue.
     linear_buffer&
-    do_abstract_socket_lock_read_queue(plain_mutex::unique_lock& lock) noexcept
+    do_abstract_socket_lock_read_queue(recursive_mutex::unique_lock& lock) noexcept
       {
         lock.lock(this->m_io_mutex);
         return this->m_io_read_queue;
@@ -58,7 +58,7 @@ class Abstract_Socket
 
     // Gets the write (send) queue.
     linear_buffer&
-    do_abstract_socket_lock_write_queue(plain_mutex::unique_lock& lock) noexcept
+    do_abstract_socket_lock_write_queue(recursive_mutex::unique_lock& lock) noexcept
       {
         lock.lock(this->m_io_mutex);
         return this->m_io_write_queue;

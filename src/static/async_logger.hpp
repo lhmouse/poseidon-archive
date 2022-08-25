@@ -37,7 +37,7 @@ class Async_Logger
     condition_variable m_queue_avail;
     vector<Queued_Message> m_queue;
 
-    mutable plain_mutex m_io_mutex;
+    mutable recursive_mutex m_io_mutex;
     vector<Queued_Message> m_io_queue;
 
   public:

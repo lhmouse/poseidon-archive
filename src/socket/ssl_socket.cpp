@@ -165,7 +165,7 @@ void
 SSL_Socket::
 do_abstract_socket_on_readable()
   {
-    plain_mutex::unique_lock io_lock;
+    recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
     int ssl_err = 0;
 
@@ -229,7 +229,7 @@ void
 SSL_Socket::
 do_abstract_socket_on_writable()
   {
-    plain_mutex::unique_lock io_lock;
+    recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
     int ssl_err = 0;
 
@@ -334,7 +334,7 @@ ssl_send(const char* data, size_t size)
     if(this->socket_state() == socket_state_closed)
       return false;
 
-    plain_mutex::unique_lock io_lock;
+    recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
     int ssl_err = 0;
 

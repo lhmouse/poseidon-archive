@@ -309,7 +309,7 @@ thread_loop()
     while(this->m_queue.empty())
       this->m_queue_avail.wait(lock);
 
-    plain_mutex::unique_lock io_sync_lock(this->m_io_mutex);
+    recursive_mutex::unique_lock io_sync_lock(this->m_io_mutex);
     this->m_io_queue.clear();
     this->m_io_queue.swap(this->m_queue);
     lock.unlock();
@@ -351,7 +351,7 @@ synchronize() noexcept
   {
     // Get all pending elements.
     plain_mutex::unique_lock lock(this->m_queue_mutex);
-    plain_mutex::unique_lock io_sync_lock(this->m_io_mutex);
+    recursive_mutex::unique_lock io_sync_lock(this->m_io_mutex);
     if(this->m_queue.empty())
       return;
 

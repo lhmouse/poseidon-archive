@@ -48,7 +48,7 @@ struct Example_Server : Listen_Socket
     shared_ptr<Abstract_Socket>
     do_on_listen_new_client_opt(unique_posix_fd&& fd) override
       {
-        plain_mutex::unique_lock io_lock;
+        recursive_mutex::unique_lock io_lock;
         auto& driver = this->do_abstract_socket_lock_driver(io_lock);
 
         this->m_client = ::std::make_shared<Example_Session>(::std::move(fd), driver.default_server_ssl_ctx());

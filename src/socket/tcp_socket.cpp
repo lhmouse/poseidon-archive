@@ -58,7 +58,7 @@ void
 TCP_Socket::
 do_abstract_socket_on_readable()
   {
-    plain_mutex::unique_lock io_lock;
+    recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
     ::ssize_t io_result = 0;
 
@@ -103,7 +103,7 @@ void
 TCP_Socket::
 do_abstract_socket_on_writable()
   {
-    plain_mutex::unique_lock io_lock;
+    recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
     ::ssize_t io_result = 0;
 
@@ -197,7 +197,7 @@ tcp_send(const char* data, size_t size)
     if(this->socket_state() == socket_state_closed)
       return false;
 
-    plain_mutex::unique_lock io_lock;
+    recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
     ::ssize_t io_result = 0;
 

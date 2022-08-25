@@ -59,7 +59,7 @@ void
 Listen_Socket::
 do_abstract_socket_on_readable()
   {
-    plain_mutex::unique_lock io_lock;
+    recursive_mutex::unique_lock io_lock;
     auto& driver = this->do_abstract_socket_lock_driver(io_lock);
 
     for(;;) {
