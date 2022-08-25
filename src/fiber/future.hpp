@@ -20,8 +20,7 @@ class future
   private:
     union {
       // This member is active if `future_state() == future_state_value`.
-      typename ::std::conditional<
-          ::std::is_void<ValueT>::value, int, ValueT>::type m_value[1];
+      typename ::std::conditional<::std::is_void<ValueT>::value, int, ValueT>::type m_value[1];
 
       // This member is active if `future_state() == future_state_exception`.
       exception_ptr m_exptr[1];
@@ -66,7 +65,7 @@ class future
       {
         // If a value or exception has already been set, this function shall
         // do nothing.
-        plain_mutex::unique_lock lock(this->m_mutex);
+        plain_mutex::unique_lock lock(this->m_init_mutex);
         if(this->m_state.load() != future_state_empty)
           return;
 
@@ -82,7 +81,7 @@ class future
       {
         // If a value or exception has already been set, this function shall
         // do nothing.
-        plain_mutex::unique_lock lock(this->m_mutex);
+        plain_mutex::unique_lock lock(this->m_init_mutex);
         if(this->m_state.load() != future_state_empty)
           return;
 

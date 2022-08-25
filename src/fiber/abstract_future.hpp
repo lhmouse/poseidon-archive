@@ -15,7 +15,7 @@ class Abstract_Future
     template<typename> friend class future;;
     friend class Fiber_Scheduler;
 
-    mutable plain_mutex m_mutex;
+    mutable plain_mutex m_init_mutex;
     atomic_acq_rel<Future_State> m_state = { future_state_empty };
     vector<weak_ptr<atomic_relaxed<int64_t>>> m_waiters;
 

@@ -491,7 +491,7 @@ checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& 
     // If a future is given, lock it, in order to prevent race conditions.
     plain_mutex::unique_lock future_lock;
     if(futr_opt)
-      future_lock.lock(futr_opt->m_mutex);
+      future_lock.lock(futr_opt->m_init_mutex);
 
     // If the future is not empty, don't block at all.
     if(futr_opt && !futr_opt->empty())
