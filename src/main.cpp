@@ -289,13 +289,13 @@ do_check_ulimits()
     ::rlimit rlim;
     if((::getrlimit(RLIMIT_CORE, &rlim) == 0) && (rlim.rlim_cur <= 0))
       POSEIDON_LOG_WARN((
-          "Core dumps are disabled. We highly suggest you enable them in case "
+          "Core dumps have been disabled. We highly suggest you enable them in case "
           "of crashes. See `/etc/security/limits.conf` for details."));
 
     if((::getrlimit(RLIMIT_NOFILE, &rlim) == 0) && (rlim.rlim_cur <= 10'000))
       POSEIDON_LOG_WARN((
-          "The limit of number of open files (which is `$1`) is too low. This "
-          "might result in denial of service when there are too many simultaneous "
+          "The limit of number of open files (which is `$1`) is too low. This might "
+          "result in denial of service when there are too many simultaneous network "
           "connections. We suggest you set it to least `10000` for production use. "
           "See `/etc/security/limits.conf` for details."),
           rlim.rlim_cur);
