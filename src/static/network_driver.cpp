@@ -319,20 +319,15 @@ thread_loop()
         (event.events / EPOLLIN) & 1U, (event.events / EPOLLOUT) & 1U);
 
     if(event.events & (EPOLLHUP | EPOLLERR)) {
-      // Say so...
-      socket->m_state.store(socket_state_closed);
-
-      // Get its error code, if an error has been reported.
-      int err = 0;
-      if(event.events & EPOLLERR) {
-        ::socklen_t optlen = sizeof(err);
-        if(::getsockopt(socket->fd(), SOL_SOCKET, SO_ERROR, &err, &optlen) != 0)
-          err = errno;
-      }
-
-      // Deliver the closure notification.
-      POSEIDON_LOG_DEBUG(("Socket `$1` (class `$2`) closed: $3"), socket, typeid(*socket), format_errno(err));
       try {
+        socket->m_state.store(socket_state_closed);
+
+        int err = 0;
+        if(event.events & EPOLLERR) {
+          ::socklen_t optlen = sizeof(err);
+          if(::getsockopt(socket->fd(), SOL_SOCKET, SO_ERROR, &err, &optlen) != 0)
+            err = errno;
+        }
         socket->do_abstract_socket_on_closed(err);
       }
       catch(exception& stdex) {
@@ -369,8 +364,6 @@ thread_loop()
           if(rsock->ssl() != ssl)
             return SSL_TLSEXT_ERR_ALERT_FATAL;
 
-          // Process an ALPN request.
-          POSEIDON_LOG_DEBUG(("Socket `$1` (class `$2`) ALPN callback"), rsock, typeid(*rsock));
           try {
             cow_vector<charbuf_256> alpn_req;
             auto bp = inp;
@@ -416,8 +409,6 @@ thread_loop()
     }
 
     if(event.events & EPOLLIN) {
-      // Deliver the readability notification.
-      POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) readable"), socket, typeid(*socket));
       try {
         socket->do_abstract_socket_on_readable();
       }
@@ -432,8 +423,6 @@ thread_loop()
     }
 
     if(event.events & EPOLLOUT) {
-      // Deliver the writability notification.
-      POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) writable"), socket, typeid(*socket));
       try {
         socket->do_abstract_socket_on_writable();
       }
