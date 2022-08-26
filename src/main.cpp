@@ -391,6 +391,7 @@ main(int argc, char** argv)
 #else
     const char* sigdescr = ::sys_siglist[sig];
 #endif  // GLIBC
+
     POSEIDON_LOG_INFO(("Shutting down due to signal $1: $2"), sig, sigdescr);
     do_exit_printf(exit_success, "");
   }
