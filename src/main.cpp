@@ -385,8 +385,13 @@ main(int argc, char** argv)
     while(fiber_scheduler.size() || !exit_signal.load())
       fiber_scheduler.thread_loop();
 
-    uint32_t sig = (uint32_t) exit_signal.load();
-    POSEIDON_LOG_INFO(("Shutting down due to signal $1: $2"), sig, ::sys_siglist[sig]);
+    int sig = exit_signal.load();
+#if defined(__GLIBC__) && (__GLIBC__ * 10000 + __GLIBC_MINOR__ >= 20032)
+    const char* sigdescr = ::sigdescr_np(sig);
+#else
+    const char* sigdescr = ::sys_siglist[sig];
+#endif  // GLIBC
+    POSEIDON_LOG_INFO(("Shutting down due to signal $1: $2"), sig, sigdescr);
     do_exit_printf(exit_success, "");
   }
   catch(exception& stdex) {
