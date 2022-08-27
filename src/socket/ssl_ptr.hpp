@@ -29,14 +29,14 @@ class SSL_ptr
       { }
 
     SSL_ptr&
-    operator=(const SSL_ptr& other) noexcept
+    operator=(const SSL_ptr& other) & noexcept
       {
         this->reset(other.do_up_ref());
         return *this;
       }
 
     SSL_ptr&
-    operator=(SSL_ptr&& other) noexcept
+    operator=(SSL_ptr&& other) & noexcept
       {
         this->reset(other.release());
         return *this;
