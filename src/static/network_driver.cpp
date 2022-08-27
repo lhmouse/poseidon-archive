@@ -95,12 +95,8 @@ reload(const Config_File& file)
     // Parse new configuration. Default ones are defined here.
     int64_t event_buffer_size = 1024;
     int64_t throttle_size = 1048576;
-    cow_string default_certificate;
-    cow_string default_private_key;
-    cow_string trusted_ca_path;
-
-    SSL_CTX_ptr server_ssl_ctx;
-    SSL_CTX_ptr client_ssl_ctx;
+    cow_string default_certificate, default_private_key, trusted_ca_path;
+    SSL_CTX_ptr server_ssl_ctx, client_ssl_ctx;
 
     // Read the event buffer size from configuration.
     auto value = file.query("network", "poll", "event_buffer_size");
@@ -168,8 +164,7 @@ reload(const Config_File& file)
 
     if(!default_certificate.empty() && !default_private_key.empty()) {
       // Create the server context.
-      server_ssl_ctx.reset(::SSL_CTX_new(::TLS_server_method()));
-      if(!server_ssl_ctx)
+      if(!server_ssl_ctx.reset(::SSL_CTX_new(::TLS_server_method())))
         POSEIDON_THROW((
             "Could not allocate server SSL context",
             "[`SSL_CTX_new()` failed]: $1"),
@@ -197,10 +192,10 @@ reload(const Config_File& file)
             "[in configuration file '$2']"),
             ::ERR_reason_error_string(::ERR_peek_error()), file.path(), default_certificate, default_private_key);
 
-      unsigned char sid_ctx[SSL_MAX_SID_CTX_LENGTH] = { };
-      ::gethostname((char*) sid_ctx, sizeof(sid_ctx));
+      ::std::array<uint8_t, 32> sid_ctx = { };
+      ::gethostname((char*) sid_ctx.data(), sid_ctx.size());
 
-      if(!::SSL_CTX_set_session_id_context(server_ssl_ctx, sid_ctx, sizeof(sid_ctx)))
+      if(!::SSL_CTX_set_session_id_context(server_ssl_ctx, sid_ctx.data(), sid_ctx.size()))
         POSEIDON_THROW((
             "Could not set SSL session ID context",
             "[`SSL_set_session_id_context()` failed: $1]",
@@ -221,8 +216,7 @@ reload(const Config_File& file)
           value, file.path());
 
     // Create the client context, always.
-    client_ssl_ctx.reset(::SSL_CTX_new(::TLS_client_method()));
-    if(!client_ssl_ctx)
+    if(!client_ssl_ctx.reset(::SSL_CTX_new(::TLS_client_method())))
       POSEIDON_THROW((
           "Could not allocate client SSL context: $1",
           "[`SSL_CTX_new()` failed]"),
