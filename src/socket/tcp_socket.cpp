@@ -204,7 +204,7 @@ tcp_send(const char* data, size_t size)
     }
 
     // Try writing once. This is essential for edge-triggered epoll to work reliably.
-    io_result = ::send(this->fd(), queue.begin(), queue.size(), 0);
+    io_result = ::send(this->fd(), data, size, 0);
 
     if(io_result < 0) {
       if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {

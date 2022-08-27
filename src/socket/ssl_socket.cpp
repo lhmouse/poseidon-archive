@@ -342,7 +342,7 @@ ssl_send(const char* data, size_t size)
     // Try writing once. This is essential for edge-triggered epoll to work reliably.
     ssl_err = 0;
     size_t datalen;
-    int ret = ::SSL_write_ex(this->ssl(), queue.begin(), queue.size(), &datalen);
+    int ret = ::SSL_write_ex(this->ssl(), data, size, &datalen);
 
     if(ret == 0) {
       ssl_err = ::SSL_get_error(this->ssl(), ret);
