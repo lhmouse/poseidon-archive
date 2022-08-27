@@ -203,7 +203,10 @@ tcp_send(const char* data, size_t size)
       return true;
     }
 
-    // Try writing once. This is essential for edge-triggered epoll to work reliably.
+    // Try writing once.
+    // This is essential for edge-triggered epoll to work reliably.
+    // We also reserve backup space in case of partial writes.
+    queue.reserve(size);
     io_result = ::send(this->fd(), data, size, 0);
 
     if(io_result < 0) {

@@ -339,7 +339,10 @@ ssl_send(const char* data, size_t size)
       return true;
     }
 
-    // Try writing once. This is essential for edge-triggered epoll to work reliably.
+    // Try writing once.
+    // This is essential for edge-triggered epoll to work reliably.
+    // We also reserve backup space in case of partial writes.
+    queue.reserve(size);
     ssl_err = 0;
     size_t datalen;
     int ret = ::SSL_write_ex(this->ssl(), data, size, &datalen);
