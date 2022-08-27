@@ -298,26 +298,35 @@ udp_send(const Socket_Address& addr, const char* data, size_t size)
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
     ::ssize_t io_result = 0;
 
-    // Try sending the packet immediately. This is valid because UDP packets
-    // can be transmitted out of order.
+    // Try sending the packet immediately.
+    // This is valid because UDP packets can be transmitted out of order.
     io_result = ::sendto(this->fd(), data, size, 0, addr.addr(), addrlen);
-    if(io_result >= 0)
-      return true;
 
-    if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-      // Append data to the write queue.
-      queue.reserve(sizeof(addrlen) + sizeof(datalen) + addrlen + datalen);
+    if(io_result < 0) {
+      if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+        // Buffer them until the next `do_abstract_socket_on_writable()`.
+        queue.reserve(sizeof(addrlen) + sizeof(datalen) + addrlen + datalen);
 
-      // This must match `do_abstract_socket_on_writable()`.
-      ::memcpy(queue.mut_end(), &addrlen, sizeof(addrlen));
-      queue.accept(sizeof(addrlen));
-      ::memcpy(queue.mut_end(), &datalen, sizeof(datalen));
-      queue.accept(sizeof(datalen));
-      ::memcpy(queue.mut_end(), addr.data(), addrlen);
-      queue.accept(addrlen);
-      ::memcpy(queue.mut_end(), data, datalen);
-      queue.accept(datalen);
+        // This must match `do_abstract_socket_on_writable()`.
+        ::memcpy(queue.mut_end(), &addrlen, sizeof(addrlen));
+        queue.accept(sizeof(addrlen));
+        ::memcpy(queue.mut_end(), &datalen, sizeof(datalen));
+        queue.accept(sizeof(datalen));
+        ::memcpy(queue.mut_end(), addr.data(), addrlen);
+        queue.accept(addrlen);
+        ::memcpy(queue.mut_end(), data, datalen);
+        queue.accept(datalen);
+        return true;
+      }
+
+      POSEIDON_THROW((
+          "Error writing UDP socket",
+          "[`sendto()` failed: $3]",
+          "[UDP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno());
     }
+
+    // Partial writes are accepted without errors.
     return true;
   }
 

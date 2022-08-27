@@ -333,45 +333,42 @@ ssl_send(const char* data, size_t size)
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
     int ssl_err = 0;
 
-    // Append data to the write queue.
-    // If there were no pending data, try writing once. This is essential for
-    // the edge-triggered epoll to work reliably.
-    queue.putn(data, size);
-    if(ROCKET_EXPECT(queue.size() != size))
+    if(queue.size() != 0) {
+      // If there have been data pending, append new data to the end.
+      queue.putn(data, size);
       return true;
+    }
 
-    for(;;) {
-      // Write bytes from `queue` and remove those written.
-      if(queue.size() == 0)
-        break;
+    // Try writing once. This is essential for edge-triggered epoll to work reliably.
+    ssl_err = 0;
+    size_t datalen;
+    int ret = ::SSL_write_ex(this->ssl(), queue.begin(), queue.size(), &datalen);
 
-      ssl_err = 0;
-      size_t datalen;
-      int ret = ::SSL_write_ex(this->ssl(), queue.begin(), queue.size(), &datalen);
+    if(ret == 0) {
+      ssl_err = ::SSL_get_error(this->ssl(), ret);
 
-      if(ret == 0) {
-        ssl_err = ::SSL_get_error(this->ssl(), ret);
-
-        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
-          break;
-
-        if(ssl_err == SSL_ERROR_SYSCALL)
-          POSEIDON_THROW((
-              "Error writing SSL socket",
-              "[syscall failure: $3]",
-              "[SSL socket `$1` (class `$2`)]"),
-              this, typeid(*this), format_errno());
-
-        POSEIDON_THROW((
-            "Error writing SSL socket",
-            "[`SSL_write_ex()` failed: SSL error `$3`: $4]",
-            "[SSL socket `$1` (class `$2`)]"),
-            this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
+      if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) {
+        // Buffer them until the next `do_abstract_socket_on_writable()`.
+        queue.putn(data, size);
+        return true;
       }
 
-      // Discard data that have been sent.
-      queue.discard(datalen);
+      if(ssl_err == SSL_ERROR_SYSCALL)
+        POSEIDON_THROW((
+            "Error writing SSL socket",
+            "[syscall failure: $3]",
+            "[SSL socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno());
+
+      POSEIDON_THROW((
+          "Error writing SSL socket",
+          "[`SSL_write_ex()` failed: SSL error `$3`: $4]",
+          "[SSL socket `$1` (class `$2`)]"),
+          this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
     }
+
+    // If the operation has completed only partially, buffer remaining data.
+    queue.putn(data + datalen, size - datalen);
     return true;
   }
 

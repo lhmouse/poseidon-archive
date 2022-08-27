@@ -197,34 +197,31 @@ tcp_send(const char* data, size_t size)
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
     ::ssize_t io_result = 0;
 
-    // Append data to the write queue.
-    // If there were no pending data, try writing once. This is essential for
-    // the edge-triggered epoll to work reliably.
-    queue.putn(data, size);
-    if(ROCKET_EXPECT(queue.size() != size))
+    if(queue.size() != 0) {
+      // If there have been data pending, append new data to the end.
+      queue.putn(data, size);
       return true;
+    }
 
-    for(;;) {
-      // Write bytes from `queue` and remove those written.
-      if(queue.size() == 0)
-        break;
+    // Try writing once. This is essential for edge-triggered epoll to work reliably.
+    io_result = ::send(this->fd(), queue.begin(), queue.size(), 0);
 
-      io_result = ::send(this->fd(), queue.begin(), queue.size(), 0);
-
-      if(io_result < 0) {
-        if((errno == EAGAIN) || (errno == EWOULDBLOCK))
-          break;
-
-        POSEIDON_THROW((
-            "Error writing TCP socket",
-            "[`send()` failed: $3]",
-            "[TCP socket `$1` (class `$2`)]"),
-            this, typeid(*this), format_errno());
+    if(io_result < 0) {
+      if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+        // Buffer them until the next `do_abstract_socket_on_writable()`.
+        queue.putn(data, size);
+        return true;
       }
 
-      // Discard data that have been sent.
-      queue.discard((size_t) io_result);
+      POSEIDON_THROW((
+          "Error writing TCP socket",
+          "[`send()` failed: $3]",
+          "[TCP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno());
     }
+
+    // If the operation has completed only partially, buffer remaining data.
+    queue.putn(data + (size_t) io_result, size - (size_t) io_result);
     return true;
   }
 
