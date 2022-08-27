@@ -167,6 +167,7 @@ do_abstract_socket_on_readable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
+    size_t old_size = queue.size();
     int ssl_err = 0;
 
     for(;;) {
@@ -217,7 +218,8 @@ do_abstract_socket_on_readable()
       queue.accept(datalen);
     }
 
-    this->do_on_ssl_stream(queue);
+    if(old_size != queue.size())
+      this->do_on_ssl_stream(queue);
 
     if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
       return;

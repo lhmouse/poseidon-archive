@@ -60,6 +60,7 @@ do_abstract_socket_on_readable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
+    size_t old_size = queue.size();
     ::ssize_t io_result = 0;
 
     for(;;) {
@@ -88,7 +89,8 @@ do_abstract_socket_on_readable()
       queue.accept((size_t) io_result);
     }
 
-    this->do_on_tcp_stream(queue);
+    if(old_size != queue.size())
+      this->do_on_tcp_stream(queue);
 
     if(io_result != 0)
       return;
