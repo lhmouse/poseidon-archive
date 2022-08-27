@@ -72,9 +72,6 @@ do_abstract_socket_on_readable()
       io_result = ::recvfrom(this->fd(), queue.mut_end(), queue.capacity(), 0, addr.mut_addr(), &addrlen);
 
       if(io_result < 0) {
-        if(errno == EINTR)
-          continue;
-
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 
@@ -121,9 +118,6 @@ do_abstract_socket_on_writable()
       queue.discard(datalen);
 
       if(io_result < 0) {
-        if(errno == EINTR)
-          continue;
-
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 

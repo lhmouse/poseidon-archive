@@ -69,9 +69,6 @@ do_abstract_socket_on_readable()
       io_result = ::recv(this->fd(), queue.mut_end(), queue.capacity(), 0);
 
       if(io_result < 0) {
-        if(errno == EINTR)
-          continue;
-
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 
@@ -117,9 +114,6 @@ do_abstract_socket_on_writable()
       io_result = ::send(this->fd(), queue.begin(), queue.size(), 0);
 
       if(io_result < 0) {
-        if(errno == EINTR)
-          continue;
-
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 
@@ -218,9 +212,6 @@ tcp_send(const char* data, size_t size)
       io_result = ::send(this->fd(), queue.begin(), queue.size(), 0);
 
       if(io_result < 0) {
-        if(errno == EINTR)
-          continue;
-
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 

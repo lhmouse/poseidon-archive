@@ -69,9 +69,6 @@ do_abstract_socket_on_readable()
       unique_posix_fd fd(::accept4(this->fd(), addr.mut_addr(), &addrlen, SOCK_NONBLOCK));
 
       if(!fd) {
-        if(errno == EINTR)
-          continue;
-
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 

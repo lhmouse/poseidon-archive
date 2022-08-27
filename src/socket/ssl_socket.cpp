@@ -189,16 +189,8 @@ do_abstract_socket_on_readable()
           ssl_err = SSL_ERROR_ZERO_RETURN;
 #endif  // Open SSL 3.0
 
-        if(ssl_err == SSL_ERROR_ZERO_RETURN)
+        if((ssl_err == SSL_ERROR_ZERO_RETURN) || (ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
           break;
-
-        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) {
-          if(errno == EINTR)
-            continue;
-
-          if((errno == EAGAIN) || (errno == EWOULDBLOCK))
-            break;
-        }
 
         if(ssl_err == SSL_ERROR_SYSCALL)
           POSEIDON_THROW((
@@ -221,7 +213,7 @@ do_abstract_socket_on_readable()
     if(old_size != queue.size())
       this->do_on_ssl_stream(queue);
 
-    if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
+    if(ssl_err != SSL_ERROR_ZERO_RETURN)
       return;
 
     // If the end of stream has been reached, shut the connection down anyway.
@@ -251,13 +243,8 @@ do_abstract_socket_on_writable()
       if(ret == 0) {
         ssl_err = ::SSL_get_error(this->ssl(), ret);
 
-        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) {
-          if(errno == EINTR)
-            continue;
-
-          if((errno == EAGAIN) || (errno == EWOULDBLOCK))
-            break;
-        }
+        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
+          break;
 
         if(ssl_err == SSL_ERROR_SYSCALL)
           POSEIDON_THROW((
@@ -365,13 +352,8 @@ ssl_send(const char* data, size_t size)
       if(ret == 0) {
         ssl_err = ::SSL_get_error(this->ssl(), ret);
 
-        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) {
-          if(errno == EINTR)
-            continue;
-
-          if((errno == EAGAIN) || (errno == EWOULDBLOCK))
-            break;
-        }
+        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
+          break;
 
         if(ssl_err == SSL_ERROR_SYSCALL)
           POSEIDON_THROW((
