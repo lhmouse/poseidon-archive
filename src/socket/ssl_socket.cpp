@@ -315,42 +315,52 @@ ssl_send(const char* data, size_t size)
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
     int ssl_err = 0;
 
+    // Reserve backup space in case of partial writes.
+    size_t nskip = 0;
+    queue.reserve(size);
+
     if(queue.size() != 0) {
       // If there have been data pending, append new data to the end.
-      queue.putn(data, size);
+      ::memcpy(queue.mut_end(), data, size);
+      queue.accept(size);
       return true;
     }
 
-    // Try writing once. This is essential for edge-triggered epoll to work
-    // reliably. We also reserve backup space in case of partial writes.
-    queue.reserve(size);
-    ssl_err = 0;
-    size_t datalen;
-    int ret = ::SSL_write_ex(this->ssl(), data, size, &datalen);
+    for(;;) {
+      // Try writing until the operation would block. This is essential for the
+      // edge-triggered epoll to work reliably.
+      if(nskip == size)
+        break;
 
-    if(ret == 0) {
-      ssl_err = ::SSL_get_error(this->ssl(), ret);
+      ssl_err = 0;
+      size_t datalen;
+      int ret = ::SSL_write_ex(this->ssl(), data + nskip, size - nskip, &datalen);
 
-      if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE)) {
-        // Buffer them until the next `do_abstract_socket_on_writable()`.
-        queue.putn(data, size);
-        return true;
+      if(ret == 0) {
+        ssl_err = ::SSL_get_error(this->ssl(), ret);
+
+        if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
+          break;
+
+        POSEIDON_LOG_ERROR((
+            "Error writing SSL socket",
+            "[`SSL_write_ex()` failed: SSL_get_error = `$3`, ERR_peek_error = `$4`, errno = `$5`]",
+            "[SSL socket `$1` (class `$2`)]"),
+            this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()), format_errno());
+
+        // The connection is now broken.
+        this->quick_shut_down();
+        return false;
       }
 
-      POSEIDON_LOG_ERROR((
-          "Error writing SSL socket",
-          "[`SSL_write_ex()` failed: SSL_get_error = `$3`, ERR_peek_error = `$4`, errno = `$5`]",
-          "[SSL socket `$1` (class `$2`)]"),
-          this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()), format_errno());
-
-      // The connection is now broken.
-      this->quick_shut_down();
-      return false;
+      // Discard data that have been sent.
+      nskip += datalen;
     }
 
     // If the operation has completed only partially, buffer remaining data.
     // Space has already been reserved so this will not throw exceptions.
-    queue.putn(data + datalen, size - datalen);
+    ::memcpy(queue.mut_end(), data + nskip, size - nskip);
+    queue.accept(size - nskip);
     return true;
   }
 

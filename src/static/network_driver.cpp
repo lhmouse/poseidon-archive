@@ -170,6 +170,9 @@ reload(const Config_File& file)
             "[`SSL_CTX_new()` failed]: $1"),
             ::ERR_reason_error_string(::ERR_peek_error()));
 
+      ::SSL_CTX_set_mode(server_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+      ::SSL_CTX_set_mode(server_ssl_ctx, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+
       // Load the certificate and private key.
       if(!::SSL_CTX_use_certificate_chain_file(server_ssl_ctx, default_certificate.safe_c_str()))
         POSEIDON_THROW((
@@ -203,7 +206,6 @@ reload(const Config_File& file)
             ::ERR_reason_error_string(::ERR_peek_error()), file.path());
 
       ::SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, nullptr);
-      ::SSL_CTX_set_mode(server_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
     }
 
     // Create the client context, always.
@@ -213,8 +215,8 @@ reload(const Config_File& file)
           "[`SSL_CTX_new()` failed]"),
           ::ERR_reason_error_string(::ERR_peek_error()));
 
-    ::SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_NONE, nullptr);
-    ::SSL_CTX_set_mode(server_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+    ::SSL_CTX_set_mode(client_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+    ::SSL_CTX_set_mode(client_ssl_ctx, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
     // Get the path to trusted CA certificates.
     value = file.query("network", "ssl", "trusted_ca_path");
@@ -237,12 +239,16 @@ reload(const Config_File& file)
 
       ::SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_PEER, nullptr);
     }
-    else
+    else {
+      // Don't verify certificates at all.
       POSEIDON_LOG_WARN((
           "CA certificate validation has been disabled. This configuration is not "
           "recommended for production use. Set `network.ssl.trusted_ca_path` in '$1' "
           "to enable it."),
           file.path());
+
+      ::SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_NONE, nullptr);
+    }
 
     // Set up new data.
     plain_mutex::unique_lock lock(this->m_conf_mutex);

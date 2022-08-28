@@ -193,38 +193,48 @@ tcp_send(const char* data, size_t size)
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
     ::ssize_t io_result = 0;
 
+    // Reserve backup space in case of partial writes.
+    size_t nskip = 0;
+    queue.reserve(size);
+
     if(queue.size() != 0) {
       // If there have been data pending, append new data to the end.
-      queue.putn(data, size);
+      ::memcpy(queue.mut_end(), data, size);
+      queue.accept(size);
       return true;
     }
 
-    // Try writing once. This is essential for edge-triggered epoll to work
-    // reliably. We also reserve backup space in case of partial writes.
-    queue.reserve(size);
-    io_result = ::send(this->fd(), data, size, 0);
+    for(;;) {
+      // Try writing until the operation would block. This is essential for the
+      // edge-triggered epoll to work reliably.
+      if(nskip == size)
+        break;
 
-    if(io_result < 0) {
-      if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-        // Buffer them until the next `do_abstract_socket_on_writable()`.
-        queue.putn(data, size);
-        return true;
+      io_result = ::send(this->fd(), data + nskip, size - nskip, 0);
+
+      if(io_result < 0) {
+        if((errno == EAGAIN) || (errno == EWOULDBLOCK))
+          break;
+
+        POSEIDON_LOG_ERROR((
+            "Error writing TCP socket",
+            "[`send()` failed: $3]",
+            "[TCP socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno());
+
+        // The connection is now broken.
+        this->quick_shut_down();
+        return false;
       }
 
-      POSEIDON_LOG_ERROR((
-          "Error writing TCP socket",
-          "[`send()` failed: $3]",
-          "[TCP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno());
-
-      // The connection is now broken.
-      this->quick_shut_down();
-      return false;
+      // Discard data that have been sent.
+      nskip += (size_t) io_result;
     }
 
     // If the operation has completed only partially, buffer remaining data.
     // Space has already been reserved so this will not throw exceptions.
-    queue.putn(data + (size_t) io_result, size - (size_t) io_result);
+    ::memcpy(queue.mut_end(), data + nskip, size - nskip);
+    queue.accept(size - nskip);
     return true;
   }
 
