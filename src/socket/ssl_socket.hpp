@@ -120,8 +120,10 @@ class SSL_Socket
       { return this->m_alpn_proto;  }
 
     // Enqueues some bytes for sending.
-    // The return value merely indicates whether the attempt has succeeded. The
-    // bytes may or may never arrive at the destination host.
+    // If this function returns `true`, data will have been enqueued; however it
+    // is not guaranteed that they will arrive at the destination host. If this
+    // function returns `false`, the connection will have been closed.
+    // If this function throws an exception, there is no effect.
     // This function is thread-safe.
     bool
     ssl_send(const char* data, size_t size);

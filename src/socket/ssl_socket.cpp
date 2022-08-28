@@ -321,9 +321,8 @@ ssl_send(const char* data, size_t size)
       return true;
     }
 
-    // Try writing once.
-    // This is essential for edge-triggered epoll to work reliably.
-    // We also reserve backup space in case of partial writes.
+    // Try writing once. This is essential for edge-triggered epoll to work
+    // reliably. We also reserve backup space in case of partial writes.
     queue.reserve(size);
     ssl_err = 0;
     size_t datalen;
@@ -350,6 +349,7 @@ ssl_send(const char* data, size_t size)
     }
 
     // If the operation has completed only partially, buffer remaining data.
+    // Space has already been reserved so this will not throw exceptions.
     queue.putn(data + datalen, size - datalen);
     return true;
   }

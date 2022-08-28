@@ -199,9 +199,8 @@ tcp_send(const char* data, size_t size)
       return true;
     }
 
-    // Try writing once.
-    // This is essential for edge-triggered epoll to work reliably.
-    // We also reserve backup space in case of partial writes.
+    // Try writing once. This is essential for edge-triggered epoll to work
+    // reliably. We also reserve backup space in case of partial writes.
     queue.reserve(size);
     io_result = ::send(this->fd(), data, size, 0);
 
@@ -224,6 +223,7 @@ tcp_send(const char* data, size_t size)
     }
 
     // If the operation has completed only partially, buffer remaining data.
+    // Space has already been reserved so this will not throw exceptions.
     queue.putn(data + (size_t) io_result, size - (size_t) io_result);
     return true;
   }
