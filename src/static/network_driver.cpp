@@ -203,7 +203,18 @@ reload(const Config_File& file)
             ::ERR_reason_error_string(::ERR_peek_error()), file.path());
 
       ::SSL_CTX_set_verify(server_ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, nullptr);
+      ::SSL_CTX_set_mode(server_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
     }
+
+    // Create the client context, always.
+    if(!client_ssl_ctx.reset(::SSL_CTX_new(::TLS_client_method())))
+      POSEIDON_THROW((
+          "Could not allocate client SSL context: $1",
+          "[`SSL_CTX_new()` failed]"),
+          ::ERR_reason_error_string(::ERR_peek_error()));
+
+    ::SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_NONE, nullptr);
+    ::SSL_CTX_set_mode(server_ssl_ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
 
     // Get the path to trusted CA certificates.
     value = file.query("network", "ssl", "trusted_ca_path");
@@ -215,23 +226,7 @@ reload(const Config_File& file)
           "[in configuration file '$2']"),
           value, file.path());
 
-    // Create the client context, always.
-    if(!client_ssl_ctx.reset(::SSL_CTX_new(::TLS_client_method())))
-      POSEIDON_THROW((
-          "Could not allocate client SSL context: $1",
-          "[`SSL_CTX_new()` failed]"),
-          ::ERR_reason_error_string(::ERR_peek_error()));
-
-    if(trusted_ca_path.empty()) {
-      POSEIDON_LOG_WARN((
-          "CA certificate validation has been disabled. This configuration is not "
-          "recommended for production use. Set `network.ssl.trusted_ca_path` in '$1' "
-          "to enable it."),
-          file.path());
-
-      ::SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_NONE, nullptr);
-    }
-    else {
+    if(!trusted_ca_path.empty()) {
       // Load trusted CA certificates from the given directory.
       if(!::SSL_CTX_load_verify_locations(client_ssl_ctx, nullptr, trusted_ca_path.safe_c_str()))
         POSEIDON_THROW((
@@ -242,6 +237,12 @@ reload(const Config_File& file)
 
       ::SSL_CTX_set_verify(client_ssl_ctx, SSL_VERIFY_PEER, nullptr);
     }
+    else
+      POSEIDON_LOG_WARN((
+          "CA certificate validation has been disabled. This configuration is not "
+          "recommended for production use. Set `network.ssl.trusted_ca_path` in '$1' "
+          "to enable it."),
+          file.path());
 
     // Set up new data.
     plain_mutex::unique_lock lock(this->m_conf_mutex);
