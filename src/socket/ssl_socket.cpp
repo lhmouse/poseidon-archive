@@ -194,7 +194,7 @@ do_abstract_socket_on_readable()
 
         POSEIDON_LOG_ERROR((
             "Error reading SSL socket",
-            "[`SSL_read_ex()` failed: SSL_get_error = `$3`, ERR_peek_error = `$4`, errno = `%5`]",
+            "[`SSL_read_ex()` failed: SSL_get_error = `$3`, ERR_peek_error = `$4`, errno = `$5`]",
             "[SSL socket `$1` (class `$2`)]"),
             this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()), format_errno());
 
@@ -245,7 +245,7 @@ do_abstract_socket_on_writable()
 
         POSEIDON_LOG_ERROR((
             "Error writing SSL socket",
-            "[`SSL_write_ex()` failed: SSL error `$3`: $4]",
+            "[`SSL_write_ex()` failed: SSL_get_error = `$3`, ERR_peek_error = `$4`, errno = `$5`]",
             "[SSL socket `$1` (class `$2`)]"),
             this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()), format_errno());
 
@@ -339,7 +339,7 @@ ssl_send(const char* data, size_t size)
 
       POSEIDON_LOG_ERROR((
           "Error writing SSL socket",
-          "[`SSL_write_ex()` failed: SSL error `$3`: $4]",
+          "[`SSL_write_ex()` failed: SSL_get_error = `$3`, ERR_peek_error = `$4`, errno = `$5`]",
           "[SSL socket `$1` (class `$2`)]"),
           this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()), format_errno());
 
