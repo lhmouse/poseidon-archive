@@ -76,7 +76,7 @@ class UDP_Socket
     // If this function returns `true`, data will have been enqueued; however it
     // is not guaranteed that they will arrive at the destination host. It should
     // also be noted that UDP packets may be truncated if they are too large, which
-    // is not considered errors; overflowing data are dropped silently.
+    // is not considered errors; overflown data are dropped silently.
     // If this function throws an exception, there is no effect.
     // This function is thread-safe.
     bool
