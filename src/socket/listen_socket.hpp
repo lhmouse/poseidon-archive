@@ -35,10 +35,6 @@ class Listen_Socket
     void
     do_abstract_socket_on_writable() override;
 
-    virtual
-    void
-    do_abstract_socket_on_exception(exception& stdex) override;
-
     // This callback is invoked by the network thread when a connection has been
     // received, and is intended to be overriden by derived classes. This function
     // should return a pointer to a socket object, constructed from the given FD.

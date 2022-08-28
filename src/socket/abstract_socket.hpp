@@ -95,13 +95,6 @@ class Abstract_Socket
     void
     do_abstract_socket_on_writable() = 0;
 
-    // This callback is invoked by the network thread after an exception has
-    // been thrown and caught from `do_abstract_socket_on_readable()` and
-    // `do_abstract_socket_on_writable()` callbacks.
-    virtual
-    void
-    do_abstract_socket_on_exception(exception& stdex) = 0;
-
   public:
     ASTERIA_NONCOPYABLE_VIRTUAL_DESTRUCTOR(Abstract_Socket);
 

@@ -139,16 +139,6 @@ do_abstract_socket_on_writable()
 
 void
 UDP_Socket::
-do_abstract_socket_on_exception(exception& stdex)
-  {
-    POSEIDON_LOG_WARN((
-        "Ignoring exception: $3",
-        "[UDP socket `$1` (class `$2`)]"),
-        this, typeid(*this), stdex);
-  }
-
-void
-UDP_Socket::
 do_on_udp_opened()
   {
     POSEIDON_LOG_INFO((

@@ -40,10 +40,6 @@ class UDP_Socket
     void
     do_abstract_socket_on_writable() override;
 
-    virtual
-    void
-    do_abstract_socket_on_exception(exception& stdex) override;
-
     // This callback is invoked by the network thread when a port has been opened
     // and incoming packets are possible.
     // The default implemention merely prints a message.

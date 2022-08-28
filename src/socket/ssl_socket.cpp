@@ -274,18 +274,6 @@ do_abstract_socket_on_writable()
 
 void
 SSL_Socket::
-do_abstract_socket_on_exception(exception& stdex)
-  {
-    this->quick_shut_down();
-
-    POSEIDON_LOG_WARN((
-        "SSL connection terminated due to exception: $3",
-        "[SSL socket `$1` (class `$2`)]"),
-        this, typeid(*this), stdex);
-  }
-
-void
-SSL_Socket::
 do_on_ssl_connected()
   {
     POSEIDON_LOG_INFO((

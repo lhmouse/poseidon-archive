@@ -411,9 +411,9 @@ thread_loop()
             "Unhandled exception thrown from socket read callback: $1",
             "[socket class `$2`]"),
             stdex, typeid(*socket));
-
-        socket->do_abstract_socket_on_exception(stdex);
       }
+
+      POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) read done"), socket, typeid(*socket));
     }
 
     if(event.events & EPOLLOUT) {
@@ -425,9 +425,9 @@ thread_loop()
             "Unhandled exception thrown from socket write callback: $1",
             "[socket class `$2`]"),
             stdex, typeid(*socket));
-
-        socket->do_abstract_socket_on_exception(stdex);
       }
+
+      POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) write done"), socket, typeid(*socket));
     }
 
     bool throttled = socket->m_io_write_queue.size() > throttle_size;

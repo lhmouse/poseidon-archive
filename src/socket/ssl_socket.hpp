@@ -49,10 +49,6 @@ class SSL_Socket
     void
     do_abstract_socket_on_writable() override;
 
-    virtual
-    void
-    do_abstract_socket_on_exception(exception& stdex) override;
-
     // This callback is invoked by the network thread when an outgoing (from
     // client) full-duplex connection has been established. It is not called for
     // incoming connections.
