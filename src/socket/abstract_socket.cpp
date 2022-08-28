@@ -76,15 +76,15 @@ bool
 Abstract_Socket::
 quick_shut_down() noexcept
   {
+    this->m_state.store(socket_state_closed);
+
     // Enable linger to request that any pending data be discarded.
     ::linger lng;
     lng.l_onoff = 1;
     lng.l_linger = 0;
     ::setsockopt(this->fd(), SOL_SOCKET, SO_LINGER, &lng, sizeof(lng));
 
-    int status = ::shutdown(this->fd(), SHUT_RDWR);
-    this->m_state.store(socket_state_closed);
-    return status == 0;
+    return ::shutdown(this->fd(), SHUT_RDWR) == 0;
   }
 
 }  // namespace poseidon

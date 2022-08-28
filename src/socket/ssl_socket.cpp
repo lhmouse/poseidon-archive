@@ -210,14 +210,13 @@ do_abstract_socket_on_readable()
     if(old_size != queue.size())
       this->do_on_ssl_stream(queue);
 
-    if(ssl_err != SSL_ERROR_ZERO_RETURN)
-      return;
-
-    // If the end of stream has been reached, shut the connection down anyway.
-    // Half-open connections are not supported.
-    bool alerted = ::SSL_shutdown(this->ssl()) == 1;
-    POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, alerted = $2"), this->get_remote_address(), alerted);
-    ::shutdown(this->fd(), SHUT_RDWR);
+    if(ssl_err == SSL_ERROR_ZERO_RETURN) {
+      // If the end of stream has been reached, shut the connection down anyway.
+      // Half-open connections are not supported.
+      bool alerted = ::SSL_shutdown(this->ssl()) == 1;
+      POSEIDON_LOG_INFO(("Closing SSL connection: remote = $1, alerted = $2"), this->get_remote_address(), alerted);
+      ::shutdown(this->fd(), SHUT_RDWR);
+    }
   }
 
 void
@@ -258,12 +257,18 @@ do_abstract_socket_on_writable()
       queue.discard(datalen);
     }
 
-    if(!this->do_set_established())
-      return;
+    if(this->do_abstract_socket_set_established()) {
+      // Deliver the establishment notification.
+      POSEIDON_LOG_DEBUG(("Established SSL connection: remote = $1"), this->get_remote_address());
+      this->do_on_ssl_connected();
+    }
 
-    // Deliver the establishment notification.
-    POSEIDON_LOG_DEBUG(("Established SSL connection: remote = $1"), this->get_remote_address());
-    this->do_on_ssl_connected();
+    if(queue.empty() && this->do_abstract_socket_set_closed()) {
+      // If the socket has been marked closing and there are no more data, perform
+      // complete shutdown.
+      ::SSL_shutdown(this->ssl());
+      ::shutdown(this->fd(), SHUT_RDWR);
+    }
   }
 
 void
@@ -308,7 +313,7 @@ ssl_send(const char* data, size_t size)
           this, typeid(*this));
 
     // If this socket has been marked closed, fail immediately.
-    if(this->socket_state() == socket_state_closed)
+    if(this->socket_state() >= socket_state_closing)
       return false;
 
     recursive_mutex::unique_lock io_lock;
@@ -389,6 +394,13 @@ bool
 SSL_Socket::
 ssl_shut_down() noexcept
   {
+    recursive_mutex::unique_lock io_lock;
+    auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
+
+    if(!queue.empty() && this->do_abstract_socket_set_closing())
+      return true;
+
+    // If there are no data pending, shut it down immediately.
     ::SSL_shutdown(this->ssl());
     return ::shutdown(this->fd(), SHUT_RDWR) == 0;
   }

@@ -25,7 +25,8 @@ enum Socket_State : uint8_t
     socket_state_unknown      = 0,
     socket_state_connecting   = 1,
     socket_state_established  = 2,
-    socket_state_closed       = 3,
+    socket_state_closing      = 3,
+    socket_state_closed       = 4,
   };
 
 }  // namespace poseidon
