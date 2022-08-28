@@ -73,8 +73,11 @@ class UDP_Socket
     leave_multicast_group(const Socket_Address& maddr);
 
     // Enqueues a packet for sending.
-    // The return value merely indicates whether the attempt has succeeded. The
-    // packet may or may never arrive at the destination host.
+    // If this function returns `true`, data will have been enqueued; however it
+    // is not guaranteed that they will arrive at the destination host. It should
+    // also be noted that UDP packets may be truncated if they are too large, which
+    // is not considered errors; overflowing data are dropped silently.
+    // If this function throws an exception, there is no effect.
     // This function is thread-safe.
     bool
     udp_send(const Socket_Address& addr, const char* data, size_t size);
