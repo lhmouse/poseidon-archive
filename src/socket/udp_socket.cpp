@@ -75,11 +75,14 @@ do_abstract_socket_on_readable()
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 
-        POSEIDON_THROW((
+        POSEIDON_LOG_ERROR((
             "Error reading UDP socket",
              "[`recvfrom()` failed: $3]",
             "[UDP socket `$1` (class `$2`)]"),
             this, typeid(*this), format_errno());
+
+        // Errors are ignored.
+        continue;
       }
 
       // Accept this incoming packet.
@@ -121,11 +124,14 @@ do_abstract_socket_on_writable()
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 
-        POSEIDON_THROW((
+        POSEIDON_LOG_ERROR((
             "Error writing UDP socket",
             "[`sendto()` failed: $3]",
             "[UDP socket `$1` (class `$2`)]"),
             this, typeid(*this), format_errno());
+
+        // Errors are ignored.
+        continue;
       }
     }
 
@@ -309,11 +315,14 @@ udp_send(const Socket_Address& addr, const char* data, size_t size)
         return true;
       }
 
-      POSEIDON_THROW((
+      POSEIDON_LOG_ERROR((
           "Error writing UDP socket",
           "[`sendto()` failed: $3]",
           "[UDP socket `$1` (class `$2`)]"),
           this, typeid(*this), format_errno());
+
+      // Errors are ignored.
+      return false;
     }
 
     // Partial writes are accepted without errors.

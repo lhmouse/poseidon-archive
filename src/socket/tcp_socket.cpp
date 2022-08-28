@@ -72,11 +72,15 @@ do_abstract_socket_on_readable()
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 
-        POSEIDON_THROW((
+        POSEIDON_LOG_ERROR((
             "Error reading TCP socket",
             "[`recv()` failed: $3]",
             "[TCP socket `$1` (class `$2`)]"),
             this, typeid(*this), format_errno());
+
+        // The connection is now broken.
+        this->quick_shut_down();
+        return;
       }
 
       if(io_result == 0)
@@ -117,11 +121,15 @@ do_abstract_socket_on_writable()
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 
-        POSEIDON_THROW((
+        POSEIDON_LOG_ERROR((
             "Error writing TCP socket",
             "[`send()` failed: $3]",
             "[TCP socket `$1` (class `$2`)]"),
             this, typeid(*this), format_errno());
+
+        // The connection is now broken.
+        this->quick_shut_down();
+        return;
       }
 
       // Discard data that have been sent.
@@ -204,11 +212,15 @@ tcp_send(const char* data, size_t size)
         return true;
       }
 
-      POSEIDON_THROW((
+      POSEIDON_LOG_ERROR((
           "Error writing TCP socket",
           "[`send()` failed: $3]",
           "[TCP socket `$1` (class `$2`)]"),
           this, typeid(*this), format_errno());
+
+      // The connection is now broken.
+      this->quick_shut_down();
+      return false;
     }
 
     // If the operation has completed only partially, buffer remaining data.

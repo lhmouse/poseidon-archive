@@ -72,11 +72,14 @@ do_abstract_socket_on_readable()
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
           break;
 
-        POSEIDON_THROW((
+        POSEIDON_LOG_ERROR((
             "Error accepting TCP connection",
             "[`accept4()` failed: $3]",
             "[TCP listen socket `$1` (class `$2`)]"),
             this, typeid(*this), format_errno());
+
+        // Errors are ignored.
+        continue;
       }
 
       // Accept the client socket. If a null pointer is returned, the accepted

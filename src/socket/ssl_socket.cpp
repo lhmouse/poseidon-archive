@@ -192,18 +192,15 @@ do_abstract_socket_on_readable()
         if((ssl_err == SSL_ERROR_ZERO_RETURN) || (ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
           break;
 
-        if(ssl_err == SSL_ERROR_SYSCALL)
-          POSEIDON_THROW((
-              "Error reading SSL socket",
-              "[syscall failure: $3]",
-              "[SSL socket `$1` (class `$2`)]"),
-              this, typeid(*this), format_errno());
-
-        POSEIDON_THROW((
+        POSEIDON_LOG_ERROR((
             "Error reading SSL socket",
-            "[`SSL_read_ex()` failed: SSL error `$3`: $4]",
+            "[`SSL_read_ex()` failed: SSL_get_error = `$3`, ERR_peek_error = `$4`, errno = `%5`]",
             "[SSL socket `$1` (class `$2`)]"),
-            this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
+            this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()), format_errno());
+
+        // The connection is now broken.
+        this->quick_shut_down();
+        return;
       }
 
       // Accept incoming data.
@@ -246,18 +243,15 @@ do_abstract_socket_on_writable()
         if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
           break;
 
-        if(ssl_err == SSL_ERROR_SYSCALL)
-          POSEIDON_THROW((
-              "Error writing SSL socket",
-              "[syscall failure: $3]",
-              "[SSL socket `$1` (class `$2`)]"),
-              this, typeid(*this), format_errno());
-
-        POSEIDON_THROW((
+        POSEIDON_LOG_ERROR((
             "Error writing SSL socket",
             "[`SSL_write_ex()` failed: SSL error `$3`: $4]",
             "[SSL socket `$1` (class `$2`)]"),
-            this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
+            this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()), format_errno());
+
+        // The connection is now broken.
+        this->quick_shut_down();
+        return;
       }
 
       // Discard data that have been sent.
@@ -344,18 +338,15 @@ ssl_send(const char* data, size_t size)
         return true;
       }
 
-      if(ssl_err == SSL_ERROR_SYSCALL)
-        POSEIDON_THROW((
-            "Error writing SSL socket",
-            "[syscall failure: $3]",
-            "[SSL socket `$1` (class `$2`)]"),
-            this, typeid(*this), format_errno());
-
-      POSEIDON_THROW((
+      POSEIDON_LOG_ERROR((
           "Error writing SSL socket",
           "[`SSL_write_ex()` failed: SSL error `$3`: $4]",
           "[SSL socket `$1` (class `$2`)]"),
-          this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()));
+          this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()), format_errno());
+
+      // The connection is now broken.
+      this->quick_shut_down();
+      return false;
     }
 
     // If the operation has completed only partially, buffer remaining data.
