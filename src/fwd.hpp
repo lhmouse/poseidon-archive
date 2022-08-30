@@ -119,7 +119,6 @@ class Abstract_Async_Task;
 // Socket types
 enum Socket_Address_Class : uint8_t;
 enum Socket_State : uint8_t;
-
 class Socket_Address;
 class Abstract_Socket;
 class Listen_Socket;
