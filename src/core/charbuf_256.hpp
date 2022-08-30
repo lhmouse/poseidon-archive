@@ -30,13 +30,13 @@ class charbuf_256
         if(!str)
           str = "";
 
-        size_t len = ::std::strlen(str);
+        size_t len = ::strlen(str);
         if(len >= 256)
           ::rocket::sprintf_and_throw<::std::length_error>(
               "charbuf_256: string `%s` (length `%lld`) too long",
               str, (long long) len);
 
-        ::std::memcpy(this->m_data, str, len + 1);
+        ::memcpy(this->m_data, str, len + 1);
       }
 
   public:
@@ -45,9 +45,9 @@ class charbuf_256
     swap(charbuf_256& other) noexcept
       {
         char temp[256];
-        ::std::memcpy(temp, other.m_data, sizeof(temp));
-        ::std::memcpy(other.m_data, this->m_data, sizeof(temp));
-        ::std::memcpy(this->m_data, temp, sizeof(temp));
+        ::memcpy(temp, other.m_data, sizeof(temp));
+        ::memcpy(other.m_data, this->m_data, sizeof(temp));
+        ::memcpy(this->m_data, temp, sizeof(temp));
         return *this;
       }
 
@@ -55,13 +55,13 @@ class charbuf_256
     int
     compare(const charbuf_256& other) const noexcept
       {
-        return ::std::strcmp(this->m_data, other.m_data);
+        return ::strcmp(this->m_data, other.m_data);
       }
 
     int
     compare(const char* other) const noexcept
       {
-        return ::std::strcmp(this->m_data, other);
+        return ::strcmp(this->m_data, other);
       }
 
     // Returns a pointer to internal storage so a buffer can be passed as
@@ -93,126 +93,126 @@ inline
 bool
 operator==(const charbuf_256& lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) == 0;
+    return ::strcmp(lhs, rhs) == 0;
   }
 
 inline
 bool
 operator==(const char* lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) == 0;
+    return ::strcmp(lhs, rhs) == 0;
   }
 
 inline
 bool
 operator==(const charbuf_256& lhs, const char* rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) == 0;
+    return ::strcmp(lhs, rhs) == 0;
   }
 
 inline
 bool
 operator!=(const charbuf_256& lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) != 0;
+    return ::strcmp(lhs, rhs) != 0;
   }
 
 inline
 bool
 operator!=(const char* lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) != 0;
+    return ::strcmp(lhs, rhs) != 0;
   }
 
 inline
 bool
 operator!=(const charbuf_256& lhs, const char* rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) != 0;
+    return ::strcmp(lhs, rhs) != 0;
   }
 
 inline
 bool
 operator<(const charbuf_256& lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) < 0;
+    return ::strcmp(lhs, rhs) < 0;
   }
 
 inline
 bool
 operator<(const char* lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) < 0;
+    return ::strcmp(lhs, rhs) < 0;
   }
 
 inline
 bool
 operator<(const charbuf_256& lhs, const char* rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) < 0;
+    return ::strcmp(lhs, rhs) < 0;
   }
 
 inline
 bool
 operator>(const charbuf_256& lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) > 0;
+    return ::strcmp(lhs, rhs) > 0;
   }
 
 inline
 bool
 operator>(const char* lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) > 0;
+    return ::strcmp(lhs, rhs) > 0;
   }
 
 inline
 bool
 operator>(const charbuf_256& lhs, const char* rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) > 0;
+    return ::strcmp(lhs, rhs) > 0;
   }
 
 inline
 bool
 operator<=(const charbuf_256& lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) <= 0;
+    return ::strcmp(lhs, rhs) <= 0;
   }
 
 inline
 bool
 operator<=(const char* lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) <= 0;
+    return ::strcmp(lhs, rhs) <= 0;
   }
 
 inline
 bool
 operator<=(const charbuf_256& lhs, const char* rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) <= 0;
+    return ::strcmp(lhs, rhs) <= 0;
   }
 
 inline
 bool
 operator>=(const charbuf_256& lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) >= 0;
+    return ::strcmp(lhs, rhs) >= 0;
   }
 
 inline
 bool
 operator>=(const char* lhs, const charbuf_256& rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) >= 0;
+    return ::strcmp(lhs, rhs) >= 0;
   }
 
 inline
 bool
 operator>=(const charbuf_256& lhs, const char* rhs) noexcept
   {
-    return ::std::strcmp(lhs, rhs) >= 0;
+    return ::strcmp(lhs, rhs) >= 0;
   }
 
 }  // namespace poseidon
