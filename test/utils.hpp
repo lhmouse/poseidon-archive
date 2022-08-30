@@ -23,7 +23,7 @@
         ::asteria::write_log_to_stderr(__FILE__, __LINE__, __func__,  \
             ::rocket::sref("POSEIDON_TEST_CHECK PASS: " #expr));  \
       }  \
-      catch(exception& stdex) {  \
+      catch(::std::exception& stdex) {  \
         /* failed */  \
         ::asteria::write_log_to_stderr(__FILE__, __LINE__, __func__,  \
             ::rocket::cow_string("POSEIDON_TEST_CHECK EXCEPTION: " #expr)  \
