@@ -17,6 +17,7 @@ class charbuf_256
   public:
     // Constructs a null-terminated string of zero characters.
     // This constructor is not explicit as it doesn't allocate memory.
+    inline
     charbuf_256() noexcept
       {
         this->m_data[0] = 0;
@@ -24,6 +25,7 @@ class charbuf_256
 
     // Constructs a null-terminated string.
     // This constructor is not explicit as it doesn't allocate memory.
+    inline
     charbuf_256(const char* str_opt)
       {
         const char* str = str_opt;
