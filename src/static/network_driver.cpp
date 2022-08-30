@@ -374,7 +374,7 @@ thread_loop()
                 return SSL_TLSEXT_ERR_ALERT_FATAL;  // malformed
 
               char* str = alpn_req.emplace_back();
-              ::std::memcpy(str, bp, len);
+              ::memcpy(str, bp, len);
               str[len] = 0;
               bp += len;
               POSEIDON_LOG_TRACE(("Received ALPN protocol: $1"), str);
