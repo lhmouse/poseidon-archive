@@ -1,0 +1,7 @@
+check_HEADERS +=  \
+  %reldir%/utils.hpp  \
+  ${END}
+
+check_PROGRAMS +=  \
+  %reldir%/utils.test  \
+  ${END}
