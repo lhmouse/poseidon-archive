@@ -128,6 +128,9 @@ class UDP_Socket;
 class TCP_Socket;
 class SSL_Socket;
 
+// HTTP types
+class HTTP_Fields;
+
 // Manager types and instances
 extern atomic_signal exit_signal;
 extern class Main_Config& main_config;

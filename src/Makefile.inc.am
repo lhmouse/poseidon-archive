@@ -47,6 +47,12 @@ include_poseidon_socket_HEADERS =  \
   %reldir%/socket/ssl_socket.hpp  \
   ${END}
 
+include_poseidon_httpdir = ${includedir}/poseidon/http
+include_poseidon_http_HEADERS =  \
+  %reldir%/http/enums.hpp  \
+  %reldir%/http/http_fields.hpp  \
+  ${END}
+
 include_poseidon_staticdir = ${includedir}/poseidon/static
 include_poseidon_static_HEADERS =  \
   %reldir%/static/main_config.hpp  \
@@ -75,6 +81,7 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/socket/listen_socket.cpp  \
   %reldir%/socket/tcp_socket.cpp  \
   %reldir%/socket/ssl_socket.cpp  \
+  %reldir%/http/http_fields.cpp  \
   %reldir%/static/main_config.cpp  \
   %reldir%/static/async_logger.cpp  \
   %reldir%/static/timer_driver.cpp  \
