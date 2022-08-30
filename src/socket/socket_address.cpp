@@ -122,7 +122,8 @@ do_classify_ipv6(const ::in6_addr* addr) noexcept
 Socket_Address::
 Socket_Address(const cow_string& host, uint16_t port)
   {
-    this->parse(host, port);
+    if(!this->parse(host, port))
+      POSEIDON_THROW(("Could not parse IP address string `$1`"), host);
   }
 
 Socket_Address_Class
@@ -184,12 +185,12 @@ format() const
     return fmt.extract_string();
   }
 
-Socket_Address&
+bool
 Socket_Address::
 parse(const cow_string& host, uint16_t port)
   {
     if(host.empty())
-      POSEIDON_THROW(("Empty address string not valid"));
+      return false;
 
     unsigned char addrbuf[16];
     char sbuf[128];
@@ -197,17 +198,14 @@ parse(const cow_string& host, uint16_t port)
     if((host.front() >= '0') && (host.front() <= '9')) {
       // Assume IPv4.
       if(::inet_pton(AF_INET, host.safe_c_str(), addrbuf) != 1)
-        POSEIDON_THROW((
-            "Invalid IPv4 address: `$1`",
-            "[`inet_ntop()` failed: $2]"),
-            host, format_errno());
+        return false;
 
       // Set up data.
       this->m_family = AF_INET;
       ::memcpy(&(this->m_addr4.sin_addr), addrbuf, sizeof(::in_addr));
       this->m_addr4.sin_port = htobe16(port);
       this->m_size = sizeof(::sockaddr_in);
-      return *this;
+      return true;
     }
 
     if((host.front() == '[') && (host.back() == ']')) {
@@ -225,10 +223,7 @@ parse(const cow_string& host, uint16_t port)
 
       // Try parsing it as IPv6.
       if(::inet_pton(AF_INET6, ub_host.c_str(), addrbuf) != 1)
-        POSEIDON_THROW((
-            "Invalid IPv6 address: `$1`",
-            "[`inet_ntop()` failed: $2]"),
-            host, format_errno());
+        return false;
 
       // Set up data.
       this->m_family = AF_INET6;
@@ -237,12 +232,10 @@ parse(const cow_string& host, uint16_t port)
       this->m_addr6.sin6_flowinfo = 0;
       this->m_addr6.sin6_scope_id = 0;
       this->m_size = sizeof(::sockaddr_in6);
-      return *this;
+      return true;
     }
 
-    POSEIDON_THROW((
-        "Unrecognizable address string: `$1`"),
-        host);
+    return false;
   }
 
 }  // namespace poseidon

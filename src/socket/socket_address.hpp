@@ -32,6 +32,7 @@ class Socket_Address
       { }
 
     // Parses an address from a string.
+    // An exception is thrown if the address string is not valid.
     explicit
     Socket_Address(const cow_string& host, uint16_t port);
 
@@ -45,12 +46,12 @@ class Socket_Address
     constexpr
     bool
     is_ipv4() const noexcept
-      { return this->m_family == PF_INET;  }
+      { return this->m_family == AF_INET;  }
 
     constexpr
     bool
     is_ipv6() const noexcept
-      { return this->m_family == PF_INET6;  }
+      { return this->m_family == AF_INET6;  }
 
     // Get raw data and size. These functions are provided for convenience.
     constexpr
@@ -142,9 +143,8 @@ class Socket_Address
     format() const;
 
     // Parses an address from a string, which may be either IPv4 or IPv6.
-    // In case of failure, an exception is thrown, and the contents of this
-    // object are unchanged.
-    Socket_Address&
+    // In case of failure, `false` is returned, and there is no effect.
+    bool
     parse(const cow_string& host, uint16_t port);
   };
 

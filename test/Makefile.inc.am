@@ -4,4 +4,5 @@ check_HEADERS +=  \
 
 check_PROGRAMS +=  \
   %reldir%/utils.test  \
+  %reldir%/socket_address.test  \
   ${END}
