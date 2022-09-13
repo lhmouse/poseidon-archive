@@ -16,7 +16,7 @@ int main()
     POSEIDON_TEST_CHECK(::memcmp(&(addr.addr4()->sin_addr), "\x01\x02\x80\xFF", 4) == 0);
     POSEIDON_TEST_CHECK(addr.addr4()->sin_port == htobe16(12345));
 
-    POSEIDON_TEST_CHECK(addr.parse(sref(""), 12345) == false);
+    POSEIDON_TEST_CHECK(addr.parse(sref(""), 12345) == true);
     POSEIDON_TEST_CHECK(addr.family() == AF_UNSPEC);
     POSEIDON_TEST_CHECK(addr.parse(sref("12.3.4"), 12345) == false);
     POSEIDON_TEST_CHECK(addr.family() == AF_UNSPEC);
