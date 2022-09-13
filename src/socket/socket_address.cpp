@@ -123,7 +123,9 @@ Socket_Address::
 Socket_Address(const cow_string& host, uint16_t port)
   {
     if(!this->parse(host, port))
-      POSEIDON_THROW(("Could not parse IP address string `$1`"), host);
+      POSEIDON_THROW((
+          "Could not parse IP address string `$1`"),
+          host);
   }
 
 Socket_Address_Class
@@ -187,8 +189,9 @@ parse(const cow_string& host, uint16_t port)
   {
     this->m_family = AF_UNSPEC;
 
-    if(host.empty())
-      return false;
+    // An empty string denotes the null address.
+    if(ROCKET_UNEXPECT(host.empty()))
+      return true;
 
     if((host.front() >= '0') && (host.front() <= '9')) {
       // Assume IPv4.
