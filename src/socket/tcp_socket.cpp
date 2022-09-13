@@ -173,7 +173,7 @@ get_remote_address() const
 
       // Cache the result.
       addr.set_size(addrlen);
-      this->m_peername = addr.format();
+      this->m_peername = addr.print_to_string();
       this->m_peername_ready.store(true);
     }
     return this->m_peername;

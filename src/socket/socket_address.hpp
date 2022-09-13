@@ -140,7 +140,7 @@ class Socket_Address
     print(tinyfmt& fmt) const;
 
     cow_string
-    format() const;
+    print_to_string() const;
 
     // Parses an address from a string, which may be either IPv4 or IPv6.
     // In case of failure, `false` is returned, and there is no effect.

@@ -178,7 +178,7 @@ print(tinyfmt& fmt) const
 
 cow_string
 Socket_Address::
-format() const
+print_to_string() const
   {
     ::rocket::tinyfmt_str fmt;
     this->print(fmt);

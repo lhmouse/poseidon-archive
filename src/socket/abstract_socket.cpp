@@ -66,7 +66,7 @@ get_local_address() const
 
       // Cache the result.
       addr.set_size(addrlen);
-      this->m_sockname = addr.format();
+      this->m_sockname = addr.print_to_string();
       this->m_sockname_ready.store(true);
     }
     return this->m_sockname;
