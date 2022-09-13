@@ -143,7 +143,8 @@ class Socket_Address
     print_to_string() const;
 
     // Parses an address from a string, which may be either IPv4 or IPv6.
-    // In case of failure, `false` is returned, and there is no effect.
+    // If `false` is returned or an exception is thrown, the contents of
+    // this object are unspecified.
     bool
     parse(const cow_string& host, uint16_t port);
   };

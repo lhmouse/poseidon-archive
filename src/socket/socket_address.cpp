@@ -147,30 +147,26 @@ tinyfmt&
 Socket_Address::
 print(tinyfmt& fmt) const
   {
-    char sbuf[128];
-    const char* host;
-    uint32_t port;
-
     if(this->m_family == AF_INET) {
       // IPv4
-      host = ::inet_ntop(AF_INET, &(this->m_addr4.sin_addr), sbuf, sizeof(sbuf));
-      port = be16toh(this->m_addr4.sin_port);
+      char sbuf[128];
+      const char* host = ::inet_ntop(AF_INET, &(this->m_addr4.sin_addr), sbuf, sizeof(sbuf));
       if(!host)
         return fmt << "(invalid IPv4 address)";
 
       // Write the host and port, separated by a colon.
-      return fmt << host << ":" << port;
+      return fmt << host << ":" << (uint32_t) be16toh(this->m_addr4.sin_port);
     }
 
     if(this->m_family == AF_INET6) {
       // IPv6
-      host = ::inet_ntop(AF_INET6, &(this->m_addr6.sin6_addr), sbuf, sizeof(sbuf));
-      port = be16toh(this->m_addr6.sin6_port);
+      char sbuf[128];
+      const char* host = ::inet_ntop(AF_INET6, &(this->m_addr6.sin6_addr), sbuf, sizeof(sbuf));
       if(!host)
         return fmt << "(invalid IPv6 address)";
 
       // Write the host in brackets, followed by the port, separated by a colon.
-      return fmt << "[" << host << "]:" << port;
+      return fmt << "[" << host << "]:" << (uint32_t) be16toh(this->m_addr6.sin6_port);
     }
 
     return fmt << "(unknown address family " << (uint32_t) this->m_family << ")";
@@ -189,20 +185,18 @@ bool
 Socket_Address::
 parse(const cow_string& host, uint16_t port)
   {
+    this->m_family = AF_UNSPEC;
+
     if(host.empty())
       return false;
 
-    unsigned char addrbuf[16];
-    char sbuf[128];
-
     if((host.front() >= '0') && (host.front() <= '9')) {
       // Assume IPv4.
-      if(::inet_pton(AF_INET, host.safe_c_str(), addrbuf) != 1)
+      if(::inet_pton(AF_INET, host.safe_c_str(), &(this->m_addr4.sin_addr)) != 1)
         return false;
 
       // Set up data.
       this->m_family = AF_INET;
-      ::memcpy(&(this->m_addr4.sin_addr), addrbuf, sizeof(::in_addr));
       this->m_addr4.sin_port = htobe16(port);
       this->m_size = sizeof(::sockaddr_in);
       return true;
@@ -212,6 +206,8 @@ parse(const cow_string& host, uint16_t port)
       // Unbracket the host string.
       cow_string ub_host;
       size_t len = host.size() - 2;
+      char sbuf[128];
+
       if(len < sizeof(sbuf)) {
         // Use the static buffer.
         ::memcpy(sbuf, host.data() + 1, len);
@@ -222,12 +218,11 @@ parse(const cow_string& host, uint16_t port)
         ub_host.assign(host.begin() + 1, host.end() - 1);
 
       // Try parsing it as IPv6.
-      if(::inet_pton(AF_INET6, ub_host.c_str(), addrbuf) != 1)
+      if(::inet_pton(AF_INET6, ub_host.c_str(), &(this->m_addr6.sin6_addr)) != 1)
         return false;
 
       // Set up data.
       this->m_family = AF_INET6;
-      ::memcpy(&(this->m_addr6.sin6_addr), addrbuf, sizeof(::in6_addr));
       this->m_addr6.sin6_port = htobe16(port);
       this->m_addr6.sin6_flowinfo = 0;
       this->m_addr6.sin6_scope_id = 0;
