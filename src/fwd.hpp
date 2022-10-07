@@ -172,7 +172,7 @@ enum Log_Level : uint8_t
        try {  \
          ::poseidon::Async_Logger::Queued_Message iQw3Zbsf;  \
          \
-         iQw3Zbsf.file = __FILE__;  \
+         iQw3Zbsf.file = __FILE_NAME__;  \
          iQw3Zbsf.line = __LINE__;  \
          iQw3Zbsf.func = f5zuNP3w;  \
          \
@@ -194,7 +194,7 @@ enum Log_Level : uint8_t
        }  \
        return true;  \
      }  \
-     (__func__)))
+     (__FUNCTION__)))
 
 #define POSEIDON_LOG_FATAL(...)   POSEIDON_LOG_GENERIC(fatal, __VA_ARGS__)
 #define POSEIDON_LOG_ERROR(...)   POSEIDON_LOG_GENERIC(error, __VA_ARGS__)

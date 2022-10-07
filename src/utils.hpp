@@ -28,7 +28,7 @@ void
 throw_runtime_error_with_backtrace(const char* file, long line, const char* func, cow_string&& msg);
 
 #define POSEIDON_THROW(TEMPLATE, ...)  \
-    (::poseidon::throw_runtime_error_with_backtrace(__FILE__, __LINE__, __func__,  \
+    (::poseidon::throw_runtime_error_with_backtrace(__FILE_NAME__, __LINE__, __FUNCTION__,  \
        ::asteria::format_string(  \
          (::asteria::make_string_template TEMPLATE), ##__VA_ARGS__)  \
        ),  \
