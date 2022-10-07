@@ -172,7 +172,7 @@ enum Log_Level : uint8_t
        try {  \
          ::poseidon::Async_Logger::Queued_Message iQw3Zbsf;  \
          \
-         iQw3Zbsf.file = __FILE_NAME__;  \
+         iQw3Zbsf.file = __FILE__;  \
          iQw3Zbsf.line = __LINE__;  \
          iQw3Zbsf.func = f5zuNP3w;  \
          \
