@@ -50,5 +50,4 @@ class Timer_Driver
   };
 
 }  // namespace poseidon
-
 #endif

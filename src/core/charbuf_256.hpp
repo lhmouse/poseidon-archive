@@ -218,5 +218,4 @@ operator>=(const charbuf_256& lhs, const char* rhs) noexcept
   }
 
 }  // namespace poseidon
-
 #endif

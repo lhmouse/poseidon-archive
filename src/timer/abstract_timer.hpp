@@ -45,5 +45,4 @@ class Abstract_Timer
   };
 
 }  // namespace poseidon
-
 #endif

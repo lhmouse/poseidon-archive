@@ -119,5 +119,4 @@ future<ValueT>::
   }
 
 }  // namespace poseidon
-
 #endif

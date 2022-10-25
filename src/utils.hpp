@@ -94,5 +94,4 @@ size_t
 implode(cow_string& text, const cow_vstrings& segments, char delim = ',');
 
 }  // namespace poseidon
-
 #endif

@@ -39,5 +39,4 @@ class Main_Config
   };
 
 }  // namespace poseidon
-
 #endif

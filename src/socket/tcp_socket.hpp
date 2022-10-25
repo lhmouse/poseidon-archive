@@ -94,5 +94,4 @@ class TCP_Socket
   };
 
 }  // namespace poseidon
-
 #endif

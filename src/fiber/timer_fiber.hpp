@@ -54,5 +54,4 @@ class Timer_Fiber
   };
 
 }  // namespace poseidon
-
 #endif

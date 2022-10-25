@@ -120,5 +120,4 @@ class Abstract_Socket
   };
 
 }  // namespace poseidon
-
 #endif

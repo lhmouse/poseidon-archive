@@ -69,5 +69,4 @@ class Abstract_Fiber
   };
 
 }  // namespace poseidon
-
 #endif

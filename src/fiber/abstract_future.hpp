@@ -55,5 +55,4 @@ class Abstract_Future
   };
 
 }  // namespace poseidon
-
 #endif

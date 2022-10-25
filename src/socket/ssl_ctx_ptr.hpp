@@ -103,5 +103,4 @@ swap(SSL_CTX_ptr& lhs, SSL_CTX_ptr& rhs) noexcept
   }
 
 }  // namespace poseidon
-
 #endif

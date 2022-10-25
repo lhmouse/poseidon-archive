@@ -30,5 +30,4 @@ enum Socket_State : uint8_t
   };
 
 }  // namespace poseidon
-
 #endif

@@ -144,5 +144,4 @@ class SSL_Socket
   };
 
 }  // namespace poseidon
-
 #endif

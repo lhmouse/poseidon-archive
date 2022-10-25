@@ -81,5 +81,4 @@ class Async_Logger
   };
 
 }  // namespace poseidon
-
 #endif

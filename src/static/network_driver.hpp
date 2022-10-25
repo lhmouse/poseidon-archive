@@ -70,5 +70,4 @@ class Network_Driver
   };
 
 }  // namespace poseidon
-
 #endif

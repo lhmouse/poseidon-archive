@@ -88,5 +88,4 @@ swap(Config_File& lhs, Config_File& rhs) noexcept
   }
 
 }  // namespace poseidon
-
 #endif

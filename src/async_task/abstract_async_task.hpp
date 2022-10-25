@@ -37,5 +37,4 @@ class Abstract_Async_Task
   };
 
 }  // namespace poseidon
-
 #endif

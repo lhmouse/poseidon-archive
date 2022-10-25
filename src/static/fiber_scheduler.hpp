@@ -81,5 +81,4 @@ class Fiber_Scheduler
   };
 
 }  // namespace poseidon
-
 #endif

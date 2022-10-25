@@ -204,5 +204,4 @@ enum Log_Level : uint8_t
 #define POSEIDON_LOG_TRACE(...)   POSEIDON_LOG_GENERIC(trace, __VA_ARGS__)
 
 }  // namespace poseidon
-
 #endif

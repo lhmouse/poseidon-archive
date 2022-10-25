@@ -164,5 +164,4 @@ operator<<(tinyfmt& fmt, const Socket_Address& addr)
   }
 
 }  // namespace poseidon
-
 #endif

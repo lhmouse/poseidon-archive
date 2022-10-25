@@ -93,5 +93,4 @@ class UDP_Socket
   };
 
 }  // namespace poseidon
-
 #endif

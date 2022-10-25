@@ -39,5 +39,4 @@ class Async_Task_Executor
   };
 
 }  // namespace poseidon
-
 #endif
