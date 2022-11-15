@@ -181,10 +181,10 @@ do_abstract_socket_on_readable()
         ssl_err = ::SSL_get_error(this->ssl(), ret);
 
         // Check for EOF without a shutdown alert.
-#if !defined(SSL_R_UNEXPECTED_EOF_WHILE_READING)
         if((ssl_err == SSL_ERROR_SYSCALL) && (errno == 0))
           ssl_err = SSL_ERROR_ZERO_RETURN;
-#else
+
+#ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
         if((ssl_err == SSL_ERROR_SSL) && (ERR_GET_REASON(::ERR_peek_error()) == SSL_R_UNEXPECTED_EOF_WHILE_READING))
           ssl_err = SSL_ERROR_ZERO_RETURN;
 #endif  // Open SSL 3.0
