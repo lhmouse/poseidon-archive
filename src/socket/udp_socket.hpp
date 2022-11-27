@@ -15,6 +15,8 @@ class UDP_Socket
   private:
     friend class Network_Driver;
 
+    Socket_Address m_temp_addr;
+
   protected:
     // Server-side constructor:
     // Creates a socket that is bound onto the given address.

@@ -61,14 +61,14 @@ do_abstract_socket_on_readable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_read_queue(io_lock);
+    auto& addr = this->m_temp_addr;
     ::ssize_t io_result = 0;
 
     for(;;) {
       // Try getting a packet.
       queue.clear();
       queue.reserve(0xFFFFU);
-      Socket_Address addr;
-      ::socklen_t addrlen = addr.capacity();
+      ::socklen_t addrlen = (uint16_t) addr.capacity();
       io_result = ::recvfrom(this->fd(), queue.mut_end(), queue.capacity(), 0, addr.mut_addr(), &addrlen);
 
       if(io_result < 0) {
@@ -86,8 +86,8 @@ do_abstract_socket_on_readable()
       }
 
       // Accept this incoming packet.
-      addr.set_size(addrlen);
       queue.accept((size_t) io_result);
+      addr.set_size(addrlen);
       this->do_on_udp_packet(::std::move(addr), ::std::move(queue));
     }
   }
@@ -98,6 +98,7 @@ do_abstract_socket_on_writable()
   {
     recursive_mutex::unique_lock io_lock;
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
+    auto& addr = this->m_temp_addr;
     ::ssize_t io_result = 0;
 
     for(;;) {
@@ -106,7 +107,6 @@ do_abstract_socket_on_writable()
       if(queue.size() == 0)
         break;
 
-      Socket_Address addr;
       uint16_t addrlen;
       uint16_t datalen;
 
@@ -133,6 +133,8 @@ do_abstract_socket_on_writable()
         // Errors are ignored.
         continue;
       }
+
+      ROCKET_ASSERT((size_t) io_result <= datalen);
     }
 
     if(this->do_abstract_socket_set_state(socket_state_connecting, socket_state_established)) {
