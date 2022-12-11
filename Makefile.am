@@ -32,7 +32,7 @@ LDADD = lib/libposeidon.la
 noinst_LIBRARIES =
 noinst_LTLIBRARIES =
 
-include_HEADERS =
+nobase_include_HEADERS =
 lib_LIBRARIES =
 lib_LTLIBRARIES =
 bin_PROGRAMS =
@@ -55,7 +55,7 @@ TESTS = ${check_PROGRAMS}
 include poseidon/Makefile.inc.am
 
 ## Sample add-ons
-include addon/Makefile.inc.am
+include lib/Makefile.inc.am
 
 ## Configuration files
 include etc/poseidon/Makefile.inc.am

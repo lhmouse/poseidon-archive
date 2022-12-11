@@ -1,4 +1,7 @@
-nobase_include_HEADERS =  \
+lib_LTLIBRARIES += lib/libposeidon.la
+bin_PROGRAMS += bin/poseidon
+
+nobase_include_HEADERS +=  \
   %reldir%/version.h  \
   %reldir%/fwd.hpp  \
   %reldir%/utils.hpp  \
@@ -28,7 +31,6 @@ nobase_include_HEADERS =  \
   %reldir%/static/network_driver.hpp  \
   ${END}
 
-lib_LTLIBRARIES += lib/libposeidon.la
 lib_libposeidon_la_SOURCES =  \
   %reldir%/version.h.in  \
   %reldir%/precompiled.ipp  \
@@ -55,9 +57,7 @@ lib_libposeidon_la_SOURCES =  \
   ${END}
 
 lib_libposeidon_la_CXXFLAGS = ${AM_CXXFLAGS}
-
-lib_libposeidon_la_LDFLAGS =  \
-  -Wl,--no-undefined -no-undefined -version-info 0:0
+lib_libposeidon_la_LDFLAGS = -Wl,--no-undefined -version-info @abi_major@:@abi_minor@
 
 if enable_address_sanitizer
 lib_libposeidon_la_LDFLAGS += -fsanitize=address
@@ -73,14 +73,13 @@ endif
 if enable_mongodb
 endif
 
-bin_PROGRAMS += bin/poseidon
-bin_poseidon_SOURCES =  \
-  %reldir%/main.cpp
-
 if enable_pch
 lib_libposeidon_la_CXXFLAGS += -include %reldir%/precompiled.xipp
 BUILT_SOURCES += %reldir%/precompiled.xipp
 endif
+
+bin_poseidon_SOURCES = %reldir%/main.cpp
+bin_poseidon_LDADD = lib/libposeidon.la
 
 %.xipp: %.ipp %reldir%/version.h config.h
 	${AM_V_CXX}${LTCXXCOMPILE} -x c++-header -Wno-error $< -o $@.o  \

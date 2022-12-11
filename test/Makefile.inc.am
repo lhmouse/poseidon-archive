@@ -1,8 +1,8 @@
-check_HEADERS +=  \
-  %reldir%/utils.hpp  \
-  ${END}
-
 check_PROGRAMS +=  \
   %reldir%/utils.test  \
   %reldir%/socket_address.test  \
+  ${END}
+
+EXTRA_DIST +=  \
+  %reldir%/utils.hpp  \
   ${END}
