@@ -1,6 +1,7 @@
 lib_LTLIBRARIES += lib/libposeidon.la
 bin_PROGRAMS += bin/poseidon
 nobase_sysconf_DATA += %reldir%/main.conf
+EXTRA_DIST += %reldir%/main.conf
 
 nobase_include_HEADERS +=  \
   %reldir%/version.h  \
