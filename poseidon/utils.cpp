@@ -51,7 +51,7 @@ throw_runtime_error_with_backtrace(const char* file, long line, const char* func
 
       // Append stack frames.
       data += "\n[backtrace frames:\n  ";
-      for(size_t k = 0;  k != (uint32_t) nframes;  ++k) {
+      for(uint32_t k = 0;  k != (uint32_t) nframes;  ++k) {
         nump.put_DU(k + 1);
         ::std::reverse_copy(nump.begin(), nump.end(), sbuf.mut_rbegin() + 1);
         data += sbuf.data();
