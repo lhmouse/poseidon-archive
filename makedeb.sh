@@ -6,7 +6,7 @@ _pkgarch=$(dpkg --print-architecture)
 
 _tempdir=$(readlink -f "./.makedeb")
 _debiandir=${_tempdir}/DEBIAN
-_prefix=$(make -np | sed -n 's/^prefix = //;T;p' | head -n1)
+_prefix=$(make -np | sed -n 's/^prefix = //;T;p;q')
 
 rm -rf ${_tempdir}
 mkdir -p ${_tempdir}
