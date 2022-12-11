@@ -33,10 +33,10 @@ noinst_LIBRARIES =
 noinst_LTLIBRARIES =
 
 nobase_include_HEADERS =
+nobase_sysconf_DATA =
 lib_LIBRARIES =
 lib_LTLIBRARIES =
 bin_PROGRAMS =
-sysconf_DATA =
 
 check_HEADERS =
 check_LIBRARIES =
@@ -56,9 +56,6 @@ include poseidon/Makefile.inc.am
 
 ## Sample add-ons
 include lib/Makefile.inc.am
-
-## Configuration files
-include etc/poseidon/Makefile.inc.am
 
 ## Tests
 include test/Makefile.inc.am
