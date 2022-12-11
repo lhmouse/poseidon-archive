@@ -81,9 +81,6 @@ lib_libposeidon_la_CXXFLAGS += -include %reldir%/precompiled.xipp
 BUILT_SOURCES += %reldir%/precompiled.xipp
 endif
 
-bin_poseidon_SOURCES = %reldir%/main.cpp
-bin_poseidon_LDADD = lib/libposeidon.la
-
 %.xipp: %.ipp %reldir%/version.h config.h
 	${AM_V_CXX}${LTCXXCOMPILE} -x c++-header -Wno-error $< -o $@.o  \
 	  && rm -rf $@.gch  \
@@ -98,3 +95,7 @@ bin_poseidon_LDADD = lib/libposeidon.la
 
 clean-local:
 	-rm -rf %reldir%/precompiled.x*
+
+bin_poseidon_SOURCES = %reldir%/main.cpp
+bin_poseidon_CXXFLAGS = ${AM_CXXFLAGS}
+bin_poseidon_LDADD = lib/libposeidon.la
