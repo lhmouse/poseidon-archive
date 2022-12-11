@@ -1,41 +1,16 @@
-include_poseidondir = ${includedir}/poseidon
-include_poseidon_HEADERS =  \
+nobase_include_HEADERS =  \
   %reldir%/version.h  \
   %reldir%/fwd.hpp  \
   %reldir%/utils.hpp  \
-  ${END}
-
-include_poseidon_detailsdir = ${includedir}/poseidon/details
-include_poseidon_details_HEADERS =  \
-  ${END}
-
-include_poseidon_coredir = ${includedir}/poseidon/core
-include_poseidon_core_HEADERS =  \
   %reldir%/core/config_file.hpp  \
   %reldir%/core/charbuf_256.hpp  \
-  ${END}
-
-include_poseidon_timerdir = ${includedir}/poseidon/timer
-include_poseidon_timer_HEADERS =  \
   %reldir%/timer/abstract_timer.hpp  \
-  ${END}
-
-include_poseidon_fiberdir = ${includedir}/poseidon/fiber
-include_poseidon_fiber_HEADERS =  \
   %reldir%/fiber/enums.hpp  \
   %reldir%/fiber/abstract_future.hpp  \
   %reldir%/fiber/future.hpp  \
   %reldir%/fiber/abstract_fiber.hpp  \
   %reldir%/fiber/timer_fiber.hpp  \
-  ${END}
-
-include_poseidon_async_taskdir = ${includedir}/poseidon/async_task
-include_poseidon_async_task_HEADERS =  \
   %reldir%/async_task/abstract_async_task.hpp  \
-  ${END}
-
-include_poseidon_socketdir = ${includedir}/poseidon/socket
-include_poseidon_socket_HEADERS =  \
   %reldir%/socket/enums.hpp  \
   %reldir%/socket/socket_address.hpp  \
   %reldir%/socket/abstract_socket.hpp  \
@@ -45,10 +20,6 @@ include_poseidon_socket_HEADERS =  \
   %reldir%/socket/ssl_ctx_ptr.hpp  \
   %reldir%/socket/tcp_socket.hpp  \
   %reldir%/socket/ssl_socket.hpp  \
-  ${END}
-
-include_poseidon_staticdir = ${includedir}/poseidon/static
-include_poseidon_static_HEADERS =  \
   %reldir%/static/main_config.hpp  \
   %reldir%/static/async_logger.hpp  \
   %reldir%/static/timer_driver.hpp  \

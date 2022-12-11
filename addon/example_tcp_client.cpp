@@ -1,11 +1,11 @@
 // This file is part of Poseidon.
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
-#include "../src/precompiled.ipp"
-#include "../src/socket/tcp_socket.hpp"
-#include "../src/static/network_driver.hpp"
-#include "../src/static/async_logger.hpp"
-#include "../src/utils.hpp"
+#include "../poseidon/precompiled.ipp"
+#include "../poseidon/socket/tcp_socket.hpp"
+#include "../poseidon/static/network_driver.hpp"
+#include "../poseidon/static/async_logger.hpp"
+#include "../poseidon/utils.hpp"
 
 namespace {
 using namespace poseidon;

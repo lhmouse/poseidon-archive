@@ -1,7 +1,7 @@
 ## AC_INIT(package, version, [bug-report], [tarname], [url])
 AC_INIT([poseidon], [master], [lh_mouse@126.com], [poseidon], [https://github.com/lhmouse/poseidon])
 AC_LANG([C++])
-AC_CONFIG_SRCDIR([src/main.cpp])
+AC_CONFIG_SRCDIR([poseidon/main.cpp])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
@@ -80,5 +80,5 @@ AC_SUBST([abi_major])
 AC_SUBST([abi_minor])
 AC_SUBST([abi_suffix])
 
-AC_CONFIG_FILES([Makefile src/version.h])
+AC_CONFIG_FILES([Makefile poseidon/version.h])
 AC_OUTPUT

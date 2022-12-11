@@ -1,14 +1,14 @@
 // This file is part of Poseidon.
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
-#include "../src/precompiled.ipp"
-#include "../src/fiber/abstract_fiber.hpp"
-#include "../src/fiber/future.hpp"
-#include "../src/timer/abstract_timer.hpp"
-#include "../src/static/fiber_scheduler.hpp"
-#include "../src/static/timer_driver.hpp"
-#include "../src/static/async_logger.hpp"
-#include "../src/utils.hpp"
+#include "../poseidon/precompiled.ipp"
+#include "../poseidon/fiber/abstract_fiber.hpp"
+#include "../poseidon/fiber/future.hpp"
+#include "../poseidon/timer/abstract_timer.hpp"
+#include "../poseidon/static/fiber_scheduler.hpp"
+#include "../poseidon/static/timer_driver.hpp"
+#include "../poseidon/static/async_logger.hpp"
+#include "../poseidon/utils.hpp"
 
 namespace {
 using namespace poseidon;

@@ -1,11 +1,11 @@
 // This file is part of Poseidon.
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
-#include "../src/precompiled.ipp"
-#include "../src/timer/abstract_timer.hpp"
-#include "../src/static/timer_driver.hpp"
-#include "../src/static/async_logger.hpp"
-#include "../src/utils.hpp"
+#include "../poseidon/precompiled.ipp"
+#include "../poseidon/timer/abstract_timer.hpp"
+#include "../poseidon/static/timer_driver.hpp"
+#include "../poseidon/static/async_logger.hpp"
+#include "../poseidon/utils.hpp"
 
 namespace {
 using namespace poseidon;

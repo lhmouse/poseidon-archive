@@ -4,8 +4,8 @@
 #ifndef POSEIDON_TEST_UTILS_
 #define POSEIDON_TEST_UTILS_
 
-#include "../src/fwd.hpp"
-#include "../src/utils.hpp"
+#include "../poseidon/fwd.hpp"
+#include "../poseidon/utils.hpp"
 #include <unistd.h>   // ::alarm()
 
 #define POSEIDON_TEST_CHECK(expr)  \
