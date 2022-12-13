@@ -76,11 +76,9 @@ thread_loop()
     if(delta > 0) {
       ::timespec ts;
       ::clock_gettime(CLOCK_REALTIME, &ts);
-
-      delta += ts.tv_nsec;
-      ts.tv_nsec = (long) ((uint64_t) delta % 1000000000ULL);
-      ts.tv_sec += (time_t) ((uint64_t) delta / 1000000000ULL);
-
+      double secs = (double) ts.tv_sec + (double) (ts.tv_nsec + delta) * 1.0e-9;
+      ts.tv_sec = (time_t) secs;
+      ts.tv_nsec = (long) ((secs - (double) ts.tv_sec) * 1.0e+9);
       this->m_pq_avail.wait_until(lock, ts);
       return;
     }
