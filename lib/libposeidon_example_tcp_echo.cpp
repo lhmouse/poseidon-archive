@@ -11,15 +11,13 @@
 namespace {
 using namespace poseidon;
 
-constexpr char bind[] = "[::]";
-constexpr uint16_t port = 3809;
+const Socket_Address listen_address(::rocket::sref("[::]:3809"));
 
 struct Example_Session : TCP_Socket
   {
     explicit
     Example_Session(unique_posix_fd&& fd)
-      :
-        TCP_Socket(::std::move(fd))
+      : TCP_Socket(::std::move(fd))
       {
       }
 
@@ -39,8 +37,7 @@ struct Example_Server : Listen_Socket
 
     explicit
     Example_Server()
-      :
-        Listen_Socket(Socket_Address(::rocket::sref(bind), port))
+      : Listen_Socket(listen_address)
       {
         POSEIDON_LOG_WARN(("example TCP server listening on `$1`"), this->get_local_address());
       }

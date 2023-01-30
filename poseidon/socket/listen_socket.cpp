@@ -11,32 +11,38 @@
 namespace poseidon {
 
 Listen_Socket::
-Listen_Socket(const Socket_Address& addr)
-  :
-    // Create a new non-blocking socket.
-    Abstract_Socket(addr.family(), SOCK_STREAM, IPPROTO_TCP)
+Listen_Socket(const Socket_Address& saddr)
+  : Abstract_Socket(SOCK_STREAM, IPPROTO_TCP)
   {
     // Use `SO_REUSEADDR`. Errors are ignored.
     int ival = 1;
     ::setsockopt(this->fd(), SOL_SOCKET, SO_REUSEADDR, &ival, sizeof(ival));
 
-    if(::bind(this->fd(), addr.addr(), addr.ssize()) != 0)
+    // Bind this socket onto `addr`.
+    ::sockaddr_in6 addr;
+    addr.sin6_family = AF_INET6;
+    addr.sin6_port = htobe16(saddr.port());
+    addr.sin6_flowinfo = 0;
+    addr.sin6_addr = saddr.data();
+    addr.sin6_scope_id = 0;
+
+    if(::bind(this->fd(), (const ::sockaddr*) &addr, sizeof(addr)) != 0)
       POSEIDON_THROW((
           "Failed to bind TCP socket onto `$4`",
           "[`bind()` failed: $3]",
-          "[TCP listen socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(), addr);
+          "[TCP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno(), saddr);
 
     if(::listen(this->fd(), SOMAXCONN) != 0)
       POSEIDON_THROW((
           "Failed to start listening on `$4`",
           "[`listen()` failed: $3]",
           "[TCP listen socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(), addr);
+          this, typeid(*this), format_errno(), saddr);
 
     POSEIDON_LOG_INFO((
         "TCP server started listening on `$3`",
-        "[TCP listen socket `$1` (class `$2`)]"),
+        "[TCP socket `$1` (class `$2`)]"),
         this, typeid(*this), this->get_local_address());
   }
 
@@ -64,9 +70,7 @@ do_abstract_socket_on_readable()
 
     for(;;) {
       // Try getting a connection.
-      Socket_Address addr;
-      ::socklen_t addrlen = addr.capacity();
-      unique_posix_fd fd(::accept4(this->fd(), addr.mut_addr(), &addrlen, SOCK_NONBLOCK));
+      unique_posix_fd fd(::accept4(this->fd(), nullptr, nullptr, SOCK_NONBLOCK));
 
       if(!fd) {
         if((errno == EAGAIN) || (errno == EWOULDBLOCK))
@@ -84,16 +88,9 @@ do_abstract_socket_on_readable()
 
       // Accept the client socket. If a null pointer is returned, the accepted
       // socket will be closed immediately.
-      addr.set_size(addrlen);
       auto client = this->do_on_listen_new_client_opt(::std::move(fd));
       if(!client)
         continue;
-
-      POSEIDON_LOG_INFO((
-          "Accepted new TCP connection from `$5`",
-          "[TCP client socket `$3` (class `$4`)]",
-          "[TCP listen socket `$1` (class `$2`)]"),
-          this, typeid(*this), client, typeid(*client), addr);
 
       driver.insert(client);
     }

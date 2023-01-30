@@ -10,15 +10,13 @@
 namespace {
 using namespace poseidon;
 
-constexpr char conn[] = "93.184.216.34";  // example.org
-constexpr uint16_t port = 443;
+const Socket_Address connect_address(::rocket::sref("93.184.216.34:443"));  // example.org
 
 struct Example_Session : SSL_Socket
   {
     explicit
     Example_Session()
-      :
-        SSL_Socket(Socket_Address(::rocket::sref(conn), port), network_driver.default_client_ssl_ctx())
+      : SSL_Socket(connect_address, network_driver.default_client_ssl_ctx())
       {
         static constexpr char data[] =
             "GET / HTTP/1.1\r\n"

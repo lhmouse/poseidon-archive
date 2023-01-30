@@ -33,7 +33,7 @@ class SSL_Socket
     // Client-side constructor:
     // Creates a new non-blocking socket to the target host.
     explicit
-    SSL_Socket(const Socket_Address& addr, const SSL_CTX_ptr& ssl_ctx);
+    SSL_Socket(const Socket_Address& saddr, const SSL_CTX_ptr& ssl_ctx);
 
   protected:
     // These callbacks implement `Abstract_Socket`.

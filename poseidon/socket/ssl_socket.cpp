@@ -15,9 +15,7 @@ namespace poseidon {
 
 SSL_Socket::
 SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
-  :
-    // Take ownership of an existent socket.
-    Abstract_Socket(::std::move(fd))
+  : Abstract_Socket(::std::move(fd))
   {
     // Create an SSL structure in server mode.
     if(!ssl_ctx)
@@ -48,10 +46,8 @@ SSL_Socket(unique_posix_fd&& fd, const SSL_CTX_ptr& ssl_ctx)
   }
 
 SSL_Socket::
-SSL_Socket(const Socket_Address& addr, const SSL_CTX_ptr& ssl_ctx)
-  :
-    // Create a new non-blocking socket.
-    Abstract_Socket(addr.family(), SOCK_STREAM, IPPROTO_TCP)
+SSL_Socket(const Socket_Address& saddr, const SSL_CTX_ptr& ssl_ctx)
+  : Abstract_Socket(SOCK_STREAM, IPPROTO_TCP)
   {
     // Create an SSL structure in client mode.
     if(!ssl_ctx)
@@ -80,12 +76,20 @@ SSL_Socket(const Socket_Address& addr, const SSL_CTX_ptr& ssl_ctx)
     int ival = 1;
     ::setsockopt(this->fd(), IPPROTO_TCP, TCP_NODELAY, &ival, sizeof(ival));
 
-    if((::connect(this->fd(), addr.addr(), addr.ssize()) != 0) && (errno != EINPROGRESS))
+    // Initiate a connection to `addr`.
+    ::sockaddr_in6 addr;
+    addr.sin6_family = AF_INET6;
+    addr.sin6_port = htobe16(saddr.port());
+    addr.sin6_flowinfo = 0;
+    addr.sin6_addr = saddr.data();
+    addr.sin6_scope_id = 0;
+
+    if((::connect(this->fd(), (const ::sockaddr*) &addr, sizeof(addr)) != 0) && (errno != EINPROGRESS))
       POSEIDON_THROW((
           "Failed to initiate SSL connection to `$4`",
           "[`connect()` failed: $3]",
           "[SSL socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(), addr);
+          this, typeid(*this), format_errno(), saddr);
   }
 
 SSL_Socket::
@@ -285,20 +289,34 @@ const cow_string&
 SSL_Socket::
 get_remote_address() const
   {
-    if(!this->m_peername_ready.load()) {
-      plain_mutex::unique_lock lock(this->m_peername_mutex);
+    if(this->m_peername_ready.load())
+      return this->m_peername;
 
-      // Try getting the address.
-      Socket_Address addr;
-      ::socklen_t addrlen = (::socklen_t) addr.capacity();
-      if(::getpeername(this->fd(), addr.mut_addr(), &addrlen) != 0)
-        return format(this->m_peername, "(unknown address: $1)", format_errno());
+    // Try getting the address now.
+    plain_mutex::unique_lock lock(this->m_peername_mutex);
 
-      // Cache the result.
-      addr.set_size(addrlen);
-      this->m_peername = addr.print_to_string();
-      this->m_peername_ready.store(true);
-    }
+    if(this->m_peername_ready.load())
+      return this->m_peername;
+
+    ::sockaddr_in6 addr;
+    ::socklen_t addrlen = sizeof(addr);
+    if(::getpeername(this->fd(), (::sockaddr*) &addr, &addrlen) != 0)
+      return format(
+          this->m_peername,  // reuse this buffer and return a copy
+          "(invalid address: $1)", format_errno());
+
+    if((addr.sin6_family != AF_INET6) || (addrlen != sizeof(addr)))
+      return format(
+          this->m_peername,  // reuse this buffer and return a copy
+          "(address family unimplemented: $1)", addr.sin6_family);
+
+    Socket_Address saddr;
+    saddr.set_data(addr.sin6_addr);
+    saddr.set_port(be16toh(addr.sin6_port));
+
+    this->m_peername = saddr.print_to_string();
+    this->m_peername_ready.store(true);
+
     return this->m_peername;
   }
 

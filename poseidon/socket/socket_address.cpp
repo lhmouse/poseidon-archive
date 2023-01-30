@@ -11,16 +11,17 @@ namespace {
 
 ROCKET_ALWAYS_INLINE
 bool
-do_match_subnet(const void* addr, size_t size, initializer_list<uint8_t> pattern, uint32_t bits) noexcept
+do_match_subnet(const uint8_t* addr, size_t size,
+                initializer_list<uint8_t> pattern, uint32_t bits) noexcept
   {
     ROCKET_ASSERT(pattern.size() != 0);
     ROCKET_ASSERT(bits <= size * 8);
     ROCKET_ASSERT(bits <= pattern.size() * 8);
 
-    auto bp = (const uint8_t*) addr;
+    auto bp = addr;
     auto pp = pattern.begin();
 
-    for(size_t k = 0;  k != bits / 8;  ++k)
+    for(uint32_t k = 0;  k != bits / 8;  ++k)
       if(*(bp++) != *(pp++))
         return false;
 
@@ -28,7 +29,7 @@ do_match_subnet(const void* addr, size_t size, initializer_list<uint8_t> pattern
   }
 
 Socket_Address_Class
-do_classify_ipv4(const ::in_addr* addr) noexcept
+do_classify_ipv4(const uint8_t* addr) noexcept
   {
     // 0.0.0.0/8: Local Identification
     if(do_match_subnet(addr, 4, {0,0,0,0}, 0))
@@ -67,7 +68,7 @@ do_classify_ipv4(const ::in_addr* addr) noexcept
   }
 
 Socket_Address_Class
-do_classify_ipv6(const ::in6_addr* addr) noexcept
+do_classify_ipv6(const uint8_t* addr) noexcept
   {
     // ::/128: Unspecified
     if(do_match_subnet(addr, 16, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 128))
@@ -79,11 +80,11 @@ do_classify_ipv6(const ::in6_addr* addr) noexcept
 
     // ::ffff:0:0/96: IPv4-mapped
     if(do_match_subnet(addr, 16, {0,0,0,0,0,0,0,0,0,0,0xFF,0xFF,0,0,0,0}, 96))
-      return do_classify_ipv4((const ::in_addr*) ((const char*) addr + 12));
+      return do_classify_ipv4(addr + 12);
 
     // 64:ff9b::/96: IPv4 to IPv6
     if(do_match_subnet(addr, 16, {0,0x64,0xFF,0x9B,0,0,0,0,0,0,0,0,0,0,0,0}, 96))
-      return do_classify_ipv4((const ::in_addr*) ((const char*) addr + 12));
+      return do_classify_ipv4(addr + 12);
 
     // 64:ff9b:1::/48: Local-Use IPv4/IPv6
     if(do_match_subnet(addr, 16, {0,0x64,0xFF,0x9B,1,0,0,0,0,0,0,0,0,0,0,0}, 48))
@@ -99,7 +100,7 @@ do_classify_ipv6(const ::in6_addr* addr) noexcept
 
     // 2002::/16: 6to4
     if(do_match_subnet(addr, 16, {0x20,0x02,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 16))
-      return do_classify_ipv4((const ::in_addr*) ((const char*) addr + 2));
+      return do_classify_ipv4(addr + 2);
 
     // fc00::/7: Unique Local Unicast
     if(do_match_subnet(addr, 16, {0xFC,0x00,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 7))
@@ -117,62 +118,151 @@ do_classify_ipv6(const ::in6_addr* addr) noexcept
     return socket_address_class_public;
   }
 
+struct cstr_buf
+  {
+    char sso[56];
+    cow_string str;
+
+    void
+    assign(const char* bp, const char* ep)
+      {
+        size_t len = (size_t) (ep - bp);
+
+        if(len + 1 <= sizeof(this->sso)) {
+          ::std::memcpy(this->sso, bp, len);
+          this->sso[len] = 0;
+          this->str = ::rocket::sref(this->sso, len);
+        }
+        else
+          this->str.assign(bp, ep);
+      }
+
+    const char*
+    c_str() const noexcept
+      { return this->str.c_str();  }
+  };
+
 }  // namespace
 
 Socket_Address::
-Socket_Address(const cow_string& host, uint16_t port)
+Socket_Address(const cow_string& str)
   {
-    if(!this->parse(host, port))
+    if(!this->parse(str))
       POSEIDON_THROW((
-          "Could not parse IP address string `$1`"),
-          host);
+          "Could not parse socket address string `$1`"),
+          str);
   }
 
 Socket_Address_Class
 Socket_Address::
 classify() const noexcept
   {
-    if(this->m_family == AF_INET) {
-      // IPv4
-      return do_classify_ipv4(&(this->m_addr4.sin_addr));
+    return do_classify_ipv6((const uint8_t*) &(this->m_addr));
+  }
+
+bool
+Socket_Address::
+parse(const cow_string& str)
+  {
+    this->clear();
+
+    if(str.empty())
+      return true;
+
+    uint8_t* const addr = (uint8_t*) &(this->m_addr);
+    const char* const bp = str.safe_c_str();
+    const char* const ep = bp + str.size();
+    const char* rp;
+
+    int family;
+    cstr_buf host;
+    ::rocket::ascii_numget numg;
+    uint64_t port = 0;
+
+    if(*bp != '[') {
+      // Parse an IPv4 address.
+      family = AF_INET;
+
+      rp = ::std::find(bp, ep, ':');
+      if(*rp == ':')
+        host.assign(bp, rp);
+      else
+        host.str = str;
+    }
+    else {
+      // Parse an IPv6 address.
+      family = AF_INET6;
+
+      rp = ::std::find(bp, ep, ']');
+      if(*rp != ']')
+        return false;
+
+      host.assign(bp + 1, rp);
+      rp = ::std::find(rp + 1, ep, ':');
     }
 
-    if(this->m_family == AF_INET6) {
-      // IPv6
-      return do_classify_ipv6(&(this->m_addr6.sin6_addr));
+    if(*rp == ':') {
+      // Parse the port number.
+      rp ++;
+      if(!numg.parse_U(rp, ep))
+        return false;
+
+      if(!numg.cast_U(port, 0, 0xFFFF))
+        return false;
     }
 
-    return socket_address_class_unknown;
+    // Check for garbage characters.
+    if(rp != ep)
+      return false;
+
+    if(family == AF_INET) {
+      // Parse the IPv4 address as a mapped one.
+      if(::inet_pton(family, host.c_str(), addr + 12) == 0)
+        return false;
+
+      ::memset(addr, 0, 10);
+      ::memset(addr + 10, 0xFF, 2);
+    }
+    else {
+      // Parse the IPv6 address.
+      if(::inet_pton(family, host.c_str(), addr) == 0)
+        return false;
+    }
+
+    // Set the port number.
+    this->m_port = (uint16_t) port;
+    return true;
   }
 
 tinyfmt&
 Socket_Address::
 print(tinyfmt& fmt) const
   {
-    if(this->m_family == AF_INET) {
-      // IPv4
-      char sbuf[128];
-      const char* host = ::inet_ntop(AF_INET, &(this->m_addr4.sin_addr), sbuf, sizeof(sbuf));
+    const uint8_t* const addr = (const uint8_t*) &(this->m_addr);
+    char sbuf[56];
+    const char* host = nullptr;
+
+    if(do_match_subnet(addr, 16, {0,0,0,0,0,0,0,0,0,0,0xFF,0xFF,0,0,0,0}, 96)) {
+      // Format it as an IPv4 address.
+      host = ::inet_ntop(AF_INET, addr + 12, sbuf, sizeof(sbuf));
       if(!host)
         return fmt << "(invalid IPv4 address)";
 
-      // Write the host and port, separated by a colon.
-      return fmt << host << ":" << (uint32_t) be16toh(this->m_addr4.sin_port);
+      fmt << host;
     }
-
-    if(this->m_family == AF_INET6) {
-      // IPv6
-      char sbuf[128];
-      const char* host = ::inet_ntop(AF_INET6, &(this->m_addr6.sin6_addr), sbuf, sizeof(sbuf));
+    else {
+      // Format it as an IPv6 address.
+      host = ::inet_ntop(AF_INET6, addr, sbuf, sizeof(sbuf));
       if(!host)
         return fmt << "(invalid IPv6 address)";
 
-      // Write the host in brackets, followed by the port, separated by a colon.
-      return fmt << "[" << host << "]:" << (uint32_t) be16toh(this->m_addr6.sin6_port);
+      fmt << '[' << host << ']';
     }
 
-    return fmt << "(unknown address family " << (uint32_t) this->m_family << ")";
-  }
+    // Format the port number.
+    fmt << ':' << this->m_port;
+    return fmt;
+ }
 
 cow_string
 Socket_Address::
@@ -181,59 +271,6 @@ print_to_string() const
     ::rocket::tinyfmt_str fmt;
     this->print(fmt);
     return fmt.extract_string();
-  }
-
-bool
-Socket_Address::
-parse(const cow_string& host, uint16_t port)
-  {
-    this->m_family = AF_UNSPEC;
-
-    // An empty string denotes the null address.
-    if(ROCKET_UNEXPECT(host.empty()))
-      return true;
-
-    if((host.front() >= '0') && (host.front() <= '9')) {
-      // Assume IPv4.
-      if(::inet_pton(AF_INET, host.safe_c_str(), &(this->m_addr4.sin_addr)) != 1)
-        return false;
-
-      // Set up data.
-      this->m_family = AF_INET;
-      this->m_addr4.sin_port = htobe16(port);
-      this->m_size = sizeof(::sockaddr_in);
-      return true;
-    }
-
-    if((host.front() == '[') && (host.back() == ']')) {
-      // Unbracket the host string.
-      cow_string ub_host;
-      size_t len = host.size() - 2;
-      char sbuf[128];
-
-      if(len < sizeof(sbuf)) {
-        // Use the static buffer.
-        ::memcpy(sbuf, host.data() + 1, len);
-        sbuf[len] = 0;
-        ub_host = ::rocket::sref(sbuf, len);
-      }
-      else
-        ub_host.assign(host.begin() + 1, host.end() - 1);
-
-      // Try parsing it as IPv6.
-      if(::inet_pton(AF_INET6, ub_host.c_str(), &(this->m_addr6.sin6_addr)) != 1)
-        return false;
-
-      // Set up data.
-      this->m_family = AF_INET6;
-      this->m_addr6.sin6_port = htobe16(port);
-      this->m_addr6.sin6_flowinfo = 0;
-      this->m_addr6.sin6_scope_id = 0;
-      this->m_size = sizeof(::sockaddr_in6);
-      return true;
-    }
-
-    return false;
   }
 
 }  // namespace poseidon

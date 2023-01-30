@@ -15,18 +15,18 @@ class UDP_Socket
   private:
     friend class Network_Driver;
 
-    Socket_Address m_temp_addr;
+    Socket_Address m_recv_saddr;
 
   protected:
     // Server-side constructor:
     // Creates a socket that is bound onto the given address.
     explicit
-    UDP_Socket(const Socket_Address& addr);
+    UDP_Socket(const Socket_Address& saddr);
 
     // Client-side constructor:
     // Creates a socket that is bound onto a random address.
     explicit
-    UDP_Socket(int family);
+    UDP_Socket();
 
   protected:
     // These callbacks implement `Abstract_Socket`.
@@ -82,16 +82,16 @@ class UDP_Socket
     // If this function throws an exception, there is no effect.
     // This function is thread-safe.
     bool
-    udp_send(const Socket_Address& addr, const char* data, size_t size);
+    udp_send(const Socket_Address& saddr, const char* data, size_t size);
 
     bool
-    udp_send(const Socket_Address& addr, const linear_buffer& data);
+    udp_send(const Socket_Address& saddr, const linear_buffer& data);
 
     bool
-    udp_send(const Socket_Address& addr, const cow_string& data);
+    udp_send(const Socket_Address& saddr, const cow_string& data);
 
     bool
-    udp_send(const Socket_Address& addr, const string& data);
+    udp_send(const Socket_Address& saddr, const string& data);
   };
 
 }  // namespace poseidon

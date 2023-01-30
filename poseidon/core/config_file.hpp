@@ -32,12 +32,12 @@ class Config_File
 
     // Returns the absolute file path.
     // If no file has been loaded, an empty string is returned.
-    const cow_string&
+    cow_string
     path() const noexcept
       { return this->m_path;  }
 
     // Accesses the contents.
-    const ::asteria::V_object&
+    ::asteria::V_object
     root() const noexcept
       { return this->m_root;  }
 

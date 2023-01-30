@@ -19,7 +19,7 @@ class Listen_Socket
     // Server-side constructor:
     // Creates a socket that is bound onto the given address.
     explicit
-    Listen_Socket(const Socket_Address& addr);
+    Listen_Socket(const Socket_Address& saddr);
 
   protected:
     // These callbacks implement `Abstract_Socket`.

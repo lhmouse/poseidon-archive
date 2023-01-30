@@ -10,15 +10,13 @@
 namespace {
 using namespace poseidon;
 
-constexpr char bind[] = "[::]";
-constexpr uint16_t port = 3807;
+const Socket_Address listen_address(::rocket::sref("[::]:3807"));
 
 struct Example_Server : UDP_Socket
   {
     explicit
     Example_Server()
-      :
-        UDP_Socket(Socket_Address(::rocket::sref(bind), port))
+      : UDP_Socket(listen_address)
       {
         POSEIDON_LOG_WARN(("example UDP server listening on `$1`"), this->get_local_address());
       }

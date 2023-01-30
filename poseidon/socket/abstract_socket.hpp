@@ -29,13 +29,13 @@ class Abstract_Socket
     linear_buffer m_io_write_queue;
 
   protected:
-    // Takes ownership of an existent socket.
+    // Takes ownership of an existent IPv6 socket.
     explicit
     Abstract_Socket(unique_posix_fd&& fd);
 
-    // Creates a new non-blocking socket.
+    // Creates a new non-blocking IPv6 socket.
     explicit
-    Abstract_Socket(int family, int type, int protocol);
+    Abstract_Socket(int type, int protocol);
 
   protected:
     // Gets the network driver instance inside the callbacks hereafter.
@@ -109,7 +109,7 @@ class Abstract_Socket
     // string. In case of errors, a string with information about the error is
     // returned instead.
     // This function is thread-safe.
-    const cow_string&
+    cow_string
     get_local_address() const;
 
     // Shuts the socket down without sending any protocol-specific closure

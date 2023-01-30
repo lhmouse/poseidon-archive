@@ -12,36 +12,57 @@ namespace poseidon {
 Abstract_Socket::
 Abstract_Socket(unique_posix_fd&& fd)
   {
-   // Take ownership the socket handle.
-   this->m_fd = ::std::move(fd);
-   if(!this->m_fd)
-     POSEIDON_THROW(("Null socket handle not valid"));
+    // Take ownership the socket handle.
+    this->m_fd = ::std::move(fd);
+    if(!this->m_fd)
+      POSEIDON_THROW(("Null socket handle not valid"));
 
-   // Turn on non-blocking mode if it hasn't been enabled.
-   int fl_old = ::fcntl(this->fd(), F_GETFL);
-   if(fl_old == -1)
-     POSEIDON_THROW((
-         "Could not get socket flags",
-         "[`fcntl()` failed: $1]"),
-         format_errno());
+    // Get the local address and address family.
+    ::sockaddr_in6 addr;
+    ::socklen_t addrlen = sizeof(addr);
+    if(::getsockname(this->fd(), (::sockaddr*) &addr, &addrlen) != 0)
+      POSEIDON_THROW((
+          "Could not get socket local address",
+          "[`getsockname()` failed: $1]"),
+          format_errno());
 
-   int fl_new = fl_old | O_NONBLOCK;
-   if(fl_new != fl_old)
-     ::fcntl(this->fd(), F_SETFL, fl_new);
+    if((addr.sin6_family != AF_INET6) || (addrlen != sizeof(addr)))
+      POSEIDON_THROW((
+          "Addresss family unimplemented: family `$1`, addrlen `$2`"),
+          addr.sin6_family, addrlen);
+
+    Socket_Address saddr;
+    saddr.set_data(addr.sin6_addr);
+    saddr.set_port(be16toh(addr.sin6_port));
+
+    this->m_sockname = saddr.print_to_string();
+    this->m_sockname_ready.store(true);
+
+    // Turn on non-blocking mode if it hasn't been enabled.
+    int fl_old = ::fcntl(this->fd(), F_GETFL);
+    if(fl_old == -1)
+      POSEIDON_THROW((
+          "Could not get socket flags",
+          "[`fcntl()` failed: $1]"),
+          format_errno());
+
+    int fl_new = fl_old | O_NONBLOCK;
+    if(fl_new != fl_old)
+      ::fcntl(this->fd(), F_SETFL, fl_new);
 
     this->m_state.store(socket_state_established);
   }
 
 Abstract_Socket::
-Abstract_Socket(int family, int type, int protocol)
+Abstract_Socket(int type, int protocol)
   {
     // Create a non-blocking socket.
-    this->m_fd.reset(::socket(family, type | SOCK_NONBLOCK, protocol));
+    this->m_fd.reset(::socket(AF_INET6, type | SOCK_NONBLOCK, protocol));
     if(!this->m_fd)
       POSEIDON_THROW((
-          "Could not create socket: family `$2`, type `$3`, protocol `$4`",
-          "[`fcntl()` failed: $1]"),
-          format_errno(), family, type, protocol);
+          "Could not create IPv6 socket: type `$2`, protocol `$3`",
+          "[`socket()` failed: $1]"),
+          format_errno(), type, protocol);
 
     this->m_state.store(socket_state_connecting);
   }
@@ -51,24 +72,38 @@ Abstract_Socket::
   {
   }
 
-const cow_string&
+cow_string
 Abstract_Socket::
 get_local_address() const
   {
-    if(!this->m_sockname_ready.load()) {
-      plain_mutex::unique_lock lock(this->m_sockname_mutex);
+    if(this->m_sockname_ready.load())
+      return this->m_sockname;
 
-      // Try getting the address.
-      Socket_Address addr;
-      ::socklen_t addrlen = (::socklen_t) addr.capacity();
-      if(::getsockname(this->fd(), addr.mut_addr(), &addrlen) != 0)
-        return format(this->m_sockname, "(unknown address: $1)", format_errno());
+    // Try getting the address now.
+    plain_mutex::unique_lock lock(this->m_sockname_mutex);
 
-      // Cache the result.
-      addr.set_size(addrlen);
-      this->m_sockname = addr.print_to_string();
-      this->m_sockname_ready.store(true);
-    }
+    if(this->m_sockname_ready.load())
+      return this->m_sockname;
+
+    ::sockaddr_in6 addr;
+    ::socklen_t addrlen = sizeof(addr);
+    if(::getsockname(this->fd(), (::sockaddr*) &addr, &addrlen) != 0)
+      return format(
+          this->m_sockname,  // reuse this buffer and return a copy
+          "(invalid address: $1)", format_errno());
+
+    if((addr.sin6_family != AF_INET6) || (addrlen != sizeof(addr)))
+      return format(
+          this->m_sockname,  // reuse this buffer and return a copy
+          "(address family unimplemented: $1)", addr.sin6_family);
+
+    Socket_Address saddr;
+    saddr.set_data(addr.sin6_addr);
+    saddr.set_port(be16toh(addr.sin6_port));
+
+    this->m_sockname = saddr.print_to_string();
+    this->m_sockname_ready.store(true);
+
     return this->m_sockname;
   }
 

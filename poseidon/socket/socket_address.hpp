@@ -6,7 +6,6 @@
 
 #include "../fwd.hpp"
 #include "enums.hpp"
-#include <sys/types.h>
 #include <netinet/in.h>
 
 namespace poseidon {
@@ -14,119 +13,64 @@ namespace poseidon {
 class Socket_Address
   {
   private:
-    union {
-      ::sa_family_t m_family;
-      ::sockaddr m_addr;
-      ::sockaddr_in m_addr4;
-      ::sockaddr_in6 m_addr6;
-      ::sockaddr_storage m_stor;
-      char m_data[1];
-    };
-    ::socklen_t m_size;
+    ::in6_addr m_addr;
+    uint16_t m_port;
 
   public:
-    // Initializes an invalid address.
+    // Initializes an unspecified address.
     explicit constexpr
     Socket_Address() noexcept
-      : m_family(AF_UNSPEC), m_size(0)
+      : m_addr(), m_port(0)
       { }
 
-    // Parses an address from a string.
+    // Initializes an address from a foreign source.
+    constexpr
+    Socket_Address(const ::in6_addr& addr, uint16_t port)
+      : m_addr(addr), m_port(port)
+      { }
+
+    // Parses an address from a string, like `parse()`.
     // An exception is thrown if the address string is not valid.
     explicit
-    Socket_Address(const cow_string& host, uint16_t port);
+    Socket_Address(const cow_string& str);
 
   public:
-    // Get the address family.
+    // Accesses raw data.
     constexpr
-    ::sa_family_t
-    family() const noexcept
-      { return this->m_family;  }
-
-    constexpr
-    bool
-    is_ipv4() const noexcept
-      { return this->m_family == AF_INET;  }
-
-    constexpr
-    bool
-    is_ipv6() const noexcept
-      { return this->m_family == AF_INET6;  }
-
-    // Get raw data and size. These functions are provided for convenience.
-    constexpr
-    const void*
+    const ::in6_addr&
     data() const noexcept
-      { return this->m_data;  }
+      { return this->m_addr;  }
 
-    void*
+    constexpr
+    uint16_t
+    port() const noexcept
+      { return this->m_port;  }
+
+    ::in6_addr&
     mut_data() noexcept
-      { return this->m_data;  }
-
-    constexpr
-    const ::sockaddr*
-    addr() const noexcept
-      { return &(this->m_addr);  }
-
-    ::sockaddr*
-    mut_addr() noexcept
-      { return &(this->m_addr);  }
-
-    constexpr
-    const ::sockaddr_in*
-    addr4() const noexcept
-      { return &(this->m_addr4);  }
-
-    ::sockaddr_in*
-    mut_addr4() noexcept
-      { return &(this->m_addr4);  }
-
-    constexpr
-    const ::sockaddr_in6*
-    addr6() const noexcept
-      { return &(this->m_addr6);  }
-
-    ::sockaddr_in6*
-    mut_addr6() noexcept
-      { return &(this->m_addr6);  }
-
-    constexpr
-    size_t
-    size() const noexcept
-      { return (::std::make_unsigned<::socklen_t>::type) this->m_size;  }
-
-    constexpr
-    ::socklen_t
-    ssize() const noexcept
-      { return this->m_size;  }
+      { return this->m_addr;  }
 
     void
-    set_size(::socklen_t nbytes) noexcept
-      {
-        ROCKET_ASSERT(nbytes <= (::socklen_t) sizeof(this->m_stor));
-        this->m_size = nbytes;
-      }
+    set_data(const ::in6_addr& addr) noexcept
+      { this->m_addr = addr;  }
 
-    constexpr
-    size_t
-    capacity() const noexcept
-      { return sizeof(this->m_stor);  }
+    void
+    set_port(uint16_t port) noexcept
+      { this->m_port = port;  }
 
-    // These are general modifiers.
     Socket_Address&
     clear() noexcept
       {
-        this->m_family = AF_UNSPEC;
-        this->m_size = 0;
+        this->m_addr = ::in6_addr();
+        this->m_port = 0;
         return *this;
       }
 
     Socket_Address&
     swap(Socket_Address& other) noexcept
       {
-        ::std::swap(this->m_family, other.m_family);
-        ::std::swap(this->m_stor, other.m_stor);
-        ::std::swap(this->m_size, other.m_size);
+        ::std::swap(this->m_addr, other.m_addr);
+        ::std::swap(this->m_port, other.m_port);
         return *this;
       }
 
@@ -135,18 +79,20 @@ class Socket_Address
     Socket_Address_Class
     classify() const noexcept;
 
+    // Parses an address from a string, which may be an IPv4 address, or
+    // an IPv6 address in brackets, followed by an optional port number.
+    // Examples are `127.0.0.1:80`, `192.168.1.0` and `[::1]:1300`.
+    // If `false` is returned or an exception is thrown, the contents of
+    // this object are unspecified.
+    bool
+    parse(const cow_string& str);
+
     // Converts this address to its string form.
     tinyfmt&
     print(tinyfmt& fmt) const;
 
     cow_string
     print_to_string() const;
-
-    // Parses an address from a string, which may be either IPv4 or IPv6.
-    // If `false` is returned or an exception is thrown, the contents of
-    // this object are unspecified.
-    bool
-    parse(const cow_string& host, uint16_t port);
   };
 
 inline
@@ -158,9 +104,9 @@ swap(Socket_Address& lhs, Socket_Address& rhs) noexcept
 
 inline
 tinyfmt&
-operator<<(tinyfmt& fmt, const Socket_Address& addr)
+operator<<(tinyfmt& fmt, const Socket_Address& saddr)
   {
-    return addr.print(fmt);
+    return saddr.print(fmt);
   }
 
 }  // namespace poseidon
