@@ -25,7 +25,10 @@ do_match_subnet(const uint8_t* addr, size_t size,
       if(*(bp++) != *(pp++))
         return false;
 
-    return (*bp ^ *pp) & (0xFF00 >> bits % 8);
+    if((*bp ^ *pp) & (0xFF00 >> bits % 8))
+      return false;
+
+    return true;
   }
 
 Socket_Address_Class
@@ -217,7 +220,7 @@ parse(const cow_string& str)
 
     if(family == AF_INET) {
       // Parse the IPv4 address as a mapped one.
-      if(::inet_pton(family, host.c_str(), addr + 12) == 0)
+      if(::inet_pton(AF_INET, host.c_str(), addr + 12) == 0)
         return false;
 
       ::memset(addr, 0, 10);
@@ -225,7 +228,7 @@ parse(const cow_string& str)
     }
     else {
       // Parse the IPv6 address.
-      if(::inet_pton(family, host.c_str(), addr) == 0)
+      if(::inet_pton(AF_INET6, host.c_str(), addr) == 0)
         return false;
     }
 
