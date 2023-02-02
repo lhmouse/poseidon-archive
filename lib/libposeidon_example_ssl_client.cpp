@@ -18,6 +18,11 @@ struct Example_Session : SSL_Socket
     Example_Session()
       : SSL_Socket(connect_address, network_driver.default_client_ssl_ctx())
       {
+      }
+
+    void
+    do_on_ssl_connected() override
+      {
         static constexpr char data[] =
             "GET / HTTP/1.1\r\n"
             "Host: example.org\r\n"
@@ -25,6 +30,7 @@ struct Example_Session : SSL_Socket
             "\r\n";
 
         this->ssl_send(data, ::strlen(data));
+        POSEIDON_LOG_ERROR(("example SSL client sent to `$1`:\n\n$2"), this->get_remote_address(), data);
       }
 
     void

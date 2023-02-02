@@ -18,6 +18,11 @@ struct Example_Session : TCP_Socket
     Example_Session()
       : TCP_Socket(connect_address)
       {
+      }
+
+    void
+    do_on_tcp_connected() override
+      {
         static constexpr char data[] =
             "GET / HTTP/1.1\r\n"
             "Host: example.org\r\n"
@@ -25,6 +30,7 @@ struct Example_Session : TCP_Socket
             "\r\n";
 
         this->tcp_send(data, ::strlen(data));
+        POSEIDON_LOG_ERROR(("example TCP client sent to `$1`:\n\n$2"), this->get_remote_address(), data);
       }
 
     void
