@@ -166,7 +166,7 @@ void
 UDP_Socket::
 join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback)
   {
-    if(maddr.classify() != socket_address_class_multicast)
+    if(maddr.classify() != ip_address_class_multicast)
       POSEIDON_THROW((
           "Invalid multicast address `$1`"),
           maddr);
@@ -202,7 +202,7 @@ void
 UDP_Socket::
 leave_multicast_group(const Socket_Address& maddr)
   {
-    if(maddr.classify() != socket_address_class_multicast)
+    if(maddr.classify() != ip_address_class_multicast)
       POSEIDON_THROW((
           "Invalid multicast address `$1`"),
           maddr);

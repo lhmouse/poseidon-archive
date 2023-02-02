@@ -8,18 +8,17 @@
 
 namespace poseidon {
 
-// Socket address classes (IPv4 and IPv6 only)
-enum Socket_Address_Class : uint8_t
+enum IP_Address_Class : uint8_t
   {
-    socket_address_class_unknown    = 0,
-    socket_address_class_reserved   = 1,
-    socket_address_class_loopback   = 2,
-    socket_address_class_private    = 3,
-    socket_address_class_multicast  = 4,
-    socket_address_class_public     = 5,
+    ip_address_class_unspecified  = 0,  // all zeroes
+    ip_address_class_reserved     = 1,
+    ip_address_class_public       = 2,
+    ip_address_class_loopback     = 3,
+    ip_address_class_private      = 4,
+    ip_address_class_link_local   = 5,
+    ip_address_class_multicast    = 6,
   };
 
-// Socket states
 enum Socket_State : uint8_t
   {
     socket_state_unknown      = 0,

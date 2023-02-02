@@ -76,7 +76,7 @@ class Socket_Address
 
     // Returns the address class, which is shared by both IPv4 and IPv6.
     ROCKET_PURE
-    Socket_Address_Class
+    IP_Address_Class
     classify() const noexcept;
 
     // Parses an address from a string, which may be an IPv4 address, or
