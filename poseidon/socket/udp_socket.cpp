@@ -178,7 +178,12 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, co
           this, typeid(*this), format_errno(), maddr);
 
     char ifname[IF_NAMESIZE];
-    ::if_indextoname(ifindex, ifname);
+    if(::if_indextoname(ifindex, ifname) == nullptr)
+      POSEIDON_THROW((
+          "No network interface available for multicasting",
+          "[`if_indextoname()` failed: $3]",
+          "[UDP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno());
 
     // Set membership.
     // IPv6 doesn't take IPv4-mapped multicast addresses, so there has to be
@@ -251,7 +256,12 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
           this, typeid(*this), format_errno(), maddr);
 
     char ifname[IF_NAMESIZE];
-    ::if_indextoname(ifindex, ifname);
+    if(::if_indextoname(ifindex, ifname) == nullptr)
+      POSEIDON_THROW((
+          "No network interface available for multicasting",
+          "[`if_indextoname()` failed: $3]",
+          "[UDP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno());
 
     // Drop membership.
     // IPv6 doesn't take IPv4-mapped multicast addresses, so there has to be
