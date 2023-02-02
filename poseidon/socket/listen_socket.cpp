@@ -23,7 +23,7 @@ Listen_Socket(const Socket_Address& saddr)
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htobe16(saddr.port());
     addr.sin6_flowinfo = 0;
-    addr.sin6_addr = saddr.data();
+    addr.sin6_addr = saddr.addr();
     addr.sin6_scope_id = 0;
 
     if(::bind(this->fd(), (const ::sockaddr*) &addr, sizeof(addr)) != 0)

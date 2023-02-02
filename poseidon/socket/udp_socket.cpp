@@ -6,6 +6,7 @@
 #include "../static/async_logger.hpp"
 #include "../utils.hpp"
 #include <sys/socket.h>
+#include <net/if.h>
 
 namespace poseidon {
 
@@ -22,7 +23,7 @@ UDP_Socket(const Socket_Address& saddr)
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htobe16(saddr.port());
     addr.sin6_flowinfo = 0;
-    addr.sin6_addr = saddr.data();
+    addr.sin6_addr = saddr.addr();
     addr.sin6_scope_id = 0;
 
     if(::bind(this->fd(), (const ::sockaddr*) &addr, sizeof(addr)) != 0)
@@ -95,7 +96,7 @@ do_abstract_socket_on_readable()
         continue;
 
       // Accept this incoming packet.
-      saddr.set_data(addr.sin6_addr);
+      saddr.set_addr(addr.sin6_addr);
       saddr.set_port(be16toh(addr.sin6_port));
       queue.accept((size_t) io_result);
 
@@ -164,22 +165,54 @@ do_on_udp_opened()
 
 void
 UDP_Socket::
-join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback)
+join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, const char* ifname_opt)
   {
+    // Get the index of the interface to use.
+    // If no interface has been given, skip `lo` and use the second one.
+    uint32_t ifindex = ifname_opt ? ::if_nametoindex(ifname_opt) : 2U;
+    if(ifindex == 0)
+      POSEIDON_THROW((
+          "Network interface not found: $4",
+          "[`if_nametoindex()` failed: $3]",
+          "[UDP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno(), maddr);
+
+    char ifname[IF_NAMESIZE];
+    ::if_indextoname(ifindex, ifname);
+
+    // Set membership.
+    // IPv6 doesn't take IPv4-mapped multicast addresses, so there has to be
+    // special treatement. `sendto()` is not affected.
     if(maddr.classify() != ip_address_class_multicast)
       POSEIDON_THROW((
           "Invalid multicast address `$1`"),
           maddr);
 
-    struct ::ipv6_mreq mreq;
-    mreq.ipv6mr_multiaddr = maddr.data();
-    mreq.ipv6mr_interface = 0;
-    if(::setsockopt(this->fd(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
-      POSEIDON_THROW((
-          "Failed to join multicast group `$4`",
-          "[`setsockopt()` failed: $3]",
-          "[UDP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(), maddr);
+    if(::memcmp(maddr.data(), "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 12) == 0) {
+      // IPv4
+      struct ::ip_mreqn mreq;
+      ::memcpy(&(mreq.imr_multiaddr), maddr.data() + 12, 4);
+      mreq.imr_address.s_addr = INADDR_ANY;
+      mreq.imr_ifindex = (int) ifindex;
+      if(::setsockopt(this->fd(), IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+        POSEIDON_THROW((
+            "Failed to join IPv4 multicast group `$4`",
+            "[`setsockopt()` failed: $3]",
+            "[UDP socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno(), maddr);
+    }
+    else {
+      // IPv6
+      struct ::ipv6_mreq mreq;
+      mreq.ipv6mr_multiaddr = maddr.addr();
+      mreq.ipv6mr_interface = ifindex;
+      if(::setsockopt(this->fd(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+        POSEIDON_THROW((
+            "Failed to join IPv6 multicast group `$4`",
+            "[`setsockopt()` failed: $3]",
+            "[UDP socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno(), maddr);
+    }
 
     int ival = ttl;
     if(::setsockopt(this->fd(), IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &ival, sizeof(ival)) != 0)
@@ -196,27 +229,68 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback)
           "[`setsockopt()` failed: $3]",
           "[UDP socket `$1` (class `$2`)]"),
           this, typeid(*this), format_errno());
+
+    POSEIDON_LOG_INFO((
+        "UDP socket has joined multicast group: address = `$3`, interface = `$4`",
+        "[UDP socket `$1` (class `$2`)]"),
+        this, typeid(*this), maddr, ifname);
   }
 
 void
 UDP_Socket::
-leave_multicast_group(const Socket_Address& maddr)
+leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
   {
+    // Get the index of the interface to use.
+    // If no interface has been given, skip `lo` and use the second one.
+    uint32_t ifindex = ifname_opt ? ::if_nametoindex(ifname_opt) : 2U;
+    if(ifindex == 0)
+      POSEIDON_THROW((
+          "Network interface not found: $4",
+          "[`if_nametoindex()` failed: $3]",
+          "[UDP socket `$1` (class `$2`)]"),
+          this, typeid(*this), format_errno(), maddr);
+
+    char ifname[IF_NAMESIZE];
+    ::if_indextoname(ifindex, ifname);
+
+    // Drop membership.
+    // IPv6 doesn't take IPv4-mapped multicast addresses, so there has to be
+    // special treatement. `sendto()` is not affected.
     if(maddr.classify() != ip_address_class_multicast)
       POSEIDON_THROW((
           "Invalid multicast address `$1`"),
           maddr);
 
-    // IPv6
-    struct ::ipv6_mreq mreq;
-    mreq.ipv6mr_multiaddr = maddr.data();
-    mreq.ipv6mr_interface = 0;
-    if(::setsockopt(this->fd(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
-      POSEIDON_THROW((
-          "Failed to leave multicast group `$4`",
-          "[`setsockopt()` failed: $3]",
-          "[UDP socket `$1` (class `$2`)]"),
-          this, typeid(*this), format_errno(), maddr);
+    if(::memcmp(maddr.data(), "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 12) == 0) {
+      // IPv4
+      struct ::ip_mreqn mreq;
+      ::memcpy(&(mreq.imr_multiaddr), maddr.data() + 12, 4);
+      mreq.imr_address.s_addr = INADDR_ANY;
+      mreq.imr_ifindex = (int) ifindex;
+      if(::setsockopt(this->fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+        POSEIDON_THROW((
+            "Failed to join IPv4 multicast group `$4`",
+            "[`setsockopt()` failed: $3]",
+            "[UDP socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno(), maddr);
+    }
+    else {
+      // IPv6
+      struct ::ipv6_mreq mreq;
+      mreq.ipv6mr_multiaddr = maddr.addr();
+      mreq.ipv6mr_interface = ifindex;
+      if(::setsockopt(this->fd(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
+        POSEIDON_THROW((
+            "Failed to join IPv6 multicast group `$4`",
+            "[`setsockopt()` failed: $3]",
+            "[UDP socket `$1` (class `$2`)]"),
+            this, typeid(*this), format_errno(), maddr);
+    }
+
+    POSEIDON_LOG_INFO((
+        "UDP socket has left multicast group: address = `$3`, interface = `$4`",
+        "[UDP socket `$1` (class `$2`)]"),
+        this, typeid(*this), maddr, ifname);
   }
 
 bool
@@ -250,7 +324,7 @@ udp_send(const Socket_Address& saddr, const char* data, size_t size)
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htobe16(saddr.port());
     addr.sin6_flowinfo = 0;
-    addr.sin6_addr = saddr.data();
+    addr.sin6_addr = saddr.addr();
     addr.sin6_scope_id = 0;
 
     io_result = ::sendto(this->fd(), data, size, 0, (const ::sockaddr*) &addr, sizeof(addr));

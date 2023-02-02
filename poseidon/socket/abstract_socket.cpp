@@ -32,7 +32,7 @@ Abstract_Socket(unique_posix_fd&& fd)
           addr.sin6_family, addrlen);
 
     Socket_Address saddr;
-    saddr.set_data(addr.sin6_addr);
+    saddr.set_addr(addr.sin6_addr);
     saddr.set_port(be16toh(addr.sin6_port));
 
     this->m_sockname = saddr.print_to_string();
@@ -98,7 +98,7 @@ get_local_address() const
           "(address family unimplemented: $1)", addr.sin6_family);
 
     Socket_Address saddr;
-    saddr.set_data(addr.sin6_addr);
+    saddr.set_addr(addr.sin6_addr);
     saddr.set_port(be16toh(addr.sin6_port));
 
     this->m_sockname = saddr.print_to_string();

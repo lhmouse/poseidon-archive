@@ -38,7 +38,7 @@ class Socket_Address
     // Accesses raw data.
     constexpr
     const ::in6_addr&
-    data() const noexcept
+    addr() const noexcept
       { return this->m_addr;  }
 
     constexpr
@@ -47,16 +47,24 @@ class Socket_Address
       { return this->m_port;  }
 
     ::in6_addr&
-    mut_data() noexcept
+    mut_addr() noexcept
       { return this->m_addr;  }
 
     void
-    set_data(const ::in6_addr& addr) noexcept
+    set_addr(const ::in6_addr& addr) noexcept
       { this->m_addr = addr;  }
 
     void
     set_port(uint16_t port) noexcept
       { this->m_port = port;  }
+
+    const uint8_t*
+    data() const noexcept
+      { return (const uint8_t*) &(this->m_addr);  }
+
+    uint8_t*
+    mut_data() noexcept
+      { return (uint8_t*) &(this->m_addr);  }
 
     Socket_Address&
     clear() noexcept

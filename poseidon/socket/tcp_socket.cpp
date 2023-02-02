@@ -32,7 +32,7 @@ TCP_Socket(const Socket_Address& saddr)
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htobe16(saddr.port());
     addr.sin6_flowinfo = 0;
-    addr.sin6_addr = saddr.data();
+    addr.sin6_addr = saddr.addr();
     addr.sin6_scope_id = 0;
 
     if((::connect(this->fd(), (const ::sockaddr*) &addr, sizeof(addr)) != 0) && (errno != EINPROGRESS))
@@ -188,7 +188,7 @@ get_remote_address() const
           "(address family unimplemented: $1)", addr.sin6_family);
 
     Socket_Address saddr;
-    saddr.set_data(addr.sin6_addr);
+    saddr.set_addr(addr.sin6_addr);
     saddr.set_port(be16toh(addr.sin6_port));
 
     this->m_peername = saddr.print_to_string();

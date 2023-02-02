@@ -64,15 +64,17 @@ class UDP_Socket
     // `maddr` is the multicast group to join/leave, and must be a valid multicast
     // address. It is also used to determine which network interface to use. `ttl`
     // specifies the TTL of multicast packets. `loopback` specifies whether packets
-    // should be sent back to the sender.
+    // should be sent back to the sender. `ifname_opt` should specify the name of a
+    // network interface to use; by default, the second interface is used (the first
+    // one is usually the loopback one, namely `lo`).
     // If these functions fail, an exception is thrown, and the state of this socket
     // is unspecified.
     // These functions are thread-safe.
     void
-    join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback);
+    join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, const char* ifname_opt = nullptr);
 
     void
-    leave_multicast_group(const Socket_Address& maddr);
+    leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt = nullptr);
 
     // Enqueues a packet for sending.
     // If this function returns `true`, data will have been enqueued; however it
