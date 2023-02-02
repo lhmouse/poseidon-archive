@@ -60,9 +60,8 @@ void
 do_load_level_config(Level_Config& lconf, const Config_File& file, const char* name)
   {
     // Set the tag.
-    ::memcpy(lconf.tag, "[     ] ", 8);
-    for(size_t k = 0;  (k < 5) && name[k];  ++k)
-      lconf.tag[k + 1] = ::rocket::ascii_to_upper(name[k]);
+    ::snprintf(lconf.tag, sizeof(lconf.tag), "[%s]", name);
+    ::rocket::for_each(lconf.tag, [](char& ch) { ch = ::rocket::ascii_to_upper(ch);  });
 
     // Read the color code sequence of the level.
     auto value = file.query("logger", name, "color");
