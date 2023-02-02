@@ -142,15 +142,18 @@ parse(const cow_string& str)
     if(str.empty())
       return true;
 
+    if(str.size() >= UINT16_MAX)
+      return false;
+
     // Break down the host:port string as a URL.
-    ::http_parser_url url = { };
+    ::http_parser_url url;
+
     if(::http_parser_parse_url(str.data(), str.size(), true, &url) != 0)
       return false;
 
     if(url.field_set != (1U << UF_HOST | 1U << UF_PORT))
       return false;
 
-    // Parse the host string.
     const char* host = str.data() + url.field_data[UF_HOST].off;
     size_t hostlen = url.field_data[UF_HOST].len;
     char sbuf[64];
