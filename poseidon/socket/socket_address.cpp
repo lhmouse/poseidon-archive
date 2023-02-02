@@ -14,7 +14,7 @@ ROCKET_ALWAYS_INLINE
 bool
 do_match_subnet(const void* addr, const void* mask, uint32_t bits) noexcept
   {
-    return (::__memcmpeq(addr, mask, bits / 8) == 0) &&
+    return (::memcmp(addr, mask, bits / 8) == 0) &&
            (((*((const uint8_t*) addr + bits / 8) ^ *((const uint8_t*) mask + bits / 8))
              & (0xFF00U >> bits % 8)) == 0);
   }
