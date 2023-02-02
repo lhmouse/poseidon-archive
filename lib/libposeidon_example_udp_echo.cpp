@@ -22,12 +22,12 @@ struct Example_Server : UDP_Socket
       }
 
     void
-    do_on_udp_packet(Socket_Address&& addr, linear_buffer&& data) override
+    do_on_udp_packet(Socket_Address&& saddr, linear_buffer&& data) override
       {
         cow_string str(data.begin(), data.end());
         data.clear();
-        POSEIDON_LOG_WARN(("example UDP server received from `$1`: $2"), addr, str);
-        this->udp_send(addr, str);
+        POSEIDON_LOG_WARN(("example UDP server received from `$1`: $2"), saddr, str);
+        this->udp_send(saddr, str);
       }
   };
 
