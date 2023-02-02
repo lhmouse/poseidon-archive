@@ -80,8 +80,8 @@ class Socket_Address
     classify() const noexcept;
 
     // Parses an address from a string, which may be an IPv4 address, or
-    // an IPv6 address in brackets, followed by an optional port number.
-    // Examples are `127.0.0.1:80`, `192.168.1.0` and `[::1]:1300`.
+    // an IPv6 address in brackets, followed by a port number. Examples
+    // are `127.0.0.1:80` and `[::1]:1300`.
     // If `false` is returned or an exception is thrown, the contents of
     // this object are unspecified.
     bool

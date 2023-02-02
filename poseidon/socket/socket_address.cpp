@@ -5,6 +5,7 @@
 #include "socket_address.hpp"
 #include "../utils.hpp"
 #include <arpa/inet.h>
+#include <http_parser.h>
 
 namespace poseidon {
 namespace {
@@ -121,30 +122,6 @@ do_classify_ipv6(const uint8_t* addr) noexcept
     return socket_address_class_public;
   }
 
-struct cstr_buf
-  {
-    char sso[56];
-    cow_string str;
-
-    void
-    assign(const char* bp, const char* ep)
-      {
-        size_t len = (size_t) (ep - bp);
-
-        if(len + 1 <= sizeof(this->sso)) {
-          ::std::memcpy(this->sso, bp, len);
-          this->sso[len] = 0;
-          this->str = ::rocket::sref(this->sso, len);
-        }
-        else
-          this->str.assign(bp, ep);
-      }
-
-    const char*
-    c_str() const noexcept
-      { return this->str.c_str();  }
-  };
-
 }  // namespace
 
 Socket_Address::
@@ -172,68 +149,40 @@ parse(const cow_string& str)
     if(str.empty())
       return true;
 
-    uint8_t* const addr = (uint8_t*) &(this->m_addr);
-    const char* const bp = str.safe_c_str();
-    const char* const ep = bp + str.size();
-    const char* rp;
-
-    int family;
-    cstr_buf host;
-    ::rocket::ascii_numget numg;
-    uint64_t port = 0;
-
-    if(*bp != '[') {
-      // Parse an IPv4 address.
-      family = AF_INET;
-
-      rp = ::std::find(bp, ep, ':');
-      if(*rp == ':')
-        host.assign(bp, rp);
-      else
-        host.str = str;
-    }
-    else {
-      // Parse an IPv6 address.
-      family = AF_INET6;
-
-      rp = ::std::find(bp, ep, ']');
-      if(*rp != ']')
-        return false;
-
-      host.assign(bp + 1, rp);
-      rp = ::std::find(rp + 1, ep, ':');
-    }
-
-    if(*rp == ':') {
-      // Parse the port number.
-      rp ++;
-      if(!numg.parse_U(rp, ep))
-        return false;
-
-      if(!numg.cast_U(port, 0, 0xFFFF))
-        return false;
-    }
-
-    // Check for garbage characters.
-    if(rp != ep)
+    // Break down the host:port string as a URL.
+    ::http_parser_url url = { };
+    if(::http_parser_parse_url(str.data(), str.size(), true, &url) != 0)
       return false;
 
-    if(family == AF_INET) {
-      // Parse the IPv4 address as a mapped one.
-      if(::inet_pton(AF_INET, host.c_str(), addr + 12) == 0)
-        return false;
+    if(url.field_set != (1U << UF_HOST | 1U << UF_PORT))
+      return false;
 
-      ::memset(addr, 0, 10);
-      ::memset(addr + 10, 0xFF, 2);
-    }
-    else {
-      // Parse the IPv6 address.
-      if(::inet_pton(AF_INET6, host.c_str(), addr) == 0)
-        return false;
+    // Parse the host string.
+    const char* host = str.data() + url.field_data[UF_HOST].off;
+    size_t hostlen = url.field_data[UF_HOST].len;
+    char sbuf[64];
+    int family = AF_INET6;
+    uint8_t* addr = (uint8_t*) &(this->m_addr);
+
+    if((hostlen < 1) || (hostlen > 63))
+      return false;
+
+    if(host[hostlen] != ']') {
+      family = AF_INET;
+      ::memset(addr, 0x00, 10);
+      addr += 10;
+      ::memset(addr, 0xFF, 2);
+      addr += 2;
     }
 
-    // Set the port number.
-    this->m_port = (uint16_t) port;
+    ::memcpy(sbuf, host, hostlen);
+    sbuf[hostlen] = 0;
+    host = sbuf;
+
+    if(::inet_pton(family, host, addr) == 0)
+      return false;
+
+    this->m_port = url.port;
     return true;
   }
 
@@ -241,31 +190,31 @@ tinyfmt&
 Socket_Address::
 print(tinyfmt& fmt) const
   {
-    const uint8_t* const addr = (const uint8_t*) &(this->m_addr);
-    char sbuf[56];
-    const char* host = nullptr;
+    int family = AF_INET6;
+    const uint8_t* addr = (const uint8_t*) &(this->m_addr);
+    char sbuf[64];
+    char* host;
 
     if(do_match_subnet(addr, 16, {0,0,0,0,0,0,0,0,0,0,0xFF,0xFF,0,0,0,0}, 96)) {
-      // Format it as an IPv4 address.
-      host = ::inet_ntop(AF_INET, addr + 12, sbuf, sizeof(sbuf));
-      if(!host)
-        return fmt << "(invalid IPv4 address)";
-
-      fmt << host;
-    }
-    else {
-      // Format it as an IPv6 address.
-      host = ::inet_ntop(AF_INET6, addr, sbuf, sizeof(sbuf));
-      if(!host)
-        return fmt << "(invalid IPv6 address)";
-
-      fmt << '[' << host << ']';
+      family = AF_INET;
+      addr += 12;
     }
 
-    // Format the port number.
-    fmt << ':' << this->m_port;
+    host = (char*) ::inet_ntop(family, addr, sbuf + 1, sizeof(sbuf) - 1);
+    if(!host)
+      return fmt << "(invalid IP address)";
+
+    if(family != AF_INET) {
+      host --;
+      host[0] = '[';
+      ::strcat(host, "]:");
+    }
+    else
+      ::strcat(host, ":");
+
+    fmt << host << this->m_port;
     return fmt;
- }
+  }
 
 cow_string
 Socket_Address::

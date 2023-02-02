@@ -15,9 +15,9 @@ int main()
         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x01\x02\x80\xFF", 16) == 0);
     POSEIDON_TEST_CHECK(addr.port() == 12345);
 
-    POSEIDON_TEST_CHECK(addr.parse(sref("3.2.128.255")) == true);
+    POSEIDON_TEST_CHECK(addr.parse(sref("3.2.128.255")) == false);
     POSEIDON_TEST_CHECK(::memcmp(&(addr.data()),
-        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF\x03\x02\x80\xFF", 16) == 0);
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 16) == 0);
     POSEIDON_TEST_CHECK(addr.port() == 0);
 
     POSEIDON_TEST_CHECK(addr.parse(sref("")) == true);
