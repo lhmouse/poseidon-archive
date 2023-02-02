@@ -279,7 +279,7 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
       mreq.imr_ifindex = (int) ifindex;
       if(::setsockopt(this->fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW((
-            "Failed to join IPv4 multicast group `$4`",
+            "Failed to leave IPv4 multicast group `$4`",
             "[`setsockopt()` failed: $3]",
             "[UDP socket `$1` (class `$2`)]"),
             this, typeid(*this), format_errno(), maddr);
@@ -291,7 +291,7 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
       mreq.ipv6mr_interface = ifindex;
       if(::setsockopt(this->fd(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW((
-            "Failed to join IPv6 multicast group `$4`",
+            "Failed to leave IPv6 multicast group `$4`",
             "[`setsockopt()` failed: $3]",
             "[UDP socket `$1` (class `$2`)]"),
             this, typeid(*this), format_errno(), maddr);
