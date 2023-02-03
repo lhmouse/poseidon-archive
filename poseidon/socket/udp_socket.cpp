@@ -188,11 +188,6 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, co
     // Set membership.
     // IPv6 doesn't take IPv4-mapped multicast addresses, so there has to be
     // special treatement. `sendto()` is not affected.
-    if(maddr.classify() != ip_address_class_multicast)
-      POSEIDON_THROW((
-          "Invalid multicast address `$1`"),
-          maddr);
-
     if(::memcmp(maddr.data(), "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 12) == 0) {
       // IPv4
       struct ::ip_mreqn mreq;
@@ -266,11 +261,6 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
     // Drop membership.
     // IPv6 doesn't take IPv4-mapped multicast addresses, so there has to be
     // special treatement. `sendto()` is not affected.
-    if(maddr.classify() != ip_address_class_multicast)
-      POSEIDON_THROW((
-          "Invalid multicast address `$1`"),
-          maddr);
-
     if(::memcmp(maddr.data(), "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 12) == 0) {
       // IPv4
       struct ::ip_mreqn mreq;
