@@ -26,7 +26,7 @@ template<class MgrT>
 MgrT&
 operator|(MgrT& mgr, const Thrd& th)
   {
-    auto thrd_function = +[](void* ptr) noexcept -> void*
+    auto thrd_function = +[](void* ptr) noexcept
       {
         // Set thread information. Errors are ignored.
         int oldst;
@@ -52,6 +52,9 @@ operator|(MgrT& mgr, const Thrd& th)
                 "[exception class `%s`]\n",
                 stdex.what(), typeid(MgrT).name(), typeid(stdex).name());
           }
+
+        // Make the return type deducible.
+        return (void*) nullptr;
       };
 
     // Create a detached thread.

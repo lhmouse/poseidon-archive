@@ -357,7 +357,7 @@ thread_loop()
       elem->sched_inner->uc_stack = do_alloc_stack(stack_vm_size);  // may throw an exception
       elem->sched_inner->uc_link = this->m_sched_outer;
 
-      auto fiber_function = +[](int a0, int a1) noexcept -> void
+      auto fiber_function = +[](int a0, int a1) noexcept
         {
           // Unpack arguments.
           Fiber_Scheduler* self;

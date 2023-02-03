@@ -234,7 +234,7 @@ do_init_signal_handlers()
     ::sigaction(SIGPIPE, &sigact, nullptr);
 
     // Trap signals. Errors are ignored.
-    sigact.sa_handler = [](int n) { exit_signal.store(n);  };
+    sigact.sa_handler = +[](int n) { exit_signal.store(n);  };
     ::sigaction(SIGINT, &sigact, nullptr);
     ::sigaction(SIGTERM, &sigact, nullptr);
     ::sigaction(SIGHUP, &sigact, nullptr);
