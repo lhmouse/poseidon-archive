@@ -158,20 +158,18 @@ parse(const cow_string& str)
 
     const char* host = str.data() + url.field_data[UF_HOST].off;
     size_t hostlen = url.field_data[UF_HOST].len;
-    char sbuf[64];
-    int family = AF_INET6;
     uint8_t* addr = (uint8_t*) &(this->m_addr);
+    int family = AF_INET6;
+    char sbuf[64];
 
     if((hostlen < 1) || (hostlen > 63))
       return false;
 
     if(host[hostlen] != ']') {
       // IPv4
+      ::memcpy(addr, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 12);
+      addr += 12;
       family = AF_INET;
-      ::memset(addr, 0x00, 10);
-      addr += 10;
-      ::memset(addr, 0xFF, 2);
-      addr += 2;
     }
 
     ::memcpy(sbuf, host, hostlen);
@@ -189,15 +187,15 @@ tinyfmt&
 Socket_Address::
 print(tinyfmt& fmt) const
   {
-    int family = AF_INET6;
     const uint8_t* addr = (const uint8_t*) &(this->m_addr);
+    int family = AF_INET6;
     char sbuf[64];
     char* host;
 
     if(do_match_subnet(addr, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 96)) {
       // IPv4
-      family = AF_INET;
       addr += 12;
+      family = AF_INET;
     }
 
     host = (char*) ::inet_ntop(family, addr, sbuf + 1, sizeof(sbuf) - 1);
