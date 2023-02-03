@@ -67,6 +67,10 @@ inline
 IP_Address_Class
 do_classify_ipv6_generic(const void* addr) noexcept
   {
+    // ::ffff:0:0/96: IPv4-mapped
+    if(do_match_subnet(addr, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 96))
+      return do_classify_ipv4_generic((const uint8_t*) addr + 12);
+
     // ::/128: Unspecified
     if(do_match_subnet(addr, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 128))
       return ip_address_class_unspecified;
@@ -74,10 +78,6 @@ do_classify_ipv6_generic(const void* addr) noexcept
     // ::1/128: Loopback
     if(do_match_subnet(addr, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01", 128))
       return ip_address_class_loopback;
-
-    // ::ffff:0:0/96: IPv4-mapped
-    if(do_match_subnet(addr, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 96))
-      return do_classify_ipv4_generic((const uint8_t*) addr + 12);
 
     // 64:ff9b::/96: IPv4 to IPv6
     if(do_match_subnet(addr, "\x00\x64\xFF\x9B\x00\x00\x00\x00\x00\x00\x00\x00", 96))
