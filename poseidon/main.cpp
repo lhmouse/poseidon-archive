@@ -360,7 +360,7 @@ main(int argc, char** argv)
     ::tzset();
     ::pthread_setname_np(::pthread_self(), PACKAGE);
     ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &::opterr);
-    ::srandom((unsigned) ::clock());
+    ::srandom((uint32_t) ::clock());
 
     // Note that this function shall not return in case of errors.
     do_parse_command_line(argc, argv);
@@ -372,7 +372,7 @@ main(int argc, char** argv)
     async_logger.reload(main_config.copy());
     fiber_scheduler.reload(main_config.copy());
     network_driver.reload(main_config.copy());
-    POSEIDON_LOG_INFO(("Finished load configuration"));
+    POSEIDON_LOG_INFO(("Finished loading configuration"));
 
     do_check_euid();
     do_check_ulimits();
@@ -386,13 +386,7 @@ main(int argc, char** argv)
       fiber_scheduler.thread_loop();
 
     int sig = exit_signal.load();
-#if defined(__GLIBC__) && (__GLIBC__ * 10000 + __GLIBC_MINOR__ >= 20032)
-    const char* sigdescr = ::sigdescr_np(sig);
-#else
-    const char* sigdescr = ::sys_siglist[sig];
-#endif  // GLIBC
-
-    POSEIDON_LOG_INFO(("Shutting down due to signal $1: $2"), sig, sigdescr);
+    POSEIDON_LOG_INFO(("Shutting down due to signal $1: $2"), sig, ::strsignal(sig));
     do_exit_printf(exit_success, "");
   }
   catch(exception& stdex) {
