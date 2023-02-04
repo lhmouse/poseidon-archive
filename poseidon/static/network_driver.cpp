@@ -394,7 +394,6 @@ thread_loop()
             return SSL_TLSEXT_ERR_NOACK;
 
           POSEIDON_LOG_TRACE(("Responding ALPN protocol: $1"), rsock->m_alpn_proto);
-
           *outp = (const uint8_t*) rsock->m_alpn_proto.data();
           *outn = (uint8_t) rsock->m_alpn_proto.size();
           return SSL_TLSEXT_ERR_OK;
