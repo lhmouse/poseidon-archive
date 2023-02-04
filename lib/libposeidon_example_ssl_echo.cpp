@@ -21,6 +21,16 @@ struct Example_Session : SSL_Socket
       {
       }
 
+    charbuf_256
+    do_on_ssl_alpn_request(cow_vector<charbuf_256>&& protos) override
+      {
+        for(const auto& proto : protos)
+          POSEIDON_LOG_ERROR(("ALPN: received `$1`"), proto);
+
+        // select no protocol
+        return {};
+      }
+
     void
     do_on_ssl_stream(linear_buffer& data) override
       {
