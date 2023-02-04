@@ -382,15 +382,6 @@ thread_loop()
 
             charbuf_256 alpn_resp = rsock->do_on_ssl_alpn_request(::std::move(alpn_req));
             rsock->m_alpn_proto.assign(alpn_resp);
-
-            // An empty string indicates that no protocol shall be selected.
-            if(!rsock->m_alpn_proto.empty()) {
-              *outp = (const uint8_t*) rsock->m_alpn_proto.data();
-              *outn = (uint8_t) rsock->m_alpn_proto.size();
-
-              POSEIDON_LOG_TRACE(("Responding ALPN protocol: $1"), rsock->m_alpn_proto);
-              return SSL_TLSEXT_ERR_OK;
-            }
           }
           catch(exception& stdex) {
             POSEIDON_LOG_ERROR((
@@ -399,8 +390,14 @@ thread_loop()
                 stdex, typeid(*rsock));
           }
 
-          // Select no protocol.
-          return SSL_TLSEXT_ERR_NOACK;
+          if(rsock->m_alpn_proto.empty())  // no protocol
+            return SSL_TLSEXT_ERR_NOACK;
+
+          POSEIDON_LOG_TRACE(("Responding ALPN protocol: $1"), rsock->m_alpn_proto);
+
+          *outp = (const uint8_t*) rsock->m_alpn_proto.data();
+          *outn = (uint8_t) rsock->m_alpn_proto.size();
+          return SSL_TLSEXT_ERR_OK;
         };
 
       ::SSL_CTX_set_alpn_select_cb(server_ssl_ctx, alpn_callback, socket.get());
