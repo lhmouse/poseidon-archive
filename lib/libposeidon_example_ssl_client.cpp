@@ -18,6 +18,8 @@ struct Example_Session : SSL_Socket
     Example_Session()
       : SSL_Socket(connect_address, network_driver.default_client_ssl_ctx())
       {
+        this->do_ssl_alpn_request({ "http/1.1" });
+        POSEIDON_LOG_FATAL(("ALPN: requesting HTTP/1.1"));
       }
 
     void
@@ -36,6 +38,8 @@ struct Example_Session : SSL_Socket
     void
     do_on_ssl_stream(linear_buffer& data) override
       {
+        POSEIDON_LOG_FATAL(("ALPN: received `$1`"), this->get_alpn_protocol());
+
         cow_string str(data.begin(), data.end());
         data.clear();
         POSEIDON_LOG_WARN(("example SSL client received from `$1`:\n\n$2"), this->get_remote_address(), str);

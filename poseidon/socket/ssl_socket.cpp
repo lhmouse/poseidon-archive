@@ -211,6 +211,13 @@ do_abstract_socket_on_readable()
       queue.accept(datalen);
     }
 
+    const uint8_t* alpn_data;
+    unsigned int alpn_size;
+    ::SSL_get0_alpn_selected(this->ssl(), &alpn_data, &alpn_size);
+
+    if(alpn_size != 0)
+      this->m_alpn_proto.assign((const char*) alpn_data, alpn_size);
+
     if(old_size != queue.size())
       this->do_on_ssl_stream(queue);
 
