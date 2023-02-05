@@ -349,13 +349,12 @@ thread_loop()
 
     if(server_ssl_ctx) {
       // Set the ALPN callback.
-      auto alpn_callback = +[](::SSL* ssl, const uint8_t** outp, uint8_t* outn,
-                               const uint8_t* inp, unsigned inn, void* arg)
+      auto alpn_callback = +[](::SSL* ssl, const uint8_t** outp, uint8_t* outn, const uint8_t* inp, unsigned int inn, void* arg) noexcept
         {
           // Verify the socket.
           // These errors shouldn't happen unless we have really messed things up
           // e.g. when `arg` is a dangling pointer.
-          auto rsock = dynamic_cast<SSL_Socket*>(static_cast<SSL_Socket*>(arg));
+          auto rsock = dynamic_cast<SSL_Socket*>(static_cast<decltype(socket.get())>(arg));
           if(!rsock)
             return SSL_TLSEXT_ERR_ALERT_FATAL;
 
