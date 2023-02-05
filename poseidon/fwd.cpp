@@ -17,14 +17,9 @@
 namespace poseidon {
 namespace {
 
-struct Thrd
-  {
-    char name[16];
-  };
-
 template<class MgrT>
 MgrT&
-operator|(MgrT& mgr, const Thrd& th)
+operator|(MgrT& mgr, const char* thrd_name)
   {
     auto thrd_function = +[](void* ptr) noexcept
       {
@@ -67,7 +62,8 @@ operator|(MgrT& mgr, const Thrd& th)
           "[manager class `%s`]\n",
           ::strerror(err), err, typeid(MgrT).name());
 
-    ::pthread_setname_np(thrd, th.name);
+    // Name the thread and detach it. Errors are ignored.
+    ::pthread_setname_np(thrd, thrd_name);
     ::pthread_detach(thrd);
     return mgr;
   }
@@ -76,10 +72,11 @@ operator|(MgrT& mgr, const Thrd& th)
 
 atomic_signal exit_signal;
 Main_Config& main_config = *new Main_Config;
-Async_Logger& async_logger = *new Async_Logger | Thrd{"logger"};
-Timer_Driver& timer_driver = *new Timer_Driver | Thrd{"timer"};
 Fiber_Scheduler& fiber_scheduler = *new Fiber_Scheduler;
-Async_Task_Executor& async_task_executor = *new Async_Task_Executor | Thrd{"task1"} | Thrd{"task2"} | Thrd{"task3"};
-Network_Driver& network_driver = *new Network_Driver | Thrd{"network"};
+
+Async_Logger& async_logger = *new Async_Logger | "logger";
+Timer_Driver& timer_driver = *new Timer_Driver | "timer";
+Async_Task_Executor& async_task_executor = *new Async_Task_Executor | "task1" | "task2" | "task3";
+Network_Driver& network_driver = *new Network_Driver | "network";
 
 }  // namespace poseidon

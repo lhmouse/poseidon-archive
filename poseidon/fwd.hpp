@@ -131,9 +131,10 @@ class SSL_Socket;
 // Manager types and instances
 extern atomic_signal exit_signal;
 extern class Main_Config& main_config;
+extern class Fiber_Scheduler& fiber_scheduler;
+
 extern class Async_Logger& async_logger;
 extern class Timer_Driver& timer_driver;
-extern class Fiber_Scheduler& fiber_scheduler;
 extern class Async_Task_Executor& async_task_executor;
 extern class Network_Driver& network_driver;
 
