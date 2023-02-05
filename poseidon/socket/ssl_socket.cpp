@@ -225,6 +225,22 @@ do_abstract_socket_on_readable()
 
 void
 SSL_Socket::
+do_abstract_socket_on_oob_readable()
+  {
+    char data;
+    ::ssize_t io_result;
+
+    // If there are no OOB data, `recv()` fails with `EINVAL`.
+    io_result = ::recv(this->fd(), &data, 1, MSG_OOB);
+    if(io_result <= 0)
+      return;
+
+    // Accept it.
+    this->do_on_ssl_oob_byte(data);
+  }
+
+void
+SSL_Socket::
 do_abstract_socket_on_writable()
   {
     recursive_mutex::unique_lock io_lock;
@@ -283,6 +299,16 @@ do_on_ssl_connected()
         "SSL connection to `$3` established",
         "[SSL socket `$1` (class `$2`)]"),
         this, typeid(*this), this->get_remote_address());
+  }
+
+void
+SSL_Socket::
+do_on_ssl_oob_byte(char data)
+  {
+    POSEIDON_LOG_INFO((
+        "SSL connection received out-of-band data: $3 ($4)",
+        "[SSL socket `$1` (class `$2`)]"),
+        this, typeid(*this), (int) data, (char) data);
   }
 
 const cow_string&
@@ -406,6 +432,13 @@ SSL_Socket::
 ssl_send(const string& data)
   {
     return this->ssl_send(data.data(), data.size());
+  }
+
+bool
+SSL_Socket::
+ssl_send_oob(char data) noexcept
+  {
+    return ::send(this->fd(), &data, 1, MSG_OOB) > 0;
   }
 
 bool

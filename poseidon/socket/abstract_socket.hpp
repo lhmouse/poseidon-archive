@@ -86,6 +86,13 @@ class Abstract_Socket
     void
     do_abstract_socket_on_readable() = 0;
 
+    // This callback is invoked by the network thread when incoming
+    // out-of-band data are available, and is intended to be overriden by
+    // derived classes.
+    virtual
+    void
+    do_abstract_socket_on_oob_readable() = 0;
+
     // This callback is invoked by the network thread when outgoing data are
     // possible, and is intended to be overriden by derived classes.
     virtual
@@ -106,8 +113,8 @@ class Abstract_Socket
       { return this->m_state.load();  }
 
     // Gets the local or bound address of this socket as a human-readable
-    // string. In case of errors, a string with information about the error is
-    // returned instead.
+    // string. In case of errors, a string with information about the error
+    // is returned instead.
     // This function is thread-safe.
     cow_string
     get_local_address() const;

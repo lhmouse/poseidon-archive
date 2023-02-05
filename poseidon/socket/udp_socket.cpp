@@ -106,6 +106,13 @@ do_abstract_socket_on_readable()
 
 void
 UDP_Socket::
+do_abstract_socket_on_oob_readable()
+  {
+    // UDP doesn't support OOB data.
+  }
+
+void
+UDP_Socket::
 do_abstract_socket_on_writable()
   {
     recursive_mutex::unique_lock io_lock;

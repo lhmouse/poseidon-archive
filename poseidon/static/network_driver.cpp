@@ -38,9 +38,9 @@ do_epoll_ctl(int epoll_fd, int op, const shared_ptr<Abstract_Socket>& socket, ui
 
     if((op == EPOLL_CTL_ADD) || (op == EPOLL_CTL_MOD))
       POSEIDON_LOG_TRACE((
-          "Updated epoll flags for socket `$1` (class `$2`): ET = $3, IN = $4, OUT = $5"),
+          "Updated epoll flags for socket `$1` (class `$2`): ET = $3, IN = $4, PRI = $5, OUT = $6"),
           socket, typeid(*socket), (event.events / EPOLLET) & 1U, (event.events / EPOLLIN) & 1U,
-          (event.events / EPOLLOUT) & 1U);
+          (event.events / EPOLLPRI) & 1U, (event.events / EPOLLOUT) & 1U);
   }
 
 }  // namespace
@@ -312,9 +312,9 @@ thread_loop()
 
     // Process events on this socket.
     POSEIDON_LOG_TRACE((
-        "Processing socket `$1` (class `$2`): HUP = $3, ERR = $4, IN = $5, OUT = $6"),
+        "Processing socket `$1` (class `$2`): HUP = $3, ERR = $4, IN = $5, PRI = $6, OUT = $7"),
         socket, typeid(*socket), (event.events / EPOLLHUP) & 1U, (event.events / EPOLLERR) & 1U,
-        (event.events / EPOLLIN) & 1U, (event.events / EPOLLOUT) & 1U);
+        (event.events / EPOLLIN) & 1U, (event.events / EPOLLPRI) & 1U, (event.events / EPOLLOUT) & 1U);
 
     if(event.events & (EPOLLHUP | EPOLLERR)) {
       try {
@@ -416,6 +416,20 @@ thread_loop()
       POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) read done"), socket, typeid(*socket));
     }
 
+    if(event.events & EPOLLPRI) {
+      try {
+        socket->do_abstract_socket_on_oob_readable();
+      }
+      catch(exception& stdex) {
+        POSEIDON_LOG_ERROR((
+            "Unhandled exception thrown from socket out-of-band read callback: $1",
+            "[socket class `$2`]"),
+            stdex, typeid(*socket));
+      }
+
+      POSEIDON_LOG_TRACE(("Socket `$1` (class `$2`) out-of-band read done"), socket, typeid(*socket));
+    }
+
     if(event.events & EPOLLOUT) {
       try {
         socket->do_abstract_socket_on_writable();
@@ -439,7 +453,7 @@ thread_loop()
       if(throttled)
         do_epoll_ctl(this->m_epoll, EPOLL_CTL_MOD, socket, EPOLLOUT);
       else
-        do_epoll_ctl(this->m_epoll, EPOLL_CTL_MOD, socket, EPOLLIN | EPOLLOUT | EPOLLET);
+        do_epoll_ctl(this->m_epoll, EPOLL_CTL_MOD, socket, EPOLLIN | EPOLLPRI | EPOLLOUT | EPOLLET);
     }
 
     if(server_ssl_ctx)
@@ -461,7 +475,7 @@ insert(const shared_ptr<Abstract_Socket>& socket)
     // The socket will be deleted from an epoll automatically when it's closed,
     // so there is no need to remove it in case of an exception.
     plain_mutex::unique_lock lock(this->m_epoll_mutex);
-    do_epoll_ctl(this->m_epoll, EPOLL_CTL_ADD, socket, EPOLLIN | EPOLLOUT | EPOLLET);
+    do_epoll_ctl(this->m_epoll, EPOLL_CTL_ADD, socket, EPOLLIN | EPOLLPRI | EPOLLOUT | EPOLLET);
     this->m_epoll_sockets[socket.get()] = socket;
   }
 

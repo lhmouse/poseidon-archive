@@ -98,6 +98,12 @@ do_abstract_socket_on_readable()
 
 void
 Listen_Socket::
+do_abstract_socket_on_oob_readable()
+  {
+  }
+
+void
+Listen_Socket::
 do_abstract_socket_on_writable()
   {
   }
