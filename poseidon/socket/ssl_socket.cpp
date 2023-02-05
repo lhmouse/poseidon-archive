@@ -211,12 +211,12 @@ do_abstract_socket_on_readable()
       queue.accept(datalen);
     }
 
-    const uint8_t* alpn_data;
-    unsigned int alpn_size;
-    ::SSL_get0_alpn_selected(this->ssl(), &alpn_data, &alpn_size);
+    const char* alpn_str;
+    unsigned int alpn_len;
+    ::SSL_get0_alpn_selected(this->ssl(), (const uint8_t**) &alpn_str, &alpn_len);
 
-    if(alpn_size != 0)
-      this->m_alpn_proto.assign((const char*) alpn_data, alpn_size);
+    if(alpn_len != 0)
+      this->m_alpn_proto.assign(alpn_str, alpn_len);
 
     if(old_size != queue.size())
       this->do_on_ssl_stream(queue);
