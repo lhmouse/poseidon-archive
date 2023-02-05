@@ -179,10 +179,8 @@ do_abstract_socket_on_readable()
       queue.reserve(0xFFFFU);
       ssl_err = 0;
       size_t datalen;
-      int ret = ::SSL_read_ex(this->ssl(), queue.mut_end(), queue.capacity(), &datalen);
-
-      if(ret == 0) {
-        ssl_err = ::SSL_get_error(this->ssl(), ret);
+      if(::SSL_read_ex(this->ssl(), queue.mut_end(), queue.capacity(), &datalen) <= 0) {
+        ssl_err = ::SSL_get_error(this->ssl(), 0);
 
         // Check for EOF without a shutdown alert.
         if((ssl_err == SSL_ERROR_SYSCALL) && (errno == 0))
@@ -210,13 +208,6 @@ do_abstract_socket_on_readable()
       // Accept incoming data.
       queue.accept(datalen);
     }
-
-    const char* alpn_str;
-    unsigned int alpn_len;
-    ::SSL_get0_alpn_selected(this->ssl(), (const uint8_t**) &alpn_str, &alpn_len);
-
-    if(alpn_len != 0)
-      this->m_alpn_proto.assign(alpn_str, alpn_len);
 
     if(old_size != queue.size())
       this->do_on_ssl_stream(queue);
@@ -254,6 +245,23 @@ do_abstract_socket_on_writable()
     auto& queue = this->do_abstract_socket_lock_write_queue(io_lock);
     int ssl_err = 0;
 
+    if(::SSL_do_handshake(this->ssl()) <= 0) {
+      ssl_err = ::SSL_get_error(this->ssl(), 0);
+
+      if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
+        return;
+
+      POSEIDON_LOG_ERROR((
+          "Error performing SSL handshake",
+          "[`SSL_do_handshake()` failed: SSL_get_error = `$3`, ERR_peek_error = `$4`, errno = `$5`]",
+          "[SSL socket `$1` (class `$2`)]"),
+          this, typeid(*this), ssl_err, ::ERR_reason_error_string(::ERR_peek_error()), format_errno());
+
+      // The connection is now broken.
+      this->quick_shut_down();
+      return;
+    }
+
     for(;;) {
       // Write bytes from `queue` and remove those written.
       if(queue.size() == 0)
@@ -261,10 +269,8 @@ do_abstract_socket_on_writable()
 
       ssl_err = 0;
       size_t datalen;
-      int ret = ::SSL_write_ex(this->ssl(), queue.begin(), queue.size(), &datalen);
-
-      if(ret == 0) {
-        ssl_err = ::SSL_get_error(this->ssl(), ret);
+      if(::SSL_write_ex(this->ssl(), queue.begin(), queue.size(), &datalen) <= 0) {
+        ssl_err = ::SSL_get_error(this->ssl(), 0);
 
         if((ssl_err == SSL_ERROR_WANT_READ) || (ssl_err == SSL_ERROR_WANT_WRITE))
           break;
@@ -285,8 +291,15 @@ do_abstract_socket_on_writable()
     }
 
     if(this->do_abstract_socket_set_state(socket_state_connecting, socket_state_established)) {
+      // Set the ALPN response for outgoing sockets. For incoming sockets, it is
+      // set in the ALPN callback.
+      const char* alpn_str;
+      unsigned int alpn_len;
+      ::SSL_get0_alpn_selected(this->ssl(), (const uint8_t**) &alpn_str, &alpn_len);
+      this->m_alpn_proto.assign(alpn_str, alpn_len);
+
       // Deliver the establishment notification.
-      POSEIDON_LOG_DEBUG(("SSL connection established: remote = $1"), this->remote_address());
+      POSEIDON_LOG_DEBUG(("SSL connection established: remote = $1, alpn = $2"), this->remote_address(), this->m_alpn_proto);
       this->do_on_ssl_connected();
     }
 
