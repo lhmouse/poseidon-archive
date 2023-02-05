@@ -36,7 +36,7 @@ struct Example_Session : SSL_Socket
       {
         cow_string str(data.begin(), data.end());
         data.clear();
-        POSEIDON_LOG_WARN(("example SSL server received from `$1`: $2"), this->get_remote_address(), str);
+        POSEIDON_LOG_WARN(("example SSL server received from `$1`: $2"), this->remote_address(), str);
         this->ssl_send(str);
       }
   };
@@ -49,7 +49,7 @@ struct Example_Server : Listen_Socket
     Example_Server()
       : Listen_Socket(listen_address)
       {
-        POSEIDON_LOG_WARN(("example SSL server listening on `$1`"), this->get_local_address());
+        POSEIDON_LOG_WARN(("example SSL server listening on `$1`"), this->local_address());
       }
 
     shared_ptr<Abstract_Socket>
@@ -59,7 +59,7 @@ struct Example_Server : Listen_Socket
         auto& driver = this->do_abstract_socket_lock_driver(io_lock);
 
         this->m_client = ::std::make_shared<Example_Session>(::std::move(fd), driver.default_server_ssl_ctx());
-        POSEIDON_LOG_WARN(("example SSL server accepted connection from `$1`"), this->m_client->get_remote_address());
+        POSEIDON_LOG_WARN(("example SSL server accepted connection from `$1`"), this->m_client->remote_address());
         return this->m_client;
       }
   };

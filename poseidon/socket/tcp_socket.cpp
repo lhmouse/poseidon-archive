@@ -55,7 +55,7 @@ do_abstract_socket_on_closed(int err)
     POSEIDON_LOG_INFO((
         "TCP connection to `$3` closed: $4",
         "[TCP socket `$1` (class `$2`)]"),
-        this, typeid(*this), this->get_remote_address(), format_errno(err));
+        this, typeid(*this), this->remote_address(), format_errno(err));
   }
 
 void
@@ -100,7 +100,7 @@ do_abstract_socket_on_readable()
     if(io_result == 0) {
       // If the end of stream has been reached, shut the connection down anyway.
       // Half-open connections are not supported.
-      POSEIDON_LOG_INFO(("Closing TCP connection: remote = $1"), this->get_remote_address());
+      POSEIDON_LOG_INFO(("Closing TCP connection: remote = $1"), this->remote_address());
       ::shutdown(this->fd(), SHUT_RDWR);
     }
   }
@@ -157,7 +157,7 @@ do_abstract_socket_on_writable()
 
     if(this->do_abstract_socket_set_state(socket_state_connecting, socket_state_established)) {
       // Deliver the establishment notification.
-      POSEIDON_LOG_DEBUG(("TCP connection established: remote = $1"), this->get_remote_address());
+      POSEIDON_LOG_DEBUG(("TCP connection established: remote = $1"), this->remote_address());
       this->do_on_tcp_connected();
     }
 
@@ -175,7 +175,7 @@ do_on_tcp_connected()
     POSEIDON_LOG_INFO((
         "TCP connection to `$3` established",
         "[TCP socket `$1` (class `$2`)]"),
-        this, typeid(*this), this->get_remote_address());
+        this, typeid(*this), this->remote_address());
   }
 
 void
@@ -190,7 +190,7 @@ do_on_tcp_oob_byte(char data)
 
 const cow_string&
 TCP_Socket::
-get_remote_address() const
+remote_address() const
   {
     if(this->m_peername_ready.load())
       return this->m_peername;

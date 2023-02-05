@@ -119,7 +119,7 @@ class SSL_Socket
     // string. In case of errors, a string with information about the error is
     // returned instead.
     const cow_string&
-    get_remote_address() const;
+    remote_address() const;
 
     // Gets the protocol that has been selected by ALPN.
     // For a server-side socket, this string equals the result of a previous
@@ -127,7 +127,7 @@ class SSL_Socket
     // string is only available since the `do_on_ssl_connected()` callback.
     // If no ALPN protocol has been selected, an empty string is returned.
     const cow_string&
-    get_alpn_protocol() const noexcept
+    alpn_protocol() const noexcept
       { return this->m_alpn_proto;  }
 
     // Enqueues some bytes for sending.

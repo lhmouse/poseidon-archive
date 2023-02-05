@@ -43,7 +43,7 @@ Listen_Socket(const Socket_Address& saddr)
     POSEIDON_LOG_INFO((
         "TCP server started listening on `$3`",
         "[TCP socket `$1` (class `$2`)]"),
-        this, typeid(*this), this->get_local_address());
+        this, typeid(*this), this->local_address());
   }
 
 Listen_Socket::
@@ -58,7 +58,7 @@ do_abstract_socket_on_closed(int err)
     POSEIDON_LOG_INFO((
         "TCP server stopped listening on `$3`: $4",
         "[TCP listen socket `$1` (class `$2`)]"),
-        this, typeid(*this), this->get_local_address(), format_errno(err));
+        this, typeid(*this), this->local_address(), format_errno(err));
   }
 
 void

@@ -36,7 +36,7 @@ UDP_Socket(const Socket_Address& saddr)
     POSEIDON_LOG_INFO((
         "UDP server started listening on `$3`",
         "[UDP socket `$1` (class `$2`)]"),
-        this, typeid(*this), this->get_local_address());
+        this, typeid(*this), this->local_address());
   }
 
 UDP_Socket::
@@ -57,7 +57,7 @@ do_abstract_socket_on_closed(int err)
     POSEIDON_LOG_INFO((
         "UDP socket on `$3` closed: $4",
         "[UDP socket `$1` (class `$2`)]"),
-        this, typeid(*this), this->get_local_address(), format_errno(err));
+        this, typeid(*this), this->local_address(), format_errno(err));
   }
 
 void
@@ -155,7 +155,7 @@ do_abstract_socket_on_writable()
 
     if(this->do_abstract_socket_set_state(socket_state_connecting, socket_state_established)) {
       // Deliver the establishment notification.
-      POSEIDON_LOG_DEBUG(("UDP port opened: local = $1"), this->get_local_address());
+      POSEIDON_LOG_DEBUG(("UDP port opened: local = $1"), this->local_address());
       this->do_on_udp_opened();
     }
   }
@@ -167,7 +167,7 @@ do_on_udp_opened()
     POSEIDON_LOG_INFO((
         "UDP socket on `$3` opened",
         "[UDP socket `$1` (class `$2`)]"),
-        this, typeid(*this), this->get_local_address());
+        this, typeid(*this), this->local_address());
   }
 
 void

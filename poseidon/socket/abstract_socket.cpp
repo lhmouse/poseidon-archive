@@ -74,7 +74,7 @@ Abstract_Socket::
 
 cow_string
 Abstract_Socket::
-get_local_address() const
+local_address() const
   {
     if(this->m_sockname_ready.load())
       return this->m_sockname;

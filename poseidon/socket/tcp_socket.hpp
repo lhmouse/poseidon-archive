@@ -78,7 +78,7 @@ class TCP_Socket
     // string. In case of errors, a string with information about the error is
     // returned instead.
     const cow_string&
-    get_remote_address() const;
+    remote_address() const;
 
     // Enqueues some bytes for sending.
     // If this function returns `true`, data will have been enqueued; however it

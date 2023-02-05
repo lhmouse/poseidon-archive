@@ -32,17 +32,17 @@ struct Example_Session : SSL_Socket
             "\r\n";
 
         this->ssl_send(data, ::strlen(data));
-        POSEIDON_LOG_ERROR(("example SSL client sent to `$1`:\n\n$2"), this->get_remote_address(), data);
+        POSEIDON_LOG_ERROR(("example SSL client sent to `$1`:\n\n$2"), this->remote_address(), data);
       }
 
     void
     do_on_ssl_stream(linear_buffer& data) override
       {
-        POSEIDON_LOG_FATAL(("ALPN: received `$1`"), this->get_alpn_protocol());
+        POSEIDON_LOG_FATAL(("ALPN: received `$1`"), this->alpn_protocol());
 
         cow_string str(data.begin(), data.end());
         data.clear();
-        POSEIDON_LOG_WARN(("example SSL client received from `$1`:\n\n$2"), this->get_remote_address(), str);
+        POSEIDON_LOG_WARN(("example SSL client received from `$1`:\n\n$2"), this->remote_address(), str);
       }
   };
 

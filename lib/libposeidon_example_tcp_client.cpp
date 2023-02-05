@@ -30,7 +30,7 @@ struct Example_Session : TCP_Socket
             "\r\n";
 
         this->tcp_send(data, ::strlen(data));
-        POSEIDON_LOG_ERROR(("example TCP client sent to `$1`:\n\n$2"), this->get_remote_address(), data);
+        POSEIDON_LOG_ERROR(("example TCP client sent to `$1`:\n\n$2"), this->remote_address(), data);
       }
 
     void
@@ -38,7 +38,7 @@ struct Example_Session : TCP_Socket
       {
         cow_string str(data.begin(), data.end());
         data.clear();
-        POSEIDON_LOG_WARN(("example TCP client received from `$1`:\n\n$2"), this->get_remote_address(), str);
+        POSEIDON_LOG_WARN(("example TCP client received from `$1`:\n\n$2"), this->remote_address(), str);
       }
   };
 

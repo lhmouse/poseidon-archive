@@ -26,7 +26,7 @@ struct Example_Session : TCP_Socket
       {
         cow_string str(data.begin(), data.end());
         data.clear();
-        POSEIDON_LOG_WARN(("example TCP server received from `$1`: $2"), this->get_remote_address(), str);
+        POSEIDON_LOG_WARN(("example TCP server received from `$1`: $2"), this->remote_address(), str);
         this->tcp_send(str);
       }
   };
@@ -39,14 +39,14 @@ struct Example_Server : Listen_Socket
     Example_Server()
       : Listen_Socket(listen_address)
       {
-        POSEIDON_LOG_WARN(("example TCP server listening on `$1`"), this->get_local_address());
+        POSEIDON_LOG_WARN(("example TCP server listening on `$1`"), this->local_address());
       }
 
     shared_ptr<Abstract_Socket>
     do_on_listen_new_client_opt(unique_posix_fd&& fd) override
       {
         this->m_client = ::std::make_shared<Example_Session>(::std::move(fd));
-        POSEIDON_LOG_WARN(("example TCP server accepted connection from `$1`"), this->m_client->get_remote_address());
+        POSEIDON_LOG_WARN(("example TCP server accepted connection from `$1`"), this->m_client->remote_address());
         return this->m_client;
       }
   };

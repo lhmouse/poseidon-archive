@@ -117,7 +117,7 @@ class Abstract_Socket
     // is returned instead.
     // This function is thread-safe.
     cow_string
-    get_local_address() const;
+    local_address() const;
 
     // Shuts the socket down without sending any protocol-specific closure
     // notifications.

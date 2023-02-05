@@ -18,7 +18,7 @@ struct Example_Server : UDP_Socket
     Example_Server()
       : UDP_Socket(listen_address)
       {
-        POSEIDON_LOG_WARN(("example UDP server listening on `$1`"), this->get_local_address());
+        POSEIDON_LOG_WARN(("example UDP server listening on `$1`"), this->local_address());
       }
 
     void
