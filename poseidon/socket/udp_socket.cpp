@@ -206,7 +206,7 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, co
       struct ::ip_mreq mreq;
       mreq.imr_interface.s_addr = INADDR_ANY;
 #endif  // linux
-      ::memcpy(&(mreq.imr_multiaddr.s_addr), maddr.data() + 12, 4);
+      ::memcpy(&(mreq.imr_multiaddr), maddr.data() + 12, 4);
 
       if(::setsockopt(this->fd(), IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW((
@@ -287,7 +287,7 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
       struct ::ip_mreq mreq;
       mreq.imr_interface.s_addr = INADDR_ANY;
 #endif  // linux
-      ::memcpy(&(mreq.imr_multiaddr.s_addr), maddr.data() + 12, 4);
+      ::memcpy(&(mreq.imr_multiaddr), maddr.data() + 12, 4);
 
       if(::setsockopt(this->fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW((
