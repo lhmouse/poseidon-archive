@@ -200,13 +200,12 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, co
       // IPv4
 #ifdef __linux__
       struct ::ip_mreqn mreq;
-      mreq.imr_address.s_addr = INADDR_ANY;
       mreq.imr_ifindex = (int) ifindex;
 #else  // linux
       struct ::ip_mreq mreq;
-      mreq.imr_interface = INADDR_ANY;
 #endif  // linux
       ::memcpy(&(mreq.imr_multiaddr), maddr.data() + 12, 4);
+      mreq.imr_address.s_addr = INADDR_ANY;
 
       if(::setsockopt(this->fd(), IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW((
@@ -281,13 +280,12 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
       // IPv4
 #ifdef __linux__
       struct ::ip_mreqn mreq;
-      mreq.imr_address.s_addr = INADDR_ANY;
       mreq.imr_ifindex = (int) ifindex;
 #else  // linux
       struct ::ip_mreq mreq;
-      mreq.imr_interface = INADDR_ANY;
 #endif  // linux
       ::memcpy(&(mreq.imr_multiaddr), maddr.data() + 12, 4);
+      mreq.imr_address.s_addr = INADDR_ANY;
 
       if(::setsockopt(this->fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW((
