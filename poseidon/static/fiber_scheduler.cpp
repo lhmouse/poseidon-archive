@@ -63,7 +63,7 @@ do_alloc_stack(size_t stack_vm_size)
     // Allocate a new stack.
     ::stack_t ss;
     ss.ss_size = stack_vm_size;
-    ss.ss_sp = ::mmap(nullptr, ss.ss_size + 0x2000, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
+    ss.ss_sp = ::mmap(nullptr, ss.ss_size + 0x2000, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if(ss.ss_sp == (void*) -1)
       POSEIDON_THROW((
           "Could not allocate fiber stack memory of size `$2`",

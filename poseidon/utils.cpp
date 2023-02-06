@@ -41,7 +41,7 @@ throw_runtime_error_with_backtrace(const char* file, long line, const char* func
     // Backtrace frames.
     ::rocket::unique_ptr<char*, void (void*)> bt_syms(::free);
     array<void*, 32> bt_frames;
-    uint32_t nframes;
+    uint32_t nframes = 0;
 
 #ifdef __linux__
     nframes = (uint32_t) ::backtrace(bt_frames.data(), (int) bt_frames.size());
