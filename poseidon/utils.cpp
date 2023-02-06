@@ -3,7 +3,10 @@
 
 #include "precompiled.ipp"
 #include "utils.hpp"
-#include <execinfo.h>  // backtrace();
+
+#ifdef __linux__
+#  include <execinfo.h>  // backtrace()
+#endif
 
 namespace poseidon {
 
@@ -37,21 +40,24 @@ throw_runtime_error_with_backtrace(const char* file, long line, const char* func
 
     // Backtrace frames.
     ::rocket::unique_ptr<char*, void (void*)> bt_syms(::free);
-
     array<void*, 32> bt_frames;
-    int nframes = ::backtrace(bt_frames.data(), (int) bt_frames.size());
+    uint32_t nframes;
+
+#ifdef __linux__
+    nframes = (uint32_t) ::backtrace(bt_frames.data(), (int) bt_frames.size());
     if(nframes > 0)
-      bt_syms.reset(::backtrace_symbols(bt_frames.data(), nframes));
+      bt_syms.reset(::backtrace_symbols(bt_frames.data(), (int) nframes));
+#endif
 
     if(bt_syms) {
       // Determine the width of the frame index field.
-      nump.put_DU((uint32_t) nframes);
+      nump.put_DU(nframes);
       static_vector<char, 24> sbuf(nump.size(), ' ');
       sbuf.emplace_back();
 
       // Append stack frames.
       data += "\n[backtrace frames:\n  ";
-      for(uint32_t k = 0;  k != (uint32_t) nframes;  ++k) {
+      for(uint32_t k = 0;  k != nframes;  ++k) {
         nump.put_DU(k + 1);
         ::std::reverse_copy(nump.begin(), nump.end(), sbuf.mut_rbegin() + 1);
         data += sbuf.data();
