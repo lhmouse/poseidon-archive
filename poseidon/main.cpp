@@ -4,8 +4,10 @@
 #include "precompiled.ipp"
 #include "core/config_file.hpp"
 #include "static/main_config.hpp"
-#include "static/async_logger.hpp"
 #include "static/fiber_scheduler.hpp"
+#include "static/async_logger.hpp"
+#include "static/timer_driver.hpp"
+#include "static/async_task_executor.hpp"
 #include "static/network_driver.hpp"
 #include "utils.hpp"
 #include <locale.h>
@@ -196,6 +198,68 @@ do_set_working_directory()
           format_errno(), cmdline.cd_here);
   }
 
+template<class ObjectT>
+void
+do_create_resident_thread(ObjectT& obj, const char* name)
+  {
+    auto thrd_function = +[](void* ptr) noexcept
+      {
+        // Set thread information. Errors are ignored.
+        int oldst;
+        ::pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldst);
+
+        ::sigset_t sigset;
+        ::sigemptyset(&sigset);
+        ::sigaddset(&sigset, SIGINT);
+        ::sigaddset(&sigset, SIGTERM);
+        ::sigaddset(&sigset, SIGHUP);
+        ::sigaddset(&sigset, SIGALRM);
+        ::pthread_sigmask(SIG_BLOCK, &sigset, nullptr);
+
+        // Enter an infinite loop.
+        for(;;)
+          try {
+            ((ObjectT*) ptr)->thread_loop();
+          }
+          catch(exception& stdex) {
+            ::fprintf(stderr,
+                "WARNING: Caught an exception from thread loop: %s\n"
+                "[static class `%s`]\n"
+                "[exception class `%s`]\n",
+                stdex.what(), typeid(ObjectT).name(), typeid(stdex).name());
+          }
+
+        // Make the return type deducible.
+        return (void*) nullptr;
+      };
+
+    ::pthread_t thrd;
+    int err = ::pthread_create(&thrd, nullptr, thrd_function, ::std::addressof(obj));
+    if(err != 0)
+      ::rocket::sprintf_and_throw<::std::runtime_error>(
+          "Could not create thread: %s\n"
+          "[`pthread_create()` failed: %d]"
+          "[static class `%s`]\n",
+          ::strerror(err), err, typeid(ObjectT).name());
+
+    // Name the thread and detach it. Errors are ignored.
+    ::pthread_setname_np(thrd, name);
+    ::pthread_detach(thrd);
+  }
+
+ROCKET_NEVER_INLINE
+void
+do_create_threads()
+  {
+    do_create_resident_thread(async_logger, "logger");
+    do_create_resident_thread(timer_driver, "timer");
+    do_create_resident_thread(async_task_executor, "task1");
+    do_create_resident_thread(async_task_executor, "task2");
+    do_create_resident_thread(async_task_executor, "task3");
+    do_create_resident_thread(async_task_executor, "task4");
+    do_create_resident_thread(network_driver, "network");
+  }
+
 ROCKET_NEVER_INLINE
 void
 do_check_euid()
@@ -368,6 +432,7 @@ main(int argc, char** argv)
     // Load configuration and start the logger early.
     do_set_working_directory();
     main_config.reload();
+    do_create_threads();
 
     async_logger.reload(main_config.copy());
     fiber_scheduler.reload(main_config.copy());
