@@ -194,7 +194,7 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, co
     // special treatement. `sendto()` is not affected.
     if(::memcmp(maddr.data(), "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 12) == 0) {
       // IPv4
-      if(ifreq.ifr_name[0] && (::ioctl(this->fd(), SIOCGIFADDR, &ifreq) != 0))
+      if(ifreq.ifr_name[0] && (::ioctl(this->fd(), (int) SIOCGIFADDR, &ifreq) != 0))
         POSEIDON_THROW((
             "Failed to get address of interface `$4`",
             "[`ioctl()` failed: $3]",
@@ -231,7 +231,7 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, co
     }
     else {
       // IPv6
-      if(ifreq.ifr_name[0] && (::ioctl(this->fd(), SIOCGIFINDEX, &ifreq) != 0))
+      if(ifreq.ifr_name[0] && (::ioctl(this->fd(), (int) SIOCGIFINDEX, &ifreq) != 0))
         POSEIDON_THROW((
             "Failed to get index of interface `$4`",
             "[`ioctl()` failed: $3]",
@@ -296,7 +296,7 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
     // special treatement. `sendto()` is not affected.
     if(::memcmp(maddr.data(), "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 12) == 0) {
       // IPv4
-      if(ifreq.ifr_name[0] && (::ioctl(this->fd(), SIOCGIFADDR, &ifreq) != 0))
+      if(ifreq.ifr_name[0] && (::ioctl(this->fd(), (int) SIOCGIFADDR, &ifreq) != 0))
         POSEIDON_THROW((
             "Failed to get address of interface `$4`",
             "[`ioctl()` failed: $3]",
@@ -316,7 +316,7 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
     }
     else {
       // IPv6
-      if(ifreq.ifr_name[0] && (::ioctl(this->fd(), SIOCGIFINDEX, &ifreq) != 0))
+      if(ifreq.ifr_name[0] && (::ioctl(this->fd(), (int) SIOCGIFINDEX, &ifreq) != 0))
         POSEIDON_THROW((
             "Failed to get index of interface `$4`",
             "[`ioctl()` failed: $3]",
