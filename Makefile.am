@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 END =
 
-## Compiler options
+## Compiler & linker options
 AM_CPPFLAGS = -pipe -pthread -Wall -Wextra -Iposeidon  \
   -D_FILE_OFFSET_BITS=64 -D_POSIX_C_SOURCE=200809 -D_GNU_SOURCE  \
   -f{strict-{aliasing,overflow},merge-all-constants,fast-math}  \
@@ -24,9 +24,11 @@ if enable_thread_sanitizer
 AM_CXXFLAGS += -fsanitize=thread
 endif
 
+AM_LDFLAGS = -Wl,--no-undefined -no-undefined
+
 AM_DEFAULT_SOURCE_EXT = .cpp
-SUFFIXES = .xipp
 LDADD = lib/libposeidon.la
+SUFFIXES = .xipp
 
 ## Initialization
 noinst_LIBRARIES =
@@ -54,8 +56,8 @@ TESTS = ${check_PROGRAMS}
 ## Programs and libraries
 include poseidon/Makefile.inc.am
 
-## Sample add-ons
-include lib/Makefile.inc.am
+## Example add-ons
+include example/Makefile.inc.am
 
 ## Tests
 include test/Makefile.inc.am

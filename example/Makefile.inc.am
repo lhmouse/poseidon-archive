@@ -1,0 +1,34 @@
+lib_LTLIBRARIES +=  \
+  lib/libposeidon_example_timer.la  \
+  lib/libposeidon_example_fiber.la  \
+  lib/libposeidon_example_timer_fiber.la  \
+  lib/libposeidon_example_tcp_echo.la  \
+  lib/libposeidon_example_tcp_client.la  \
+  lib/libposeidon_example_ssl_echo.la  \
+  lib/libposeidon_example_ssl_client.la  \
+  lib/libposeidon_example_udp_echo.la  \
+  ${END}
+
+lib_libposeidon_example_timer_la_SOURCES = %reldir%/timer.cpp
+lib_libposeidon_example_timer_la_LIBADD = lib/libposeidon.la
+
+lib_libposeidon_example_fiber_la_SOURCES = %reldir%/fiber.cpp
+lib_libposeidon_example_fiber_la_LIBADD = lib/libposeidon.la
+
+lib_libposeidon_example_timer_fiber_la_SOURCES = %reldir%/timer_fiber.cpp
+lib_libposeidon_example_timer_fiber_la_LIBADD = lib/libposeidon.la
+
+lib_libposeidon_example_tcp_echo_la_SOURCES = %reldir%/tcp_echo.cpp
+lib_libposeidon_example_tcp_echo_la_LIBADD = lib/libposeidon.la
+
+lib_libposeidon_example_tcp_client_la_SOURCES = %reldir%/tcp_client.cpp
+lib_libposeidon_example_tcp_client_la_LIBADD = lib/libposeidon.la
+
+lib_libposeidon_example_ssl_echo_la_SOURCES = %reldir%/ssl_echo.cpp
+lib_libposeidon_example_ssl_echo_la_LIBADD = lib/libposeidon.la
+
+lib_libposeidon_example_ssl_client_la_SOURCES = %reldir%/ssl_client.cpp
+lib_libposeidon_example_ssl_client_la_LIBADD = lib/libposeidon.la
+
+lib_libposeidon_example_udp_echo_la_SOURCES = %reldir%/udp_echo.cpp
+lib_libposeidon_example_udp_echo_la_LIBADD = lib/libposeidon.la
