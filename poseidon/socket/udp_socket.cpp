@@ -204,7 +204,7 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, co
       mreq.imr_ifindex = (int) ifindex;
 #else  // linux
       struct ::ip_mreq mreq;
-      mreq.imr_interface.s_addr = INADDR_ANY;
+      mreq.imr_interface = INADDR_ANY;
 #endif  // linux
       ::memcpy(&(mreq.imr_multiaddr), maddr.data() + 12, 4);
 
@@ -285,7 +285,7 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
       mreq.imr_ifindex = (int) ifindex;
 #else  // linux
       struct ::ip_mreq mreq;
-      mreq.imr_interface.s_addr = INADDR_ANY;
+      mreq.imr_interface = INADDR_ANY;
 #endif  // linux
       ::memcpy(&(mreq.imr_multiaddr), maddr.data() + 12, 4);
 
