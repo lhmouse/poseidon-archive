@@ -177,8 +177,6 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, co
     // Get the index of the interface to use.
     // If no interface has been given, skip `lo` and use the second one.
     uint32_t ifindex = ifname_opt ? ::if_nametoindex(ifname_opt) : 2U;
-    char ifname[IF_NAMESIZE];
-
     if(ifindex == 0)
       POSEIDON_THROW((
           "Network interface not found: $4",
@@ -186,6 +184,7 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, co
           "[UDP socket `$1` (class `$2`)]"),
           this, typeid(*this), format_errno(), maddr);
 
+    char ifname[IF_NAMESIZE];
     if(::if_indextoname(ifindex, ifname) == nullptr)
       POSEIDON_THROW((
           "No network interface available for multicasting",
@@ -198,15 +197,10 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, co
     // special treatement. `sendto()` is not affected.
     if(::memcmp(maddr.data(), "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 12) == 0) {
       // IPv4
-#ifdef __linux__
       struct ::ip_mreqn mreq;
-      mreq.imr_ifindex = (int) ifindex;
-#else  // linux
-      struct ::ip_mreq mreq;
-#endif  // linux
       ::memcpy(&(mreq.imr_multiaddr), maddr.data() + 12, 4);
       mreq.imr_address.s_addr = INADDR_ANY;
-
+      mreq.imr_ifindex = (int) ifindex;
       if(::setsockopt(this->fd(), IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW((
             "Failed to join IPv4 multicast group `$4`",
@@ -219,7 +213,6 @@ join_multicast_group(const Socket_Address& maddr, uint8_t ttl, bool loopback, co
       struct ::ipv6_mreq mreq;
       mreq.ipv6mr_multiaddr = maddr.addr();
       mreq.ipv6mr_interface = ifindex;
-
       if(::setsockopt(this->fd(), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW((
             "Failed to join IPv6 multicast group `$4`",
@@ -257,8 +250,6 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
     // Get the index of the interface to use.
     // If no interface has been given, skip `lo` and use the second one.
     uint32_t ifindex = ifname_opt ? ::if_nametoindex(ifname_opt) : 2U;
-    char ifname[IF_NAMESIZE];
-
     if(ifindex == 0)
       POSEIDON_THROW((
           "Network interface not found: $4",
@@ -266,6 +257,7 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
           "[UDP socket `$1` (class `$2`)]"),
           this, typeid(*this), format_errno(), maddr);
 
+    char ifname[IF_NAMESIZE];
     if(::if_indextoname(ifindex, ifname) == nullptr)
       POSEIDON_THROW((
           "No network interface available for multicasting",
@@ -278,15 +270,10 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
     // special treatement. `sendto()` is not affected.
     if(::memcmp(maddr.data(), "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xFF\xFF", 12) == 0) {
       // IPv4
-#ifdef __linux__
       struct ::ip_mreqn mreq;
-      mreq.imr_ifindex = (int) ifindex;
-#else  // linux
-      struct ::ip_mreq mreq;
-#endif  // linux
       ::memcpy(&(mreq.imr_multiaddr), maddr.data() + 12, 4);
       mreq.imr_address.s_addr = INADDR_ANY;
-
+      mreq.imr_ifindex = (int) ifindex;
       if(::setsockopt(this->fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW((
             "Failed to leave IPv4 multicast group `$4`",
@@ -299,7 +286,6 @@ leave_multicast_group(const Socket_Address& maddr, const char* ifname_opt)
       struct ::ipv6_mreq mreq;
       mreq.ipv6mr_multiaddr = maddr.addr();
       mreq.ipv6mr_interface = ifindex;
-
       if(::setsockopt(this->fd(), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) != 0)
         POSEIDON_THROW((
             "Failed to leave IPv6 multicast group `$4`",
