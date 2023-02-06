@@ -25,7 +25,7 @@ AM_CXXFLAGS += -fsanitize=thread
 endif
 
 AM_DEFAULT_SOURCE_EXT = .cpp
-SUFFIXES = .xipp .xipp.gch
+SUFFIXES = .xipp
 LDADD = lib/libposeidon.la
 
 ## Initialization
