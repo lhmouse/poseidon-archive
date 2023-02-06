@@ -76,25 +76,22 @@ class SSL_Socket
     void
     do_on_ssl_oob_byte(char data);
 
-    // Server-side ALPN support:
-    // This callback is invoked by the network thread when ALPN has been
-    // requested by the client. This function should return the name of protocol
-    // being selected. If an empty string is returned, no ALPN protocol will be
-    // selected.
-    // The argument is a list of names of protocols that have been sent by the
-    // client.
+    // For a server-side socket, this callback is invoked by the network thread
+    // when ALPN has been requested by the client. This function should return
+    // the name of protocol being selected. If an empty string is returned, no
+    // ALPN protocol will be selected. The argument is the list of protocols
+    // that have been offered by the client.
     // The default implemention returns an empty string.
     virtual
     charbuf_256
     do_on_ssl_alpn_request(cow_vector<charbuf_256>&& protos);
 
-    // Client-side ALPN support:
-    // Prepares a list of protocols that will be sent to the server for
-    // Application-Layer Protocol Negotiation (ALPN). If ALPN is desired, this
-    // function shall be called before this socket is assigned to a network
-    // driver.
-    // The argument is the list of names of protocols that will be sent. Empty
-    // protocol names are ignored. If the list is empty, ALPN is not requested.
+    // For a client-side socket, this function offers a list of protocols to the
+    // server. This function must be called before SSL negotiation, for example
+    // inside the constructor of a derived class or just before assigning this
+    // socket to the network driver. The argument is the list of protocols that
+    // will be offered to the server. Empty protocol names are ignored. If the
+    // list is empty, ALPN is not requested.
     void
     do_ssl_alpn_request(const charbuf_256* protos_opt, size_t protos_size);
 
