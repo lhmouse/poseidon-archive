@@ -23,6 +23,19 @@ namespace {
 plain_mutex s_stack_pool_mutex;
 ::stack_t s_stack_pool;
 
+void
+do_free_stack(::stack_t ss) noexcept
+  {
+    if(!ss.ss_sp)
+      return;
+
+    if(::munmap((char*) ss.ss_sp - 0x1000, ss.ss_size + 0x2000) != 0)
+      POSEIDON_LOG_FATAL((
+          "Failed to unmap fiber stack memory `$2` of size `$3`",
+          "[`munmap()` failed: $1]"),
+          format_errno(), ss.ss_sp, ss.ss_size);
+  }
+
 ::stack_t
 do_alloc_stack(size_t stack_vm_size)
   {
@@ -61,19 +74,6 @@ do_alloc_stack(size_t stack_vm_size)
     ss.ss_sp = (char*) ss.ss_sp + 0x1000;
     ::mprotect(ss.ss_sp, ss.ss_size, PROT_READ | PROT_WRITE);
     return ss;
-  }
-
-void
-do_free_stack(::stack_t ss) noexcept
-  {
-    if(!ss.ss_sp)
-      return;
-
-    if(::munmap((char*) ss.ss_sp - 0x1000, ss.ss_size + 0x2000) != 0)
-      POSEIDON_LOG_FATAL((
-          "Failed to unmap fiber stack memory `$2` of size `$3`",
-          "[`munmap()` failed: $1]"),
-          format_errno(), ss.ss_sp, ss.ss_size);
   }
 
 void
