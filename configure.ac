@@ -41,16 +41,20 @@ AC_ARG_ENABLE([pch], AS_HELP_STRING([--disable-pch], [do not use pre-compiled he
 AM_CONDITIONAL([enable_pch], [test "${enable_pch}" != "no"])
 
 ## Set up optional features
-AC_ARG_ENABLE([sanitizer], AS_HELP_STRING([--enable-sanitizer=address|thread], [enable sanitizer (address sanitizer and thread sanitizer cannot be enabled at the same time)]))
+AC_ARG_ENABLE([sanitizer], AS_HELP_STRING([--enable-sanitizer=address|thread],
+  [enable sanitizer (address sanitizer and thread sanitizer cannot be enabled at the same time)]))
+AS_VAR_SET([sanitizer_flags])
 AM_CONDITIONAL([enable_address_sanitizer], [test "${enable_sanitizer}" == "address"])
 AM_COND_IF([enable_address_sanitizer], [
   AC_CHECK_LIB([asan], [__asan_report_error], [], [AC_MSG_ERROR([address sanitizer not found])])
   AC_DEFINE([POSEIDON_ENABLE_ADDRESS_SANITIZER], [1], [Define to 1 to enable address sanitizer.])
+  AS_VAR_APPEND([sanitizer_flags], [" -fsanitize=address"])
 ])
 AM_CONDITIONAL([enable_thread_sanitizer], [test "${enable_sanitizer}" == "thread"])
 AM_COND_IF([enable_thread_sanitizer], [
   AC_CHECK_LIB([tsan], [__tsan_on_report], [], [AC_MSG_ERROR([thread sanitizer not found])])
   AC_DEFINE([POSEIDON_ENABLE_THREAD_SANITIZER], [1], [Define to 1 to enable thread sanitizer.])
+  AS_VAR_APPEND([sanitizer_flags], [" -fsanitize=thread"])
 ])
 
 AC_ARG_ENABLE([mysql], AS_HELP_STRING([--disable-mysql], [disable MySQL support]))
@@ -79,6 +83,7 @@ AM_COND_IF([enable_magic], [
 AC_SUBST([abi_major])
 AC_SUBST([abi_minor])
 AC_SUBST([abi_suffix])
+AC_SUBST([sanitizer_flags])
 
 AC_CONFIG_FILES([Makefile poseidon/version.h])
 AC_OUTPUT

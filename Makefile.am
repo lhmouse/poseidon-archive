@@ -13,18 +13,12 @@ AM_CPPFLAGS = -pipe -pthread -Wall -Wextra -Iposeidon  \
   -W{switch-enum,unused-{function,label,local-typedefs}}  \
   -Wunused-but-set-{variable,parameter}
 
-AM_CXXFLAGS = -std=c++17 -fvisibility-inlines-hidden  \
-  -Wno-redundant-move -Werror={non-virtual-dtor,missing-declarations}
+AM_CXXFLAGS = -std=c++17 @sanitizer_flags@  \
+  -fvisibility-inlines-hidden  \
+  -Wno-redundant-move  \
+  -Werror={non-virtual-dtor,missing-declarations}
 
-if enable_address_sanitizer
-AM_CXXFLAGS += -fsanitize=address
-endif
-
-if enable_thread_sanitizer
-AM_CXXFLAGS += -fsanitize=thread
-endif
-
-AM_LDFLAGS = -Wl,--no-undefined -no-undefined
+AM_LDFLAGS = -no-undefined
 
 AM_DEFAULT_SOURCE_EXT = .cpp
 LDADD = lib/libposeidon.la

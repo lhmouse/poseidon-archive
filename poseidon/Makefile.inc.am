@@ -59,16 +59,7 @@ lib_libposeidon_la_SOURCES =  \
   ${END}
 
 lib_libposeidon_la_CXXFLAGS = ${AM_CXXFLAGS}
-lib_libposeidon_la_LDFLAGS = -Wl,--no-undefined  \
-  -no-undefined -version-info @abi_major@:@abi_minor@
-
-if enable_address_sanitizer
-lib_libposeidon_la_LDFLAGS += -fsanitize=address
-endif
-
-if enable_thread_sanitizer
-lib_libposeidon_la_LDFLAGS += -fsanitize=thread
-endif
+lib_libposeidon_la_LDFLAGS = -no-undefined -version-info @abi_major@:@abi_minor@
 
 if enable_mysql
 endif
