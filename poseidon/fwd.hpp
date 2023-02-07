@@ -104,12 +104,11 @@ template<typename T> using weak_ptrR = const weak_ptr<T>&;
   struct __attribute__((__visibility__("hidden")))  \
       CLASS::MEMBER : CLASS##_##MEMBER { }  // no semicolon
 
-// Core types
+// Base types
 class Config_File;
 class charbuf_256;
-
-// Timer types
 class Abstract_Timer;
+class Abstract_Async_Task;
 
 // Fiber types
 enum Future_State : uint8_t;
@@ -117,9 +116,6 @@ class Abstract_Future;
 template<typename ValueT> class future;
 class Abstract_Fiber;
 class Timer_Fiber;
-
-// Asynchronous task types
-class Abstract_Async_Task;
 
 // Socket types
 enum IP_Address_Class : uint8_t;
@@ -133,7 +129,7 @@ class UDP_Socket;
 class TCP_Socket;
 class SSL_Socket;
 
-// Manager types and instances
+// Singletons
 extern atomic_signal exit_signal;
 extern class Main_Config& main_config;
 extern class Fiber_Scheduler& fiber_scheduler;
