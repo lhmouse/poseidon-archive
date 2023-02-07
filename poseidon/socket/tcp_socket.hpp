@@ -76,8 +76,9 @@ class TCP_Socket
     // Gets the remote or connected address of this socket. In case of errors,
     // `ipv6_unspecified` is returned. The result is cached and will not
     // reflect changes that other APIs may have made.
+    ROCKET_PURE
     const Socket_Address&
-    remote_address() const noexcept ROCKET_PURE;
+    remote_address() const noexcept;
 
     // Enqueues some bytes for sending.
     // If this function returns `true`, data will have been enqueued; however it
