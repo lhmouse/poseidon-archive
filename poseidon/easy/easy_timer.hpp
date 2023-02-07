@@ -24,11 +24,11 @@ class Easy_Timer
     // invoked accordingly in the main thread. The callback object will never
     // be copied, and can modify itself.
     template<typename CallbackT,
-    ROCKET_DISABLE_IF(::std::is_same<typename ::std::decay<CallbackT>::type, Easy_Timer>::value)>
+    ROCKET_DISABLE_IF(::std::is_same<::std::decay_t<CallbackT>, Easy_Timer>::value)>
     explicit
     Easy_Timer(CallbackT&& callback)
-      : m_cb_thunk([](void* ptr, int64_t now) { ((*(typename ::std::decay<CallbackT>::type*) ptr) (now));  }),
-        m_cb_obj(::std::make_shared<typename ::std::decay<CallbackT>::type>(::std::forward<CallbackT>(callback)))
+      : m_cb_thunk([](void* ptr, int64_t now) { ((*(::std::decay_t<CallbackT>*) ptr) (now));  }),
+        m_cb_obj(::std::make_shared<::std::decay_t<CallbackT>>(::std::forward<CallbackT>(callback)))
       { }
 
   public:
