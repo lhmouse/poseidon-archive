@@ -51,7 +51,7 @@ TESTS = ${check_PROGRAMS}
 include poseidon/Makefile.inc.am
 
 ## Example add-ons
-include example/Makefile.inc.am
+include lib/Makefile.inc.am
 
 ## Tests
 include test/Makefile.inc.am
