@@ -16,7 +16,7 @@ namespace poseidon {
 namespace {
 
 void
-do_epoll_ctl(int epoll_fd, int op, const shared_ptr<Abstract_Socket>& socket, uint32_t events)
+do_epoll_ctl(int epoll_fd, int op, const shared_ptr<Abstract_Socket>& socket, uint32_t events = EPOLLIN | EPOLLPRI | EPOLLOUT | EPOLLET)
   {
     struct ::epoll_event event;
     event.events = events;
@@ -304,7 +304,7 @@ thread_loop()
       // Remove the socket due to an error, or an end-of-file condition.
       POSEIDON_LOG_TRACE(("Removing closed socket `$1` (class `$2`)"), socket, typeid(*socket));
       this->m_epoll_sockets.erase(socket_it);
-      do_epoll_ctl(this->m_epoll, EPOLL_CTL_DEL, socket, 0);
+      do_epoll_ctl(this->m_epoll, EPOLL_CTL_DEL, socket);
     }
     recursive_mutex::unique_lock io_lock(socket->m_io_mutex);
     socket->m_io_driver = this;
@@ -445,14 +445,14 @@ thread_loop()
 
     bool throttled = socket->m_io_write_queue.size() > throttle_size;
     if(throttled != socket->m_io_throttled) {
-      // If there are too many bytes pending, disable `EPOLLIN` notification.
-      // The socket will be set to write-only, level-triggered mode.
       socket->m_io_throttled = throttled;
 
+      // If there are too many bytes pending, disable `EPOLLIN` notification.
+      // The socket will be set to write-only, level-triggered mode.
       if(throttled)
         do_epoll_ctl(this->m_epoll, EPOLL_CTL_MOD, socket, EPOLLOUT);
       else
-        do_epoll_ctl(this->m_epoll, EPOLL_CTL_MOD, socket, EPOLLIN | EPOLLPRI | EPOLLOUT | EPOLLET);
+        do_epoll_ctl(this->m_epoll, EPOLL_CTL_MOD, socket);
     }
 
     if(server_ssl_ctx)
@@ -474,7 +474,7 @@ insert(const shared_ptr<Abstract_Socket>& socket)
     // The socket will be deleted from an epoll automatically when it's closed,
     // so there is no need to remove it in case of an exception.
     plain_mutex::unique_lock lock(this->m_epoll_mutex);
-    do_epoll_ctl(this->m_epoll, EPOLL_CTL_ADD, socket, EPOLLIN | EPOLLPRI | EPOLLOUT | EPOLLET);
+    do_epoll_ctl(this->m_epoll, EPOLL_CTL_ADD, socket);
     this->m_epoll_sockets[socket.get()] = socket;
   }
 
