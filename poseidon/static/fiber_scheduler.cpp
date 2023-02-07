@@ -383,7 +383,7 @@ thread_loop()
           POSEIDON_LOG_TRACE(("Starting fiber `$1` (class `$2`)"), elec->fiber, typeid(*(elec->fiber)));
 
           try {
-            elec->fiber->do_abstract_fiber_on_execution();
+            elec->fiber->do_abstract_fiber_on_work();
           }
           catch(exception& stdex) {
             POSEIDON_LOG_ERROR((

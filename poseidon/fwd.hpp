@@ -101,8 +101,11 @@ template<typename T> using weak_ptrR = const weak_ptr<T>&;
 
 #define POSEIDON_HIDDEN_STRUCT(CLASS, MEMBER)  \
   using CLASS##_##MEMBER = MEMBER;  \
-  struct __attribute__((__visibility__("hidden")))  \
-      CLASS::MEMBER : CLASS##_##MEMBER { }  // no semicolon
+  struct __attribute__((__visibility__("hidden"))) CLASS::MEMBER : CLASS##_##MEMBER  \
+    {  \
+      using CLASS##_##MEMBER::MEMBER;  \
+      using CLASS##_##MEMBER::operator=;  \
+    }  // no semicolon
 
 // Base types
 class Config_File;

@@ -32,10 +32,10 @@ class Abstract_Fiber
        }
 
     // This callback is invoked by the fiber scheduler and is intended to be
-    // overriden by derived classes.
+    // overriden by derived classes to perform useful operation.
     virtual
     void
-    do_abstract_fiber_on_execution() = 0;
+    do_abstract_fiber_on_work() = 0;
 
     // This callback is invoked before `do_abstract_fiber_on_execution()`, and
     // after it is resumed from a preivous yield operation. `async_state()` can

@@ -3,11 +3,6 @@ lib_libposeidon_example_timer_la_SOURCES = %reldir%/timer.cpp
 lib_libposeidon_example_timer_la_LDFLAGS = -module
 lib_libposeidon_example_timer_la_LIBADD = lib/libposeidon.la
 
-lib_LTLIBRARIES += lib/libposeidon_example_fiber.la
-lib_libposeidon_example_fiber_la_SOURCES = %reldir%/fiber.cpp
-lib_libposeidon_example_fiber_la_LDFLAGS = -module
-lib_libposeidon_example_fiber_la_LIBADD = lib/libposeidon.la
-
 lib_LTLIBRARIES += lib/libposeidon_example_tcp_echo.la
 lib_libposeidon_example_tcp_echo_la_SOURCES = %reldir%/tcp_echo.cpp
 lib_libposeidon_example_tcp_echo_la_LDFLAGS = -module
