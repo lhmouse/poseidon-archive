@@ -59,6 +59,10 @@ do_classify_ipv4_generic(const void* addr) noexcept
     if(do_match_subnet(addr, "\xF0", 4))
       return ip_address_class_reserved;
 
+    // 255.255.255.255/32: Broadcast
+    if(do_match_subnet(addr, "\xFF\xFF\xFF\xFF", 32))
+      return ip_address_class_broadcast;
+
     // Default
     return ip_address_class_public;
   }
@@ -116,6 +120,12 @@ do_classify_ipv6_generic(const void* addr) noexcept
   }
 
 }  // namespace
+
+const Socket_Address ipv6_unspecified  = (::in6_addr) {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+const Socket_Address ipv6_loopback     = (::in6_addr) {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+const Socket_Address ipv4_unspecified  = (::in6_addr) {0,0,0,0,0,0,0,0,0,0,255,255,0,0,0,0};
+const Socket_Address ipv4_loopback     = (::in6_addr) {0,0,0,0,0,0,0,0,0,0,255,255,127,0,0,1};
+const Socket_Address ipv4_broadcast    = (::in6_addr) {0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255};
 
 Socket_Address::
 Socket_Address(const cow_string& str)

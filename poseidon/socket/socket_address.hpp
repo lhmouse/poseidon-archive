@@ -18,15 +18,20 @@ class Socket_Address
 
   public:
     // Initializes an unspecified address.
-    explicit constexpr
+    constexpr
     Socket_Address() noexcept
       : m_addr(), m_port(0)
       { }
 
     // Initializes an address from a foreign source.
     constexpr
-    Socket_Address(const ::in6_addr& addr, uint16_t port)
+    Socket_Address(const ::in6_addr& addr, uint16_t port = 0) noexcept
       : m_addr(addr), m_port(port)
+      { }
+
+    constexpr
+    Socket_Address(const Socket_Address& other, uint16_t port) noexcept
+      : m_addr(other.m_addr), m_port(port)
       { }
 
     // Parses an address from a string, like `parse()`.
@@ -102,6 +107,28 @@ class Socket_Address
     cow_string
     print_to_string() const;
   };
+
+extern const Socket_Address ipv6_unspecified;  // ::
+extern const Socket_Address ipv6_loopback;     // ::1
+extern const Socket_Address ipv4_unspecified;  // ::ffff::0.0.0.0
+extern const Socket_Address ipv4_loopback;     // ::ffff::127.0.0.1
+extern const Socket_Address ipv4_broadcast;    // ::ffff::255.255.255.255
+
+inline
+bool
+operator==(const Socket_Address& lhs, const Socket_Address& rhs) noexcept
+  {
+    return (::memcmp(lhs.data(), rhs.data(), sizeof(::in6_addr)) == 0) &&
+           (lhs.port() == rhs.port());
+  }
+
+inline
+bool
+operator!=(const Socket_Address& lhs, const Socket_Address& rhs) noexcept
+  {
+    return (::memcmp(lhs.data(), rhs.data(), sizeof(::in6_addr)) != 0) ||
+           (lhs.port() != rhs.port());
+  }
 
 inline
 void

@@ -17,6 +17,7 @@ enum IP_Address_Class : uint8_t
     ip_address_class_private      = 4,
     ip_address_class_link_local   = 5,
     ip_address_class_multicast    = 6,
+    ip_address_class_broadcast    = 7,  // IPv4 only
   };
 
 enum Socket_State : uint8_t
