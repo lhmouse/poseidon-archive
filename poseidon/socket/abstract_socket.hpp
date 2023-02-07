@@ -114,7 +114,7 @@ class Abstract_Socket
     // `ipv6_unspecified` is returned. The result is cached and will not
     // reflect changes that other APIs may have made.
     const Socket_Address&
-    local_address() const ROCKET_PURE;
+    local_address() const noexcept ROCKET_PURE;
 
     // Shuts the socket down without sending any protocol-specific closure
     // notifications.

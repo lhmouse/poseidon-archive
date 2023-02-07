@@ -71,7 +71,7 @@ Abstract_Socket::
 
 const Socket_Address&
 Abstract_Socket::
-local_address() const
+local_address() const noexcept
   {
     if(this->m_sockname_ready.load())
       return this->m_sockname;

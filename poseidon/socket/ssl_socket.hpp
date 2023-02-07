@@ -115,14 +115,14 @@ class SSL_Socket
     // `ipv6_unspecified` is returned. The result is cached and will not
     // reflect changes that other APIs may have made.
     const Socket_Address&
-    remote_address() const ROCKET_PURE;
+    remote_address() const noexcept ROCKET_PURE;
 
     // Gets the protocol that has been selected by ALPN.
     // For a server-side socket, this string equals the result of a previous
     // `do_on_ssl_alpn_request()` callback. For a client-side socket, this
     // string is only available since the `do_on_ssl_connected()` callback.
     // If no ALPN protocol has been selected, an empty string is returned.
-    const cow_string&
+    cow_string
     alpn_protocol() const noexcept
       { return this->m_alpn_proto;  }
 

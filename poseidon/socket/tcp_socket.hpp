@@ -77,7 +77,7 @@ class TCP_Socket
     // `ipv6_unspecified` is returned. The result is cached and will not
     // reflect changes that other APIs may have made.
     const Socket_Address&
-    remote_address() const ROCKET_PURE;
+    remote_address() const noexcept ROCKET_PURE;
 
     // Enqueues some bytes for sending.
     // If this function returns `true`, data will have been enqueued; however it

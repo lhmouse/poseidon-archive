@@ -333,7 +333,7 @@ do_on_ssl_oob_byte(char data)
 
 const Socket_Address&
 SSL_Socket::
-remote_address() const
+remote_address() const noexcept
   {
     if(this->m_peername_ready.load())
       return this->m_peername;

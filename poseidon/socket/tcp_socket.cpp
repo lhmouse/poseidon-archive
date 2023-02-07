@@ -190,7 +190,7 @@ do_on_tcp_oob_byte(char data)
 
 const Socket_Address&
 TCP_Socket::
-remote_address() const
+remote_address() const noexcept
   {
     if(this->m_peername_ready.load())
       return this->m_peername;
