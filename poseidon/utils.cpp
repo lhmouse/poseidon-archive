@@ -3,10 +3,7 @@
 
 #include "precompiled.ipp"
 #include "utils.hpp"
-
-#ifdef __linux__
-#  include <execinfo.h>  // backtrace()
-#endif
+#include <execinfo.h>  // backtrace()
 
 namespace poseidon {
 
@@ -41,13 +38,10 @@ throw_runtime_error_with_backtrace(const char* file, long line, const char* func
     // Backtrace frames.
     ::rocket::unique_ptr<char*, void (void*)> bt_syms(::free);
     array<void*, 32> bt_frames;
-    uint32_t nframes = 0;
 
-#ifdef __linux__
-    nframes = (uint32_t) ::backtrace(bt_frames.data(), (int) bt_frames.size());
-    if(nframes > 0)
+    uint32_t nframes = (uint32_t) ::backtrace(bt_frames.data(), (int) bt_frames.size());
+    if(nframes != 0)
       bt_syms.reset(::backtrace_symbols(bt_frames.data(), (int) nframes));
-#endif
 
     if(bt_syms) {
       // Determine the width of the frame index field.

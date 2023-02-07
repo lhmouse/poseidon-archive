@@ -6,17 +6,7 @@
 #include "../core/config_file.hpp"
 #include "../utils.hpp"
 #include <time.h>
-
-#if defined(__linux__)
-#  include <sys/syscall.h>
-#  define MY_THREAD_LWPID   ((uint32_t) ::syscall(SYS_gettid))
-#elif defined(__CYGWIN__)
-#  define WIN32_LEAN_AND_MEAN 1
-#  include <windows.h>
-#  define MY_THREAD_LWPID   ((uint32_t) ::GetCurrentThreadId())
-#else
-#  error Cannot get thread ID
-#endif
+#include <sys/syscall.h>
 
 namespace poseidon {
 namespace {
@@ -346,7 +336,7 @@ enqueue(Queued_Message&& msg)
     // Fill in the name and LWP ID of the calling thread.
     ::strncpy(msg.thrd_name, "[unknown]", sizeof(msg.thrd_name));
     ::pthread_getname_np(::pthread_self(), msg.thrd_name, sizeof(msg.thrd_name));
-    msg.thrd_lwpid = MY_THREAD_LWPID;
+    msg.thrd_lwpid = (uint32_t) ::syscall(SYS_gettid);
 
     // Enqueue the element.
     plain_mutex::unique_lock lock(this->m_queue_mutex);
