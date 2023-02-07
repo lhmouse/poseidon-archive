@@ -15,31 +15,7 @@ namespace poseidon {
 namespace {
 
 using thunk_function = void (void*, int64_t);
-
-struct Final_Fiber final : Abstract_Fiber
-  {
-    thunk_function* m_cb_thunk;
-    weak_ptr<void> m_cb_wobj;
-
-    int64_t m_now;
-
-    explicit
-    Final_Fiber(thunk_function* cb_thunk, shared_ptrR<void> cb_obj, int64_t now)
-      : m_cb_thunk(cb_thunk), m_cb_wobj(cb_obj), m_now(now)
-      { }
-
-    virtual
-    void
-    do_abstract_fiber_on_work() override
-      {
-        auto cb_obj = this->m_cb_wobj.lock();
-        if(!cb_obj)
-          return;
-
-        // We are in the main thread, so invoke the user-defined callback here.
-        this->m_cb_thunk(cb_obj.get(), this->m_now);
-      }
-  };
+class Final_Fiber;
 
 struct Final_Timer final : Abstract_Timer
   {
@@ -53,16 +29,44 @@ struct Final_Timer final : Abstract_Timer
 
     virtual
     void
-    do_abstract_timer_on_tick(int64_t now)
-      {
-        auto cb_obj = this->m_cb_wobj.lock();
-        if(!cb_obj)
-          return;
-
-        // We are in the timer thread here, so create a new fiber.
-        fiber_scheduler.insert(::std::make_unique<Final_Fiber>(this->m_cb_thunk, cb_obj, now));
-      }
+    do_abstract_timer_on_tick(int64_t now);
   };
+
+struct Final_Fiber final : Abstract_Fiber
+  {
+    thunk_function* m_cb_thunk;
+    weak_ptr<void> m_cb_wobj;
+    int64_t m_now;
+
+    explicit
+    Final_Fiber(const Final_Timer& timer, int64_t now)
+      : m_cb_thunk(timer.m_cb_thunk), m_cb_wobj(timer.m_cb_wobj), m_now(now)
+      { }
+
+    virtual
+    void
+    do_abstract_fiber_on_work() override;
+  };
+
+void
+Final_Timer::
+do_abstract_timer_on_tick(int64_t now)
+  {
+    // We are in the timer thread here, so create a new fiber.
+    fiber_scheduler.insert(::std::make_unique<Final_Fiber>(*this, now));
+  }
+
+void
+Final_Fiber::
+do_abstract_fiber_on_work()
+  {
+    auto cb_obj = this->m_cb_wobj.lock();
+    if(!cb_obj)
+      return;
+
+    // We are in the main thread, so invoke the user-defined callback.
+    this->m_cb_thunk(cb_obj.get(), this->m_now);
+  }
 
 }  // namespace
 
