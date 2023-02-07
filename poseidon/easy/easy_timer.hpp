@@ -18,17 +18,17 @@ class Easy_Timer
     shared_ptr<Abstract_Timer> m_timer;
 
   public:
-    // Constructs a timer. The argument shall be an invocable object for
-    // `callback(int64_t now)`, where `now` is the number of nanoseconds since
-    // system startup. This timer stores a copy of the callback, which is
-    // invoked accordingly in the main thread. The callback object will never
-    // be copied, and can modify itself.
+    // Constructs a timer. The argument shall be an invocable object taking
+    // `(int64_t now)`, where `now` is the number of nanoseconds since system
+    // startup. This timer stores a copy of the callback, which is invoked
+    // accordingly in the main thread. The callback object is never copied,
+    // and is allowed to modify itself.
     template<typename CallbackT,
     ROCKET_DISABLE_IF(::std::is_same<::std::decay_t<CallbackT>, Easy_Timer>::value)>
     explicit
-    Easy_Timer(CallbackT&& callback)
+    Easy_Timer(CallbackT&& cb)
       : m_cb_thunk([](void* ptr, int64_t now) { ((*(::std::decay_t<CallbackT>*) ptr) (now));  }),
-        m_cb_obj(::std::make_shared<::std::decay_t<CallbackT>>(::std::forward<CallbackT>(callback)))
+        m_cb_obj(::std::make_shared<::std::decay_t<CallbackT>>(::std::forward<CallbackT>(cb)))
       { }
 
   public:
