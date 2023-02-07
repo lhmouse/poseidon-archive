@@ -14,16 +14,13 @@ class future
   : public Abstract_Future
   {
     using value_type       = ValueT;
-    using const_reference  = typename ::std::add_lvalue_reference<const ValueT>::type;
-    using reference        = typename ::std::add_lvalue_reference<ValueT>::type;
+    using const_reference  = ::std::add_lvalue_reference_t<const ValueT>;
+    using reference        = ::std::add_lvalue_reference_t<ValueT>;
 
   private:
     union {
-      // This member is active if `future_state() == future_state_value`.
-      typename ::std::conditional<::std::is_void<ValueT>::value, int, ValueT>::type m_value[1];
-
-      // This member is active if `future_state() == future_state_exception`.
       exception_ptr m_exptr[1];
+      ::std::conditional_t<::std::is_void<ValueT>::value, int, ValueT> m_value[1];
     };
 
   public:
