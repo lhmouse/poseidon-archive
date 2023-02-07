@@ -10,7 +10,7 @@
 namespace poseidon {
 
 Config_File::
-Config_File(const cow_string& path)
+Config_File(stringR path)
   {
     this->reload(path);
   }
@@ -22,7 +22,7 @@ Config_File::
 
 Config_File&
 Config_File::
-reload(const cow_string& file_path)
+reload(stringR file_path)
   {
     // Resolve the path to an absolute one.
     ::rocket::unique_ptr<char, void (void*)> abs_path(::free);

@@ -25,7 +25,7 @@ class Config_File
 
     // Loads the file denoted by `path`, like `reload(path)`.
     explicit
-    Config_File(const cow_string& path);
+    Config_File(stringR path);
 
   public:
     ASTERIA_COPYABLE_DESTRUCTOR(Config_File);
@@ -65,7 +65,7 @@ class Config_File
     // This function provides strong exception guarantee. In case of failure,
     // an exception is thrown, and the contents of this object are unchanged.
     Config_File&
-    reload(const cow_string& file_path);
+    reload(stringR file_path);
 
     // Gets a value denoted by a path, which shall not be empty.
     // If the path does not denote an existent value, a statically allocated

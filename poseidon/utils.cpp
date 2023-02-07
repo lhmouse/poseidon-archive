@@ -126,7 +126,7 @@ ascii_trim(cow_string text)
   }
 
 bool
-ascii_ci_has_token(const cow_string& text, char delim, const char* token, size_t len)
+ascii_ci_has_token(stringR text, char delim, const char* token, size_t len)
   {
     size_t bpos = text.find_first_not_of(" \t");
     while(bpos < text.size()) {
@@ -148,7 +148,7 @@ ascii_ci_has_token(const cow_string& text, char delim, const char* token, size_t
   }
 
 size_t
-explode(cow_vstrings& segments, const cow_string& text, char delim, size_t limit)
+explode(cow_vstrings& segments, stringR text, char delim, size_t limit)
   {
     segments.clear();
     size_t bpos = text.find_first_not_of(" \t");

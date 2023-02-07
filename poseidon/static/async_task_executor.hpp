@@ -35,7 +35,7 @@ class Async_Task_Executor
     // If this function fails, an exception is thrown, and there is no effect.
     // This function is thread-safe.
     void
-    enqueue(const shared_ptr<Abstract_Async_Task>& task);
+    enqueue(shared_ptrR<Abstract_Async_Task> task);
   };
 
 }  // namespace poseidon

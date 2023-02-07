@@ -94,6 +94,11 @@ using ::rocket::optional;
 using ::rocket::variant;
 using phsh_string = ::rocket::prehashed_string;
 
+using stringR = const cow_string&;
+using phsh_stringR = const phsh_string&;
+template<typename T> using shared_ptrR = const shared_ptr<T>&;
+template<typename T> using weak_ptrR = const weak_ptr<T>&;
+
 #define POSEIDON_HIDDEN_STRUCT(CLASS, MEMBER)  \
   using CLASS##_##MEMBER = MEMBER;  \
   struct __attribute__((__visibility__("hidden")))  \

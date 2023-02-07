@@ -46,7 +46,7 @@ class Timer_Driver
     // timer.
     // This function is thread-safe.
     void
-    insert(const shared_ptr<Abstract_Timer>& timer, int64_t delay, int64_t period);
+    insert(shared_ptrR<Abstract_Timer> timer, int64_t delay, int64_t period);
   };
 
 }  // namespace poseidon

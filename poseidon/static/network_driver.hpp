@@ -66,7 +66,7 @@ class Network_Driver
     // to this socket.
     // This function is thread-safe.
     void
-    insert(const shared_ptr<Abstract_Socket>& socket);
+    insert(shared_ptrR<Abstract_Socket> socket);
   };
 
 }  // namespace poseidon

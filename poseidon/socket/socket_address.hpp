@@ -37,7 +37,7 @@ class Socket_Address
     // Parses an address from a string, like `parse()`.
     // An exception is thrown if the address string is not valid.
     explicit
-    Socket_Address(const cow_string& str);
+    Socket_Address(stringR str);
 
   public:
     // Accesses raw data.
@@ -98,7 +98,7 @@ class Socket_Address
     // If `false` is returned or an exception is thrown, the contents of
     // this object are unspecified.
     bool
-    parse(const cow_string& str);
+    parse(stringR str);
 
     // Converts this address to its string form.
     tinyfmt&

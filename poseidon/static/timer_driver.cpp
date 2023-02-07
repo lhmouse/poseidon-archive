@@ -126,7 +126,7 @@ thread_loop()
 
 void
 Timer_Driver::
-insert(const shared_ptr<Abstract_Timer>& timer, int64_t delay, int64_t period)
+insert(shared_ptrR<Abstract_Timer> timer, int64_t delay, int64_t period)
   {
     if(!timer)
       POSEIDON_THROW(("Null timer pointer not valid"));

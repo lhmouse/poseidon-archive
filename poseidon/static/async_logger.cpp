@@ -125,7 +125,7 @@ do_color(cow_string& data, const Level_Config& lconf, const char* code)
 
 inline
 bool
-do_write_loop(int fd, const cow_string& data) noexcept
+do_write_loop(int fd, stringR data) noexcept
   {
     for(;;)
       if(::write(fd, data.data(), data.size()) >= 0)

@@ -104,15 +104,15 @@ struct Fiber_Comparator
   {
     // We have to build a minheap here.
     bool
-    operator()(const shared_ptr<Queued_Fiber>& lhs, const shared_ptr<Queued_Fiber>& rhs) noexcept
+    operator()(shared_ptrR<Queued_Fiber> lhs, shared_ptrR<Queued_Fiber> rhs) noexcept
       { return lhs->check_time > rhs->check_time;  }
 
     bool
-    operator()(const shared_ptr<Queued_Fiber>& lhs, int64_t rhs) noexcept
+    operator()(shared_ptrR<Queued_Fiber> lhs, int64_t rhs) noexcept
       { return lhs->check_time > rhs;  }
 
     bool
-    operator()(int64_t lhs, const shared_ptr<Queued_Fiber>& rhs) noexcept
+    operator()(int64_t lhs, shared_ptrR<Queued_Fiber> rhs) noexcept
       { return lhs > rhs->check_time;  }
   }
   constexpr fiber_comparator;
@@ -479,7 +479,7 @@ self_opt() const noexcept
 
 void
 Fiber_Scheduler::
-checked_yield(const Abstract_Fiber* current, const shared_ptr<Abstract_Future>& futr_opt, int64_t fail_timeout_override)
+checked_yield(const Abstract_Fiber* current, shared_ptrR<Abstract_Future> futr_opt, int64_t fail_timeout_override)
   {
     // Get the current fiber.
     recursive_mutex::unique_lock sched_lock(this->m_sched_mutex);

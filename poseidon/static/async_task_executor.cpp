@@ -60,7 +60,7 @@ thread_loop()
 
 void
 Async_Task_Executor::
-enqueue(const shared_ptr<Abstract_Async_Task>& task)
+enqueue(shared_ptrR<Abstract_Async_Task> task)
   {
     if(!task)
       POSEIDON_THROW(("Null task pointer not valid"));

@@ -35,7 +35,7 @@ do_abstract_fiber_on_suspended()
 
 void
 Abstract_Fiber::
-yield(const shared_ptr<Abstract_Future>& futr_opt, int64_t fail_timeout_override) const
+yield(shared_ptrR<Abstract_Future> futr_opt, int64_t fail_timeout_override) const
   {
     if(!this->m_scheduler)
       POSEIDON_THROW(("Fiber not yieldable unless assigned to a scheduler"));

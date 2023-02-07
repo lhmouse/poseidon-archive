@@ -128,7 +128,7 @@ const Socket_Address ipv4_loopback     = (::in6_addr) {0,0,0,0,0,0,0,0,0,0,255,2
 const Socket_Address ipv4_broadcast    = (::in6_addr) {0,0,0,0,0,0,0,0,0,0,255,255,255,255,255,255};
 
 Socket_Address::
-Socket_Address(const cow_string& str)
+Socket_Address(stringR str)
   {
     if(!this->parse(str))
       POSEIDON_THROW((
@@ -145,7 +145,7 @@ classify() const noexcept
 
 bool
 Socket_Address::
-parse(const cow_string& str)
+parse(stringR str)
   {
     this->clear();
 

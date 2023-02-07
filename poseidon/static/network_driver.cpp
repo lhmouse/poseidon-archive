@@ -16,7 +16,7 @@ namespace poseidon {
 namespace {
 
 void
-do_epoll_ctl(int epoll_fd, int op, const shared_ptr<Abstract_Socket>& socket, uint32_t events = EPOLLIN | EPOLLPRI | EPOLLOUT | EPOLLET)
+do_epoll_ctl(int epoll_fd, int op, shared_ptrR<Abstract_Socket> socket, uint32_t events = EPOLLIN | EPOLLPRI | EPOLLOUT | EPOLLET)
   {
     struct ::epoll_event event;
     event.events = events;
@@ -464,7 +464,7 @@ thread_loop()
 
 void
 Network_Driver::
-insert(const shared_ptr<Abstract_Socket>& socket)
+insert(shared_ptrR<Abstract_Socket> socket)
   {
     // Validate arguments.
     if(!socket)
