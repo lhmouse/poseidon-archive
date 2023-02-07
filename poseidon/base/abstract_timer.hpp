@@ -1,5 +1,5 @@
 // This file is part of Poseidon.
-// Copyleft 2022, LH_Mouse. All wrongs reserved.
+// Copyleft 2022 - 2023, LH_Mouse. All wrongs reserved.
 
 #ifndef POSEIDON_BASE_ABSTRACT_TIMER_
 #define POSEIDON_BASE_ABSTRACT_TIMER_
