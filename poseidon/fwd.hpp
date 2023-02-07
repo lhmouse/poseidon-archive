@@ -132,6 +132,10 @@ class UDP_Socket;
 class TCP_Socket;
 class SSL_Socket;
 
+// Easy classes
+// These are suitable for agile development.
+class Easy_Timer;
+
 // Singletons
 extern atomic_signal exit_signal;
 extern class Main_Config& main_config;
