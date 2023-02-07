@@ -188,7 +188,7 @@ do_on_tcp_oob_byte(char data)
         this, typeid(*this), (int) data, (char) data);
   }
 
-const cow_string&
+const Socket_Address&
 TCP_Socket::
 remote_address() const
   {
@@ -196,7 +196,8 @@ remote_address() const
       return this->m_peername;
 
     // Try getting the address now.
-    plain_mutex::unique_lock lock(this->m_peername_mutex);
+    static plain_mutex s_mutex;
+    plain_mutex::unique_lock lock(s_mutex);
 
     if(this->m_peername_ready.load())
       return this->m_peername;
@@ -204,22 +205,15 @@ remote_address() const
     ::sockaddr_in6 addr;
     ::socklen_t addrlen = sizeof(addr);
     if(::getpeername(this->fd(), (::sockaddr*) &addr, &addrlen) != 0)
-      return format(
-          this->m_peername,  // reuse this buffer and return a copy
-          "(invalid address: $1)", format_errno());
+      return ipv6_unspecified;
 
-    if((addr.sin6_family != AF_INET6) || (addrlen != sizeof(addr)))
-      return format(
-          this->m_peername,  // reuse this buffer and return a copy
-          "(address family unimplemented: $1)", addr.sin6_family);
+    ROCKET_ASSERT(addr.sin6_family == AF_INET6);
+    ROCKET_ASSERT(addrlen == sizeof(addr));
 
-    Socket_Address saddr;
-    saddr.set_addr(addr.sin6_addr);
-    saddr.set_port(be16toh(addr.sin6_port));
-
-    this->m_peername = saddr.print_to_string();
+    // Cache the address.
+    this->m_peername.set_addr(addr.sin6_addr);
+    this->m_peername.set_port(be16toh(addr.sin6_port));
     this->m_peername_ready.store(true);
-
     return this->m_peername;
   }
 

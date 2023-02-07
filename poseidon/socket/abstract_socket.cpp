@@ -31,11 +31,8 @@ Abstract_Socket(unique_posix_fd&& fd)
           "Addresss family unimplemented: family `$1`, addrlen `$2`"),
           addr.sin6_family, addrlen);
 
-    Socket_Address saddr;
-    saddr.set_addr(addr.sin6_addr);
-    saddr.set_port(be16toh(addr.sin6_port));
-
-    this->m_sockname = saddr.print_to_string();
+    this->m_sockname.set_addr(addr.sin6_addr);
+    this->m_sockname.set_port(be16toh(addr.sin6_port));
     this->m_sockname_ready.store(true);
 
     // Turn on non-blocking mode if it hasn't been enabled.
@@ -72,7 +69,7 @@ Abstract_Socket::
   {
   }
 
-cow_string
+const Socket_Address&
 Abstract_Socket::
 local_address() const
   {
@@ -80,7 +77,8 @@ local_address() const
       return this->m_sockname;
 
     // Try getting the address now.
-    plain_mutex::unique_lock lock(this->m_sockname_mutex);
+    static plain_mutex s_mutex;
+    plain_mutex::unique_lock lock(s_mutex);
 
     if(this->m_sockname_ready.load())
       return this->m_sockname;
@@ -88,22 +86,15 @@ local_address() const
     ::sockaddr_in6 addr;
     ::socklen_t addrlen = sizeof(addr);
     if(::getsockname(this->fd(), (::sockaddr*) &addr, &addrlen) != 0)
-      return format(
-          this->m_sockname,  // reuse this buffer and return a copy
-          "(invalid address: $1)", format_errno());
+      return ipv6_unspecified;
 
-    if((addr.sin6_family != AF_INET6) || (addrlen != sizeof(addr)))
-      return format(
-          this->m_sockname,  // reuse this buffer and return a copy
-          "(address family unimplemented: $1)", addr.sin6_family);
+    ROCKET_ASSERT(addr.sin6_family == AF_INET6);
+    ROCKET_ASSERT(addrlen == sizeof(addr));
 
-    Socket_Address saddr;
-    saddr.set_addr(addr.sin6_addr);
-    saddr.set_port(be16toh(addr.sin6_port));
-
-    this->m_sockname = saddr.print_to_string();
+    // Cache the address.
+    this->m_sockname.set_addr(addr.sin6_addr);
+    this->m_sockname.set_port(be16toh(addr.sin6_port));
     this->m_sockname_ready.store(true);
-
     return this->m_sockname;
   }
 

@@ -17,10 +17,8 @@ class Abstract_Socket
 
     unique_posix_fd m_fd;
     atomic_relaxed<Socket_State> m_state = { socket_state_unknown };
-
     mutable atomic_acq_rel<bool> m_sockname_ready;
-    mutable plain_mutex m_sockname_mutex;
-    mutable cow_string m_sockname;
+    mutable Socket_Address m_sockname;
 
     mutable recursive_mutex m_io_mutex;
     Network_Driver* m_io_driver;
@@ -112,12 +110,11 @@ class Abstract_Socket
     socket_state() const noexcept
       { return this->m_state.load();  }
 
-    // Gets the local or bound address of this socket as a human-readable
-    // string. In case of errors, a string with information about the error
-    // is returned instead.
-    // This function is thread-safe.
-    cow_string
-    local_address() const;
+    // Gets the local or bound address of this socket. In case of errors,
+    // `ipv6_unspecified` is returned. The result is cached and will not
+    // reflect changes that other APIs may have made.
+    const Socket_Address&
+    local_address() const ROCKET_PURE;
 
     // Shuts the socket down without sending any protocol-specific closure
     // notifications.

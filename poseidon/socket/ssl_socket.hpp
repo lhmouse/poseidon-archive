@@ -21,8 +21,7 @@ class SSL_Socket
     cow_string m_alpn_proto;
 
     mutable atomic_acq_rel<bool> m_peername_ready;
-    mutable plain_mutex m_peername_mutex;
-    mutable cow_string m_peername;
+    mutable Socket_Address m_peername;
 
   protected:
     // Server-side constructor:
@@ -112,11 +111,11 @@ class SSL_Socket
     ssl() const noexcept
       { return this->m_ssl.get();  }
 
-    // Gets the remote or connected address of this socket as a human-readable
-    // string. In case of errors, a string with information about the error is
-    // returned instead.
-    const cow_string&
-    remote_address() const;
+    // Gets the remote or connected address of this socket. In case of errors,
+    // `ipv6_unspecified` is returned. The result is cached and will not
+    // reflect changes that other APIs may have made.
+    const Socket_Address&
+    remote_address() const ROCKET_PURE;
 
     // Gets the protocol that has been selected by ALPN.
     // For a server-side socket, this string equals the result of a previous
