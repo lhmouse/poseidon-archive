@@ -4,7 +4,7 @@
 #include "../poseidon/precompiled.ipp"
 #include "../poseidon/fiber/abstract_fiber.hpp"
 #include "../poseidon/fiber/future.hpp"
-#include "../poseidon/timer/abstract_timer.hpp"
+#include "../poseidon/base/abstract_timer.hpp"
 #include "../poseidon/static/fiber_scheduler.hpp"
 #include "../poseidon/static/timer_driver.hpp"
 #include "../poseidon/static/async_logger.hpp"

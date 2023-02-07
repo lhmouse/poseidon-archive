@@ -1,8 +1,8 @@
 // This file is part of Poseidon.
 // Copyleft 2022, LH_Mouse. All wrongs reserved.
 
-#ifndef POSEIDON_CORE_CHARBUF_256_
-#define POSEIDON_CORE_CHARBUF_256_
+#ifndef POSEIDON_BASE_CHARBUF_256_
+#define POSEIDON_BASE_CHARBUF_256_
 
 #include "../fwd.hpp"
 

@@ -4,7 +4,7 @@
 #include "../precompiled.ipp"
 #include "fiber_scheduler.hpp"
 #include "async_logger.hpp"
-#include "../core/config_file.hpp"
+#include "../base/config_file.hpp"
 #include "../fiber/abstract_fiber.hpp"
 #include "../fiber/abstract_future.hpp"
 #include "../utils.hpp"

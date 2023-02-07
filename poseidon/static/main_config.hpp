@@ -5,7 +5,7 @@
 #define POSEIDON_STATIC_MAIN_CONFIG_
 
 #include "../fwd.hpp"
-#include "../core/config_file.hpp"
+#include "../base/config_file.hpp"
 
 namespace poseidon {
 

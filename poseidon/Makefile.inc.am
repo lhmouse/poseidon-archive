@@ -7,15 +7,14 @@ nobase_include_HEADERS +=  \
   %reldir%/version.h  \
   %reldir%/fwd.hpp  \
   %reldir%/utils.hpp  \
-  %reldir%/core/config_file.hpp  \
-  %reldir%/core/charbuf_256.hpp  \
-  %reldir%/timer/abstract_timer.hpp  \
+  %reldir%/base/config_file.hpp  \
+  %reldir%/base/charbuf_256.hpp  \
+  %reldir%/base/abstract_timer.hpp  \
+  %reldir%/base/abstract_async_task.hpp  \
   %reldir%/fiber/enums.hpp  \
   %reldir%/fiber/abstract_future.hpp  \
   %reldir%/fiber/future.hpp  \
   %reldir%/fiber/abstract_fiber.hpp  \
-  %reldir%/fiber/timer_fiber.hpp  \
-  %reldir%/async_task/abstract_async_task.hpp  \
   %reldir%/socket/enums.hpp  \
   %reldir%/socket/socket_address.hpp  \
   %reldir%/socket/abstract_socket.hpp  \
@@ -38,12 +37,11 @@ lib_libposeidon_la_SOURCES =  \
   %reldir%/precompiled.ipp  \
   %reldir%/fwd.cpp  \
   %reldir%/utils.cpp  \
-  %reldir%/core/config_file.cpp  \
-  %reldir%/timer/abstract_timer.cpp  \
+  %reldir%/base/config_file.cpp  \
+  %reldir%/base/abstract_timer.cpp  \
+  %reldir%/base/abstract_async_task.cpp  \
   %reldir%/fiber/abstract_future.cpp  \
   %reldir%/fiber/abstract_fiber.cpp  \
-  %reldir%/fiber/timer_fiber.cpp  \
-  %reldir%/async_task/abstract_async_task.cpp  \
   %reldir%/socket/socket_address.cpp  \
   %reldir%/socket/abstract_socket.cpp  \
   %reldir%/socket/udp_socket.cpp  \
