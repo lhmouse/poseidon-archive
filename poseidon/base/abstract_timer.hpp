@@ -14,11 +14,10 @@ class Abstract_Timer
     friend class Timer_Driver;
 
     atomic_relaxed<Async_State> m_state = { async_state_pending };
-    atomic_relaxed<int64_t> m_count = { 0 };
     uint64_t m_serial;  // used by timer driver
 
   protected:
-    // Constructs a timer whose count is zero.
+    // Constructs an inactive timer.
     explicit
     Abstract_Timer() noexcept;
 
@@ -37,11 +36,6 @@ class Abstract_Timer
     Async_State
     async_state() const noexcept
       { return this->m_state.load();  }
-
-    // Gets the number of times that this timer has been triggered.
-    int64_t
-    count() const noexcept
-      { return this->m_count.load();  }
   };
 
 }  // namespace poseidon

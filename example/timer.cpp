@@ -21,7 +21,7 @@ struct Example_Timer : Abstract_Timer
     void
     do_abstract_timer_on_tick(int64_t now) override
       {
-        POSEIDON_LOG_ERROR(("example timer: now = $1, count = $2"), now, this->count());
+        POSEIDON_LOG_ERROR(("example timer: now = $1"), now);
       }
   };
 
